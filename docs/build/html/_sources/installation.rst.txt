@@ -24,7 +24,7 @@ Create conda environment
 
 PyPSA-GB's depends on PyPSA to undertake the power flow calculations, and also has other dependencies which can be found in PyPSA-GB_requirements.yaml. This file can be used to create a virtual environment through the conda package, see (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file).
 
-For creating a PyPSA-GB conda environment::
+Navigate to the requirements directory and create a PyPSA-GB conda environment::
 
 	conda env create -f PyPSA-GB_requirements.yml
 
@@ -35,7 +35,7 @@ Then to activate the new environment::
 Run jupyter notebooks
 #####################
 
-This environment can be used to easily run the Jupyter notebooks by installing the environment as a kernel::
+This environment can be used to easily run the Jupyter notebooks by navigating to PyPSA-GB directory and installing the environment as a kernel::
 
 	python -m ipykernel install --user --name=PyPSA-GB
 
