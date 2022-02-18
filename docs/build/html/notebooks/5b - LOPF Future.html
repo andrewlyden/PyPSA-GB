@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Network Constrained Linear Optimal Power Flow &mdash; PyPSA-GB  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "tex2jax_ignore|mathjax_ignore|document", "processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Unit Commitment" href="6%20-%20Unit%20Commitment.html" />
+    <link rel="prev" title="Historical Network Constrained Linear Optimal Power Flow" href="5a%20-%20LOPF%20Historical.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyPSA-GB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_run.html">Quick run</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Data and Functionality</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Future Network Constrained Linear Optimal Power Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../licencing.html">Licencing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPSA-GB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Future Network Constrained Linear Optimal Power Flow</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/5b - LOPF Future.nblink.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Future-Network-Constrained-Linear-Optimal-Power-Flow">
+<h1>Future Network Constrained Linear Optimal Power Flow<a class="headerlink" href="#Future-Network-Constrained-Linear-Optimal-Power-Flow" title="Permalink to this headline">¶</a></h1>
+<p>PyPSA-UK can model the UK power system by solving a network constrained Linear Optimal Power Flow (LOPF) problem. This notebook shows the example application of a future 3 day period.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
+
+<span class="kn">import</span> <span class="nn">data_reader_writer</span>
+</pre></div>
+</div>
+</div>
+<p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># write csv files for import</span>
+<span class="n">start</span> <span class="o">=</span> <span class="s1">&#39;2050-06-04 00:00:00&#39;</span>
+<span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;2050-06-06 23:30:00&#39;</span>
+<span class="c1"># year of simulation</span>
+<span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+<span class="c1"># time step as fraction of hour</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.5</span>
+</pre></div>
+</div>
+</div>
+<p>Choose from one of the National Grid Future Energy Scenarios.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scenario</span> <span class="o">=</span> <span class="s1">&#39;Leading The Way&#39;</span>
+<span class="c1"># scenario = &#39;Consumer Transformation&#39;</span>
+<span class="c1"># scenario = &#39;System Transformation&#39;</span>
+<span class="c1"># scenario = &#39;Steady Progression&#39;</span>
+</pre></div>
+</div>
+</div>
+<p>Choose a baseline year (from 2010-2020). The baseline year determines which historical load profile and weather dataset is used for the future year modelled. The National Grid FES modellers used 2012 as their baseline year.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2012</span>
+</pre></div>
+</div>
+</div>
+<p>data_reader_writer is a script written to read in data from the various sources and write csv files in the format required for populating a PyPSA network object</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+  warnings.warn(
+C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+  self.obj[key] = value
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\interconnectors.py:199: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+  df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
+
+<span class="n">network</span><span class="o">.</span><span class="n">import_from_csv_folder</span><span class="p">(</span><span class="s1">&#39;../LOPF_data&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:pypsa.io:
+Importing PyPSA from older version of PyPSA than current version.
+Please read the release notes at https://pypsa.org/doc/release_notes.html
+carefully to prepare your network for import.
+Currently used PyPSA version [0, 18, 1], imported network file PyPSA version None.
+
+INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
+INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, loads, storage_units
+</pre></div></div>
+</div>
+<p>Lines need to be scaled up to accomadate for future generation, and specific analysis will be done on this in a later notebook. Note: interconnects are links in future, so don’t need to be selective here (as was required in historical simulation).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">contingency_factor</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_max_pu</span> <span class="o">*=</span> <span class="n">contingency_factor</span>
+</pre></div>
+</div>
+</div>
+<p>Run the optimisation…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.opf:Performed preliminary steps
+INFO:pypsa.opf:Building pyomo model using `kirchhoff` formulation
+INFO:pypsa.opf:Solving model using gurobi
+INFO:pypsa.opf:Optimization successful
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem:
+- Name: x464257_copy
+  Lower bound: 33312321.080369998
+  Upper bound: 33312321.080369998
+  Number of objectives: 1
+  Number of constraints: 886261
+  Number of variables: 464257
+  Number of binary variables: 0
+  Number of integer variables: 0
+  Number of continuous variables: 464257
+  Number of nonzeros: 2216238
+  Sense: minimize
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver:
+- Status: ok
+  Return code: 0
+  Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
+  Termination condition: optimal
+  Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
+  Wall time: 6.304109573364258
+  Error rc: 0
+  Time: 16.91200065612793
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution:
+- number of solutions: 0
+  number of solutions displayed: 0
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;SolverStatus.ok: &#39;ok&#39;&gt;, &lt;TerminationCondition.optimal: &#39;optimal&#39;&gt;)
+</pre></div></div>
+</div>
+<p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="n">storage_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="c1"># to show on graph set the negative storage values to zero</span>
+<span class="n">storage_by_carrier</span><span class="p">[</span><span class="n">storage_by_carrier</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">p_by_carrier</span><span class="p">,</span> <span class="n">storage_by_carrier</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="p">)</span>
+<span class="n">imp</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">imp</span><span class="p">[</span><span class="n">imp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">imp</span><span class="p">[</span><span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">interconnector_import</span> <span class="o">=</span> <span class="n">imp</span><span class="p">[[</span><span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">]]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">interconnector_import</span><span class="p">)</span>
+
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">p_by_carrier</span><span class="p">,</span> <span class="n">interconnector_import</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">exp</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">exp</span><span class="p">[</span><span class="n">exp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">exp</span><span class="p">[</span><span class="s1">&#39;Interconnectors Export&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">interconnector_export</span> <span class="o">=</span> <span class="n">exp</span><span class="p">[[</span><span class="s1">&#39;Interconnectors Export&#39;</span><span class="p">]]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">interconnector_export</span><span class="p">)</span>
+
+<span class="c1"># group biomass stuff</span>
+<span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">]</span> <span class="o">+</span>
+    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Landfill Gas&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Anaerobic Digestion&#39;</span><span class="p">]</span> <span class="o">+</span>
+    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Sewage Sludge Digestion&#39;</span><span class="p">])</span>
+
+<span class="c1"># rename the hydro bit</span>
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Large Hydro&#39;</span><span class="p">:</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">})</span>
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Interconnector&#39;</span><span class="p">:</span> <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">})</span>
+
+<span class="n">p_by_carrier</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+name                 BritNed  EastWest     Moyle  Nemo     IFA    IFA2  \
+snapshot
+2050-06-04 00:00:00      0.0       0.0  0.000000   0.0  -700.0  1750.0
+2050-06-04 00:30:00      0.0       0.0  0.000000   0.0  3500.0  1750.0
+2050-06-04 01:00:00      0.0       0.0  0.000000   0.0 -3500.0 -1750.0
+2050-06-04 01:30:00      0.0       0.0  0.000000   0.0  3500.0  1750.0
+2050-06-04 02:00:00      0.0       0.0  0.000000   0.0 -3500.0  1750.0
+...                      ...       ...       ...   ...     ...     ...
+2050-06-06 21:30:00      0.0       0.0  3.375090   0.0 -3500.0  1750.0
+2050-06-06 22:00:00      0.0       0.0  3.640953   0.0 -3500.0 -1750.0
+2050-06-06 22:30:00      0.0       0.0  2.608939   0.0 -3500.0  1750.0
+2050-06-06 23:00:00      0.0       0.0  0.150090   0.0   700.0 -1750.0
+2050-06-06 23:30:00      0.0       0.0  0.148641   0.0  3500.0 -1750.0
+
+name                    NSL  ElecLink  Viking Link  Greenlink  GridLink  \
+snapshot
+2050-06-04 00:00:00  2450.0   -1750.0          0.0        0.0    2450.0
+2050-06-04 00:30:00  2450.0   -1050.0          0.0        0.0   -2450.0
+2050-06-04 01:00:00  2450.0    1050.0          0.0        0.0    2450.0
+2050-06-04 01:30:00  2450.0   -1050.0          0.0        0.0   -2450.0
+2050-06-04 02:00:00  2450.0    1050.0          0.0        0.0    2450.0
+...                     ...       ...          ...        ...       ...
+2050-06-06 21:30:00  2450.0    1050.0          0.0        0.0    2450.0
+2050-06-06 22:00:00  2450.0    1050.0          0.0        0.0    2450.0
+2050-06-06 22:30:00  2450.0    1050.0          0.0        0.0    2450.0
+2050-06-06 23:00:00  2450.0    1750.0          0.0        0.0   -2450.0
+2050-06-06 23:30:00  2450.0   -1050.0          0.0        0.0   -2450.0
+
+name                 NeuConnect  NorthConnect  FAB Link
+snapshot
+2050-06-04 00:00:00         0.0       -2450.0   -1750.0
+2050-06-04 00:30:00         0.0       -2450.0   -1750.0
+2050-06-04 01:00:00         0.0       -2450.0    1750.0
+2050-06-04 01:30:00         0.0       -2450.0   -1750.0
+2050-06-04 02:00:00         0.0       -2450.0   -1750.0
+...                         ...           ...       ...
+2050-06-06 21:30:00         0.0       -2450.0   -1750.0
+2050-06-06 22:00:00         0.0       -2450.0    1750.0
+2050-06-06 22:30:00         0.0       -2450.0   -1750.0
+2050-06-06 23:00:00         0.0       -2450.0    1750.0
+2050-06-06 23:30:00         0.0       -2450.0    1750.0
+
+[144 rows x 14 columns]
+name                 Interconnectors Import
+snapshot
+2050-06-04 00:00:00             6650.000000
+2050-06-04 00:30:00             7700.000000
+2050-06-04 01:00:00             7700.000000
+2050-06-04 01:30:00             7700.000000
+2050-06-04 02:00:00             7700.000000
+...                                     ...
+2050-06-06 21:30:00             7703.375090
+2050-06-06 22:00:00             7703.640953
+2050-06-06 22:30:00             7702.608939
+2050-06-06 23:00:00             6650.150090
+2050-06-06 23:30:00             7700.148641
+
+[144 rows x 1 columns]
+name                 Interconnectors Export
+snapshot
+2050-06-04 00:00:00                 -6650.0
+2050-06-04 00:30:00                 -7700.0
+2050-06-04 01:00:00                 -7700.0
+2050-06-04 01:30:00                 -7700.0
+2050-06-04 02:00:00                 -7700.0
+...                                     ...
+2050-06-06 21:30:00                 -7700.0
+2050-06-06 22:00:00                 -7700.0
+2050-06-06 22:30:00                 -7700.0
+2050-06-06 23:00:00                 -6650.0
+2050-06-06 23:30:00                 -7700.0
+
+[144 rows x 1 columns]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Anaerobic Digestion</th>
+      <th>Biomass (co-firing)</th>
+      <th>Biomass (dedicated)</th>
+      <th>CCS Biomass</th>
+      <th>CCS Gas</th>
+      <th>EfW Incineration</th>
+      <th>Hydrogen</th>
+      <th>Landfill Gas</th>
+      <th>Hydro</th>
+      <th>Natural Gas</th>
+      <th>...</th>
+      <th>Tidal Barrage and Tidal Stream</th>
+      <th>Unmet Load</th>
+      <th>Wind Offshore</th>
+      <th>Wind Onshore</th>
+      <th>Battery</th>
+      <th>Compressed Air</th>
+      <th>Liquid Air</th>
+      <th>Pumped Storage Hydroelectric</th>
+      <th>Interconnectors Import</th>
+      <th>Biomass</th>
+    </tr>
+    <tr>
+      <th>snapshot</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2050-06-04 00:00:00</th>
+      <td>248.700000</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1911.609</td>
+      <td>0.000000</td>
+      <td>552.1</td>
+      <td>18.250582</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>27731.571881</td>
+      <td>4510.844019</td>
+      <td>8939.592367</td>
+      <td>2209.543108</td>
+      <td>1586.790017</td>
+      <td>3043.227788</td>
+      <td>6650.000000</td>
+      <td>851.000000</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 00:30:00</th>
+      <td>313.453654</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>0.000000</td>
+      <td>728.6</td>
+      <td>21.342536</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>25785.915467</td>
+      <td>5004.065493</td>
+      <td>5413.324976</td>
+      <td>2880.557971</td>
+      <td>2247.070839</td>
+      <td>4799.900000</td>
+      <td>7700.000000</td>
+      <td>1092.253654</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 01:00:00</th>
+      <td>283.500000</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2105.523</td>
+      <td>0.000000</td>
+      <td>682.5</td>
+      <td>42.590527</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>29235.303685</td>
+      <td>3964.666877</td>
+      <td>4985.430454</td>
+      <td>3519.172345</td>
+      <td>450.360755</td>
+      <td>3442.078218</td>
+      <td>7700.000000</td>
+      <td>1009.500000</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 01:30:00</th>
+      <td>254.700000</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2145.195</td>
+      <td>0.000000</td>
+      <td>671.4</td>
+      <td>32.442755</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>29476.309216</td>
+      <td>4185.711649</td>
+      <td>3330.038776</td>
+      <td>2277.111517</td>
+      <td>1662.257307</td>
+      <td>4383.391692</td>
+      <td>7700.000000</td>
+      <td>973.300000</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 02:00:00</th>
+      <td>277.900000</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2205.900</td>
+      <td>0.000000</td>
+      <td>682.0</td>
+      <td>15.064083</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>8.0</td>
+      <td>0.0</td>
+      <td>28116.424055</td>
+      <td>4064.601965</td>
+      <td>4306.492389</td>
+      <td>2794.027733</td>
+      <td>1241.586390</td>
+      <td>3679.697030</td>
+      <td>7700.000000</td>
+      <td>1005.900000</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 21:30:00</th>
+      <td>314.100000</td>
+      <td>108.8</td>
+      <td>544.736</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>3139.357659</td>
+      <td>734.8</td>
+      <td>102.817333</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>34742.418223</td>
+      <td>2067.687137</td>
+      <td>9657.765593</td>
+      <td>5382.263586</td>
+      <td>2954.994293</td>
+      <td>4290.716832</td>
+      <td>7703.375090</td>
+      <td>1752.636000</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 22:00:00</th>
+      <td>316.100000</td>
+      <td>108.8</td>
+      <td>544.736</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>864.515514</td>
+      <td>734.8</td>
+      <td>68.001734</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>27869.376053</td>
+      <td>3003.698129</td>
+      <td>16531.248401</td>
+      <td>5796.283862</td>
+      <td>3617.497741</td>
+      <td>3781.533663</td>
+      <td>7703.640953</td>
+      <td>1754.636000</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 22:30:00</th>
+      <td>314.100000</td>
+      <td>108.8</td>
+      <td>544.736</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>433.653000</td>
+      <td>734.8</td>
+      <td>56.675477</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>26866.439158</td>
+      <td>2812.835119</td>
+      <td>13998.773817</td>
+      <td>5589.273724</td>
+      <td>3466.683948</td>
+      <td>4290.716832</td>
+      <td>7702.608939</td>
+      <td>1752.636000</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 23:00:00</th>
+      <td>314.100000</td>
+      <td>108.8</td>
+      <td>544.736</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>936.870000</td>
+      <td>734.8</td>
+      <td>34.974204</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>27479.177114</td>
+      <td>2390.256728</td>
+      <td>8675.930921</td>
+      <td>5589.273724</td>
+      <td>3617.973526</td>
+      <td>3781.533663</td>
+      <td>6650.150090</td>
+      <td>1752.636000</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 23:30:00</th>
+      <td>314.100000</td>
+      <td>108.8</td>
+      <td>544.736</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2308.671</td>
+      <td>958.749000</td>
+      <td>734.8</td>
+      <td>34.391301</td>
+      <td>1500.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>27718.618895</td>
+      <td>2178.996223</td>
+      <td>4527.873851</td>
+      <td>5589.273724</td>
+      <td>2836.497741</td>
+      <td>4290.716832</td>
+      <td>7700.148641</td>
+      <td>1752.636000</td>
+    </tr>
+  </tbody>
+</table>
+<p>144 rows × 26 columns</p>
+</div></div>
+</div>
+<p>Graph the power output of the different generation types…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;EfW Incineration&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Battery&#39;</span><span class="p">,</span> <span class="s1">&#39;Compressed Air&#39;</span><span class="p">,</span> <span class="s1">&#39;Liquid Air&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">,</span> <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">,</span> <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">,</span> <span class="s1">&#39;Unmet Load&#39;</span>
+        <span class="p">]</span>
+
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span>
+
+<span class="n">p_by_carrier</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">p_by_carrier</span><span class="o">.</span><span class="n">max</span><span class="p">()[</span><span class="n">p_by_carrier</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">50.0</span><span class="p">])</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Coal&quot;</span><span class="p">:</span> <span class="s2">&quot;grey&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/gas Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Oil&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Unmet Load&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Anaerobic Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;EfW Incineration&#39;</span><span class="p">:</span> <span class="s1">&#39;chocolate&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Sewage Sludge Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Landfill Gas&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;darkgreen&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">:</span> <span class="s1">&#39;pink&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Sour gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Natural Gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Gas&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydrogen&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Nuclear&quot;</span><span class="p">:</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Tidal Barrage and Tidal Stream&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydro&#39;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Large Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Small Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">:</span> <span class="s2">&quot;darkturquoise&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Battery&#39;</span><span class="p">:</span> <span class="s1">&#39;lime&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Compressed Air&#39;</span><span class="p">:</span> <span class="s1">&#39;greenyellow&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Liquid Air&#39;</span><span class="p">:</span> <span class="s1">&#39;lawngreen&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">:</span> <span class="s2">&quot;lightskyblue&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">:</span> <span class="s1">&#39;deepskyblue&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">:</span> <span class="s1">&#39;yellow&#39;</span><span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="p">(</span><span class="n">p_by_carrier</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
+
+<span class="c1"># stacked area plot of negative values, prepend column names with &#39;_&#39; such that they don&#39;t appear in the legend</span>
+<span class="p">(</span><span class="n">interconnector_export</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">area</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+<span class="c1"># rescale the y axis</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([(</span><span class="n">interconnector_export</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">p_by_carrier</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()])</span>
+
+<span class="c1"># Shrink current axis&#39;s height by 10% on the bottom</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_position</span><span class="p">([</span><span class="n">box</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">y0</span> <span class="o">+</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">box</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">])</span>
+
+<span class="c1"># Put a legend below current axis</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper center&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">),</span>
+          <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shadow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;GW&quot;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matplotlib\core.py:1391: UserWarning: Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.
+  ax.set_ylim(None, 0)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 0, &#39;&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_5b_-_LOPF_Future_19_2.png" src="../_images/notebooks_5b_-_LOPF_Future_19_2.png" />
+</div>
+</div>
+<p>Graph the pumped hydro dispatch and state of charge…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">p_storage</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">state_of_charge</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">state_of_charge</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">p_storage</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pumped hydro dispatch&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">state_of_charge</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;State of charge&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;MWh&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 0, &#39;&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_5b_-_LOPF_Future_21_1.png" src="../_images/notebooks_5b_-_LOPF_Future_21_1.png" />
+</div>
+</div>
+<p>Look at the line loading stats and graph…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">now</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">139</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;With the linear load flow, there is the following per unit loading:&quot;</span><span class="p">)</span>
+<span class="n">loading</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">lines_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">now</span><span class="p">]</span> <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span>
+<span class="n">loading</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+With the linear load flow, there is the following per unit loading:
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+count    99.000000
+mean      0.391217
+std       1.083708
+min      -1.926864
+25%      -0.206908
+50%       0.246824
+75%       0.641539
+max       4.000000
+dtype: float64
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+
+<span class="n">network</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">line_colors</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">loading</span><span class="p">),</span> <span class="n">line_cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Line loading&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;matplotlib.collections.PatchCollection at 0x2868c43dd60&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x2868c44bd60&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x2868c3ca580&gt;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_5b_-_LOPF_Future_24_1.png" src="../_images/notebooks_5b_-_LOPF_Future_24_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">network</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">line_widths</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hexbin</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+           <span class="n">gridsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+           <span class="n">C</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">now</span><span class="p">],</span>
+           <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">)</span>
+
+<span class="c1"># for some reason the colorbar only works with graphs plt.plot</span>
+<span class="c1"># and must be attached plt.colorbar</span>
+
+<span class="n">cb</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Locational Marginal Price (£/MWh)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_5b_-_LOPF_Future_25_0.png" src="../_images/notebooks_5b_-_LOPF_Future_25_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>name</th>
+      <th>Beauly</th>
+      <th>Peterhead</th>
+      <th>Errochty</th>
+      <th>Denny/Bonnybridge</th>
+      <th>Neilston</th>
+      <th>Strathaven</th>
+      <th>Torness</th>
+      <th>Eccles</th>
+      <th>Harker</th>
+      <th>Stella West</th>
+      <th>...</th>
+      <th>Netherlands</th>
+      <th>Belgium</th>
+      <th>France1</th>
+      <th>France2</th>
+      <th>Ireland</th>
+      <th>N. Ireland</th>
+      <th>Denmark</th>
+      <th>Germany</th>
+      <th>Ireland2</th>
+      <th>Norway</th>
+    </tr>
+    <tr>
+      <th>snapshot</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2050-06-04 00:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-15.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 00:30:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-15.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 01:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-15.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 01:30:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-15.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 02:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-15.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-1.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 21:30:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>36.590789</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>...</td>
+      <td>60.0</td>
+      <td>60.0</td>
+      <td>65.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>79.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 22:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>36.590789</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>...</td>
+      <td>60.0</td>
+      <td>60.0</td>
+      <td>65.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>79.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 22:30:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>36.590789</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>...</td>
+      <td>60.0</td>
+      <td>60.0</td>
+      <td>65.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>79.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 23:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>36.590789</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>...</td>
+      <td>60.0</td>
+      <td>60.0</td>
+      <td>65.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>79.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-06 23:30:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>36.590789</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>80.0</td>
+      <td>...</td>
+      <td>60.0</td>
+      <td>60.0</td>
+      <td>65.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>79.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>144 rows × 39 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">carrier</span> <span class="o">=</span> <span class="s2">&quot;Wind Onshore&quot;</span>
+
+<span class="n">capacity</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;carrier&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span> <span class="s2">&quot;p_nom&quot;</span><span class="p">]</span>
+<span class="n">p_available</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom&quot;</span><span class="p">])</span>
+<span class="n">p_available_by_carrier</span> <span class="o">=</span> <span class="n">p_available</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">p_curtailed_by_carrier</span> <span class="o">=</span> <span class="n">p_available_by_carrier</span> <span class="o">-</span> <span class="n">p_by_carrier</span>
+<span class="n">p_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; available&quot;</span><span class="p">:</span> <span class="n">p_available_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">],</span>
+                     <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">:</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">],</span>
+                     <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">:</span> <span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]})</span>
+
+<span class="n">p_df</span><span class="p">[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; capacity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capacity</span>
+<span class="n">p_df</span><span class="p">[</span><span class="s2">&quot;Wind Onshore curtailed&quot;</span><span class="p">][</span><span class="n">p_df</span><span class="p">[</span><span class="s2">&quot;Wind Onshore curtailed&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">p_df</span><span class="p">[[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">,</span> <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">p_df</span><span class="p">[[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; available&quot;</span><span class="p">,</span> <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; capacity&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Power [MW]&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x2868bf28070&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_5b_-_LOPF_Future_27_1.png" src="../_images/notebooks_5b_-_LOPF_Future_27_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="5a%20-%20LOPF%20Historical.html" class="btn btn-neutral float-left" title="Historical Network Constrained Linear Optimal Power Flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="6%20-%20Unit%20Commitment.html" class="btn btn-neutral float-right" title="Unit Commitment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Andrew Lyden.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1312 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PyPSA-GB: Network Data &#8212; PyPSA-GB  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "tex2jax_ignore|mathjax_ignore|document", "processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyPSA-GB: Demand Data" href="2%20-%20Demand.html" />
+    <link rel="prev" title="Quick run" href="../quick_run.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<div class="section" id="PyPSA-GB:-Network-Data">
+<h1>PyPSA-GB: Network Data<a class="headerlink" href="#PyPSA-GB:-Network-Data" title="Permalink to this headline">¶</a></h1>
+<p>This notebook explores the reduced network model included with PyPSA-GB. The reduced network model is a 29 bus and 99 line representation of the high voltage AC transmission network of the Great Britain (GB) electricity system. It has been adapted from the openly available Reduced GB Network which was developed at the University of Strathclyde in 2010 (<a class="reference external" href="https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/">https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/</a>). The main change is the addition of the Western HVDC link which strengthens the
+connection between Scotland and England.</p>
+<p>Interconnections to other countries are also included for historical years and the pipeline up to 2030 are included for scaling to match capacities for future years.</p>
+<div class="section" id="Voronoi-cells">
+<h2>Voronoi cells<a class="headerlink" href="#Voronoi-cells" title="Permalink to this headline">¶</a></h2>
+<p>Generators are connected to the buses by calculating the nearest bus by distance. Voronoi cells have been generated for the diagram below to illustrate the areas which correspond to the nearest bus.</p>
+<p><img alt="title" src="notebooks\voronoi_reduced_model.jpg" /></p>
+</div>
+<div class="section" id="Reduced-Network-GB">
+<h2>Reduced Network GB<a class="headerlink" href="#Reduced-Network-GB" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
+<span class="kn">import</span> <span class="nn">cartopy.feature</span>
+
+<span class="kn">import</span> <span class="nn">imageio</span>
+
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">Voronoi</span><span class="p">,</span> <span class="n">voronoi_plot_2d</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">Point</span>
+
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="kn">import</span> <span class="n">mean</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/buses.csv&#39;</span><span class="p">)</span>
+<span class="n">lon</span> <span class="o">=</span> <span class="n">df_network</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">lat</span> <span class="o">=</span> <span class="n">df_network</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lon</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lon</span><span class="p">)):</span>
+    <span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_buses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/buses.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+
+    <span class="n">bus0</span> <span class="o">=</span> <span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus1</span> <span class="o">=</span> <span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus0_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">]]</span>
+    <span class="n">bus1_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">]]</span>
+    <span class="n">line_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bus0_coord</span><span class="p">,</span> <span class="n">bus1_coord</span><span class="p">])</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                     <span class="n">projection</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">())</span>
+
+<span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">8.09782</span><span class="p">,</span> <span class="mf">2.40511</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mf">49.5</span><span class="p">]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_extent</span><span class="p">(</span><span class="n">extent</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">OCEAN</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">LAND</span><span class="p">)</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="p">[</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="c1"># ax.scatter(lon, lat, s=sizes * marker_scaler, c=&#39;black&#39;, edgecolors=&#39;black&#39;)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">txt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df_buses</span><span class="p">[:</span><span class="mi">29</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                <span class="n">textcoords</span><span class="o">=</span><span class="s2">&quot;offset points&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;extra bold&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reduced Network GB&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_1-Network_6_0.png" src="../_images/notebooks_1-Network_6_0.png" />
+</div>
+</div>
+<p>Bus data…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_buses</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">29</span><span class="p">,</span> <span class="p">:]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>v_nom</th>
+      <th>carrier</th>
+      <th>x</th>
+      <th>y</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Beauly</th>
+      <td>275</td>
+      <td>AC</td>
+      <td>-4.533299</td>
+      <td>57.469876</td>
+    </tr>
+    <tr>
+      <th>Peterhead</th>
+      <td>275</td>
+      <td>AC</td>
+      <td>-1.804331</td>
+      <td>57.484481</td>
+    </tr>
+    <tr>
+      <th>Errochty</th>
+      <td>132</td>
+      <td>AC</td>
+      <td>-4.054907</td>
+      <td>56.724571</td>
+    </tr>
+    <tr>
+      <th>Denny/Bonnybridge</th>
+      <td>275</td>
+      <td>AC</td>
+      <td>-3.725282</td>
+      <td>56.109237</td>
+    </tr>
+    <tr>
+      <th>Neilston</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-4.414788</td>
+      <td>55.808831</td>
+    </tr>
+    <tr>
+      <th>Strathaven</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-3.880268</td>
+      <td>55.753988</td>
+    </tr>
+    <tr>
+      <th>Torness</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.507448</td>
+      <td>55.922401</td>
+    </tr>
+    <tr>
+      <th>Eccles</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.229827</td>
+      <td>55.677255</td>
+    </tr>
+    <tr>
+      <th>Harker</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.847820</td>
+      <td>54.931176</td>
+    </tr>
+    <tr>
+      <th>Stella West</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-1.667840</td>
+      <td>54.987162</td>
+    </tr>
+    <tr>
+      <th>Penwortham</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.679880</td>
+      <td>53.776910</td>
+    </tr>
+    <tr>
+      <th>Deeside</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-3.072208</td>
+      <td>53.223030</td>
+    </tr>
+    <tr>
+      <th>Daines</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.181395</td>
+      <td>53.361456</td>
+    </tr>
+    <tr>
+      <th>Th. Marsh/Stocksbridge</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-1.392936</td>
+      <td>53.467042</td>
+    </tr>
+    <tr>
+      <th>Thornton/Drax/Eggborough</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.989753</td>
+      <td>53.833428</td>
+    </tr>
+    <tr>
+      <th>Keadby</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.683866</td>
+      <td>53.493436</td>
+    </tr>
+    <tr>
+      <th>Ratcliffe</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-1.065185</td>
+      <td>52.876444</td>
+    </tr>
+    <tr>
+      <th>Feckenham</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-1.958841</td>
+      <td>52.296944</td>
+    </tr>
+    <tr>
+      <th>Walpole</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>0.244973</td>
+      <td>52.730476</td>
+    </tr>
+    <tr>
+      <th>Bramford</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>1.159651</td>
+      <td>52.088738</td>
+    </tr>
+    <tr>
+      <th>Pelham</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>0.164054</td>
+      <td>51.982791</td>
+    </tr>
+    <tr>
+      <th>Sundon/East Claydon</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.634044</td>
+      <td>51.957294</td>
+    </tr>
+    <tr>
+      <th>Melksham</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.224944</td>
+      <td>51.419196</td>
+    </tr>
+    <tr>
+      <th>Bramley</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.978219</td>
+      <td>51.291877</td>
+    </tr>
+    <tr>
+      <th>London</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.131943</td>
+      <td>51.532973</td>
+    </tr>
+    <tr>
+      <th>Kemsley</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>0.768177</td>
+      <td>51.376012</td>
+    </tr>
+    <tr>
+      <th>Sellindge</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>1.117562</td>
+      <td>51.104927</td>
+    </tr>
+    <tr>
+      <th>Lovedean</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-0.995022</td>
+      <td>50.912050</td>
+    </tr>
+    <tr>
+      <th>S.W.Penisula</th>
+      <td>400</td>
+      <td>AC</td>
+      <td>-2.265294</td>
+      <td>50.996346</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Line data…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>bus0</th>
+      <th>bus1</th>
+      <th>r</th>
+      <th>x</th>
+      <th>b</th>
+      <th>s_nom</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Beauly</td>
+      <td>Peterhead</td>
+      <td>0.01220</td>
+      <td>0.02000</td>
+      <td>0.0856</td>
+      <td>525</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Beauly</td>
+      <td>Errochty</td>
+      <td>0.00700</td>
+      <td>0.15000</td>
+      <td>0.0520</td>
+      <td>132</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Beauly</td>
+      <td>Peterhead</td>
+      <td>0.01220</td>
+      <td>0.02000</td>
+      <td>0.2844</td>
+      <td>525</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Beauly</td>
+      <td>Errochty</td>
+      <td>0.00700</td>
+      <td>0.15000</td>
+      <td>0.0520</td>
+      <td>132</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Peterhead</td>
+      <td>Denny/Bonnybridge</td>
+      <td>0.00040</td>
+      <td>0.06500</td>
+      <td>0.4454</td>
+      <td>760</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>94</th>
+      <td>Sellindge</td>
+      <td>Kemsley</td>
+      <td>0.00020</td>
+      <td>0.00503</td>
+      <td>0.1797</td>
+      <td>3100</td>
+    </tr>
+    <tr>
+      <th>95</th>
+      <td>Lovedean</td>
+      <td>Sellindge</td>
+      <td>0.00038</td>
+      <td>0.00711</td>
+      <td>0.2998</td>
+      <td>3070</td>
+    </tr>
+    <tr>
+      <th>96</th>
+      <td>Lovedean</td>
+      <td>Sellindge</td>
+      <td>0.00038</td>
+      <td>0.00711</td>
+      <td>0.2998</td>
+      <td>3070</td>
+    </tr>
+    <tr>
+      <th>97</th>
+      <td>S.W.Penisula</td>
+      <td>Lovedean</td>
+      <td>0.00051</td>
+      <td>0.00796</td>
+      <td>0.3400</td>
+      <td>2780</td>
+    </tr>
+    <tr>
+      <th>98</th>
+      <td>S.W.Penisula</td>
+      <td>Lovedean</td>
+      <td>0.00051</td>
+      <td>0.00796</td>
+      <td>0.3400</td>
+      <td>2780</td>
+    </tr>
+  </tbody>
+</table>
+<p>99 rows × 6 columns</p>
+</div></div>
+</div>
+</div>
+<div class="section" id="Interconnectors">
+<h2>Interconnectors<a class="headerlink" href="#Interconnectors" title="Permalink to this headline">¶</a></h2>
+<p>Interconnectors &lt;= 2020…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/interconnectors/links.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_interconnectors</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>bus0</th>
+      <th>bus1</th>
+      <th>carrier</th>
+      <th>p_nom</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>BritNed</th>
+      <td>Netherlands</td>
+      <td>Kemsley</td>
+      <td>DC</td>
+      <td>1000</td>
+    </tr>
+    <tr>
+      <th>EastWest</th>
+      <td>Ireland</td>
+      <td>Deeside</td>
+      <td>DC</td>
+      <td>600</td>
+    </tr>
+    <tr>
+      <th>Moyle</th>
+      <td>N. Ireland</td>
+      <td>Neilston</td>
+      <td>DC</td>
+      <td>600</td>
+    </tr>
+    <tr>
+      <th>Nemo</th>
+      <td>Belgium</td>
+      <td>Sellindge</td>
+      <td>DC</td>
+      <td>1000</td>
+    </tr>
+    <tr>
+      <th>IFA</th>
+      <td>France1</td>
+      <td>Sellindge</td>
+      <td>DC</td>
+      <td>2000</td>
+    </tr>
+    <tr>
+      <th>IFA2</th>
+      <td>France2</td>
+      <td>Lovedean</td>
+      <td>DC</td>
+      <td>1000</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_buses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/buses.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># append the interconnector data</span>
+<span class="n">df_lines_interconnectors</span> <span class="o">=</span> <span class="n">df_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_interconnectors</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df_lines_interconnectors</span><span class="p">)</span>
+
+<span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+
+    <span class="n">bus0</span> <span class="o">=</span> <span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus1</span> <span class="o">=</span> <span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus0_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">]]</span>
+    <span class="n">bus1_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">]]</span>
+    <span class="n">line_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bus0_coord</span><span class="p">,</span> <span class="n">bus1_coord</span><span class="p">])</span>
+
+<span class="n">line_coordinates</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                     <span class="n">projection</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">())</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">OCEAN</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">LAND</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="p">[</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="c1"># ax.scatter(lon, lat, s=sizes * marker_scaler, c=&#39;black&#39;, edgecolors=&#39;black&#39;)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">txt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df_buses</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                <span class="n">textcoords</span><span class="o">=</span><span class="s2">&quot;offset points&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;extra bold&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reduced Network GB with Interconnectors &lt;=2020&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+                bus0               bus1       r      x       b  s_nom carrier  \
+name
+0             Beauly          Peterhead  0.0122  0.020  0.0856  525.0     NaN
+1             Beauly           Errochty  0.0070  0.150  0.0520  132.0     NaN
+2             Beauly          Peterhead  0.0122  0.020  0.2844  525.0     NaN
+3             Beauly           Errochty  0.0070  0.150  0.0520  132.0     NaN
+4          Peterhead  Denny/Bonnybridge  0.0004  0.065  0.4454  760.0     NaN
+...              ...                ...     ...    ...     ...    ...     ...
+EastWest     Ireland            Deeside     NaN    NaN     NaN    NaN      DC
+Moyle     N. Ireland           Neilston     NaN    NaN     NaN    NaN      DC
+Nemo         Belgium          Sellindge     NaN    NaN     NaN    NaN      DC
+IFA          France1          Sellindge     NaN    NaN     NaN    NaN      DC
+IFA2         France2           Lovedean     NaN    NaN     NaN    NaN      DC
+
+           p_nom
+name
+0            NaN
+1            NaN
+2            NaN
+3            NaN
+4            NaN
+...          ...
+EastWest   600.0
+Moyle      600.0
+Nemo      1000.0
+IFA       2000.0
+IFA2      1000.0
+
+[105 rows x 8 columns]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_1-Network_14_1.png" src="../_images/notebooks_1-Network_14_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors_future</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/interconnectors/links_future.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_interconnectors_future</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>bus0</th>
+      <th>bus1</th>
+      <th>carrier</th>
+      <th>p_nom</th>
+      <th>installed date</th>
+      <th>marginal_cost</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>BritNed</th>
+      <td>Netherlands</td>
+      <td>Kemsley</td>
+      <td>DC</td>
+      <td>1000</td>
+      <td>01/01/2020</td>
+      <td>20</td>
+    </tr>
+    <tr>
+      <th>EastWest</th>
+      <td>Ireland</td>
+      <td>Deeside</td>
+      <td>DC</td>
+      <td>600</td>
+      <td>01/01/2020</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>Moyle</th>
+      <td>N. Ireland</td>
+      <td>Neilston</td>
+      <td>DC</td>
+      <td>600</td>
+      <td>01/01/2020</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>Nemo</th>
+      <td>Belgium</td>
+      <td>Sellindge</td>
+      <td>DC</td>
+      <td>1000</td>
+      <td>01/01/2020</td>
+      <td>20</td>
+    </tr>
+    <tr>
+      <th>IFA</th>
+      <td>France1</td>
+      <td>Sellindge</td>
+      <td>DC</td>
+      <td>2000</td>
+      <td>01/01/2020</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>IFA2</th>
+      <td>France2</td>
+      <td>Lovedean</td>
+      <td>DC</td>
+      <td>1000</td>
+      <td>01/01/2020</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>NSL</th>
+      <td>Norway</td>
+      <td>Stella West</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2021</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>ElecLink</th>
+      <td>France1</td>
+      <td>Sellindge</td>
+      <td>DC</td>
+      <td>1000</td>
+      <td>01/01/2022</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>Viking Link</th>
+      <td>Denmark</td>
+      <td>Walpole</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2023</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>Greenlink</th>
+      <td>Ireland2</td>
+      <td>Melksham</td>
+      <td>DC</td>
+      <td>500</td>
+      <td>01/01/2023</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>GridLink</th>
+      <td>France1</td>
+      <td>Kemsley</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2024</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>NeuConnect</th>
+      <td>Germany</td>
+      <td>Kemsley</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2024</td>
+      <td>20</td>
+    </tr>
+    <tr>
+      <th>NorthConnect</th>
+      <td>Norway</td>
+      <td>Peterhead</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2025</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>FAB Link</th>
+      <td>France2</td>
+      <td>S.W.Penisula</td>
+      <td>DC</td>
+      <td>1400</td>
+      <td>01/01/2025</td>
+      <td>15</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_buses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/network/buses.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># append new buses</span>
+<span class="n">df_buses_future</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/interconnectors/links_new_buses.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_buses</span> <span class="o">=</span> <span class="n">df_buses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_buses_future</span><span class="p">)</span>
+<span class="c1"># drop duplicate index incase future are already included</span>
+<span class="n">df_buses</span> <span class="o">=</span> <span class="n">df_buses</span><span class="p">[</span><span class="o">~</span><span class="n">df_buses</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="s1">&#39;first&#39;</span><span class="p">)]</span>
+<span class="n">lon</span> <span class="o">=</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">lat</span> <span class="o">=</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+<span class="c1"># append the interconnector data</span>
+<span class="n">df_lines_interconnectors</span> <span class="o">=</span> <span class="n">df_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_interconnectors_future</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+
+    <span class="n">bus0</span> <span class="o">=</span> <span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus1</span> <span class="o">=</span> <span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">bus0_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">]]</span>
+    <span class="n">bus1_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">]]</span>
+    <span class="n">line_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bus0_coord</span><span class="p">,</span> <span class="n">bus1_coord</span><span class="p">])</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                     <span class="n">projection</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">())</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">OCEAN</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">LAND</span><span class="p">)</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines_interconnectors</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="p">[</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="c1"># ax.scatter(lon, lat, s=sizes * marker_scaler, c=&#39;black&#39;, edgecolors=&#39;black&#39;)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">txt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df_buses</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                <span class="n">textcoords</span><span class="o">=</span><span class="s2">&quot;offset points&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;extra bold&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reduced Network GB with Interconnectors in Pipeline&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_1-Network_16_0.png" src="../_images/notebooks_1-Network_16_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PyPSA-GB</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_run.html">Quick run</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Data and Functionality</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PyPSA-GB: Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">PyPSA-GB: Demand Data</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../quick_run.html" title="previous chapter">Quick run</a></li>
+      <li>Next: <a href="2%20-%20Demand.html" title="next chapter">PyPSA-GB: Demand Data</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Andrew Lyden.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/notebooks/1-Network.nblink.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

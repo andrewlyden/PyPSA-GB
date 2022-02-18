@@ -1,0 +1,2541 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renewable Power and Storage &mdash; PyPSA-GB  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "tex2jax_ignore|mathjax_ignore|document", "processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Historical Network Constrained Linear Optimal Power Flow" href="5a%20-%20LOPF%20Historical.html" />
+    <link rel="prev" title="Generator and Marginal Prices" href="3%20-%20Generator%20and%20Marginal%20Prices.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyPSA-GB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_run.html">Quick run</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Data and Functionality</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Renewable Power and Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Mapping-historical-renewable-power-sites">Mapping historical renewable power sites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Historical-renewable-correction-factors">Historical renewable correction factors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Closer-look-at-renewable-power-generation-timeseries">Closer look at renewable power generation timeseries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Future-installed-capacities-of-renewable-power">Future installed capacities of renewable power</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Historical-storage-units">Historical storage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Future-storage-units">Future storage units</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../licencing.html">Licencing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPSA-GB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Renewable Power and Storage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/4 - Renewable Power and Storage.nblink.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Renewable-Power-and-Storage">
+<h1>Renewable Power and Storage<a class="headerlink" href="#Renewable-Power-and-Storage" title="Permalink to this headline">¶</a></h1>
+<p>This notebook looks at data for the variable renewable power generators and storage units in the PyPSA-GB dataset. For historical years, 2010-2020, data on operational solar photovoltaics (PV), onshore wind, and offshore wind sites is sourced from the Renewable Energy Planning Database (REPD) <a class="reference external" href="https://www.gov.uk/government/publications/renewable-energy-planning-database-monthly-extract">https://www.gov.uk/government/publications/renewable-energy-planning-database-monthly-extract</a>. Geocoordinates, technology type, and installed capacity are extracted and used for PyPSA generator components,
+as well as to generate power timeseries using Atlite.</p>
+<p>For modelling future energy scenarios, the FES2021 workbook is used to extract projected capacities. The spatial distribution of PV and onshore wind from 2020 is used as a baseline for future years and is scaled up based on projected capacities. For offshore wind in the near future (to 2030), the pipeline (from the REPD) and Sectoral Marine Plan (planning sites around Scotland) are used to update the spatial distribution from 2020 as it is anticipated that there will be a large expansion of
+offshore wind in the next 10 years which will significantly impact the current spatial distribution. From 2030 to 2050 it is assumed that the spatial distribution of offshore wind, along with PV and onshore wind, will be static.</p>
+<p>The only historical storage units for 2010-2020 included are large-scale pumped hydro stations. The future storage technologies represented are pumped hydro, batteries, liquid air storage and compressed air storage. The energy capacities and nominal power for the years 2021-2050 are extracted from the FES2021 workbook, and can be obtained for the four different scenarios.</p>
+<div class="section" id="Mapping-historical-renewable-power-sites">
+<h2>Mapping historical renewable power sites<a class="headerlink" href="#Mapping-historical-renewable-power-sites" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mapping</span>
+<span class="kn">import</span> <span class="nn">renewables</span>
+<span class="kn">import</span> <span class="nn">generators</span>
+<span class="kn">import</span> <span class="nn">snapshots</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
+<span class="kn">import</span> <span class="nn">cartopy.feature</span>
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="kn">import</span> <span class="n">mean</span>
+<span class="kn">import</span> <span class="nn">imageio</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># tech = &#39;Advanced Conversion Technology&#39;</span>
+<span class="c1"># tech = &#39;Anaerobic Digestion&#39;</span>
+<span class="c1"># tech = &#39;Biomass (co-firing)&#39;</span>
+<span class="c1"># tech = &#39;Biomass (dedicated)&#39;</span>
+<span class="c1"># tech = &#39;EfW Incineration&#39;</span>
+<span class="c1"># tech = &#39;Fuel Cell (Hydrogen)&#39;</span>
+<span class="c1"># tech = &#39;Hot Dry Rocks (HDR)&#39;</span>
+<span class="c1"># tech = &#39;Landfill Gas&#39;</span>
+<span class="c1"># tech = &#39;Large Hydro&#39;</span>
+<span class="c1"># tech = &#39;Pumped Storage Hydroelectricity&#39;</span>
+<span class="c1"># tech = &#39;Sewage Sludge Digestion&#39;</span>
+<span class="c1"># tech = &#39;Shoreline Wave&#39;</span>
+<span class="c1"># tech = &#39;Small Hydro&#39;</span>
+<span class="n">tech</span> <span class="o">=</span> <span class="s1">&#39;Solar Photovoltaics&#39;</span>
+<span class="c1"># tech = &#39;Tidal Barrage and Tidal Stream&#39;</span>
+<span class="c1"># tech = &#39;Wind Offshore&#39;</span>
+<span class="c1"># tech = &#39;Wind Onshore&#39;</span>
+<span class="c1"># tech = &#39;Biomass (co-firing)&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;deepskyblue&#39;</span>
+<span class="n">marker_scaler</span> <span class="o">=</span> <span class="mf">2.</span>
+<span class="n">year</span> <span class="o">=</span> <span class="mi">2020</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">renewables</span><span class="o">.</span><span class="n">REPD_date_corrected</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+<span class="n">df_res</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Technology Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">tech</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">lon</span> <span class="o">=</span> <span class="n">df_res</span><span class="p">[</span><span class="s1">&#39;lon&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">lat</span> <span class="o">=</span> <span class="n">df_res</span><span class="p">[</span><span class="s1">&#39;lat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+<span class="n">sizes</span> <span class="o">=</span> <span class="n">df_res</span><span class="p">[</span><span class="s1">&#39;Installed Capacity (MWelec)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                     <span class="n">projection</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">())</span>
+
+<span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">8.09782</span><span class="p">,</span> <span class="mf">2.40511</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mf">49.5</span><span class="p">]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_extent</span><span class="p">(</span><span class="n">extent</span><span class="p">)</span>
+<span class="c1"># ax.stock_img()</span>
+<span class="c1"># ax.coastlines()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">OCEAN</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">LAND</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">sizes</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">tech</span> <span class="o">+</span> <span class="s1">&#39; - &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">l1</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+<span class="n">l2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+<span class="n">l3</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+<span class="n">label1</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">sizes</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">label2</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">sizes</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">label3</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">sizes</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">label1</span><span class="p">,</span> <span class="n">label2</span><span class="p">,</span> <span class="n">label3</span><span class="p">]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span><span class="p">],</span> <span class="n">labels</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+          <span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+          <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Installed Capacity (MWelec)&#39;</span><span class="p">,</span> <span class="n">scatterpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># plt.savefig(&#39;../data/FES2021/&#39; + str(year) + &#39;_&#39; + tech + &#39;.png&#39;)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_6_0.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_6_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># do for all years</span>
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2011</span><span class="p">,</span> <span class="mi">2020</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">mapping</span><span class="o">.</span><span class="n">generator_map_plotter</span><span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_0.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_1.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_2.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_2.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_3.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_4.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_4.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_5.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_5.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_6.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_6.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_7.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_7.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_8.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_8.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_9.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_7_9.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mapping</span><span class="o">.</span><span class="n">gif_maker</span><span class="p">(</span><span class="n">tech</span><span class="p">)</span>
+
+<span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../data/renewables/&#39;</span> <span class="o">+</span> <span class="n">tech</span> <span class="o">+</span> <span class="s1">&#39;.gif&#39;</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;IPython.core.display.Image object&gt;
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Historical-renewable-correction-factors">
+<h2>Historical renewable correction factors<a class="headerlink" href="#Historical-renewable-correction-factors" title="Permalink to this headline">¶</a></h2>
+<p>Historical annual power output from different renewable power generators is reported by BEIS and this is compared to the power output calculated using Atlite.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">renewables</span><span class="o">.</span><span class="n">RES_correction_factors</span><span class="p">()</span>
+<span class="n">df</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>2010</th>
+      <th>2011</th>
+      <th>2012</th>
+      <th>2013</th>
+      <th>2014</th>
+      <th>2015</th>
+      <th>2016</th>
+      <th>2017</th>
+      <th>2018</th>
+      <th>2019</th>
+      <th>2020</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Wind_Offshore</th>
+      <td>0.733633</td>
+      <td>0.775553</td>
+      <td>0.836134</td>
+      <td>0.742069</td>
+      <td>0.782873</td>
+      <td>0.770685</td>
+      <td>0.732413</td>
+      <td>0.792680</td>
+      <td>0.820076</td>
+      <td>0.871102</td>
+      <td>0.878444</td>
+    </tr>
+    <tr>
+      <th>Wind_Onshore</th>
+      <td>1.029483</td>
+      <td>0.976941</td>
+      <td>1.029872</td>
+      <td>0.938289</td>
+      <td>0.941133</td>
+      <td>0.936483</td>
+      <td>0.926565</td>
+      <td>0.956799</td>
+      <td>0.941639</td>
+      <td>0.969856</td>
+      <td>0.908810</td>
+    </tr>
+    <tr>
+      <th>PV</th>
+      <td>NaN</td>
+      <td>4.831223</td>
+      <td>6.487221</td>
+      <td>2.799122</td>
+      <td>1.964904</td>
+      <td>1.527666</td>
+      <td>1.407315</td>
+      <td>1.438742</td>
+      <td>1.461258</td>
+      <td>1.437970</td>
+      <td>1.461977</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Both wind onshore and offshore power production are overestimated, and this is likely due to a combination of limitations with use of reanalysis datasets, neglecting of wake effects, and maintenance/down town. However, there is an underestimation of PV power production and this is because &lt;150kW installations are not included in the REPD, which means that domestic scale systems are not included. By presuming the spatial distribution of &lt;150kW systems is the same as &gt;150kW systems we can scale
+the power capacities of the PV generators to match historical data.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;PV&#39;</span><span class="p">,</span> <span class="mi">2010</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;Wind_Offshore&#39;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;Wind_Onshore&#39;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;PV&#39;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x2906cd0fd90&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_13_1.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_13_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Closer-look-at-renewable-power-generation-timeseries">
+<h2>Closer look at renewable power generation timeseries<a class="headerlink" href="#Closer-look-at-renewable-power-generation-timeseries" title="Permalink to this headline">¶</a></h2>
+<p>Choose a year to analyse, and if future year then choose a baseline year in the following cell.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-01-01 00:00:00&#39;</span>
+<span class="n">end</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-12-31 23:30:00&#39;</span>
+
+<span class="c1"># time step as fraction of hour</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="n">snapshots</span><span class="o">.</span><span class="n">write_snapshots</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">)</span>
+
+<span class="c1"># write generators contains the applying correction factors function</span>
+<span class="n">generators</span><span class="o">.</span><span class="n">write_generators</span><span class="p">(</span><span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">year</span> <span class="o">&gt;</span> <span class="mi">2020</span><span class="p">:</span>
+    <span class="c1"># if future choose a baseline year</span>
+    <span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2019</span>
+    <span class="n">scenario</span> <span class="o">=</span> <span class="s1">&#39;Leading The Way&#39;</span>
+    <span class="n">generators</span><span class="o">.</span><span class="n">future_p_nom</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">scenario</span><span class="p">)</span>
+    <span class="n">generators</span><span class="o">.</span><span class="n">write_generators_p_max_pu</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">)</span>
+    <span class="n">generators</span><span class="o">.</span><span class="n">unmet_load</span><span class="p">()</span>
+
+<span class="k">elif</span> <span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2020</span><span class="p">:</span>
+    <span class="n">generators</span><span class="o">.</span><span class="n">write_generators_p_max_pu</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+<span class="n">df_RES</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../LOPF_data/generators-p_max_pu.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_RES</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+  warnings.warn(
+C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+  self.obj[key] = value
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
+      <th>Beatrice Demonstrator</th>
+      <th>Burbo Bank</th>
+      <th>Gunfleet Sands - (Demo) Extension</th>
+      <th>Gunfleet Sands II</th>
+      <th>Gunfleet Sands Offshore Wind Scheme</th>
+      <th>Inner Dowsing</th>
+      <th>Kentish Flats</th>
+      <th>Lynn</th>
+      <th>North Hoyle</th>
+      <th>...</th>
+      <th>Abhainn Gleann Nam Fiadh</th>
+      <th>Allt Cheanna Mhuir Hydro</th>
+      <th>Keltneyburn Hydro</th>
+      <th>Ceannacroc.1</th>
+      <th>Bruach Caorainn Hydro Scheme</th>
+      <th>Llyn Celyn</th>
+      <th>Caban Coch</th>
+      <th>River Coiltie Hydro Scheme</th>
+      <th>Eas a Ghaill</th>
+      <th>River Pattack (resubmission)</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2050-01-01 00:00:00</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.998449</td>
+      <td>0.355643</td>
+      <td>0.450097</td>
+      <td>0.450097</td>
+      <td>0.993255</td>
+      <td>0.331019</td>
+      <td>0.993255</td>
+      <td>0.998194</td>
+      <td>...</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+      <td>0.215862</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 00:30:00</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.998630</td>
+      <td>0.356263</td>
+      <td>0.449326</td>
+      <td>0.449326</td>
+      <td>0.994529</td>
+      <td>0.323019</td>
+      <td>0.994529</td>
+      <td>0.998592</td>
+      <td>...</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+      <td>0.206801</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 01:00:00</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.998549</td>
+      <td>0.363484</td>
+      <td>0.457552</td>
+      <td>0.457552</td>
+      <td>0.995643</td>
+      <td>0.323650</td>
+      <td>0.995643</td>
+      <td>0.998615</td>
+      <td>...</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+      <td>0.198273</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 01:30:00</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.998207</td>
+      <td>0.377306</td>
+      <td>0.474776</td>
+      <td>0.474776</td>
+      <td>0.996597</td>
+      <td>0.332910</td>
+      <td>0.996597</td>
+      <td>0.998264</td>
+      <td>...</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+      <td>0.196141</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 02:00:00</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.997720</td>
+      <td>0.404703</td>
+      <td>0.510393</td>
+      <td>0.510393</td>
+      <td>0.997287</td>
+      <td>0.359857</td>
+      <td>0.997287</td>
+      <td>0.997749</td>
+      <td>...</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+      <td>0.189212</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 21:30:00</th>
+      <td>0.959733</td>
+      <td>0.286398</td>
+      <td>0.224614</td>
+      <td>0.522030</td>
+      <td>0.647349</td>
+      <td>0.647349</td>
+      <td>0.315004</td>
+      <td>0.546296</td>
+      <td>0.315004</td>
+      <td>0.175264</td>
+      <td>...</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+      <td>0.353907</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 22:00:00</th>
+      <td>0.966778</td>
+      <td>0.272982</td>
+      <td>0.182529</td>
+      <td>0.436542</td>
+      <td>0.551402</td>
+      <td>0.551402</td>
+      <td>0.285380</td>
+      <td>0.426086</td>
+      <td>0.285380</td>
+      <td>0.139727</td>
+      <td>...</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+      <td>0.345912</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 22:30:00</th>
+      <td>0.962127</td>
+      <td>0.289324</td>
+      <td>0.183538</td>
+      <td>0.407859</td>
+      <td>0.519177</td>
+      <td>0.519177</td>
+      <td>0.290130</td>
+      <td>0.371481</td>
+      <td>0.290130</td>
+      <td>0.138307</td>
+      <td>...</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+      <td>0.345379</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 23:00:00</th>
+      <td>0.945779</td>
+      <td>0.335424</td>
+      <td>0.227640</td>
+      <td>0.435981</td>
+      <td>0.550676</td>
+      <td>0.550676</td>
+      <td>0.329255</td>
+      <td>0.382480</td>
+      <td>0.329255</td>
+      <td>0.171004</td>
+      <td>...</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+      <td>0.335785</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 23:30:00</th>
+      <td>0.945779</td>
+      <td>0.335424</td>
+      <td>0.227640</td>
+      <td>0.435981</td>
+      <td>0.550676</td>
+      <td>0.550676</td>
+      <td>0.329255</td>
+      <td>0.382480</td>
+      <td>0.329255</td>
+      <td>0.171004</td>
+      <td>...</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+      <td>0.370963</td>
+    </tr>
+  </tbody>
+</table>
+<p>17520 rows × 2080 columns</p>
+</div></div>
+</div>
+<p>Pick one renewable generator to plot the timeseries of.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_RES</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Hywind Scotland Pilot Park (Hywind 2) Demonstrator&#39;,
+ &#39;Beatrice Demonstrator&#39;,
+ &#39;Burbo Bank&#39;,
+ &#39;Gunfleet Sands - (Demo) Extension&#39;,
+ &#39;Gunfleet Sands II&#39;,
+ &#39;Gunfleet Sands Offshore Wind Scheme&#39;,
+ &#39;Inner Dowsing&#39;,
+ &#39;Kentish Flats&#39;,
+ &#39;Lynn&#39;,
+ &#39;North Hoyle&#39;,
+ &#39;Rhyl Flats&#39;,
+ &#39;Robin Rigg East&#39;,
+ &#39;Robin Rigg West&#39;,
+ &#39;Scroby Sands&#39;,
+ &#39;Thanet&#39;,
+ &#39;Walney 1&#39;,
+ &#39;Kentish Flats 2&#39;,
+ &#39;European Offshore Wind Deployment Centre (EOWDC) (Aberdeen Bay - Demonstration site)&#39;,
+ &#39;Walney 2&#39;,
+ &#39;Ormonde Offshore&#39;,
+ &#39;Greater Gabbard Wind Farm&#39;,
+ &#39;London Array Phase 1&#39;,
+ &#39;Sheringham Shoal&#39;,
+ &#39;Centrica (Lincs)&#39;,
+ &#39;Teeside Offshore Wind Farm&#39;,
+ &#39;Race Bank (Phase 1)&#39;,
+ &#39;West of Duddon Sands&#39;,
+ &#39;Rampion Offshore Wind Farm (Hastings Zone)&#39;,
+ &#39;Beatrice&#39;,
+ &#39;Blyth Offshore Wind Test Site&#39;,
+ &#39;East Anglia 1 (EA 1)&#39;,
+ &#39;Hornsea 1 - Heron &amp; Njord&#39;,
+ &#39;Galloper Wind Farm&#39;,
+ &#39;Levenmouth demonstration turbine (Fife Energy Park)&#39;,
+ &#39;Walney 3&#39;,
+ &#39;Dudgeon East&#39;,
+ &#39;Burbo Bank Extension (Burbo Bank 2)&#39;,
+ &#39;Gwynt y Mor&#39;,
+ &#39;Humber Gateway A&#39;,
+ &#39;Westermost Rough A&#39;,
+ &#39;Barrow&#39;,
+ &#39;Race Bank (Phase 2)&#39;,
+ &#39;East Anglia 3 (EA 3)&#39;,
+ &#39;Hornsea 3&#39;,
+ &#39;The East Anglia Array - Norfolk Vanguard&#39;,
+ &#39;Hornsea 2 - Optimus and Breesea&#39;,
+ &#39;Dogger Bank C (was Teesside A)&#39;,
+ &#39;Inch Cape&#39;,
+ &#39;Triton Knoll&#39;,
+ &#39;MacColl Offshore Windfarm (Moray East)&#39;,
+ &#39;Telford Offshore Windfarm (Moray East)&#39;,
+ &#39;Stevenson Offshore Windfarm (Moray East)&#39;,
+ &#39;Seagreen Phase 1 (Alpha)&#39;,
+ &#39;Dogger Bank A &amp; B (was Creyke Beck A &amp; B)&#39;,
+ &#39;Forth of Firth (Methil)&#39;,
+ &#39;Kincardine Offshore Windfarm&#39;,
+ &#39;Moray Firth 2 (West)&#39;,
+ &#39;Dounreay Tri Floating Wind Demonstration&#39;,
+ &#39;Neart na Gaoithe (Resubmission)&#39;,
+ &#39;The East Anglia Array - Norfolk Boreas&#39;,
+ &#39;Sofia (Teesside B)&#39;,
+ &#39;N1&#39;,
+ &#39;N2&#39;,
+ &#39;N3&#39;,
+ &#39;N4&#39;,
+ &#39;NE1&#39;,
+ &#39;NE2&#39;,
+ &#39;NE3&#39;,
+ &#39;NE4&#39;,
+ &#39;NE6&#39;,
+ &#39;NE7&#39;,
+ &#39;NE8&#39;,
+ &#39;E1&#39;,
+ &#39;E2&#39;,
+ &#39;E3&#39;,
+ &#39;W1&#39;,
+ &#39;South Beach Wind Turbine (Somerton)&#39;,
+ &#39;Swaffham 1 - Ecotech Wind Park&#39;,
+ &#39;Mynydd Gorddu Wind Farm&#39;,
+ &#39;Cefn Croes Wind Farm&#39;,
+ &#34;Carno &#39;B&#39; Wind Farm&#34;,
+ &#34;Carno &#39;A&#39; Wind Farm&#34;,
+ &#34;Cemmaes &#39;B&#39; Wind Farm&#34;,
+ &#39;Trysglwyn Wind Farm&#39;,
+ &#34;Hafoty Ucha &#39;2&#39; and &#39;3&#39; Wind Turbine&#34;,
+ &#39;Royal Seaforth Dock Wind Farm&#39;,
+ &#34;Cemmaes &#39;C&#39; Wind Farm&#34;,
+ &#39;Llanbabo Wind Farm&#39;,
+ &#39;Tow Law Wind Farm&#39;,
+ &#39;Kirkheaton Wind Farm&#39;,
+ &#39;Great Eppleton Wind Farm&#39;,
+ &#39;Great Orton Wind Farm (Extension)&#39;,
+ &#39;Harlock Hill Wind Farm&#39;,
+ &#39;Wharrels Hill Wind Farm&#39;,
+ &#39;Siddick Wind Farm&#39;,
+ &#39;Oldside Wind Farm&#39;,
+ &#39;Haverigg Extension Wind Farm&#39;,
+ &#39;Blaen Bowi Wind Farm&#39;,
+ &#39;Parc-Cynog Wind Farm&#39;,
+ &#39;Moel Maelogen A&#39;,
+ &#39;Out Newton Wind Farm&#39;,
+ &#39;Brockholes Wind Cluster&#39;,
+ &#39;Kilbraur Windfarm Farlary - Extension&#39;,
+ &#39;Maesgwyn&#39;,
+ &#39;Spicer Hill Wind Farm&#39;,
+ &#39;Ford Motor Company Ltd (Extension)&#39;,
+ &#39;FMC Technologies&#39;,
+ &#39;Boyndie Airfield Extension&#39;,
+ &#39;Blue Gates Farm&#39;,
+ &#39;Celcon Blocks Ltd&#39;,
+ &#34;Hammar&#39;s Hill&#34;,
+ &#39;F M C Land, Pitreavie Business Park&#39;,
+ &#39;Strath of Brydock - Extension&#39;,
+ &#39;Hare Hill (East Ayrshire)&#39;,
+ &#39;Kirkby Moor&#39;,
+ &#39;Bambers II&#39;,
+ &#39;Millennium Extension II&#39;,
+ &#39;Cairnmore Farm&#39;,
+ &#39;St Fergus Moss Wind Farm&#39;,
+ &#39;West Hill, Flotta&#39;,
+ &#39;Chelker Reservoir (Retention of Turbines)&#39;,
+ &#39;Whitelee Windfarm Extension phase 2&#39;,
+ &#39;Hill of Balquhindachy extension&#39;,
+ &#39;Taff Ely Wind Farm&#39;,
+ &#39;Mossmorran Wind Farm&#39;,
+ &#39;Courtstone Wind Turbine&#39;,
+ &#39;Lairg Wind Farm&#39;,
+ &#39;G24 Innovations Turbine&#39;,
+ &#39;Mornflake Oats Wind Turbine&#39;,
+ &#39;Clochnahill Wind Farm&#39;,
+ &#39;St John Hill&#39;,
+ &#39;MARCH SEWAGE TREATMENT WORKS - WIND TURBINE&#39;,
+ &#39;Burnfoot Hill&#39;,
+ &#39;Chelker Reservoir&#39;,
+ &#39;Strath of Brydock&#39;,
+ &#34;House O&#39;Hill&#34;,
+ &#39;Bagmoor&#39;,
+ &#39;Croda Chemicals Europe&#39;,
+ &#39;Eastman Chemicals, Workington&#39;,
+ &#39;Lindhurst Wind Farm&#39;,
+ &#39;Craigengelt&#39;,
+ &#39;Saltend Wind Turbine&#39;,
+ &#39;Loftsome Bridge&#39;,
+ &#39;Nissan Wind Farm&#39;,
+ &#39;Parc Cynog Extension&#39;,
+ &#39;Ranson Moor (phase 1)&#39;,
+ &#39;Ranson Moor Wind Farm (Phase 2)&#39;,
+ &#39;West Durham Wind Farm&#39;,
+ &#39;Dyffryn Brodyn Wind Farm&#39;,
+ &#39;North Red Bog&#39;,
+ &#39;Milton Keynes Wind Farm&#39;,
+ &#39;Broom Hill Farm&#39;,
+ &#39;Winscales Moor&#39;,
+ &#39;Wind Farm Africa Alive&#39;,
+ &#39;Beinn Tharsuinn Extension (Beinn nan Oighrean)&#39;,
+ &#34;St John&#39;s Well&#34;,
+ &#39;Hellrigg Wind farm - Resubmission&#39;,
+ &#39;Bryn titli Windfarm&#39;,
+ &#39;Delabole (Repowering)&#39;,
+ &#39;Whittlesey&#39;,
+ &#39;Advanced Manufacturing Research Centre&#39;,
+ &#39;Solutia UK Ltd&#39;,
+ &#39;High Haswell Wind Farm&#39;,
+ &#39;Llandinam Windfarm&#39;,
+ &#39;Goonhilly Downs Wind Farm Repower&#39;,
+ &#39;MSD Cramlington&#39;,
+ &#39;Skelmonae Wind Farm&#39;,
+ &#39;Carn Vean&#39;,
+ &#39;Dewlay Cheese Wind Turbine&#39;,
+ &#39;Coal Clough Wind Farm&#39;,
+ &#39;Myres Hill&#39;,
+ &#39;High Sharpley Wind Farm&#39;,
+ &#39;National Wind Turbine Test Site&#39;,
+ &#39;Little Cheyne Court Wind Farm&#39;,
+ &#39;Long Hill Road&#39;,
+ &#39;Ness point Wind Turbine 1&#39;,
+ &#39;Causeymire&#39;,
+ &#39;Hadyard Hill&#39;,
+ &#39;Hare Hill (B)&#39;,
+ &#39;Crystal Rig Phase 1&#39;,
+ &#39;Black Law&#39;,
+ &#39;Ardrossan&#39;,
+ &#34;Braes O&#39;Doune&#34;,
+ &#39;Thorfinn Wind Farm - NM1500&#39;,
+ &#39;Boulfruich&#39;,
+ &#39;Bicker Fen&#39;,
+ &#39;Stags Holt&#39;,
+ &#39;Glass Moor&#39;,
+ &#39;Gedney Marsh&#39;,
+ &#39;Ben Aketil&#39;,
+ &#39;Knabs Ridge Windfarm&#39;,
+ &#39;Kelburn&#39;,
+ &#39;Ramsey 1&#39;,
+ &#39;Bambers Farm&#39;,
+ &#39;Ford Wind Park - Dagenham&#39;,
+ &#39;Swaffham Plashes II&#39;,
+ &#39;Shooters Bottom Wind Park&#39;,
+ &#39;Caton Moor Windfarm Repowering&#39;,
+ &#39;Moel Maelogen A Phase 2&#39;,
+ &#39;Scout Moor Windfarm&#39;,
+ &#39;The Haven&#39;,
+ &#39;The Hollies&#39;,
+ &#39;Tullo Farm&#39;,
+ &#39;Avonmouth Port&#39;,
+ &#39;Dummuie&#39;,
+ &#39;Earlsburn&#39;,
+ &#39;Kilbraur Windfarm&#39;,
+ &#39;Achany Wind Farm&#39;,
+ &#39;Bilbster Wind Farm&#39;,
+ &#39;Green Park&#39;,
+ &#39;Carcant Windfarm&#39;,
+ &#39;Butterwick Moor&#39;,
+ &#39;Hagshaw Hill Wind Farm Extension&#39;,
+ &#39;Southern Law&#39;,
+ &#39;Llangwyryfon&#39;,
+ &#39;Pates Hill&#39;,
+ &#39;Roskrow Wind Turbines&#39;,
+ &#39;Greendykeside&#39;,
+ &#39;Loscar Farm&#39;,
+ &#39;Langley Moor&#39;,
+ &#39;Arecleoch Windfarm&#39;,
+ &#39;Mark Hill&#39;,
+ &#39;Westmill Wind Farm&#39;,
+ &#39;Lodge Farm 1&#39;,
+ &#34;Carno &#39;A&#39;and &#39;B&#39; Wind Farm, (Extension)&#34;,
+ &#39;Achairn&#39;,
+ &#39;High Hedley Hope 2 (Extension)&#39;,
+ &#39;Beinn an Tuirc&#39;,
+ &#39;Cnoc Donn Arnicle&#39;,
+ &#39;Beinn Ghlas Wind Farm&#39;,
+ &#39;Bendealt Wind Farm, Highland&#39;,
+ &#39;Meall an Tuirc Wind Farm&#39;,
+ &#39;An Suidhe&#39;,
+ &#39;Roughside Hill&#39;,
+ &#39;Bowbeat Wind Farm&#39;,
+ &#39;Hagshaw Hill Wind Farm&#39;,
+ &#39;Arnish Moor&#39;,
+ &#39;Burgar Hill&#39;,
+ &#39;Thorfinn Wind Farm - NM2000&#39;,
+ &#39;Hill of Lybster&#39;,
+ &#39;Burradale Hill&#39;,
+ &#39;Glens of Foudland&#39;,
+ &#39;Castle Pill - Repowering&#39;,
+ &#39;New Holland&#39;,
+ &#39;Weston Airfield Wind Turbines&#39;,
+ &#39;Orton Park Farm&#39;,
+ &#39;PROMISED LAND FARM&#39;,
+ &#39;Nethercott Farm&#39;,
+ &#39;Bonerbo Wind Turbines (resubmission)&#39;,
+ &#39;Princes Gate Spring Water&#39;,
+ &#39;Phase 1 Bettyhill Wind Farm&#39;,
+ &#39;Sibelco Brassington&#39;,
+ &#39;Lambrigg Wind Farm&#39;,
+ &#39;Askam&#39;,
+ &#39;Bears Down Wind Farm&#39;,
+ &#39;Welton Of Creuchies&#39;,
+ &#39;Droop Hill Wind Farm x&#39;,
+ &#39;Denhill&#39;,
+ &#39;Haddo&#39;,
+ &#39;Gairnieston Farm&#39;,
+ &#39;Burgar Hill (land Near), Evie&#39;,
+ &#39;Tod Hill Farm Wind Turbines&#39;,
+ &#39;Moorhouse Farm&#39;,
+ &#39;Royd Moor&#39;,
+ &#39;Stroupster Wind Farm - additional turbine&#39;,
+ &#39;Little Belhus Restoration Site&#39;,
+ &#39;Crystal Rig Wind Farm Phase 2a&#39;,
+ &#39;Clachan Flats Wind Farm&#39;,
+ &#39;Fen Farm&#39;,
+ &#39;Darracott Moor&#39;,
+ &#39;Lochhead Farm&#39;,
+ &#39;Toddleburn&#39;,
+ &#39;Crimp Wind Farm - resubmission&#39;,
+ &#39;Hedley Hope&#39;,
+ &#39;Tangy Wind Farm/Tangy 1&#39;,
+ &#39;Coldham Hall&#39;,
+ &#39;Whitemill Wind Farm&#39;,
+ &#39;Green Knowes&#39;,
+ &#39;Whitelee&#39;,
+ &#39;Great Orton&#39;,
+ &#39;Winscales Phase I and II&#39;,
+ &#39;Holmside Hall&#39;,
+ &#39;High Volts Wind Farm&#39;,
+ &#39;Hare Hill&#39;,
+ &#39;Great Eppleton Farm Repowering&#39;,
+ &#39;Haswell Moor&#39;,
+ &#39;Worksop - B&amp;Q&#39;,
+ &#39;Cold Northcott&#39;,
+ &#39;Upper Ardgrain Wind Farm&#39;,
+ &#39;Rothiesholm&#39;,
+ &#39;Hill of Easterton&#39;,
+ &#39;Port of Liverpool - wind&#39;,
+ &#39;Rothes Wind (Cairn Uish)&#39;,
+ &#39;Crystal Rig Extension II&#39;,
+ &#39;Glenkerie Wind Farm&#39;,
+ &#39;Lissett Airfield Wind Farm&#39;,
+ &#39;Methlick Farmers Wind Energy Project&#39;,
+ &#39;Rheidol Wind Farm&#39;,
+ &#39;Deucheran Hill&#39;,
+ &#39;Bryn Du&#39;,
+ &#39;Dun Law&#39;,
+ &#39;Black Hill (Borders)&#39;,
+ &#39;Four Burrows Wind Farm&#39;,
+ &#39;Dun Law Extension&#39;,
+ &#39;Lochelbank Wind Farm II&#39;,
+ &#39;Cruach Mhor&#39;,
+ &#39;Wern Ddu Wind Farm&#39;,
+ &#39;Hagshaw Hill (S15) Wind Farm, Lanarkshire&#39;,
+ &#39;Muirake&#39;,
+ &#39;Millennium Extension&#39;,
+ &#39;Rusholme Wind Farm&#39;,
+ &#39;Longpark&#39;,
+ &#39;Walkway&#39;,
+ &#39;Coldham&#39;,
+ &#39;Red Tile&#39;,
+ &#39;Deeping St Nicholas Wind Farm&#39;,
+ &#39;Lowca Wind Farm&#39;,
+ &#39;Fairfield Farm&#39;,
+ &#39;Haverigg Repowering (Haverigg II)&#39;,
+ &#39;Beinneun Windfarm Extension&#39;,
+ &#39;Ewe Hill (extension)&#39;,
+ &#39;Moy Wind Farm (2nd Application)&#39;,
+ &#39;Rosehill Wind Turbines&#39;,
+ &#39;Twin Rivers&#39;,
+ &#39;Blyth Harbour Wind Farm&#39;,
+ &#39;Penrhys Wind Farm/Ferndale Power Factory&#39;,
+ &#39;Gordonbush&#39;,
+ &#39;Avonmouth Wind Power&#39;,
+ &#39;Gordonstown Hill Wind Farm&#39;,
+ &#39;The Rosti Factory&#39;,
+ &#39;Ben Aketil Extension&#39;,
+ &#39;Lochcarnan Community Windfarm&#39;,
+ &#39;The Grange Wind Farm&#39;,
+ &#39;Humphrey Group&#39;,
+ &#39;Rodbaston&#39;,
+ &#39;Boundary Lane&#39;,
+ &#39;Nutberry Wind Farm&#39;,
+ &#39;Penny Hill Lane&#39;,
+ &#39;West Knock Wind Cluster&#39;,
+ &#39;Low Spinney Wind Farm&#39;,
+ &#39;Westfield&#39;,
+ &#39;Swinford Wind Farm&#39;,
+ &#39;Burnt House Farm&#39;,
+ &#39;Calder Water Community Wind Farm&#39;,
+ &#39;Millour Hill Community Windfarm (Re-submission)&#39;,
+ &#39;Netherton of Windyhills&#39;,
+ &#39;Gallowhill&#39;,
+ &#39;Frodsham Marsh&#39;,
+ &#39;Brechfa Forest West&#39;,
+ &#39;Greenhill Croft&#39;,
+ &#39;Severn Trent STW&#39;,
+ &#39;Spaldington Airfield&#39;,
+ &#39;Hillhead of Auquhirie, Resubmission&#39;,
+ &#39;Middleton Wind Farm&#39;,
+ &#39;Orchard End (Resubmission)&#39;,
+ &#39;Mynydd Bwllfa Wind Farm - Resubmission&#39;,
+ &#39;Tirgwynt&#39;,
+ &#39;Garreg Lwyd&#39;,
+ &#39;Castle of Auchry Farm&#39;,
+ &#39;Little Byth&#39;,
+ &#39;Yonderton Farm&#39;,
+ &#39;Oakdale Business Park&#39;,
+ &#39;Boddington Reservoir&#39;,
+ &#39;HMP Standford Hill&#39;,
+ &#39;Sharpness Docks&#39;,
+ &#39;Sancton Hill - Resubmission&#39;,
+ &#39;Port of Sheerness Wind Farm (was Lappel Bank)&#39;,
+ &#39;Stonish Hill Re-submission (Bilsthorpe)&#39;,
+ &#39;Stags Holt Extension&#39;,
+ &#39;North Yell Wind Farm (Garth Community Wind Farm)&#39;,
+ &#39;Glenurquhart and Strathglass Wind Farm project&#39;,
+ &#39;Damhead Farm&#39;,
+ &#39;Hyndburn Wind Farm&#39;,
+ &#39;Tedder Hill Wind cluster&#39;,
+ &#39;Lynemouth Windfarm (Resubmission)&#39;,
+ &#39;Wingates Wind Farm&#39;,
+ &#39;Wathegar wind farm&#39;,
+ &#39;Allt Dearg Wind Farmers LLP&#39;,
+ &#39;Hameldon Hill extension&#39;,
+ &#39;Dalby&#39;,
+ &#39;Glass moor Extension&#39;,
+ &#39;Cour Wind Farm&#39;,
+ &#39;Upper Wheedlemont Farm&#39;,
+ &#39;Shielburn Farm&#39;,
+ &#39;Beinneun&#39;,
+ &#39;Seamer Wind Farm - Hambleton&#39;,
+ &#39;Fanny House Farm/Heysham Moss&#39;,
+ &#39;Newthorpe Wind Turbine&#39;,
+ &#39;Chelveston Renewable Energy Park Wind Farm (Bedford)&#39;,
+ &#39;Torrance Farm&#39;,
+ &#39;Land at Overside and Greenwellheads Farms&#39;,
+ &#39;Lancaster University (wind)&#39;,
+ &#39;Myreton Crossroads&#39;,
+ &#39;Auchinderran Wind Farm&#39;,
+ &#39;The Limes Wind Turbines&#39;,
+ &#39;Milton of Fisherie Wind Cluster&#39;,
+ &#39;Blantyre Muir Wind Farm&#39;,
+ &#39;Lilbourne Wind Farm&#39;,
+ &#39;Tullo Wind Farm North Extension (Shiels Wind Farm)&#39;,
+ &#39;Easter Melrose Wind Energy Project&#39;,
+ &#39;Newton Marsh Wind Project&#39;,
+ &#39;North Pickenham Airfield&#39;,
+ &#39;Wythegill Wind Turbine&#39;,
+ &#39;Roos Wind Farm (Resubmission)&#39;,
+ &#39;Yonderton Wind Cluster&#39;,
+ &#39;Spurness Wind Farm Repowering&#39;,
+ &#39;St Johns Wells Wind Cluster Extension&#39;,
+ &#39;GlaxoSmithKline Wind Project&#39;,
+ &#39;K L Technologies Wind Turbine&#39;,
+ &#39;Skeddoway Farm Wind Turbine&#39;,
+ &#39;Coire Na Cloiche Wind Farm&#39;,
+ &#39;Ardoch and Over Enoch Wind Farm (Over Enoch)&#39;,
+ &#39;Ystgellog Farm Wind Farm&#39;,
+ &#39;NEILSTON WIND FARM&#39;,
+ &#39;Greencroft Estate Turbines&#39;,
+ &#39;Crossness Sewage Works Turbine&#39;,
+ &#39;Muirhall Extension&#39;,
+ &#39;Freasdail Wind Farm&#39;,
+ &#39;Nash Waste Water Treatment Works Turbine&#39;,
+ &#39;Marston Vale Country Park Wind Turbine&#39;,
+ &#39;Energy Works Hull - Wind Turbine&#39;,
+ &#39;Mynydd Y Gwrhyd Windfarm (resubmission)&#39;,
+ &#39;Severn Trent Water - Stoke Bardolph Wind Turbine&#39;,
+ &#39;Barns of Ayre Wind Turbines (2)&#39;,
+ &#39;Newton Down&#39;,
+ &#39;North Steads Wind Farm&#39;,
+ &#39;Hill of Tillymorgan (Kirkton Farm) Wind turbines (resubmission)&#39;,
+ &#39;LADEHEAD FARM - WIND TURBINES&#39;,
+ &#39;Garlenick Estate 2 - Wind Turbines&#39;,
+ &#39;Goonabarn Farm Wind Turbines&#39;,
+ &#39;Bloodhills - repowering&#39;,
+ &#39;Ardoch and Over Enoch Wind Farm (Ardoch)&#39;,
+ &#39;Avonmouth Port II&#39;,
+ &#39;Tween Bridge Windfarm&#39;,
+ &#39;Mynydd Portref&#39;,
+ &#39;Fforch Nest Wind Farm pt2&#39;,
+ &#39;Wadlow Wind Farm&#39;,
+ &#39;Bradwell Wind Farm (Repower)&#39;,
+ &#39;Hazlehead&#39;,
+ &#39;Kiln Pit Hill Windfarm&#39;,
+ &#39;Otterham Down Wind Farm (Resubmission)&#39;,
+ &#39;Sixpenny Wood Windfarm&#39;,
+ &#34;Earl&#39;s Hall&#34;,
+ &#39;Mawdesley Moss&#39;,
+ &#39;Chelveston Renewable Energy Park Wind Farm (East Northamptonshire)&#39;,
+ &#39;Bewick Drift&#39;,
+ &#39;Hall Farm Routh&#39;,
+ &#39;Rothes Wind Farm (Extension) (II)&#39;,
+ &#39;Fforch Nest Wind Farm pt1&#39;,
+ &#39;Hampole Wind Farm&#39;,
+ &#39;Blackstone Edge&#39;,
+ &#39;Marr Windfarm&#39;,
+ &#39;Nissan Motors Plant Extn&#39;,
+ &#39;Hill of Fiddes&#39;,
+ &#39;Cotton Farm&#39;,
+ &#39;Land at Flimby Hall Farm (resubmission)&#39;,
+ &#39;Carland Cross Wind Farm Repowering&#39;,
+ &#39;Yelvertoft Wind Farm&#39;,
+ &#39;Mains of Hatton&#39;,
+ &#39;Whitelee Windfarm Extension Phase 1&#39;,
+ &#39;Tilbury Docks&#39;,
+ &#39;Seamer Windfarm - Stockton on Tees&#39;,
+ &#39;South Sharpley Wind Farm (Revised)&#39;,
+ &#39;Armistead Wind Farm&#39;,
+ &#39;Withernwick&#39;,
+ &#39;Loch Sminig Wind Project&#39;,
+ &#39;Burton Pidsea (Wadworth Hill) Wind Farm&#39;,
+ &#39;Camster&#39;,
+ &#39;Bu Farm&#39;,
+ &#39;Drumderg&#39;,
+ &#39;Clyde Wind Farm&#39;,
+ &#39;Novar Wind Farm (Extension)&#39;,
+ &#39;Hill of Towie (Drummuir)&#39;,
+ &#39;Ewe Hill&#39;,
+ &#39;Middlemoor&#39;,
+ &#39;Baillie Wind Farm&#39;,
+ &#39;Braich Ddu&#39;,
+ &#39;Drone Hill&#39;,
+ &#39;Tangy Wind Farm Extension/Tangy 2&#39;,
+ &#39;Ray Wind Farm&#39;,
+ &#39;Calliachar&#39;,
+ &#39;Griffin Wind farm&#39;,
+ &#39;High Pow Farm (Resubmission)&#39;,
+ &#39;St. Johns Hill&#39;,
+ &#39;Blackcraig&#39;,
+ &#39;Fullabrook Down Wind Farm&#39;,
+ &#39;Little Raith Farm&#39;,
+ &#39;Pant y wal&#39;,
+ &#39;Green Rigg&#39;,
+ &#39;Rosehall Hill Forest Windfarm&#39;,
+ &#39;Bankend Rig&#39;,
+ &#39;Hill of Easterton Extension&#39;,
+ &#39;Batsworthy Cross&#39;,
+ &#39;Fallago Rig&#39;,
+ &#39;Cathkin Braes Wind Farm (Castlemilk)&#39;,
+ &#39;Mynydd y Betws&#39;,
+ &#39;Ark Hill&#39;,
+ &#39;Pentland Road Wind Farm&#39;,
+ &#39;Turncole Wind Farm&#39;,
+ &#39;Derby Sewage Treatment Works&#39;,
+ &#39;Grange Resubmission&#39;,
+ &#39;Goole Fields ll Wind Farm&#39;,
+ &#39;Edintore Wind Farm&#39;,
+ &#39;Gremista Wind Farm&#39;,
+ &#39;Common Barn Wind Farm&#39;,
+ &#39;Clentrie Wind Farm (Gevens)&#39;,
+ &#39;Kelmarsh Wind Farm (Resubmission)&#39;,
+ &#39;Torrance Farm Wind Park Extension&#39;,
+ &#39;Goathill Quarry Turbine&#39;,
+ &#39;Skeddoway Farm Wind Turbine (Resubmission)&#39;,
+ &#39;Middle Balbeggie Wind Turbines&#39;,
+ &#39;Upper Holton Wind Farm&#39;,
+ &#39;Tallentire Hill&#39;,
+ &#39;Meikle Carewe (Re-Submission)&#39;,
+ &#39;Andershaw&#39;,
+ &#39;East Midlands Airport&#39;,
+ &#39;Kildrummy Windfarm&#39;,
+ &#39;Airfield Farm (Podington) (Resubmission)&#39;,
+ &#39;Dunmaglass Wind Farm&#39;,
+ &#39;Harestanes&#39;,
+ &#39;Corriemoillie (Resubmission)&#39;,
+ &#39;Hill of Stroupster Windfarm&#39;,
+ &#39;Burn of Whilk&#39;,
+ &#39;Lochluichart&#39;,
+ &#39;Burnhead&#39;,
+ &#39;Easter Tolmauds&#39;,
+ &#39;Maerdy&#39;,
+ &#39;Woodlands Barton Wind Project&#39;,
+ &#39;Westnewton&#39;,
+ &#39;Hare Hill Extension&#39;,
+ &#39;Avonmouth Port - extension&#39;,
+ &#39;Barmoor South Wind Farm (Resubmission)&#39;,
+ &#39;Winwick&#39;,
+ &#39;Sisters&#39;,
+ &#39;East Youlstone Wind Farm&#39;,
+ &#39;Hill of Skilmafilly Cloffrickford (Denmore) Wind Farm&#39;,
+ &#39;Heysham South Wind Farm&#39;,
+ &#39;Woolley Hill Wind Farm&#39;,
+ &#39;Furness Wind Farm/High Winds (Harlock Repowering)&#39;,
+ &#39;Clyde Wind Farm Extension (Clyde 2)&#39;,
+ &#39;Quixwood Moor&#39;,
+ &#39;Auchadaduie Wind Farm&#39;,
+ &#39;Mynydd Brombil Wind Farm&#39;,
+ &#39;Mynydd Portref Wind Farm extension&#39;,
+ &#39;Longlands Lane&#39;,
+ &#39;Ryder Point Quarry Wind Turbines&#39;,
+ &#39;Burton Wold Wind Farm - Northern Extension (resubmission)&#39;,
+ &#39;Pearie Law Wind Farm&#39;,
+ &#39;Crystal Rig Wind Farm Phase III&#39;,
+ &#39;Drumduff&#39;,
+ &#39;Rhodders Wind Farm&#39;,
+ &#39;Harburnhead Wind Farm&#39;,
+ &#39;Dunsland Cross Wind Farm&#39;,
+ &#39;Potato Pot Wind Farm&#39;,
+ &#39;Millour Hill Community Windfarm (Extension) resubmission&#39;,
+ &#39;Blantyre Muir Wind Farm extension&#39;,
+ &#39;Dorenell Wind Farm (Previously Site A and B Scaut Hill)&#39;,
+ &#39;Earlsburn North (Kingsburn) Wind Farm&#39;,
+ &#39;Wryde Croft&#39;,
+ &#39;Wandylaw&#39;,
+ &#39;Black Law Extension - 1a&#39;,
+ &#39;Bishopthorpe&#39;,
+ &#39;Keadby Wind Farm&#39;,
+ &#39;Berry Burn&#39;,
+ &#39;Afton Wind Farm&#39;,
+ &#39;Tormywheel&#39;,
+ &#39;Den Brook&#39;,
+ &#39;Dersalloch&#39;,
+ &#39;Point Wind / Beinn Ghrideag Farm&#39;,
+ &#39;Muirhall South&#39;,
+ &#39;Double Arches Quarry Wind Turbine&#39;,
+ &#39;Lochend Wind Farm&#39;,
+ &#39;KELLAS WIND FARM&#39;,
+ &#39;Hallburn Farm (resubmission)&#39;,
+ &#39;Coal Clough Wind Farm Repowering&#39;,
+ &#39;Shepham Lane (Resubmission)&#39;,
+ &#39;Sober Hill Wind Farm (Resubmission)&#39;,
+ &#39;Srondoire Community Wind Farm&#39;,
+ &#39;Achlachan Wind Farm&#39;,
+ &#34;A&#39;Chruach (Phase 1)&#34;,
+ &#39;Aikengall II, Wester Dod Community Wind Farm&#39;,
+ &#39;Alveston Wind Park&#39;,
+ &#39;Auchrobert Wind Farm&#39;,
+ &#39;Boardinghouse Wind Farm&#39;,
+ &#39;Bogenlea Farm&#39;,
+ &#39;BROWNIELEYS - 3 WIND TURBINES&#39;,
+ &#39;Cairnborrow - resubmission&#39;,
+ &#39;Crook Hill (Revised Application - Calderdale MBC) 1 of 2&#39;,
+ &#39;Deuchries&#39;,
+ &#39;Dungavel Hill&#39;,
+ &#39;Earlseat&#39;,
+ &#39;Easter Tulloch Wind Farm (Tullo Extension)&#39;,
+ &#39;Galawhistle&#39;,
+ &#39;Gayton Le Marsh Wind Farm&#39;,
+ &#39;GlaxoSmithKline Wind Project (Turbine 4)&#39;,
+ &#39;Goole Fields&#39;,
+ &#39;Greenvale AP Wind Turbine - resubmission&#39;,
+ &#39;Hill of Glaschyle Wind Farm&#39;,
+ &#39;Kilgallioch wind farm&#39;,
+ &#39;Lambs Hill&#39;,
+ &#39;Lochluichart (Extension)&#39;,
+ &#39;M1 Wind Farm&#39;,
+ &#39;New Rides Wind Farm&#39;,
+ &#39;Noble Foods&#39;,
+ &#39;Ovenden Moor (Repower) (Re-submission)&#39;,
+ &#39;Pant y wal extension&#39;,
+ &#39;Park Spring Wind Farm&#39;,
+ &#39;Brotherton (formerly Paul Matthew Hill wind turbines)&#39;,
+ &#39;Pen Bryn Oer Wind Farm&#39;,
+ &#39;Ramsey Wind Farm Extension&#39;,
+ &#39;Red Gap Moor Wind Farm&#39;,
+ &#39;Todmorden Moor  - Resubmission&#39;,
+ &#39;Tom Nan Clach (redesign)&#39;,
+ &#39;Tullo Wind Farm South (Ext.)&#39;,
+ &#39;Watford Lodge&#39;,
+ &#39;Wathegar 2 Wind Farm&#39;,
+ &#39;West Browncastle&#39;,
+ &#39;Brochloch Rig (formerly Windy Standard II)&#39;,
+ &#39;Withernwick extension&#39;,
+ &#39;Pogbie Wind Farm 1&#39;,
+ &#39;Barlockhart Moor&#39;,
+ &#39;Minnygap (Resubmission)&#39;,
+ &#39;Middle Muir Wind Farm&#39;,
+ &#39;Sanquhar Community Windfarm&#39;,
+ &#39;Balmurrie Fell Wind Farm&#39;,
+ &#39;Burnfoot Hill Extension&#39;,
+ &#39;Airies Farm&#39;,
+ &#39;Craig Wind Farm (Extension)&#39;,
+ &#39;Lawrence Landfill&#39;,
+ &#39;Plascow wind cluster (resubmission)&#39;,
+ &#39;Maesgwyn Wind Farm - extension&#39;,
+ &#39;Halifax Farm&#39;,
+ &#39;Norton Fields Farm&#39;,
+ &#39;Carscreugh Renewable Energy Park&#39;,
+ &#39;Whiteside Hill&#39;,
+ &#39;North Rhins&#39;,
+ &#39;Jacksbank Wind Farm (Glenbervie)&#39;,
+ &#39;New Albion Wind Farm&#39;,
+ &#39;Sunnyside wind cluster&#39;,
+ &#39;Keith Hill (resubmission)&#39;,
+ &#39;Minsca&#39;,
+ &#39;Artfield Fell&#39;,
+ &#39;Wether Hill&#39;,
+ &#39;Dalswinton&#39;,
+ &#39;Craig Wind Farm&#39;,
+ &#39;Beinn an Tuirc Phase 2&#39;,
+ &#39;Aikengall&#39;,
+ &#39;Brochloch Rig 1 (formerly Windy Standard)&#39;,
+ &#39;Hawton Wind Farm&#39;,
+ &#39;Beck Burn (resubmission)&#39;,
+ &#39;Melton Common Wind Cluster&#39;,
+ &#39;Hoprigshiels Community Wind Farm&#39;,
+ &#39;Black Law Extension - 1b&#39;,
+ &#39;Glen App&#39;,
+ &#39;Pen Y Cymoedd&#39;,
+ &#39;Stronelairg Wind Farm&#39;,
+ &#39;M1 J18 Wind Turbines&#39;,
+ &#39;Tullymurdoch Wind Farm&#39;,
+ &#39;Penmanshiel Wind Farm&#39;,
+ &#39;Kinegar Quarry (resubmission)&#39;,
+ &#39;St. Breock Re-Power (Resubmission)&#39;,
+ &#39;Carraig Gheal&#39;,
+ &#39;Langhope Rig&#39;,
+ &#39;Clashindarroch 2 (Revised)&#39;,
+ &#39;Galsworthy Wind Park&#39;,
+ &#39;Strathy North&#39;,
+ &#39;Mid Hill - Phase II&#39;,
+ &#39;Monan Hill Wind Turbines&#39;,
+ &#39;French Farm (resubmission)&#39;,
+ &#39;Glenchamber Wind Farm&#39;,
+ &#39;Bhlaraidh (previously Balmacaan)&#39;,
+ &#39;Moor House Wind Farm (resubmission)&#39;,
+ &#39;Kype Muir Wind Farm&#39;,
+ &#39;Llynfi Afan Renewable Energy Park&#39;,
+ &#39;Assel Valley Wind Farm&#39;,
+ &#39;Bad a Cheo Wind Farm&#39;,
+ &#39;Fraisthorpe Wind Farm&#39;,
+ &#39;Mynydd Y Gwair Wind Farm (resubmission)&#39;,
+ &#34;Jack&#39;s Lane Wind Farm&#34;,
+ &#39;Denzell Downs Wind Farm - resubmission&#39;,
+ &#39;Reaps Moss Wind Farm (resubmitted)&#39;,
+ &#39;Llynfi Renewable Energy Park, Land at Mynydd Caerau&#39;,
+ &#39;Chiplow&#39;,
+ &#39;Hook Moor&#39;,
+ &#39;Crook Hill (Revised Application - Rochdale MBC) 2 of 2&#39;,
+ &#39;Far Marsh Farm (Resubmission)&#39;,
+ &#39;Wear Point&#39;,
+ &#39;Middlewick wind farm&#39;,
+ &#39;Blyth Harbour Wind Farm (re-power)&#39;,
+ &#39;Corriegarth&#39;,
+ &#39;Carsington Pasture&#39;,
+ &#39;Langford Wind Farm&#39;,
+ &#39;Mid Hill I&#39;,
+ &#39;Ardrossan Extension&#39;,
+ &#39;Beinn Tharsuinn Windfarm Project&#39;,
+ &#39;Blaengwen (Re-Submission)&#39;,
+ &#39;Boyndie Airfield&#39;,
+ &#39;Burton Wold Windfarm&#39;,
+ &#39;Edinbane Wind Farm&#39;,
+ &#39;Fairburn&#39;,
+ &#39;Farr Wind Farm&#39;,
+ &#39;Ffynnon Oer Wind Farm&#39;,
+ &#39;Flotta&#39;,
+ &#39;Forss Wind Farm (Extension)&#39;,
+ &#39;Michelin Tyre Co Ltd - Dundee&#39;,
+ &#39;Millennium Windfarm&#39;,
+ &#39;Muirhall&#39;,
+ &#39;Mynydd Clogau Wind Farm&#39;,
+ &#39;New Barn Farm&#39;,
+ &#39;North Pickenham&#39;,
+ &#34;Paul&#39;s Hill and Extension&#34;,
+ &#39;Tir Mostyn And Foel Goch Wind Farm&#39;,
+ &#39;Trimdon Grange&#39;,
+ &#39;Wardlaw Wood&#39;,
+ &#39;Southrigg&#39;,
+ &#39;Kingspan&#39;,
+ &#39;Gawnsmoss Cluster&#39;,
+ &#39;Quarrendon Fields&#39;,
+ &#39;Newstead and Annesley Wind Turbine&#39;,
+ &#39;Beckton Sewage Treatment Works&#39;,
+ &#39;Melton Waste Park (resubmission)&#39;,
+ &#39;Burton Wold Wind Farm South&#39;,
+ &#39;ANP Newport Wind Turbine&#39;,
+ &#39;Brenig Wind Farm (Resubmission)&#39;,
+ &#39;Pogbie Wind Farm 2&#39;,
+ &#39;Bodtegir&#39;,
+ &#39;West of Rhiwfelin Fach Farm&#39;,
+ &#39;Marshill Farm&#39;,
+ &#39;Woodlands Wind Farm&#39;,
+ &#39;Accolade Wines&#39;,
+ &#39;Craigannet Farm Wind Turbine&#39;,
+ &#39;Ferneylea Farm&#39;,
+ &#39;Forss Wind Farm&#39;,
+ &#39;Land near Ventonteague (Resubmission)&#39;,
+ &#39;Fen Farm Solar Park&#39;,
+ &#39;Manor Farm&#39;,
+ &#39;Nanterrow Farm&#39;,
+ &#39;Howton Farm&#39;,
+ &#39;East Langford Farm&#39;,
+ &#39;Trevemper solar farm&#39;,
+ &#39;Chester Energy (East Woolley Farm)&#39;,
+ &#39;Chynoweth Farm&#39;,
+ &#39;Carlton Farm Solar farm&#39;,
+ &#39;Wheal Jane&#39;,
+ &#39;Cantelupe Solar Farm&#39;,
+ &#39;Benbole Farm&#39;,
+ &#39;Langage Solar Farm&#39;,
+ &#39;Grange Solar Farm&#39;,
+ &#39;Ebbsfleet Farm Solar Farm&#39;,
+ &#39;Westcott Venture Park Phase 2 &amp; 3&#39;,
+ &#39;Summerway Drove&#39;,
+ &#39;Puriton Solar Farm&#39;,
+ &#39;Toyota Solar Farm&#39;,
+ &#39;Long Sutton Butterfly And Wildlife Park&#39;,
+ &#39;Long Sutton Butterfly And Wildlife Park (extension)&#39;,
+ &#39;Springhill Solar Park (Northwick)&#39;,
+ &#39;Westmill Farm - PV&#39;,
+ &#39;Rhosygilwen Solar Farm&#39;,
+ &#39;Llancayo Solar Farm&#39;,
+ &#39;Shacks Barn Solar Farm&#39;,
+ &#39;Carines Farm Solar Array&#39;,
+ &#39;Trigon Solar Farm&#39;,
+ &#39;Chittering Solar Farm Extension&#39;,
+ &#39;Tredinnick Fields&#39;,
+ &#39;Summercourt Solar Farm (Glebe Farm)&#39;,
+ &#39;Higher Trevartha Farm&#39;,
+ &#39;Beechgrove Farm&#39;,
+ &#39;PARK WOOD SOLAR FARM&#39;,
+ &#39;Promens Solar&#39;,
+ &#39;Malmesbury Solar&#39;,
+ &#39;Trefullock Solar Farm&#39;,
+ &#39;Lower Coombe Farm Solar&#39;,
+ &#39;Durrants Farm Solar&#39;,
+ &#39;Dunsfold Park Solar Farm&#39;,
+ &#39;Alan Bartlett &amp; Sons Solar&#39;,
+ &#39;Tavells Lane Solar Farm&#39;,
+ &#39;LITTLE TREVEASE SOLAR PARK&#39;,
+ &#39;Cobbs Cross Solar Park&#39;,
+ &#39;NOTTINGTON LANE SOLAR FARM&#39;,
+ &#39;RUDGE FARM SOLAR FARM&#39;,
+ &#39;CRINACOTT SOLAR FARM (Pyworthy)&#39;,
+ &#39;Chawton Farm Solar Farm&#39;,
+ &#39;VENTNOR ROAD SOLAR PARK&#39;,
+ &#39;ROOKERY FARM SOLAR FARM&#39;,
+ &#39;Little White Alice Solar Park&#39;,
+ &#39;Park Wall Solar Park&#39;,
+ &#39;Hall Farm Solar park&#39;,
+ &#39;Oulton Airfield Solar Farm (Phase 1)&#39;,
+ &#39;Chalcroft Solar Park&#39;,
+ &#39;Bradford Solar Park&#39;,
+ &#39;Lower Coombe Farm (Bean Field)&#39;,
+ &#39;Ffos Las Racecourse&#39;,
+ &#39;Woodforde Farm&#39;,
+ &#39;Kingston Farm&#39;,
+ &#39;Spriggs Farm&#39;,
+ &#39;Rotherdale Farm&#39;,
+ &#39;Turves Solar Farm (Resubmission)&#39;,
+ &#39;Rexton Cross&#39;,
+ &#39;Hatchlands Farm&#39;,
+ &#39;Land At Potash Farm&#39;,
+ &#39;Land at Upper Clayhill Farm&#39;,
+ &#39;Towerbrook Farm (Banwell Solar Farm)&#39;,
+ &#39;Twin Elm Solar Farm&#39;,
+ &#39;Hardingham Solar Farm&#39;,
+ &#39;Hollamoor Farm (PV)&#39;,
+ &#39;Langlands Solar Farm&#39;,
+ &#39;Langunnett Solar Farm&#39;,
+ &#39;Manston Solar Farm&#39;,
+ &#39;Marsh House Solar Park&#39;,
+ &#39;Morrisons roof mounted solar&#39;,
+ &#39;Rickfield Farm solar park&#39;,
+ &#39;Tump Solar Farm&#39;,
+ &#39;West Farm (Solar)&#39;,
+ &#39;Owls Lodge Farm&#39;,
+ &#39;Beckley Solar Farm&#39;,
+ &#39;Oakham Farm&#39;,
+ &#39;Limberlost Farm&#39;,
+ &#39;Office Field&#39;,
+ &#39;Sandys Moor Road&#39;,
+ &#39;Skylark Meadow Solar park&#39;,
+ &#39;Aldi Distribution Centre - Darlington&#39;,
+ &#39;Bishops Sutton&#39;,
+ &#39;Blackawton Solar Farm&#39;,
+ &#39;BMW UK Manufacturing Ltd&#39;,
+ &#39;Land to the East of Burton Lane&#39;,
+ &#39;Land west of Hawkspur Green (Hill Hall Solar)&#39;,
+ &#39;Kingspan Insulation Solar Installation&#39;,
+ &#39;Langley Hall Farm&#39;,
+ &#39;Pond Farm&#39;,
+ &#39;Nether Mill Farm (resubmission)&#39;,
+ &#39;NEWNTON DAIRY FARM&#39;,
+ &#39;Pierces Farm - resubmission&#39;,
+ &#39;Rew Farm Solar Farm&#39;,
+ &#39;Westbury (Closed) Landfill Site&#39;,
+ &#39;Wiggin Hill Solar Farm - Phase 2&#39;,
+ &#39;Grain Harvesters Ltd&#39;,
+ &#39;Hyde Farm&#39;,
+ &#39;St Francis Farm&#39;,
+ &#39;Bishops Waltham Solar Farm&#39;,
+ &#39;Nova Scotia Farm solar park&#39;,
+ &#39;Hall Farm, East Beckham&#39;,
+ &#39;Cefn Betingau Farm&#39;,
+ &#39;Hill Farm Solar Park (VoWH)&#39;,
+ &#39;Wix Lodge&#39;,
+ &#39;Saxley Farm&#39;,
+ &#39;Snarlton Farm (Melksham solar farm)&#39;,
+ &#39;Lackford Estate Solar Park&#39;,
+ &#39;Colpmans Farm&#39;,
+ &#39;Porvair International Ltd&#39;,
+ &#39;Willsland Solar farm&#39;,
+ &#39;Frying Down Copse Solar Farm&#39;,
+ &#39;Wilmingham Lane Solar Farm&#39;,
+ &#39;Chilton Cantelo Solar Farm&#39;,
+ &#39;Beaford Brook Solar Park&#39;,
+ &#39;Hayford Farm&#39;,
+ &#39;Halse Farm&#39;,
+ &#39;STRETE FARM SOLAR FARM&#39;,
+ &#39;Tregassow Farm - Solar Modules&#39;,
+ &#39;Higher Hatherleigh Solar Farm extension&#39;,
+ &#39;Pont Andrew Solar Farm&#39;,
+ &#39;Cairnhill Farm solar park&#39;,
+ &#39;Manston Solar Farm extension (Westwood)&#39;,
+ &#39;Newlands Farm Solar - resubmission&#39;,
+ &#39;Fen Road&#39;,
+ &#39;Long Meadow Farm&#39;,
+ &#39;Liverton Farm&#39;,
+ &#39;Home Farm (Knowlton - solar)&#39;,
+ &#39;Lake Farm&#39;,
+ &#39;Parkhouse Corner (Orta Solar)&#39;,
+ &#39;Sandhill Solar Park&#39;,
+ &#39;Mingay Farm&#39;,
+ &#39;Jordanston Solar Farm&#39;,
+ &#39;Aldi Distribution Centre - Neston&#39;,
+ &#39;Rodbourne Rail Farm - Solar Park&#39;,
+ &#39;Barnby Moor&#39;,
+ &#39;Knockworthy Farm&#39;,
+ &#39;Raglington Farm, Botley Road, Shedfield, Southampton, Hampshire&#39;,
+ &#39;Stables Farm&#39;,
+ &#39;Luson Farm&#39;,
+ &#39;Kellygreen Farm&#39;,
+ &#39;Grove Farm (solar)&#39;,
+ &#39;Marston Solar Farm&#39;,
+ &#39;Tredown Solar Farm&#39;,
+ &#39;Slaughtergate Farm&#39;,
+ &#39;Kia Ora Farm&#39;,
+ &#39;Ellicombe Farm&#39;,
+ &#39;Southcombe Farm&#39;,
+ &#39;West Bradley Farm&#39;,
+ &#39;Whiddon Farm&#39;,
+ &#39;Lovedean Farm&#39;,
+ &#39;Higher Knapp Farm&#39;,
+ &#39;Park Farm&#39;,
+ &#39;Dunkeswell Airfield&#39;,
+ &#39;Langenhoe Solar Farm&#39;,
+ &#39;Kentishes Solar Farm&#39;,
+ &#39;Marley Thatch Solar Farm&#39;,
+ &#39;Newlands Farm (East Devon)&#39;,
+ &#39;Goldthorpe&#39;,
+ &#39;Barley Wood Farm Lane (Gaston Lane - resubmission)&#39;,
+ &#39;Battens Farm Solar Park&#39;,
+ &#39;Combermere Abbey&#39;,
+ &#39;Foxburrow Farm&#39;,
+ &#39;Great Houndbeare Farm&#39;,
+ &#39;Condover (Green Farm)&#39;,
+ &#39;Hurst Farm&#39;,
+ &#39;Ikea Distribution Centre - resubmission&#39;,
+ &#39;Jaguar Land Rover&#39;,
+ &#39;Leverton Ings&#39;,
+ &#39;Little Morton Solar Farm&#39;,
+ &#39;Lodge Farm - Orston&#39;,
+ &#39;Lowther Farms&#39;,
+ &#39;Mackies Dairy PV&#39;,
+ &#39;Mingay Farm - extension&#39;,
+ &#39;Redcourt Farm&#39;,
+ &#39;Sowerby Lodge Farm&#39;,
+ &#39;Stone Hill&#39;,
+ &#39;Taunton Racecourse&#39;,
+ &#39;The Stables&#39;,
+ &#39;Vantage Point&#39;,
+ &#39;Wilsom Farm&#39;,
+ &#39;Woodlands Farm Solar Park&#39;,
+ &#39;Bowerhouse Farm&#39;,
+ &#39;Brickyard Barn (resubmission)&#39;,
+ &#39;Bronwylfa Reservoir&#39;,
+ &#39;Land At Court Farm&#39;,
+ &#39;Crapnell Farm Solar Farm&#39;,
+ &#39;Danes Farm - extension&#39;,
+ &#39;Ellough Airfield (Resubmission)&#39;,
+ &#39;Ermine Street Farm solar park&#39;,
+ &#39;Eynsham Solar Farm&#39;,
+ &#39;Ford Farm (Ashurst)&#39;,
+ &#39;Priors Byne Farm&#39;,
+ &#39;Scottow Moor - RAF Coltishall Solar Farm (Phase 1)&#39;,
+ &#39;Owls Lodge Farm Extension&#39;,
+ &#39;Hawksland Solar&#39;,
+ &#39;Middle Treworder Farm&#39;,
+ &#39;Black Bush Farm&#39;,
+ &#39;Goonhilly Downs - PV&#39;,
+ &#39;Higher Tregarne Solar Farm&#39;,
+ &#39;Causilgey Solar Farm&#39;,
+ &#39;Ninnis Farm Solar&#39;,
+ &#39;Trelow Farm&#39;,
+ &#39;Hewas Solar Farm&#39;,
+ &#39;Great Knowle Farm Solar&#39;,
+ &#39;Airfield Farm PV&#39;,
+ &#39;Lower Bodiniel Farm&#39;,
+ &#39;Shelswell Park Solar Farm&#39;,
+ &#39;Chittering Solar Farm&#39;,
+ &#39;Kernow Solar Farm&#39;,
+ &#39;Limes Farm Solar Farm&#39;,
+ &#39;Bratton Fleming Solar Farm&#39;,
+ &#39;Lee Farm&#39;,
+ &#39;Woodlands Barton Solar Farm&#39;,
+ &#39;Winsdon Farm&#39;,
+ &#39;The Manor of Cadland Estate&#39;,
+ &#39;Trenouth Farm&#39;,
+ &#39;Callington Solar Farm&#39;,
+ &#39;St Columb Major Solar Farm&#39;,
+ &#39;Crossways Pit Solar Farm&#39;,
+ &#39;Ayshford Court Farm&#39;,
+ &#39;Andover Solar Farm&#39;,
+ &#39;Oving Solar Farm&#39;,
+ &#39;Grange Farm (Cornwall)&#39;,
+ &#39;Shipton Bellinger - Park House Corner Solar Farm&#39;,
+ &#39;Wyld Meadow Solar Farm&#39;,
+ &#39;Shooters Bottom Solar Park&#39;,
+ &#39;Goldenhaye Field Solar Farm&#39;,
+ &#39;Clearwell Farm - solar&#39;,
+ &#39;Danes Farm&#39;,
+ &#39;Langstone Court Road Solar Farm&#39;,
+ &#39;Five Oaks Solar Farm&#39;,
+ &#39;Culworth House Solar Farm&#39;,
+ &#39;Warleigh Barton Solar Farm&#39;,
+ &#39;Trenoweth Solar Farm&#39;,
+ &#39;Wymeswold Airfield&#39;,
+ &#39;Higher Hatherleigh Solar Farm&#39;,
+ &#39;Barton Solar Farm&#39;,
+ &#39;Clann Solar Farm&#39;,
+ &#39;Dolmans Hill (Redbridge Farm) Solar Arrays&#39;,
+ &#39;North Norfolk Business Centre Solar Park&#39;,
+ &#39;Horsacott Farm Solar Park&#39;,
+ &#39;Broxted Solar Farm (Stradishall Airfield)&#39;,
+ &#39;Pentylands Farm&#39;,
+ &#39;Trefinnick Farm&#39;,
+ &#39;Four Burrows Solar farm&#39;,
+ &#39;Rudbaxton Solar Park&#39;,
+ &#39;Hope Solar Farm&#39;,
+ &#39;Culmhead Solar Farm (Resubmission)&#39;,
+ &#39;Wheal Alfred Road Solar Farm&#39;,
+ &#39;Blatchworthy Farm&#39;,
+ &#39;Parsonage Barn (extension)&#39;,
+ &#39;BIOSSENCE SOLAR PARK&#39;,
+ &#39;HENDRA HOLIDAY PARK SOLAR FARM&#39;,
+ &#39;EASTACOMBE SOLAR FARM&#39;,
+ &#39;Wrexham Social Housing PV&#39;,
+ &#39;Creathorne Farm  - Solar Farm&#39;,
+ &#39;Higher Pirzwell Solar Farm&#39;,
+ &#39;Broadgate Solar Farm&#39;,
+ &#39;CRAYSMARSH SOLAR FARM&#39;,
+ &#39;SOLAR PARK - WHITCHURCH FARM&#39;,
+ ...]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span> <span class="o">=</span> <span class="n">df_RES</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;Whitelee&#39;</span><span class="p">]</span>
+<span class="n">whitelee</span> <span class="o">=</span> <span class="n">df_RES</span><span class="p">[[</span><span class="s1">&#39;Whitelee&#39;</span><span class="p">]]</span>
+<span class="n">whitelee</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Whitelee</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2050-01-01 00:00:00</th>
+      <td>0.915911</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 00:30:00</th>
+      <td>0.767069</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 01:00:00</th>
+      <td>0.632692</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 01:30:00</th>
+      <td>0.512778</td>
+    </tr>
+    <tr>
+      <th>2050-01-01 02:00:00</th>
+      <td>0.407853</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 21:30:00</th>
+      <td>0.114266</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 22:00:00</th>
+      <td>0.124903</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 22:30:00</th>
+      <td>0.135496</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 23:00:00</th>
+      <td>0.146044</td>
+    </tr>
+    <tr>
+      <th>2050-12-31 23:30:00</th>
+      <td>0.146044</td>
+    </tr>
+  </tbody>
+</table>
+<p>17520 rows × 1 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Whitelee output over year&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Power normalised&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Power normalised&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_21_1.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_21_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span><span class="p">[</span><span class="s1">&#39;2050-01-01 00:00:00&#39;</span><span class="p">:</span> <span class="s1">&#39;2050-01-01 23:30:00&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Whitelee over 01/01/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Power normalised&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Power normalised&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_22_1.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_22_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">whitelee</span><span class="o">.</span><span class="n">index</span>
+<span class="n">s_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">infer_datetime_format</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">whitelee</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">s_index</span>
+<span class="n">whitelee</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;Month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">whitelee</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">month</span>
+<span class="c1"># Box plots over whole dataset for month values</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">whitelee</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;Month&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Whitelee&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Boxplot for Whitelee power normalised power output&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Month&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Supply [kWh]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Supply [kWh]&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_4_-_Renewable_Power_and_Storage_23_1.png" src="../_images/notebooks_4_-_Renewable_Power_and_Storage_23_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Future-installed-capacities-of-renewable-power">
+<h2>Future installed capacities of renewable power<a class="headerlink" href="#Future-installed-capacities-of-renewable-power" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Note not included coal as it will be phased out in next few years</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../data/FES2021/Capacities Pics/FES_installed_capacities.gif&#39;</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;IPython.core.display.Image object&gt;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">storage</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Historical-storage-units">
+<h2>Historical storage units<a class="headerlink" href="#Historical-storage-units" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2015</span>
+<span class="n">storage</span><span class="o">.</span><span class="n">read_storage_data</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>bus</th>
+      <th>p_nom</th>
+      <th>carrier</th>
+      <th>marginal_cost</th>
+      <th>max_hours</th>
+      <th>efficiency_store</th>
+      <th>efficiency_dispatch</th>
+      <th>x</th>
+      <th>y</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Dinorwig</td>
+      <td>bus</td>
+      <td>1728</td>
+      <td>Pumped Storage Hydroelectric</td>
+      <td>0</td>
+      <td>5.266</td>
+      <td>0.865</td>
+      <td>0.865</td>
+      <td>-4.113899</td>
+      <td>53.118623</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Ffestiniog</td>
+      <td>bus</td>
+      <td>360</td>
+      <td>Pumped Storage Hydroelectric</td>
+      <td>0</td>
+      <td>3.889</td>
+      <td>0.850</td>
+      <td>0.850</td>
+      <td>-3.968897</td>
+      <td>52.980848</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Cruachan</td>
+      <td>bus</td>
+      <td>440</td>
+      <td>Pumped Storage Hydroelectric</td>
+      <td>0</td>
+      <td>16.136</td>
+      <td>0.865</td>
+      <td>0.865</td>
+      <td>-5.113430</td>
+      <td>56.411140</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Foyers</td>
+      <td>bus</td>
+      <td>300</td>
+      <td>Pumped Storage Hydroelectric</td>
+      <td>0</td>
+      <td>21.000</td>
+      <td>0.865</td>
+      <td>0.865</td>
+      <td>-4.493816</td>
+      <td>57.254341</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</div>
+<div class="section" id="Future-storage-units">
+<h2>Future storage units<a class="headerlink" href="#Future-storage-units" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_storage</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">write_storage_units</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="s1">&#39;Leading the Way&#39;</span><span class="p">)</span>
+<span class="n">storage_p_nom</span> <span class="o">=</span> <span class="n">df_storage</span><span class="o">.</span><span class="n">p_nom</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df_storage</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">storage_p_nom</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+carrier
+Battery                         28294.141
+Compressed Air                   6003.294
+Liquid Air                       3905.000
+Pumped Storage Hydroelectric     4799.900
+Name: p_nom, dtype: float64
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../data/FES2021/Capacities Pics/FES_storage_installed_capacities.gif&#39;</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;IPython.core.display.Image object&gt;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="3%20-%20Generator%20and%20Marginal%20Prices.html" class="btn btn-neutral float-left" title="Generator and Marginal Prices" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="5a%20-%20LOPF%20Historical.html" class="btn btn-neutral float-right" title="Historical Network Constrained Linear Optimal Power Flow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Andrew Lyden.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+
+# SPDX-FileCopyrightText: 2016-2019 The Atlite Authors
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: atlite
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.6
+  - numpy
+  - scipy
+  - pandas>=0.25
+  - xarray>=0.16.2
+  - seaborn
+  - netcdf4
+  - dask>=0.18.0 ,<2021.04.0
+  - toolz
+  - yaml
+  - requests
+  - geopandas
+  - cartopy
+  - cdsapi
+  - pyproj>=2.0
+  - rasterio>=1.0
+  - shapely
+  - progressbar2
+  - tqdm
+  - atlite
+  - pip:
+    - osgb
+
+  # Recommended for pandas and xarray
+  - bottleneck
+  - numexpr
+
+  # For travis and testing
+  - pip
+  - pytest
