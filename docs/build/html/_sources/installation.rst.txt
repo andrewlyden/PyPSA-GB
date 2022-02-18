@@ -10,13 +10,7 @@ The code for PyPSA-GB is written in Python and relies on a number of standard Py
 Clone repository using Git
 ############################
 
-Clone the repository from GitHub through a terminal using Git. Make sure Git is installed, and additionally install Git LFS (https://git-lfs.github.com/)::
-
-	git lfs install
-
-Git LFS is required to handle large files (there are csv files which are >100MB).
-
-Using a terminal navigate to a target folder where the repo will be cloned and run the following Git clone command (https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for the PyPSA-GB repository. (Warning: this may take a long time)::
+Clone the repository from GitHub through a terminal using Git. Using a terminal navigate to a target folder where the repo will be cloned and run the following Git clone command (https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for the PyPSA-GB repository. (Warning: this may take a long time and repository size is around 2GB)::
 
 	git clone https://github.com/andrewlyden/PyPSA-GB.git
 

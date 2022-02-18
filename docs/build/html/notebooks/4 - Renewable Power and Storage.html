@@ -382,7 +382,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 <div class="section" id="Mapping-historical-renewable-power-sites">
 <h2>Mapping historical renewable power sites<a class="headerlink" href="#Mapping-historical-renewable-power-sites" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mapping</span>
@@ -401,7 +401,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># tech = &#39;Advanced Conversion Technology&#39;</span>
@@ -426,7 +426,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;deepskyblue&#39;</span>
@@ -436,7 +436,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">renewables</span><span class="o">.</span><span class="n">REPD_date_corrected</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
@@ -484,7 +484,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># do for all years</span>
@@ -564,7 +564,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mapping</span><span class="o">.</span><span class="n">gif_maker</span><span class="p">(</span><span class="n">tech</span><span class="p">)</span>
@@ -576,7 +576,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -589,7 +589,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 <h2>Historical renewable correction factors<a class="headerlink" href="#Historical-renewable-correction-factors" title="Permalink to this headline">¶</a></h2>
 <p>Historical annual power output from different renewable power generators is reported by BEIS and this is compared to the power output calculated using Atlite.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">renewables</span><span class="o">.</span><span class="n">RES_correction_factors</span><span class="p">()</span>
@@ -598,7 +598,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -683,7 +683,7 @@ offshore wind in the next 10 years which will significantly impact the current s
 <p>Both wind onshore and offshore power production are overestimated, and this is likely due to a combination of limitations with use of reanalysis datasets, neglecting of wake effects, and maintenance/down town. However, there is an underestimation of PV power production and this is because &lt;150kW installations are not included in the REPD, which means that domestic scale systems are not included. By presuming the spatial distribution of &lt;150kW systems is the same as &gt;150kW systems we can scale
 the power capacities of the PV generators to match historical data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;PV&#39;</span><span class="p">,</span> <span class="mi">2010</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -696,12 +696,12 @@ the power capacities of the PV generators to match historical data.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x2906cd0fd90&gt;
+&lt;matplotlib.legend.Legend at 0x1a130e29b50&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -716,7 +716,7 @@ the power capacities of the PV generators to match historical data.</p>
 <h2>Closer look at renewable power generation timeseries<a class="headerlink" href="#Closer-look-at-renewable-power-generation-timeseries" title="Permalink to this headline">¶</a></h2>
 <p>Choose a year to analyse, and if future year then choose a baseline year in the following cell.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
@@ -724,7 +724,7 @@ the power capacities of the PV generators to match historical data.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-01-01 00:00:00&#39;</span>
@@ -748,10 +748,172 @@ the power capacities of the PV generators to match historical data.</p>
 <span class="k">elif</span> <span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2020</span><span class="p">:</span>
     <span class="n">generators</span><span class="o">.</span><span class="n">write_generators_p_max_pu</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
 
-<span class="n">df_RES</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../LOPF_data/generators-p_max_pu.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df_RES</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;LOPF_data/generators-p_max_pu.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">df_RES</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+                     Hywind Scotland Pilot Park (Hywind 2) Demonstrator  \
+name
+2019-01-01 00:00:00                                          30.000000
+2019-01-01 01:00:00                                          30.000000
+2019-01-01 02:00:00                                          30.000000
+2019-01-01 03:00:00                                          30.000000
+2019-01-01 04:00:00                                          30.000000
+...                                                                ...
+2019-12-31 19:00:00                                          30.000000
+2019-12-31 20:00:00                                          30.000000
+2019-12-31 21:00:00                                          28.735723
+2019-12-31 22:00:00                                          29.003353
+2019-12-31 23:00:00                                          28.373369
+
+                     Beatrice Demonstrator  Burbo Bank  \
+name
+2019-01-01 00:00:00              10.000000   89.860374
+2019-01-01 01:00:00              10.000000   89.869436
+2019-01-01 02:00:00              10.000000   89.794773
+2019-01-01 03:00:00              10.000000   89.711849
+2019-01-01 04:00:00              10.000000   89.700441
+...                                    ...         ...
+2019-12-31 19:00:00               3.136524   24.656407
+2019-12-31 20:00:00               2.785190   20.734573
+2019-12-31 21:00:00               3.016945   23.678370
+2019-12-31 22:00:00               2.729815   16.427627
+2019-12-31 23:00:00               3.354243   20.487629
+
+                     Gunfleet Sands - (Demo) Extension  Gunfleet Sands II  \
+name
+2019-01-01 00:00:00                           4.267711          29.166269
+2019-01-01 01:00:00                           4.361812          29.649374
+2019-01-01 02:00:00                           4.856438          33.073477
+2019-01-01 03:00:00                           6.051327          41.409126
+2019-01-01 04:00:00                           6.856686          45.796378
+...                                                ...                ...
+2019-12-31 19:00:00                           6.751307          45.205903
+2019-12-31 20:00:00                           7.439866          48.938636
+2019-12-31 21:00:00                           7.277371          48.057742
+2019-12-31 22:00:00                           5.238502          35.730821
+2019-12-31 23:00:00                           5.231768          35.683800
+
+                     Gunfleet Sands Offshore Wind Scheme  Inner Dowsing  \
+name
+2019-01-01 00:00:00                            48.610448      96.544373
+2019-01-01 01:00:00                            49.415623      96.776467
+2019-01-01 02:00:00                            55.122462      96.936269
+2019-01-01 03:00:00                            69.015210      96.968734
+2019-01-01 04:00:00                            76.327296      96.922745
+...                                                  ...            ...
+2019-12-31 19:00:00                            75.343171      25.225550
+2019-12-31 20:00:00                            81.564394      28.054039
+2019-12-31 21:00:00                            80.096237      33.071004
+2019-12-31 22:00:00                            59.551369      27.738891
+2019-12-31 23:00:00                            59.473000      32.003585
+
+                     Kentish Flats       Lynn  North Hoyle  ...  \
+name                                                        ...
+2019-01-01 00:00:00      29.791675  96.544373    59.891644  ...
+2019-01-01 01:00:00      29.128471  96.776467    59.916891  ...
+2019-01-01 02:00:00      32.387167  96.936269    59.864916  ...
+2019-01-01 03:00:00      42.650450  96.968734    59.811220  ...
+2019-01-01 04:00:00      49.973400  96.922745    59.773759  ...
+...                            ...        ...          ...  ...
+2019-12-31 19:00:00      51.973704  25.225550    12.080707  ...
+2019-12-31 20:00:00      59.933167  28.054039    10.275184  ...
+2019-12-31 21:00:00      59.251191  33.071004    12.360969  ...
+2019-12-31 22:00:00      38.347735  27.738891     8.383626  ...
+2019-12-31 23:00:00      34.423196  32.003585    10.260230  ...
+
+                     Galloper Wind Farm  \
+name
+2019-01-01 00:00:00          190.696420
+2019-01-01 01:00:00          193.136284
+2019-01-01 02:00:00          214.225948
+2019-01-01 03:00:00          254.047817
+2019-01-01 04:00:00          269.842614
+...                                 ...
+2019-12-31 19:00:00          201.896521
+2019-12-31 20:00:00          211.279517
+2019-12-31 21:00:00          206.077133
+2019-12-31 22:00:00          189.497416
+2019-12-31 23:00:00          193.433324
+
+                     Levenmouth demonstration turbine (Fife Energy Park)  \
+name
+2019-01-01 00:00:00                                           5.289567
+2019-01-01 01:00:00                                           2.918136
+2019-01-01 02:00:00                                           1.683739
+2019-01-01 03:00:00                                           1.122158
+2019-01-01 04:00:00                                           1.185900
+...                                                                ...
+2019-12-31 19:00:00                                           0.500155
+2019-12-31 20:00:00                                           0.734478
+2019-12-31 21:00:00                                           0.917313
+2019-12-31 22:00:00                                           0.926496
+2019-12-31 23:00:00                                           0.998439
+
+                       Walney 3  Dudgeon East  \
+name
+2019-01-01 00:00:00  660.000000    376.616863
+2019-01-01 01:00:00  660.000000    380.314650
+2019-01-01 02:00:00  660.000000    385.205985
+2019-01-01 03:00:00  660.000000    394.005874
+2019-01-01 04:00:00  660.000000    392.551543
+...                         ...           ...
+2019-12-31 19:00:00  191.767925     88.181158
+2019-12-31 20:00:00  211.065953     92.839651
+2019-12-31 21:00:00  256.770491    105.132045
+2019-12-31 22:00:00  207.764766     82.626584
+2019-12-31 23:00:00  240.015121     88.885498
+
+                     Burbo Bank Extension (Burbo Bank 2)  Gwynt y Mor  \
+name
+2019-01-01 00:00:00                           254.468200   574.415955
+2019-01-01 01:00:00                           254.786911   574.640933
+2019-01-01 02:00:00                           252.159441   573.724409
+2019-01-01 03:00:00                           249.240974   571.259480
+2019-01-01 04:00:00                           248.839431   570.192385
+...                                                  ...          ...
+2019-12-31 19:00:00                            55.821976    76.250551
+2019-12-31 20:00:00                            47.087687    63.773378
+2019-12-31 21:00:00                            53.643839    80.130006
+2019-12-31 22:00:00                            37.402445    47.997541
+2019-12-31 23:00:00                            46.537906    64.179735
+
+                     Humber Gateway A  Westermost Rough A     Barrow  \
+name
+2019-01-01 00:00:00        218.708538          196.740152  90.000000
+2019-01-01 01:00:00        218.759509          198.671832  90.000000
+2019-01-01 02:00:00        218.838086          201.227007  90.000000
+2019-01-01 03:00:00        218.843042          205.823964  90.000000
+2019-01-01 04:00:00        218.763181          205.064239  90.000000
+...                               ...                 ...        ...
+2019-12-31 19:00:00         52.285520           46.064784  23.716630
+2019-12-31 20:00:00         64.822460           48.498325  26.488820
+2019-12-31 21:00:00         73.983955           54.919725  33.817094
+2019-12-31 22:00:00         74.828865           43.163141  27.170143
+2019-12-31 23:00:00         86.528523           46.432723  32.770658
+
+                     Race Bank (Phase 2)
+name
+2019-01-01 00:00:00           266.530204
+2019-01-01 01:00:00           270.000000
+2019-01-01 02:00:00           270.000000
+2019-01-01 03:00:00           270.000000
+2019-01-01 04:00:00           270.000000
+...                                  ...
+2019-12-31 19:00:00            55.173665
+2019-12-31 20:00:00            60.613230
+2019-12-31 21:00:00            71.535891
+2019-12-31 22:00:00            60.010424
+2019-12-31 23:00:00            69.100107
+
+[8760 rows x 42 columns]
+</pre></div></div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -760,12 +922,322 @@ the power capacities of the PV generators to match historical data.</p>
 <div class="highlight"><pre>
 C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
   warnings.warn(
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+                     South Beach Wind Turbine (Somerton)  \
+name
+2019-01-01 00:00:00                             1.359554
+2019-01-01 01:00:00                             1.379291
+2019-01-01 02:00:00                             1.409005
+2019-01-01 03:00:00                             1.423964
+2019-01-01 04:00:00                             1.433799
+...                                                  ...
+2019-12-31 19:00:00                             0.592295
+2019-12-31 20:00:00                             0.717519
+2019-12-31 21:00:00                             0.734788
+2019-12-31 22:00:00                             0.666881
+2019-12-31 23:00:00                             0.733538
+
+                     Swaffham 1 - Ecotech Wind Park  Mynydd Gorddu Wind Farm  \
+name
+2019-01-01 00:00:00                        1.083687                 1.197065
+2019-01-01 01:00:00                        1.134039                 1.303022
+2019-01-01 02:00:00                        1.145738                 1.217152
+2019-01-01 03:00:00                        1.183002                 1.048233
+2019-01-01 04:00:00                        1.205269                 0.791687
+...                                             ...                      ...
+2019-12-31 19:00:00                        0.372311                 0.656899
+2019-12-31 20:00:00                        0.343022                 0.392001
+2019-12-31 21:00:00                        0.361515                 0.030731
+2019-12-31 22:00:00                        0.288317                 0.000000
+2019-12-31 23:00:00                        0.318022                 0.000000
+
+                     Cefn Croes Wind Farm  Carno &#39;B&#39; Wind Farm  \
+name
+2019-01-01 00:00:00             17.759762             3.614145
+2019-01-01 01:00:00             18.910577             3.741643
+2019-01-01 02:00:00             18.042667             3.687474
+2019-01-01 03:00:00             16.026599             3.368658
+2019-01-01 04:00:00             12.782243             2.834541
+...                                   ...                  ...
+2019-12-31 19:00:00             10.508353             2.210371
+2019-12-31 20:00:00              7.528612             1.748459
+2019-12-31 21:00:00              3.655857             1.190078
+2019-12-31 22:00:00              0.345069             0.077859
+2019-12-31 23:00:00              0.196657             0.043776
+
+                     Carno &#39;A&#39; Wind Farm  Cemmaes &#39;B&#39; Wind Farm  \
+name
+2019-01-01 00:00:00             3.614145               0.623457
+2019-01-01 01:00:00             3.741643               0.650701
+2019-01-01 02:00:00             3.687474               0.607247
+2019-01-01 03:00:00             3.368658               0.497403
+2019-01-01 04:00:00             2.834541               0.396967
+...                                  ...                    ...
+2019-12-31 19:00:00             2.210371               0.173279
+2019-12-31 20:00:00             1.748459               0.088363
+2019-12-31 21:00:00             1.190078               0.009847
+2019-12-31 22:00:00             0.077859               0.000000
+2019-12-31 23:00:00             0.043776               0.000000
+
+                     Trysglwyn Wind Farm  \
+name
+2019-01-01 00:00:00             0.946986
+2019-01-01 01:00:00             0.924361
+2019-01-01 02:00:00             0.764074
+2019-01-01 03:00:00             0.599401
+2019-01-01 04:00:00             0.528394
+...                                  ...
+2019-12-31 19:00:00             0.000000
+2019-12-31 20:00:00             0.000000
+2019-12-31 21:00:00             0.000000
+2019-12-31 22:00:00             0.000000
+2019-12-31 23:00:00             0.000000
+
+                     Hafoty Ucha &#39;2&#39; and &#39;3&#39; Wind Turbine  \
+name
+2019-01-01 00:00:00                              0.529184
+2019-01-01 01:00:00                              0.551919
+2019-01-01 02:00:00                              0.514373
+2019-01-01 03:00:00                              0.436749
+2019-01-01 04:00:00                              0.363769
+...                                                   ...
+2019-12-31 19:00:00                              0.136744
+2019-12-31 20:00:00                              0.076756
+2019-12-31 21:00:00                              0.000000
+2019-12-31 22:00:00                              0.000000
+2019-12-31 23:00:00                              0.000000
+
+                     Royal Seaforth Dock Wind Farm  ...  Pogbie Wind Farm 2  \
+name                                                ...
+2019-01-01 00:00:00                       2.353977  ...            3.564448
+2019-01-01 01:00:00                       2.338024  ...            2.483994
+2019-01-01 02:00:00                       2.245780  ...            1.654675
+2019-01-01 03:00:00                       2.156971  ...            1.280437
+2019-01-01 04:00:00                       2.159804  ...            0.999782
+...                                            ...  ...                 ...
+2019-12-31 19:00:00                       0.451492  ...            0.607887
+2019-12-31 20:00:00                       0.378132  ...            0.685500
+2019-12-31 21:00:00                       0.416804  ...            0.787455
+2019-12-31 22:00:00                       0.297174  ...            0.890030
+2019-12-31 23:00:00                       0.349388  ...            0.886695
+
+                     Bodtegir  West of Rhiwfelin Fach Farm  Marshill Farm  \
+name
+2019-01-01 00:00:00  0.633723                     0.499087       1.397485
+2019-01-01 01:00:00  0.664357                     0.561969       1.086965
+2019-01-01 02:00:00  0.613779                     0.565258       0.756408
+2019-01-01 03:00:00  0.509203                     0.523048       0.386399
+2019-01-01 04:00:00  0.417368                     0.437948       0.159029
+...                       ...                          ...            ...
+2019-12-31 19:00:00  0.121159                     0.444168       0.139794
+2019-12-31 20:00:00  0.061932                     0.423533       0.193779
+2019-12-31 21:00:00  0.007004                     0.347617       0.229255
+2019-12-31 22:00:00  0.000000                     0.315269       0.290333
+2019-12-31 23:00:00  0.000000                     0.272457       0.307405
+
+                     Woodlands Wind Farm  Accolade Wines  \
+name
+2019-01-01 00:00:00             1.541695        0.222096
+2019-01-01 01:00:00             1.012471        0.266499
+2019-01-01 02:00:00             0.633096        0.221205
+2019-01-01 03:00:00             0.333850        0.189777
+2019-01-01 04:00:00             0.163375        0.167427
+...                                  ...             ...
+2019-12-31 19:00:00             0.148782        0.133217
+2019-12-31 20:00:00             0.195614        0.114046
+2019-12-31 21:00:00             0.233929        0.085326
+2019-12-31 22:00:00             0.272980        0.079156
+2019-12-31 23:00:00             0.283804        0.076137
+
+                     Craigannet Farm Wind Turbine  Ferneylea Farm  \
+name
+2019-01-01 00:00:00                      1.273900        1.370987
+2019-01-01 01:00:00                      1.011055        1.068866
+2019-01-01 02:00:00                      0.668549        0.821533
+2019-01-01 03:00:00                      0.245939        0.681201
+2019-01-01 04:00:00                      0.076192        0.594009
+...                                           ...             ...
+2019-12-31 19:00:00                      0.006239        0.147843
+2019-12-31 20:00:00                      0.012826        0.150678
+2019-12-31 21:00:00                      0.043247        0.167007
+2019-12-31 22:00:00                      0.076516        0.160499
+2019-12-31 23:00:00                      0.123032        0.153244
+
+                     Forss Wind Farm  Land near Ventonteague (Resubmission)
+name
+2019-01-01 00:00:00         2.600000                               0.000000
+2019-01-01 01:00:00         2.600000                               0.000000
+2019-01-01 02:00:00         2.600000                               0.000000
+2019-01-01 03:00:00         2.600000                               0.000000
+2019-01-01 04:00:00         2.600000                               0.111229
+...                              ...                                    ...
+2019-12-31 19:00:00         0.947935                               0.436240
+2019-12-31 20:00:00         0.996114                               0.364948
+2019-12-31 21:00:00         1.172203                               0.290719
+2019-12-31 22:00:00         0.889847                               0.230948
+2019-12-31 23:00:00         1.427746                               0.178430
+
+[8760 rows x 658 columns]
+                     Fen Farm Solar Park  Manor Farm  Nanterrow Farm  \
+name
+2019-01-01 00:00:00                  0.0         0.0             0.0
+2019-01-01 01:00:00                  0.0         0.0             0.0
+2019-01-01 02:00:00                  0.0         0.0             0.0
+2019-01-01 03:00:00                  0.0         0.0             0.0
+2019-01-01 04:00:00                  0.0         0.0             0.0
+...                                  ...         ...             ...
+2019-12-31 19:00:00                  0.0         0.0             0.0
+2019-12-31 20:00:00                  0.0         0.0             0.0
+2019-12-31 21:00:00                  0.0         0.0             0.0
+2019-12-31 22:00:00                  0.0         0.0             0.0
+2019-12-31 23:00:00                  0.0         0.0             0.0
+
+                     Howton Farm  East Langford Farm  Trevemper solar farm  \
+name
+2019-01-01 00:00:00          0.0                 0.0                   0.0
+2019-01-01 01:00:00          0.0                 0.0                   0.0
+2019-01-01 02:00:00          0.0                 0.0                   0.0
+2019-01-01 03:00:00          0.0                 0.0                   0.0
+2019-01-01 04:00:00          0.0                 0.0                   0.0
+...                          ...                 ...                   ...
+2019-12-31 19:00:00          0.0                 0.0                   0.0
+2019-12-31 20:00:00          0.0                 0.0                   0.0
+2019-12-31 21:00:00          0.0                 0.0                   0.0
+2019-12-31 22:00:00          0.0                 0.0                   0.0
+2019-12-31 23:00:00          0.0                 0.0                   0.0
+
+                     Chester Energy (East Woolley Farm)  Chynoweth Farm  \
+name
+2019-01-01 00:00:00                                 0.0             0.0
+2019-01-01 01:00:00                                 0.0             0.0
+2019-01-01 02:00:00                                 0.0             0.0
+2019-01-01 03:00:00                                 0.0             0.0
+2019-01-01 04:00:00                                 0.0             0.0
+...                                                 ...             ...
+2019-12-31 19:00:00                                 0.0             0.0
+2019-12-31 20:00:00                                 0.0             0.0
+2019-12-31 21:00:00                                 0.0             0.0
+2019-12-31 22:00:00                                 0.0             0.0
+2019-12-31 23:00:00                                 0.0             0.0
+
+                     Carlton Farm Solar farm  Wheal Jane  ...  Volmary Site  \
+name                                                      ...
+2019-01-01 00:00:00                      0.0         0.0  ...           0.0
+2019-01-01 01:00:00                      0.0         0.0  ...           0.0
+2019-01-01 02:00:00                      0.0         0.0  ...           0.0
+2019-01-01 03:00:00                      0.0         0.0  ...           0.0
+2019-01-01 04:00:00                      0.0         0.0  ...           0.0
+...                                      ...         ...  ...           ...
+2019-12-31 19:00:00                      0.0         0.0  ...           0.0
+2019-12-31 20:00:00                      0.0         0.0  ...           0.0
+2019-12-31 21:00:00                      0.0         0.0  ...           0.0
+2019-12-31 22:00:00                      0.0         0.0  ...           0.0
+2019-12-31 23:00:00                      0.0         0.0  ...           0.0
+
+                     Invergordon Academy  National Space Centre  \
+name
+2019-01-01 00:00:00                  0.0                    0.0
+2019-01-01 01:00:00                  0.0                    0.0
+2019-01-01 02:00:00                  0.0                    0.0
+2019-01-01 03:00:00                  0.0                    0.0
+2019-01-01 04:00:00                  0.0                    0.0
+...                                  ...                    ...
+2019-12-31 19:00:00                  0.0                    0.0
+2019-12-31 20:00:00                  0.0                    0.0
+2019-12-31 21:00:00                  0.0                    0.0
+2019-12-31 22:00:00                  0.0                    0.0
+2019-12-31 23:00:00                  0.0                    0.0
+
+                     Tesco Queensway Place  Kingmoor Park  \
+name
+2019-01-01 00:00:00                    0.0            0.0
+2019-01-01 01:00:00                    0.0            0.0
+2019-01-01 02:00:00                    0.0            0.0
+2019-01-01 03:00:00                    0.0            0.0
+2019-01-01 04:00:00                    0.0            0.0
+...                                    ...            ...
+2019-12-31 19:00:00                    0.0            0.0
+2019-12-31 20:00:00                    0.0            0.0
+2019-12-31 21:00:00                    0.0            0.0
+2019-12-31 22:00:00                    0.0            0.0
+2019-12-31 23:00:00                    0.0            0.0
+
+                     Henry Colbeck Office  Flint Landfill Site Castle Park  \
+name
+2019-01-01 00:00:00                   0.0                              0.0
+2019-01-01 01:00:00                   0.0                              0.0
+2019-01-01 02:00:00                   0.0                              0.0
+2019-01-01 03:00:00                   0.0                              0.0
+2019-01-01 04:00:00                   0.0                              0.0
+...                                   ...                              ...
+2019-12-31 19:00:00                   0.0                              0.0
+2019-12-31 20:00:00                   0.0                              0.0
+2019-12-31 21:00:00                   0.0                              0.0
+2019-12-31 22:00:00                   0.0                              0.0
+2019-12-31 23:00:00                   0.0                              0.0
+
+                     Hewitts Avenue Tesco  \
+name
+2019-01-01 00:00:00                   0.0
+2019-01-01 01:00:00                   0.0
+2019-01-01 02:00:00                   0.0
+2019-01-01 03:00:00                   0.0
+2019-01-01 04:00:00                   0.0
+...                                   ...
+2019-12-31 19:00:00                   0.0
+2019-12-31 20:00:00                   0.0
+2019-12-31 21:00:00                   0.0
+2019-12-31 22:00:00                   0.0
+2019-12-31 23:00:00                   0.0
+
+                     Queen Elizabeth The Queen Mothers Hospital  \
+name
+2019-01-01 00:00:00                                         0.0
+2019-01-01 01:00:00                                         0.0
+2019-01-01 02:00:00                                         0.0
+2019-01-01 03:00:00                                         0.0
+2019-01-01 04:00:00                                         0.0
+...                                                         ...
+2019-12-31 19:00:00                                         0.0
+2019-12-31 20:00:00                                         0.0
+2019-12-31 21:00:00                                         0.0
+2019-12-31 22:00:00                                         0.0
+2019-12-31 23:00:00                                         0.0
+
+                     Jaywick Water Recycling Centre
+name
+2019-01-01 00:00:00                             0.0
+2019-01-01 01:00:00                             0.0
+2019-01-01 02:00:00                             0.0
+2019-01-01 03:00:00                             0.0
+2019-01-01 04:00:00                             0.0
+...                                             ...
+2019-12-31 19:00:00                             0.0
+2019-12-31 20:00:00                             0.0
+2019-12-31 21:00:00                             0.0
+2019-12-31 22:00:00                             0.0
+2019-12-31 23:00:00                             0.0
+
+[8760 rows x 1156 columns]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
 C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1106,7 +1578,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </div>
 <p>Pick one renewable generator to plot the timeseries of.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_RES</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1114,7 +1586,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2123,7 +2595,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span> <span class="o">=</span> <span class="n">df_RES</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;Whitelee&#39;</span><span class="p">]</span>
@@ -2133,7 +2605,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -2213,7 +2685,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
@@ -2224,7 +2696,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2240,7 +2712,7 @@ Text(0, 0.5, &#39;Power normalised&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">whitelee</span><span class="p">[</span><span class="s1">&#39;2050-01-01 00:00:00&#39;</span><span class="p">:</span> <span class="s1">&#39;2050-01-01 23:30:00&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
@@ -2251,7 +2723,7 @@ Text(0, 0.5, &#39;Power normalised&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2267,7 +2739,7 @@ Text(0, 0.5, &#39;Power normalised&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">whitelee</span><span class="o">.</span><span class="n">index</span>
@@ -2285,7 +2757,7 @@ Text(0, 0.5, &#39;Power normalised&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2304,7 +2776,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 <div class="section" id="Future-installed-capacities-of-renewable-power">
 <h2>Future installed capacities of renewable power<a class="headerlink" href="#Future-installed-capacities-of-renewable-power" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Note not included coal as it will be phased out in next few years</span>
@@ -2312,7 +2784,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../data/FES2021/Capacities Pics/FES_installed_capacities.gif&#39;</span>
@@ -2322,7 +2794,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2331,7 +2803,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">storage</span>
@@ -2342,7 +2814,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 <div class="section" id="Historical-storage-units">
 <h2>Historical storage units<a class="headerlink" href="#Historical-storage-units" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2015</span>
@@ -2351,7 +2823,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -2446,7 +2918,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 <div class="section" id="Future-storage-units">
 <h2>Future storage units<a class="headerlink" href="#Future-storage-units" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
@@ -2454,7 +2926,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_storage</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">write_storage_units</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="s1">&#39;Leading the Way&#39;</span><span class="p">)</span>
@@ -2464,7 +2936,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2478,7 +2950,7 @@ Name: p_nom, dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../data/FES2021/Capacities Pics/FES_storage_installed_capacities.gif&#39;</span>
@@ -2488,7 +2960,7 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
