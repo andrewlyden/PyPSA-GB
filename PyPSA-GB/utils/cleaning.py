@@ -82,7 +82,7 @@ def unify_index(dfs, freq):
     return dfs
             
 
-def fix_snapshots(data_snapshots, snapshots_path='../LOPF_data/snapshots.csv'):
+def fix_snapshots(data_snapshots, snapshots_path='LOPF_data/snapshots.csv'):
     '''
     Some data might not be available for the full range of snapshots, so
     snapshots has the largest set of common timestamps  
