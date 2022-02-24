@@ -1491,6 +1491,8 @@ def future_p_nom(year, time_step, scenario):
     renewables.future_RES_scale_p_nom(year, 'Solar Photovoltaics', scenario)
     renewables.future_RES_scale_p_nom(year, 'Hydro', scenario)
 
+    # HERE ADD THE MARINE WRITING FUNCTION WHEN READY
+
     # ensure all generator data is added
     df_UC = pd.read_csv('UC_data/generators.csv', index_col=0)
     df_LOPF = pd.read_csv('LOPF_data/generators.csv', index_col=0)
