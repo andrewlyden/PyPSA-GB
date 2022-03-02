@@ -40,9 +40,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quick_run.html">Quick run</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul class="current">
@@ -57,21 +55,11 @@
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
-</ul>
-<p class="caption"><span class="caption-text">References</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../licencing.html">Licencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
 </ul>
 
         </div>
@@ -379,7 +367,7 @@ from <a class="reference external" href="https://www.imperial.ac.uk/media/imperi
 <div class="section" id="Visualising-installed-capacities-for-individual-years">
 <h2>Visualising installed capacities for individual years<a class="headerlink" href="#Visualising-installed-capacities-for-individual-years" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">data_reader_writer</span> <span class="kn">import</span> <span class="n">data_writer</span>
@@ -393,7 +381,7 @@ from <a class="reference external" href="https://www.imperial.ac.uk/media/imperi
 </div>
 <p>Choose a year to produce bar graph of installed generator capacities by type…</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
@@ -401,7 +389,7 @@ from <a class="reference external" href="https://www.imperial.ac.uk/media/imperi
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-12-02 00:00:00&#39;</span>
@@ -424,12 +412,12 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\dat
   warnings.warn(
 C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\interconnectors.py:214: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:214: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_generators</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;LOPF_data/generators.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -438,7 +426,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -481,30 +469,10 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
   </thead>
   <tbody>
     <tr>
-      <th>Wilton GT*</th>
-      <td>Natural Gas</td>
-      <td>Conventional steam</td>
-      <td>120.0</td>
-      <td>Stella West</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-    </tr>
-    <tr>
-      <th>Connahs Quay</th>
-      <td>Natural Gas</td>
-      <td>Sour gas</td>
-      <td>1380.0</td>
-      <td>Deeside</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
       <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
       <td>Wind Offshore</td>
       <td>Wind Offshore</td>
-      <td>47.7</td>
+      <td>4.770000e+01</td>
       <td>Peterhead</td>
       <td>0.0</td>
       <td>1.0</td>
@@ -514,7 +482,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
       <th>Beatrice Demonstrator</th>
       <td>Wind Offshore</td>
       <td>Wind Offshore</td>
-      <td>15.9</td>
+      <td>1.590000e+01</td>
       <td>Peterhead</td>
       <td>0.0</td>
       <td>1.0</td>
@@ -524,8 +492,28 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
       <th>Burbo Bank</th>
       <td>Wind Offshore</td>
       <td>Wind Offshore</td>
-      <td>143.1</td>
+      <td>1.431000e+02</td>
       <td>Deeside</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>Gunfleet Sands - (Demo) Extension</th>
+      <td>Wind Offshore</td>
+      <td>Wind Offshore</td>
+      <td>1.908000e+01</td>
+      <td>Bramford</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>Gunfleet Sands II</th>
+      <td>Wind Offshore</td>
+      <td>Wind Offshore</td>
+      <td>1.030320e+02</td>
+      <td>Bramford</td>
       <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -541,62 +529,62 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
       <td>...</td>
     </tr>
     <tr>
+      <th>Unmet Load London</th>
+      <td>Unmet Load</td>
+      <td>Unmet Load</td>
+      <td>1.000000e+09</td>
+      <td>London</td>
+      <td>999999999.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>Unmet Load Kemsley</th>
+      <td>Unmet Load</td>
+      <td>Unmet Load</td>
+      <td>1.000000e+09</td>
+      <td>Kemsley</td>
+      <td>999999999.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>Unmet Load Sellindge</th>
+      <td>Unmet Load</td>
+      <td>Unmet Load</td>
+      <td>1.000000e+09</td>
+      <td>Sellindge</td>
+      <td>999999999.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>Unmet Load Lovedean</th>
+      <td>Unmet Load</td>
+      <td>Unmet Load</td>
+      <td>1.000000e+09</td>
+      <td>Lovedean</td>
+      <td>999999999.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
       <th>Unmet Load S.W.Penisula</th>
       <td>Unmet Load</td>
       <td>Unmet Load</td>
-      <td>999999999.0</td>
+      <td>1.000000e+09</td>
       <td>S.W.Penisula</td>
-      <td>999999999.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>Unmet Load Germany</th>
-      <td>Unmet Load</td>
-      <td>Unmet Load</td>
-      <td>999999999.0</td>
-      <td>Germany</td>
-      <td>999999999.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>Unmet Load Denmark</th>
-      <td>Unmet Load</td>
-      <td>Unmet Load</td>
-      <td>999999999.0</td>
-      <td>Denmark</td>
-      <td>999999999.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>Unmet Load Ireland2</th>
-      <td>Unmet Load</td>
-      <td>Unmet Load</td>
-      <td>999999999.0</td>
-      <td>Ireland2</td>
-      <td>999999999.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>Unmet Load Norway</th>
-      <td>Unmet Load</td>
-      <td>Unmet Load</td>
-      <td>999999999.0</td>
-      <td>Norway</td>
       <td>999999999.0</td>
       <td>1.0</td>
       <td>1.0</td>
     </tr>
   </tbody>
 </table>
-<p>2836 rows × 7 columns</p>
+<p>2835 rows × 7 columns</p>
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df_generators</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Wind Offshore&#39;</span><span class="p">]</span>
@@ -604,7 +592,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -762,7 +750,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generators_p_nom</span> <span class="o">=</span> <span class="n">df_generators</span><span class="o">.</span><span class="n">p_nom</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
@@ -790,7 +778,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generators_p_nom</span>
@@ -798,7 +786,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -806,12 +794,11 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\PyPSA-GB\inte
 carrier
 Biomass (dedicated)      550.512
 Landfill Gas             743.500
-Natural Gas             1500.000
 Large Hydro             1826.660
 EfW Incineration        2308.671
-CCS Biomass             5099.790
+CCS Biomass             5079.780
 Nuclear                 5443.030
-Hydrogen               15057.801
+Hydrogen               15211.119
 Wind Onshore           40046.832
 Wind Offshore          86993.034
 Solar Photovoltaics    88585.623
@@ -830,7 +817,7 @@ Name: p_nom, dtype: float64
 <div class="section" id="Marginal-prices-for-fossil-fuel-power-plants">
 <h2>Marginal prices for fossil fuel power plants<a class="headerlink" href="#Marginal-prices-for-fossil-fuel-power-plants" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;../data/marginal_cost_data.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -909,7 +896,7 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
@@ -929,7 +916,7 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">marginal_prices</span> <span class="o">=</span> <span class="n">result</span><span class="p">[[</span><span class="s1">&#39;Coal&#39;</span><span class="p">,</span> <span class="s1">&#39;Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;Oil&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -948,7 +935,7 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># add the future prices</span>
@@ -995,7 +982,7 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1094,8 +1081,8 @@ Name: p_nom, dtype: float64
 <p>718800 rows × 3 columns</p>
 </div></div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">marginal_prices</span><span class="p">)</span>
@@ -1103,13 +1090,6 @@ Name: p_nom, dtype: float64
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Coal, gas, and oil future marginal prices based on FES2021&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_3_-_Generator_and_Marginal_Prices_17_0.png" src="../_images/notebooks_3_-_Generator_and_Marginal_Prices_17_0.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">

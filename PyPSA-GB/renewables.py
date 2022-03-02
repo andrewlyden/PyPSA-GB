@@ -457,6 +457,8 @@ def read_tidal_lagoon(year, scenario):
     # drop the last row as this is a total row
     df_tidal_lagoon_locations.drop(df_tidal_lagoon_locations.tail(1).index, inplace=True)
     df_tidal_lagoon_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    if year < 2025:
+        year = 2025
     date = str(year) + '-01-01'
     dic = {'capacities': df_tidal_lagoon_capacities.loc[date, :], 'locations': df_tidal_lagoon_locations}
 
@@ -478,9 +480,9 @@ def read_tidal_stream(year, scenario):
         sheet_name = 'tidal_stream_SP'
 
     df_tidal_stream_capacities = df_tidal_stream[sheet_name].T
-    df_tidal_stream_capacities.columns = df_tidal_stream_capacities.iloc[0]
+    df_tidal_stream_capacities.columns = df_tidal_stream_capacities.iloc[1]
     df_tidal_stream_capacities = df_tidal_stream_capacities.drop(['Lat', 'Long', 'Suggested Bus', 'Site ID', 'Site Name'])
-    df_tidal_stream_capacities = df_tidal_stream_capacities.drop(columns=['Total'])
+    df_tidal_stream_capacities = df_tidal_stream_capacities.iloc[:, :-1]
 
     # need to get values for years 2020 - 2050
     index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
@@ -493,10 +495,12 @@ def read_tidal_stream(year, scenario):
     df_tidal_stream_capacities = df_tidal_stream_capacities.fillna(0)
 
     df_tidal_stream_locations = df_tidal_stream[sheet_name].iloc[:, -3:]
-    df_tidal_stream_locations.index = df_tidal_stream[sheet_name]['Site Name']
+    df_tidal_stream_locations.index = df_tidal_stream[sheet_name]['Site ID']
     # drop the last row as this is a total row
     df_tidal_stream_locations.drop(df_tidal_stream_locations.tail(1).index, inplace=True)
     df_tidal_stream_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    if year < 2025:
+        year = 2025
     date = str(year) + '-01-01'
     dic = {'capacities': df_tidal_stream_capacities.loc[date, :], 'locations': df_tidal_stream_locations}
 
@@ -518,9 +522,9 @@ def read_wave_power(year, scenario):
         sheet_name = 'wave_power_SP'
 
     df_wave_power_capacities = df_wave_power[sheet_name].T
-    df_wave_power_capacities.columns = df_wave_power_capacities.iloc[0]
+    df_wave_power_capacities.columns = df_wave_power_capacities.iloc[1]
     df_wave_power_capacities = df_wave_power_capacities.drop(['Lat', 'Long', 'Suggested Bus', 'Site ID', 'Site Name'])
-    df_wave_power_capacities = df_wave_power_capacities.drop(columns=['Total'])
+    df_wave_power_capacities = df_wave_power_capacities.iloc[:, :-1]
 
     # need to get values for years 2020 - 2050
     index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
@@ -533,10 +537,12 @@ def read_wave_power(year, scenario):
     df_wave_power_capacities = df_wave_power_capacities.fillna(0)
 
     df_wave_power_locations = df_wave_power[sheet_name].iloc[:, -3:]
-    df_wave_power_locations.index = df_wave_power[sheet_name]['Site Name']
+    df_wave_power_locations.index = df_wave_power[sheet_name]['Site ID']
     # drop the last row as this is a total row
     df_wave_power_locations.drop(df_wave_power_locations.tail(1).index, inplace=True)
     df_wave_power_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    if year < 2025:
+        year = 2025
     date = str(year) + '-01-01'
     dic = {'capacities': df_wave_power_capacities.loc[date, :], 'locations': df_wave_power_locations}
 
@@ -623,6 +629,111 @@ def write_marine_generators(year, scenario):
 
     df_UC.to_csv('UC_data/generators.csv', header=True)
     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
+
+
+def add_marine_timeseries(year, year_baseline, scenario, time_step):
+
+    path = 'LOPF_data/generators-p_max_pu.csv'
+    df_LOPF = pd.read_csv(path, index_col=0)
+
+    # in 5 year increments
+    if year < 2030:
+        year = 2025
+    elif year >= 2030 and year < 2035:
+        year = 2030
+    elif year >= 2035 and year < 2040:
+        year = 2035
+    elif year >= 2040 and year < 2045:
+        year = 2040
+    elif year >= 2045 and year < 2050:
+        year = 2045
+    elif year >= 2050:
+        year = 2050
+
+    # for interpolating
+    if time_step == 0.5:
+        freq = '0.5H'
+    elif time_step == 1:
+        freq = 'H'
+
+    # TIDAL LAGOON
+
+    df_tidal_lagoon = pd.read_excel('../data/renewables/Marine/tidal_lagoon_full.xlsx', sheet_name=str(year))
+    df_tidal_lagoon.index = df_tidal_lagoon['Date/time']
+    df_tidal_lagoon.drop(['Date/time'], axis=1, inplace=True)
+    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True, utc=True)
+    df_tidal_lagoon.index = df_tidal_lagoon.index.round('H')
+    df_tidal_lagoon.drop(df_tidal_lagoon.tail(1).index, inplace=True)
+    df_tidal_lagoon.dropna(axis='columns', inplace=True)
+
+    # FUTURE WORK, NEED TO INCLUDE NEGATIVE VALUES AS A LOAD, BUT DROPPING FOR NOW
+
+    # fix inconsistent name
+    df_tidal_lagoon.rename(columns={'Colwyn Bay': 'Colwyn'}, inplace=True)
+    # interpolate to correct timestep
+    df_tidal_lagoon = df_tidal_lagoon.resample(freq).interpolate('polynomial', order=2)
+    df_tidal_lagoon[df_tidal_lagoon < 0] = 0
+    df_tidal_lagoon[df_tidal_lagoon > 1] = 1
+    # pick out required timeseries
+    df_tidal_lagoon = df_tidal_lagoon.loc[df_LOPF.index.values]
+    df_tidal_lagoon.index = df_LOPF.index
+
+    # TIDAL STREAM
+
+    path = '../data/renewables/Marine/tidal_stream_' + str(year) + '_full.xlsx'
+    df_tidal_stream = pd.read_excel(path)
+    df_tidal_stream.index = df_tidal_stream['Date/time']
+    df_tidal_stream.drop(['Date/time'], axis=1, inplace=True)
+    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True, utc=True)
+    df_tidal_stream.index = df_tidal_stream.index.round('H')
+    df_tidal_stream.drop(df_tidal_stream.tail(1).index, inplace=True)
+    # interpolate to correct timestep
+    df_tidal_stream = df_tidal_stream.resample(freq).interpolate('polynomial', order=2)
+    df_tidal_stream[df_tidal_stream < 0] = 0
+    df_tidal_stream[df_tidal_stream > 1] = 1
+    # pick out required timeseries
+    df_tidal_stream = df_tidal_stream.loc[df_LOPF.index.values]
+    df_tidal_stream.index = df_LOPF.index
+
+    # WAVE POWER
+
+    df_wave_power = pd.read_csv('../data/renewables/Marine/capacity_factors_wave_full - Open Source.csv', index_col=0)
+    df_wave_power.index = pd.to_datetime(df_wave_power.index, infer_datetime_format=True)
+    # df_wave_power.index = df_wave_power.index.round('H')
+    # interpolate to correct timestep
+    df_wave_power = df_wave_power.resample(freq).interpolate('linear').round(5)
+    df_wave_power[df_wave_power < 0] = 0
+    df_wave_power[df_wave_power > 1] = 1
+    # pick out required timeseries
+    period = df_LOPF.index
+    period = pd.to_datetime(period, infer_datetime_format=True, utc=True)
+    # change year to baseline year
+    period = period.map(lambda t: t.replace(year=year_baseline))
+    df_wave_power = df_wave_power.loc[period.values]
+    df_wave_power.index = df_LOPF.index
+
+    # concat the DFs together
+    df_LOPF = pd.concat([df_LOPF, df_tidal_lagoon, df_tidal_stream, df_wave_power], axis=1)
+
+    # want to ensure no duplicate names
+    cols = pd.Series(df_LOPF.columns)
+    for dup in cols[cols.duplicated()].unique():
+        cols[cols[cols == dup].index.values.tolist()] = [dup + '.' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
+    # rename the columns with the cols list.
+    df_LOPF.columns = cols
+    # make sure there are no missing values
+    df_LOPF = df_LOPF.fillna(0)
+    # make sure there are no negative values
+    df_LOPF[df_LOPF < 0] = 0
+    # fix the column names
+    df_LOPF.columns = df_LOPF.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+    df_LOPF.columns = df_LOPF.columns.astype(str).str.replace(u'\xa0', '')
+    df_LOPF.columns = df_LOPF.columns.astype(str).str.replace('ì', 'i')
+    df_LOPF.columns = df_LOPF.columns.str.strip()
+
+    df_LOPF.to_csv('LOPF_data/generators-p_max_pu.csv', header=True)
+    df_LOPF.to_csv('UC_data/generators-p_max_pu.csv', header=True)
+
 
 def aggregate_renewable_generation(start, end, year, time_step):
 
@@ -1461,4 +1572,6 @@ if __name__ == "__main__":
     # print(read_tidal_stream(year, scenario))
     # print(read_wave_power(year, scenario))
 
-    write_marine_generators(year, scenario)
+    # write_marine_generators(year, scenario)
+    year_baseline = 2012
+    # add_marine_timeseries(year, year_baseline, scenario, time_step=0.5)

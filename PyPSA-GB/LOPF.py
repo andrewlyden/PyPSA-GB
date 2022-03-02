@@ -8,9 +8,13 @@ import cartopy.crs as ccrs
 
 import data_reader_writer
 
+import time
+
+start_t = time.time()
+
 # write csv files for import
-start = '2050-06-02 00:00:00'
-end = '2050-06-04 23:30:00'
+start = '2050-06-01 00:00:00'
+end = '2050-06-01 23:30:00'
 # year of simulation
 year = int(start[0:4])
 # time step as fraction of hour
@@ -46,7 +50,7 @@ if year <= 2020:
 elif year > 2020:
     # need to scale up for future, and will do analysis on this
     # interconnects are links in future, so don't need to be selective here
-    contingency_factor = 100
+    contingency_factor = 10000
     network.lines.s_max_pu *= contingency_factor
 
 network.lopf(network.snapshots, solver_name="gurobi")
@@ -103,7 +107,7 @@ p_by_carrier = p_by_carrier.rename(
 p_by_carrier = p_by_carrier.rename(
     columns={'Interconnector': 'Interconnectors Import'})
 
-print(p_by_carrier)
+print(p_by_carrier['Marine'])
 # cols = ["Nuclear", "Coal", "Diesel/Gas oil", "Diesel/gas Diesel/Gas oil",
 #         "Natural Gas", "Sour gas",
 #         'Shoreline Wave', 'Tidal Barrage and Tidal Stream',
@@ -116,7 +120,7 @@ print(p_by_carrier)
 
 if year > 2020:
 
-    cols = ["Nuclear", 'Shoreline Wave', 'Biomass',
+    cols = ["Nuclear", 'Shoreline Wave', 'Marine', 'Biomass',
             'EfW Incineration', "Oil", "Natural Gas",
             'Hydrogen', 'CCS Gas', 'CCS Biomass',
             "Pumped Storage Hydroelectric", 'Hydro',
@@ -126,7 +130,7 @@ if year > 2020:
             ]
 
 else:
-    cols = ["Nuclear", 'Shoreline Wave', 'Biomass',
+    cols = ["Nuclear", 'Shoreline Wave', 'Marine', 'Biomass',
             'EfW Incineration',
             "Coal", "Oil", "Natural Gas",
             "Pumped Storage Hydroelectric", 'Hydro',
@@ -137,7 +141,7 @@ else:
 p_by_carrier = p_by_carrier[cols]
 
 p_by_carrier.drop(
-    (p_by_carrier.max()[p_by_carrier.max() < 50.0]).index,
+    (p_by_carrier.max()[p_by_carrier.max() < 35.0]).index,
     axis=1, inplace=True)
 
 
@@ -162,6 +166,7 @@ colors = {"Coal": "grey",
           "Nuclear": "orange",
           'Shoreline Wave': 'aqua',
           'Tidal Barrage and Tidal Stream': 'aqua',
+          'Marine': 'aqua',
           'Hydro': "turquoise",
           "Large Hydro": "turquoise",
           "Small Hydro": "turquoise",
@@ -263,3 +268,7 @@ ax.set_ylabel("Power [MW]")
 # ax.set_ylim([0, 10000])
 ax.legend()
 plt.show()
+
+end_t = time.time()
+print(end_t - start_t, 'time taken in seconds.')
+print((end_t - start_t) / 60, 'time taken in minutes.')

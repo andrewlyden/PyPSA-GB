@@ -9,26 +9,17 @@ at the moment this script is a collection of functions,
 but classes could be used to improve readability
 """
 
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# import numpy as np
-# import pickle
-
-# # this is the required package for calculating distances between coordinates
-# import osgb
-
-# import renewables
-# import marginal_cost_calculator
-# import distance_calculator as dc
 
 import snapshots
 import buses
 import lines
 import storage
 import generators
+import renewables
 import marginal_costs
 import loads
 import interconnectors
+import distribution
 import pandas as pd
 
 from utils.cleaning import unify_snapshots
@@ -65,7 +56,9 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None):
         storage.write_storage_units(year, scenario=scenario)
         generators.future_p_nom(year, time_step, scenario)
         generators.write_generators_p_max_pu(start, end, freq, year, year_baseline=year_baseline, scenario=scenario)
+        renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
+        distribution.Distribution(year, scenario).update()
 
     elif year <= 2020:
         storage.write_storage_units(year)

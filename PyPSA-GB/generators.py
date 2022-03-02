@@ -1439,7 +1439,8 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
             df_hydro = df_hydro.resample(freq).mean().append(df_hydro.iloc[-1])
             df_hydro.index = df_offshore.index
 
-    # New Method
+    # MARINE TECHNOLOGIES
+
     # want to join the three dataframes together
     dfs = [df_offshore, df_onshore, df_PV, df_hydro]
     if year <= 2020:
@@ -1490,8 +1491,7 @@ def future_p_nom(year, time_step, scenario):
     renewables.future_RES_scale_p_nom(year, 'Wind Onshore', scenario)
     renewables.future_RES_scale_p_nom(year, 'Solar Photovoltaics', scenario)
     renewables.future_RES_scale_p_nom(year, 'Hydro', scenario)
-
-    # HERE ADD THE MARINE WRITING FUNCTION WHEN READY
+    renewables.write_marine_generators(year, scenario)
 
     # ensure all generator data is added
     df_UC = pd.read_csv('UC_data/generators.csv', index_col=0)

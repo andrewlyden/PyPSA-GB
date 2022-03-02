@@ -6,11 +6,16 @@
 PyPSA-GB: An open source model of the GB power system for future energy scenarios
 =================================================================================
 
-Energy system models with high spatial and temporal resolution are required to analyse systems reliant on variable renewable generation. This paper presents PyPSA-GB which is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and for future energy scenarios. Two aspects of the GB electricity market can be readily modelled: (i) the wholesale electricity market, by solving a single bus unit commitment optimisation problem to dispatch generators and storage, and (ii) the balancing mechanism, by solving a network constrained linear optimal power flow. The model is showcased through an analysis of network expansion for National Grid’s net zero future energy scenarios.
+Energy system models with high spatial and temporal resolution are required to analyse systems reliant on variable renewable generation. This documentation describes PyPSA-GB which is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and for future energy scenarios. Two aspects of the GB electricity market can be readily modelled: (i) the wholesale electricity market, by solving a single bus unit commitment optimisation problem to dispatch generators and storage, and (ii) the balancing mechanism, by solving a network constrained linear optimal power flow. The model is showcased through an analysis of network expansion for National Grid’s net zero future energy scenarios.
 
 **Developers**
 
-Institute for Energy Systems, University of Edinburgh. Andrew Lyden...
+PyPSA-GB is developed at the Institute for Energy Systems, University of Edinburgh. The following people have so far contributed to the developed code:
+
+- Andrew Lyden
+- Iain Struthers
+- Seb Hudson
+- Lukas Franken
 
 **Licence**
 
@@ -23,9 +28,9 @@ To do...
    :maxdepth: 1
    :caption: Getting Started
 
-   introduction
+   .. introduction
    installation
-   quick_run
+   .. quick_run
 
 .. toctree::
    :maxdepth: 1
@@ -38,22 +43,23 @@ To do...
    notebooks/5a - LOPF Historical.ipynb
    notebooks/5b - LOPF Future.ipynb
    notebooks/6 - Unit Commitment.ipynb
-   notebooks/7 - Network Expansion.ipynb
    notebooks/8 - Two Step Dispatch.ipynb
 
 .. toctree::
    :maxdepth: 1
    :caption: Examples
 
-   seasonal_thermal_energy_storage
-   high_temperature_thermal_energy_storage
-   marine_energy
+   notebooks/7 - Network Expansion.ipynb
+
+   .. seasonal_thermal_energy_storage
+   .. high_temperature_thermal_energy_storage
+   .. marine_energy
 
 .. toctree::
    :maxdepth: 1
    :caption: References
 
-   API_reference
-   release_notes
-   contributing
-   licencing
+   .. API_reference
+   .. release_notes
+   .. contributing
+   .. licencing
