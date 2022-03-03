@@ -43,6 +43,13 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None):
     Returns
     -------
     """
+
+    # make sure that end time is in accordance with timestep
+    if time_step == 1. or time_step == 'H' or time_step == '1H':
+        end = pd.Timestamp(end) 
+        end = end.replace(minute=0)
+        end = str(end)
+
     freq = snapshots.write_snapshots(start, end, time_step)
 
     buses.write_buses(year)
