@@ -626,6 +626,7 @@ def write_marine_generators(year, scenario):
 
     # in shape to add to UC generators
     df_UC = df_UC.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
+    df_UC.bus = 'bus'
 
     df_UC.to_csv('UC_data/generators.csv', header=True)
     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)

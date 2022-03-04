@@ -14,7 +14,7 @@ start_t = time.time()
 
 # write csv files for import
 start = '2050-06-01 00:00:00'
-end = '2050-06-01 23:30:00'
+end = '2050-06-02 23:30:00'
 # year of simulation
 year = int(start[0:4])
 # time step as fraction of hour
