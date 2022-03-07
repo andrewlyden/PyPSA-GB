@@ -6,6 +6,6 @@ Energy system models with high spatial and temporal resolution are required to a
 
 See the notebooks within the PyPSA-GB folder for exploration of the data and functionality.
 
-Please read installation instructions and more in the [documentation](pypsa-gb.netlify.app/).
+Please read installation instructions and more in the [Documentation](https://pypsa-gb.netlify.app/).
 
 ![PyPSA-GB Reduced Network Model](pics/voronoi_reduced_model.jpg)
