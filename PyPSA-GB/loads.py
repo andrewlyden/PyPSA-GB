@@ -138,7 +138,7 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         date = str(year) + '-01-01 00:00:00'
         df_FES_demand.columns = df_FES_demand.columns.astype(str)
         # future demand in GWh/yr
-        future_demand = float(df_FES_demand[date].values[0]) * time_step
+        future_demand = float(df_FES_demand[date].values[0])
 
         # scale historical demand using baseline year
         year_start = str(year_baseline) + '-01-01 00:00:00'
@@ -147,7 +147,8 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         # load timeseries in baseline year
         df_year = df_hd.loc[year_start:year_end]
         # summed load in baseline year
-        historical_demand = df_year.sum().values[0] * time_step / 1000
+        # factor of two because historical demand is read in half hourly, so need to convert to GWh/yr
+        historical_demand = df_year.sum().values[0] * 0.5 / 1000
         scale_factor = float(future_demand) / float(historical_demand)
 
         # load for simulation dates in baseline year
@@ -164,11 +165,13 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
                 # remove 29th Feb
                 scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
 
-        try:
+        print(scaled_load)
+        if time_step == 0.5:
             scaled_load.index = dti
-        except ValueError:
+        elif time_step == 1:
             scaled_load = scaled_load.resample(freq).mean()
             scaled_load.index = dti
+        print(scaled_load)
 
         # can use this for UC
         df_loads_p_set_UC = scaled_load.copy()
@@ -181,6 +184,8 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_loads_p_set_UC.index.name = 'name'
     df_loads_p_set_LOPF.index.name = 'name'
 
+    print(df_loads_p_set_LOPF)
+
     if year > 2020 and time_step == 1.:
 
         appendix = df_loads_p_set_LOPF.iloc[-1:]
@@ -192,6 +197,8 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
         appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
         df_loads_p_set_UC = df_loads_p_set_UC.append(appendix)
+
+    print(df_loads_p_set_LOPF)
 
     df_loads_p_set_LOPF.to_csv('LOPF_data/loads-p_set.csv', header=True)
     df_loads_p_set_UC.to_csv('UC_data/loads-p_set.csv', header=True)

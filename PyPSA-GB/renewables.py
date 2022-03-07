@@ -674,14 +674,16 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     # interpolate to correct timestep
     df_tidal_lagoon = df_tidal_lagoon.resample(freq).interpolate('polynomial', order=2)
 
-    # add end value
-    end = df_LOPF.index.values[-1]
-    df_new_tidal_lagoon = pd.DataFrame(
-        data=df_tidal_lagoon.tail(1).values,
-        columns=df_tidal_lagoon.columns,
-        index=[end])
-    # add to existing dataframe
-    df_tidal_lagoon = df_tidal_lagoon.append(df_new_tidal_lagoon, sort=False)
+    if len(df_tidal_lagoon.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_tidal_lagoon = pd.DataFrame(
+            data=df_tidal_lagoon.tail(1).values,
+            columns=df_tidal_lagoon.columns,
+            index=[end])
+        # add to existing dataframe
+        df_tidal_lagoon = df_tidal_lagoon.append(df_new_tidal_lagoon, sort=False)
 
     df_tidal_lagoon[df_tidal_lagoon < 0] = 0
     df_tidal_lagoon[df_tidal_lagoon > 1] = 1
@@ -705,14 +707,16 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     # interpolate to correct timestep
     df_tidal_stream = df_tidal_stream.resample(freq).interpolate('polynomial', order=2)
 
-    # add end value
-    end = df_LOPF.index.values[-1]
-    df_new_tidal_stream = pd.DataFrame(
-        data=df_tidal_stream.tail(1).values,
-        columns=df_tidal_stream.columns,
-        index=[end])
-    # add to existing dataframe
-    df_tidal_stream = df_tidal_stream.append(df_new_tidal_stream, sort=False)
+    if len(df_tidal_stream.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_tidal_stream = pd.DataFrame(
+            data=df_tidal_stream.tail(1).values,
+            columns=df_tidal_stream.columns,
+            index=[end])
+        # add to existing dataframe
+        df_tidal_stream = df_tidal_stream.append(df_new_tidal_stream, sort=False)
 
     df_tidal_stream[df_tidal_stream < 0] = 0
     df_tidal_stream[df_tidal_stream > 1] = 1
@@ -732,14 +736,16 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     # interpolate to correct timestep
     df_wave_power = df_wave_power.resample(freq).interpolate('linear').round(5)
 
-    # add end value
-    end = df_LOPF.index.values[-1]
-    df_new_wave_power = pd.DataFrame(
-        data=df_wave_power.tail(1).values,
-        columns=df_wave_power.columns,
-        index=[end])
-    # add to existing dataframe
-    df_wave_power = df_wave_power.append(df_new_wave_power, sort=False)
+    if len(df_wave_power.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_wave_power = pd.DataFrame(
+            data=df_wave_power.tail(1).values,
+            columns=df_wave_power.columns,
+            index=[end])
+        # add to existing dataframe
+        df_wave_power = df_wave_power.append(df_new_wave_power, sort=False)
 
     df_wave_power[df_wave_power < 0] = 0
     df_wave_power[df_wave_power > 1] = 1
