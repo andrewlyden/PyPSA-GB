@@ -85,8 +85,18 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_hd.rename(columns={'POWER_ESPENI_MW': 'load'}, inplace=True)
 
     # need an index for the period to be simulated
-    frequency = str(time_step) + 'H'
-    dti = pd.date_range(start=start, end=end, freq=frequency)
+    if time_step == 0.5:
+        freq = '0.5H'
+    elif time_step == 1.0:
+        freq = 'H'
+    else:
+        raise Exception("Time step not recognised")
+
+    dti = pd.date_range(
+        start=start,
+        end=end,
+        freq=freq)
+
     df_distribution = pd.read_csv(
         '../data/demand/Demand_Distribution.csv', index_col=0)
     df_distribution = df_distribution.loc[:, ~df_distribution.columns.str.contains('^Unnamed')]
@@ -147,10 +157,17 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         df_sim = df_year[start_yr:end_yr]
         scaled_load = scale_factor * df_sim
 
+        # check if baseline year is a leap year and simulated year is not and remove 29th Feb
+        if year_baseline % 4 == 0:
+            # and the year modelled is also not a leap year
+            if year % 4 != 0:
+                # remove 29th Feb
+                scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
+
         try:
             scaled_load.index = dti
         except ValueError:
-            scaled_load = scaled_load.resample(frequency).mean()
+            scaled_load = scaled_load.resample(freq).mean()
             scaled_load.index = dti
 
         # can use this for UC

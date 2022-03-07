@@ -19,7 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Two Step Dispatch" href="8%20-%20Two%20Step%20Dispatch.html" /> 
+    <link rel="next" title="Seasonal Thermal Energy Storage" href="../seasonal_thermal_energy_storage.html" />
+    <link rel="prev" title="Unit Commitment" href="6%20-%20Unit%20Commitment.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -44,17 +45,31 @@
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Network Expansion</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Network Expansion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Setting-up-simulation">Setting up simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Run-the-optimisation">Run the optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Line-expansion-results">Line expansion results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
         </div>
@@ -367,6 +382,8 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+<div class="section" id="Setting-up-simulation">
+<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -809,7 +826,9 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 <p>99 rows × 29 columns</p>
 </div></div>
 </div>
-<p>Run the optimisation…</p>
+</div>
+<div class="section" id="Run-the-optimisation">
+<h2>Run the optimisation<a class="headerlink" href="#Run-the-optimisation" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
@@ -881,6 +900,9 @@ Solution:
 (&lt;SolverStatus.ok: &#39;ok&#39;&gt;, &lt;TerminationCondition.optimal: &#39;optimal&#39;&gt;)
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="Outputs">
+<h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
@@ -944,7 +966,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_18_1.png" src="../_images/notebooks_7_-_Network_Expansion_18_1.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_20_1.png" src="../_images/notebooks_7_-_Network_Expansion_20_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -972,9 +994,12 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_19_0.png" src="../_images/notebooks_7_-_Network_Expansion_19_0.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_21_0.png" src="../_images/notebooks_7_-_Network_Expansion_21_0.png" />
 </div>
 </div>
+</div>
+<div class="section" id="Line-expansion-results">
+<h2>Line expansion results<a class="headerlink" href="#Line-expansion-results" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
@@ -1014,7 +1039,7 @@ Text(0.5, 0, &#39;Line&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_21_1.png" src="../_images/notebooks_7_-_Network_Expansion_21_1.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_24_1.png" src="../_images/notebooks_7_-_Network_Expansion_24_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1046,7 +1071,7 @@ Text(0.5, 0, &#39;Line&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_22_1.png" src="../_images/notebooks_7_-_Network_Expansion_22_1.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_25_1.png" src="../_images/notebooks_7_-_Network_Expansion_25_1.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -1058,12 +1083,14 @@ Text(0.5, 0, &#39;Line&#39;)
 </div>
 </div>
 </div>
+</div>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="8%20-%20Two%20Step%20Dispatch.html" class="btn btn-neutral float-left" title="Two Step Dispatch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="6%20-%20Unit%20Commitment.html" class="btn btn-neutral float-left" title="Unit Commitment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../seasonal_thermal_energy_storage.html" class="btn btn-neutral float-right" title="Seasonal Thermal Energy Storage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

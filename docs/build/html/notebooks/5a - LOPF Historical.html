@@ -45,17 +45,34 @@
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Historical Network Constrained Linear Optimal Power Flow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Historical Network Constrained Linear Optimal Power Flow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Setting-up-simulation">Setting up simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Running-the-optimisation">Running the optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Power-output-by-generation-type">Power output by generation type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Plotting-storage">Plotting storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Plotting-line-loading">Plotting line loading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Plotting-locational-marginal-prices">Plotting locational marginal prices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Plotting-curtailment">Plotting curtailment</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
         </div>
@@ -368,6 +385,8 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+<div class="section" id="Setting-up-simulation">
+<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -436,7 +455,9 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </pre></div>
 </div>
 </div>
-<p>Run the optimisation…</p>
+</div>
+<div class="section" id="Running-the-optimisation">
+<h2>Running the optimisation<a class="headerlink" href="#Running-the-optimisation" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -508,6 +529,9 @@ Solution:
 (&lt;SolverStatus.ok: &#39;ok&#39;&gt;, &lt;TerminationCondition.optimal: &#39;optimal&#39;&gt;)
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="Power-output-by-generation-type">
+<h2>Power output by generation type<a class="headerlink" href="#Power-output-by-generation-type" title="Permalink to this headline">¶</a></h2>
 <p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -967,9 +991,12 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_LOPF_Historical_15_2.png" src="../_images/notebooks_5a_-_LOPF_Historical_15_2.png" />
+<img alt="../_images/notebooks_5a_-_LOPF_Historical_17_2.png" src="../_images/notebooks_5a_-_LOPF_Historical_17_2.png" />
 </div>
 </div>
+</div>
+<div class="section" id="Plotting-storage">
+<h2>Plotting storage<a class="headerlink" href="#Plotting-storage" title="Permalink to this headline">¶</a></h2>
 <p>Graph the pumped hydro dispatch and state of charge…</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -1003,9 +1030,12 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_LOPF_Historical_17_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_17_1.png" />
+<img alt="../_images/notebooks_5a_-_LOPF_Historical_20_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_20_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="Plotting-line-loading">
+<h2>Plotting line loading<a class="headerlink" href="#Plotting-line-loading" title="Permalink to this headline">¶</a></h2>
 <p>Look at the line loading stats and graph…</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -1069,9 +1099,12 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_LOPF_Historical_20_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_20_1.png" />
+<img alt="../_images/notebooks_5a_-_LOPF_Historical_24_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_24_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="Plotting-locational-marginal-prices">
+<h2>Plotting locational marginal prices<a class="headerlink" href="#Plotting-locational-marginal-prices" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
@@ -1097,7 +1130,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_LOPF_Historical_21_0.png" src="../_images/notebooks_5a_-_LOPF_Historical_21_0.png" />
+<img alt="../_images/notebooks_5a_-_LOPF_Historical_26_0.png" src="../_images/notebooks_5a_-_LOPF_Historical_26_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1448,6 +1481,9 @@ dtype: float64
 <p>144 rows × 35 columns</p>
 </div></div>
 </div>
+</div>
+<div class="section" id="Plotting-curtailment">
+<h2>Plotting curtailment<a class="headerlink" href="#Plotting-curtailment" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
@@ -1487,7 +1523,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_LOPF_Historical_23_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_23_1.png" />
+<img alt="../_images/notebooks_5a_-_LOPF_Historical_29_1.png" src="../_images/notebooks_5a_-_LOPF_Historical_29_1.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -1496,6 +1532,7 @@ dtype: float64
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
+</div>
 </div>
 </div>
 </div>
