@@ -138,7 +138,7 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         date = str(year) + '-01-01 00:00:00'
         df_FES_demand.columns = df_FES_demand.columns.astype(str)
         # future demand in GWh/yr
-        future_demand = df_FES_demand[date].values[0]
+        future_demand = float(df_FES_demand[date].values[0]) * time_step
 
         # scale historical demand using baseline year
         year_start = str(year_baseline) + '-01-01 00:00:00'
