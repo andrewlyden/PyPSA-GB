@@ -2,7 +2,6 @@ import pandas as pd
 import os
 
 
-
 def remove_double(df):
     '''
     If the last two rows have the same value, the last row will be removed
@@ -80,12 +79,12 @@ def unify_index(dfs, freq):
     fix_snapshots(dfs[0].index)
 
     return dfs
-            
+
 
 def fix_snapshots(data_snapshots, snapshots_path='LOPF_data/snapshots.csv'):
     '''
     Some data might not be available for the full range of snapshots, so
-    snapshots has the largest set of common timestamps  
+    snapshots has the largest set of common timestamps
     This method takes the currently snapshots availabe for the currently
     investigates data (such as generators or marginal cost) and adjusts the
     snapshots stored in LOPF/snapshots.py if necessary
@@ -111,7 +110,7 @@ def unify_snapshots(target, filenames, dir):
     '''
     goes over all dataframe stored in filenames and
     adjusts their length to match the one in target
-    Method should be called once before convertig data to
+    Method should be called once before converting data to
     a network
 
     Parameters
@@ -140,19 +139,6 @@ def unify_snapshots(target, filenames, dir):
             df.loc[target[0]:target[-1]].to_csv(file)
 
 
-
-
-
-    
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
 
     dummy_sn = pd.date_range('2020-01-01 00:00:00', '2020-01-01 03:00:00', freq='0.5H')
@@ -165,17 +151,6 @@ if __name__ == '__main__':
     sn = pd.date_range('2020-01-01 00:00:00', '2020-01-01 02:30:00', freq='0.5H')
 
     fix_snapshots(sn, snapshots_path=path)
-    
-
 
     print('\n at end')
     print(pd.read_csv(path, index_col=0, parse_dates=True).index)
-
-
-
-
-
-
-
-
-

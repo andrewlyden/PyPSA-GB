@@ -126,6 +126,15 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
             # scale load for each node/bus
             df_loads_p_set_LOPF[j] = df['load'] * norm[j].values
 
+        if time_step == 0.5:
+            df_loads_p_set_LOPF.index = dti
+        elif time_step == 1:
+            df_loads_p_set_LOPF = df_loads_p_set_LOPF.resample(freq).mean()
+        if time_step == 0.5:
+            df_loads_p_set_UC.index = dti
+        elif time_step == 1:
+            df_loads_p_set_UC = df_loads_p_set_UC.resample(freq).mean()
+
     elif year > 2020:
         # if future scenarios need to scale historical
         # data using FES demand data
@@ -165,13 +174,18 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
                 # remove 29th Feb
                 scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
 
-        print(scaled_load)
         if time_step == 0.5:
             scaled_load.index = dti
         elif time_step == 1:
             scaled_load = scaled_load.resample(freq).mean()
+            # for some reason need to get rid of this date again?
+            # probably due to resampling step...
+            if year_baseline % 4 == 0:
+                # and the year modelled is also not a leap year
+                if year % 4 != 0:
+                    # remove 29th Feb
+                    scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
             scaled_load.index = dti
-        print(scaled_load)
 
         # can use this for UC
         df_loads_p_set_UC = scaled_load.copy()
@@ -184,21 +198,17 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_loads_p_set_UC.index.name = 'name'
     df_loads_p_set_LOPF.index.name = 'name'
 
-    print(df_loads_p_set_LOPF)
+    # if time_step == 0.5:
 
-    if year > 2020 and time_step == 1.:
+    #     appendix = df_loads_p_set_LOPF.iloc[-1:]
+    #     new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
+    #     appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
+    #     df_loads_p_set_LOPF = df_loads_p_set_LOPF.append(appendix)
 
-        appendix = df_loads_p_set_LOPF.iloc[-1:]
-        new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
-        appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
-        df_loads_p_set_LOPF = df_loads_p_set_LOPF.append(appendix)
-
-        appendix = df_loads_p_set_UC.iloc[-1:]
-        new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
-        appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
-        df_loads_p_set_UC = df_loads_p_set_UC.append(appendix)
-
-    print(df_loads_p_set_LOPF)
+    #     appendix = df_loads_p_set_UC.iloc[-1:]
+    #     new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
+    #     appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
+    #     df_loads_p_set_UC = df_loads_p_set_UC.append(appendix)
 
     df_loads_p_set_LOPF.to_csv('LOPF_data/loads-p_set.csv', header=True)
     df_loads_p_set_UC.to_csv('UC_data/loads-p_set.csv', header=True)

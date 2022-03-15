@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Seasonal Thermal Energy Storage" href="../seasonal_thermal_energy_storage.html" />
-    <link rel="prev" title="Unit Commitment" href="6%20-%20Unit%20Commitment.html" /> 
+    <link rel="prev" title="Comparison To Historical Data" href="9%20-%20Comparison%20To%20Historical%20Data.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,6 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -62,8 +63,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
 </ul>
 <p class="caption"><span class="caption-text">References</span></p>
 <ul>
@@ -370,7 +369,7 @@ div.rendered_html tbody tr:hover {
 <h1>Network Expansion<a class="headerlink" href="#Network-Expansion" title="Permalink to this headline">¶</a></h1>
 <p>PyPSA-GB can also allow for certain parameters to be optimised, which can be useful in planning studies. In this notebook network expansion is explored for the month of June in 2050.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
@@ -386,7 +385,7 @@ div.rendered_html tbody tr:hover {
 <h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># write csv files for import</span>
@@ -401,7 +400,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Choose from one of the National Grid Future Energy Scenarios.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scenario</span> <span class="o">=</span> <span class="s1">&#39;Leading The Way&#39;</span>
@@ -413,7 +412,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Choose a baseline year (from 2010-2020). The baseline year determines which historical load profile and weather dataset is used for the future year modelled. The National Grid FES modellers used 2012 as their baseline year.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2012</span>
@@ -422,10 +421,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>data_reader_writer is a script written to read in data from the various sources and write csv files in the format required for populating a PyPSA network object</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span>
+                               <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">,</span> <span class="n">merge_generators</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -438,12 +438,12 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\dat
   warnings.warn(
 C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\interconnectors.py:199: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:201: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
@@ -459,9 +459,9 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\interconnecto
 <div class="highlight"><pre>
 WARNING:pypsa.io:
 Importing PyPSA from older version of PyPSA than current version.
-Please read the release notes at https://pypsa.org/doc/release_notes.html
+Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
 carefully to prepare your network for import.
-Currently used PyPSA version [0, 18, 1], imported network file PyPSA version None.
+Currently used PyPSA version [0, 19, 2], imported network file PyPSA version None.
 
 INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
 INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, loads, storage_units
@@ -469,7 +469,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </div>
 <p>Now going to allow the limit of the apparent power to flow through the line to be extendable, and provide a capital cost (cost of extending s_nom by 1 MVA.)</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_extendable</span> <span class="o">=</span> <span class="kc">True</span>
@@ -479,7 +479,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lines</span>
@@ -487,7 +487,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -532,7 +532,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
       <th>s_nom_opt</th>
     </tr>
     <tr>
-      <th>name</th>
+      <th>Line</th>
       <th></th>
       <th></th>
       <th></th>
@@ -830,10 +830,10 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 <div class="section" id="Run-the-optimisation">
 <h2>Run the optimisation<a class="headerlink" href="#Run-the-optimisation" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -842,10 +842,9 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-INFO:pypsa.opf:Performed preliminary steps
-INFO:pypsa.opf:Building pyomo model using `kirchhoff` formulation
-INFO:pypsa.opf:Solving model using gurobi
-INFO:pypsa.opf:Optimization successful
+INFO:pypsa.linopf:Prepare linear problem
+INFO:pypsa.linopf:Total preparation time: 27.62s
+INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -853,58 +852,348 @@ INFO:pypsa.opf:Optimization successful
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-# ==========================================================
-# = Solver Results                                         =
-# ==========================================================
-# ----------------------------------------------------------
-#   Problem Information
-# ----------------------------------------------------------
-Problem:
-- Name: x4634020_copy
-  Lower bound: 887616028515070.5
-  Upper bound: 887616028515070.5
-  Number of objectives: 1
-  Number of constraints: 8896417
-  Number of variables: 4634020
-  Number of binary variables: 0
-  Number of integer variables: 0
-  Number of continuous variables: 4634020
-  Number of nonzeros: 22498662
-  Sense: minimize
-# ----------------------------------------------------------
-#   Solver Information
-# ----------------------------------------------------------
-Solver:
-- Status: ok
-  Return code: 0
-  Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Termination condition: optimal
-  Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 2879.7222995758057
-  Error rc: 0
-  Time: 3018.7942156791687
-# ----------------------------------------------------------
-#   Solution Information
-# ----------------------------------------------------------
-Solution:
-- number of solutions: 0
-  number of solutions displayed: 0
+Set parameter Username
+Academic license - for non-commercial use only - expires 2022-09-03
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-llbdtit0.lp
+Reading time = 16.58 seconds
+obj: 6491192 rows, 1828900 columns, 11680533 nonzeros
+Gurobi Optimizer version 9.5.1 build v9.5.1rc2 (win64)
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+Optimize a model with 6491192 rows, 1828900 columns and 11680533 nonzeros
+Model fingerprint: 0x8cc72c67
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+00]
+  Objective range  [5e-01, 5e+08]
+  Bounds range     [1e+02, 2e+10]
+  RHS range        [1e-06, 1e+09]
+Warning: Model contains large bounds
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 6004488 rows and 1198103 columns (presolve time = 5s) ...
+Presolve removed 6016000 rows and 1198103 columns
+Presolve time: 8.08s
+Presolved: 475192 rows, 642309 columns, 1951063 nonzeros
+
+Ordering time: 5.16s
+
+Barrier statistics:
+ Dense cols : 99
+ Free vars  : 46080
+ AA&#39; NZ     : 4.383e+06
+ Factor NZ  : 2.158e+07 (roughly 600 MB of memory)
+ Factor Ops : 3.676e+09 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   4.74926991e+22 -7.59774475e+22  3.63e+09 1.09e+09  2.48e+18    15s
+   1   8.41111712e+21 -2.80977786e+22  2.78e+08 1.39e+08  2.06e+17    16s
+   2   1.64598823e+21 -2.36099325e+21  4.97e+07 1.09e+07  3.24e+16    17s
+   3   1.91921770e+18 -2.18753898e+19  4.77e+04 6.49e+04  6.01e+13    18s
+   4   4.00314326e+17 -1.15755677e+18  8.94e+03 1.45e+02  5.72e+12    20s
+   5   1.08901267e+17 -6.49234686e+17  1.46e+03 8.58e+00  1.18e+12    22s
+   6   4.59942690e+16 -2.69264979e+17  1.47e+02 1.62e+00  2.61e+11    23s
+   7   3.62448674e+16 -1.62923952e+17  9.13e+01 9.16e-01  1.57e+11    23s
+   8   2.68121082e+16 -7.83568947e+16  5.50e+01 3.98e-01  8.02e+10    24s
+   9   1.62853792e+16 -3.87555779e+16  2.91e+01 1.90e-01  4.07e+10    25s
+  10   9.52577604e+15 -1.44317443e+16  1.48e+01 6.72e-02  1.74e+10    26s
+  11   5.62174998e+15 -6.55130402e+15  7.43e+00 3.17e-02  8.66e+09    27s
+  12   4.98754952e+15 -2.43707508e+15  6.31e+00 1.46e-02  5.29e+09    28s
+  13   3.41808517e+15 -1.02894535e+15  3.65e+00 8.65e-03  3.14e+09    29s
+  14   2.72703466e+15 -5.75274340e+14  2.54e+00 7.68e-03  2.31e+09    30s
+  15   2.54614450e+15 -2.14053193e+14  2.19e+00 6.72e-03  1.93e+09    30s
+  16   2.25409976e+15  1.70807728e+14  1.67e+00 5.54e-03  1.45e+09    31s
+  17   2.00735922e+15  6.62623816e+14  1.23e+00 4.02e-03  9.32e+08    32s
+  18   1.73436035e+15  9.39756180e+14  8.18e-01 4.14e-03  5.49e+08    33s
+  19   1.61555714e+15  1.07951439e+15  5.60e-01 3.88e-03  3.69e+08    34s
+  20   1.54429358e+15  1.17126130e+15  4.28e-01 2.98e-03  2.56e+08    35s
+  21   1.48740194e+15  1.21787337e+15  3.02e-01 2.47e-03  1.85e+08    36s
+  22   1.45579044e+15  1.27934456e+15  2.65e-01 1.70e-03  1.21e+08    37s
+  23   1.41132661e+15  1.31068375e+15  6.52e-01 1.32e-03  6.87e+07    38s
+  24   1.38500460e+15  1.35364146e+15  3.38e+00 3.86e-04  2.14e+07    41s
+  25   1.37503703e+15  1.37209891e+15  1.14e+01 1.34e-05  2.01e+06    43s
+  26   1.37389625e+15  1.37305409e+15  5.04e+00 3.81e-06  5.78e+05    45s
+  27   1.37359999e+15  1.37312431e+15  2.84e+00 2.86e-06  3.27e+05    47s
+  28   1.37351365e+15  1.37314000e+15  2.18e+00 3.81e-06  2.58e+05    49s
+  29   1.37347487e+15  1.37316103e+15  1.95e+00 2.86e-06  2.17e+05    52s
+  30   1.37344399e+15  1.37317344e+15  1.96e+00 1.91e-06  1.87e+05    54s
+  31   1.37342025e+15  1.37317535e+15  1.90e+00 1.91e-06  1.69e+05    57s
+  32   1.37340564e+15  1.37317998e+15  1.87e+00 1.91e-06  1.56e+05    59s
+  33   1.37339200e+15  1.37318627e+15  1.79e+00 8.34e-07  1.43e+05    62s
+  34   1.37334842e+15  1.37319292e+15  1.53e+00 9.54e-07  1.08e+05    64s
+  35   1.37332497e+15  1.37320080e+15  1.30e+00 1.98e-04  8.62e+04    66s
+  36   1.37330850e+15  1.37320415e+15  1.10e+00 1.77e-04  7.25e+04    68s
+  37   1.37329874e+15  1.37321112e+15  9.57e-01 5.05e-04  6.09e+04    70s
+  38   1.37328840e+15  1.37321419e+15  7.95e-01 4.55e-04  5.16e+04    72s
+  39   1.37328376e+15  1.37321984e+15  7.18e-01 2.13e-03  4.45e+04    74s
+  40   1.37327920e+15  1.37322374e+15  6.40e-01 1.79e-03  3.87e+04    76s
+  41   1.37327305e+15  1.37322667e+15  5.32e-01 2.70e-03  3.24e+04    77s
+  42   1.37326896e+15  1.37322982e+15  4.55e-01 2.24e-03  2.73e+04    79s
+  43   1.37326514e+15  1.37323276e+15  3.74e-01 1.83e-03  2.26e+04    81s
+  44   1.37326220e+15  1.37323775e+15  3.09e-01 1.16e-03  1.72e+04    83s
+  45   1.37325858e+15  1.37323931e+15  2.37e-01 1.19e-03  1.36e+04    85s
+  46   1.37325552e+15  1.37324315e+15  2.31e-01 3.17e-03  8.80e+03    87s
+  47   1.37325321e+15  1.37324416e+15  2.38e-01 2.12e-03  6.47e+03    89s
+  48   1.37325185e+15  1.37324549e+15  2.42e-01 1.98e-03  4.60e+03    90s
+  49   1.37325105e+15  1.37324645e+15  2.44e-01 1.68e-03  3.39e+03    92s
+  50   1.37325064e+15  1.37324686e+15  2.45e-01 1.19e-03  2.81e+03    94s
+  51   1.37325025e+15  1.37324730e+15  2.46e-01 7.47e-04  2.24e+03    95s
+  52   1.37324939e+15  1.37324756e+15  2.49e-01 7.67e-04  1.45e+03    97s
+  53   1.37324901e+15  1.37324774e+15  2.50e-01 7.65e-04  1.06e+03    98s
+  54   1.37324877e+15  1.37324785e+15  2.50e-01 1.46e-03  8.05e+02   100s
+  55   1.37324855e+15  1.37324797e+15  2.51e-01 8.85e-04  5.69e+02   101s
+  56   1.37324828e+15  1.37324804e+15  2.52e-01 6.34e-04  3.30e+02   103s
+  57   1.37324818e+15  1.37324810e+15  2.52e-01 1.82e-03  2.18e+02   104s
+  58   1.37324813e+15  1.37324812e+15  2.52e-01 1.50e-03  1.69e+02   105s
+  59   1.37324811e+15  1.37324814e+15  2.52e-01 1.15e-03  1.39e+02   107s
+  60   1.37324807e+15  1.37324816e+15  2.52e-01 8.79e-04  9.82e+01   108s
+  61   1.37324806e+15  1.37324817e+15  2.52e-01 6.92e-04  7.98e+01   109s
+  62   1.37324804e+15  1.37324819e+15  2.52e-01 5.03e-04  5.70e+01   110s
+  63   1.37324803e+15  1.37324820e+15  2.52e-01 4.38e-04  4.13e+01   112s
+  64   1.37324802e+15  1.37324821e+15  2.52e-01 1.15e-03  2.96e+01   113s
+  65   1.37324801e+15  1.37324821e+15  2.52e-01 1.66e-03  2.35e+01   115s
+  66   1.37324801e+15  1.37324822e+15  2.52e-01 2.09e-03  1.76e+01   116s
+  67   1.37324801e+15  1.37324822e+15  2.52e-01 2.28e-03  1.36e+01   117s
+  68   1.37324801e+15  1.37324822e+15  2.52e-01 2.26e-03  1.24e+01   119s
+  69   1.37324801e+15  1.37324822e+15  2.52e-01 2.25e-03  9.11e+00   120s
+  70   1.37324800e+15  1.37324823e+15  2.52e-01 2.73e-03  6.39e+00   121s
+  71   1.37324800e+15  1.37324823e+15  2.52e-01 3.17e-03  3.81e+00   122s
+  72   1.37324800e+15  1.37324823e+15  2.52e-01 3.42e-03  2.63e+00   123s
+  73   1.37324800e+15  1.37324823e+15  2.52e-01 3.43e-03  2.26e+00   124s
+  74   1.37324800e+15  1.37324823e+15  2.52e-01 3.39e-03  2.06e+00   125s
+  75   1.37324800e+15  1.37324823e+15  2.52e-01 3.39e-03  1.97e+00   126s
+  76   1.37324800e+15  1.37324823e+15  2.52e-01 3.33e-03  1.85e+00   127s
+  77   1.37324800e+15  1.37324823e+15  2.52e-01 2.94e-03  1.28e+00   129s
+  78   1.37324800e+15  1.37324823e+15  2.52e-01 2.55e-03  1.09e+00   130s
+  79   1.37324800e+15  1.37324823e+15  2.52e-01 2.30e-03  9.79e-01   131s
+  80   1.37324800e+15  1.37324823e+15  2.52e-01 2.14e-03  8.88e-01   132s
+  81   1.37324800e+15  1.37324823e+15  2.52e-01 1.85e-03  6.62e-01   133s
+  82   1.37324800e+15  1.37324823e+15  2.52e-01 1.98e-03  4.16e-01   135s
+  83   1.37324800e+15  1.37324823e+15  2.52e-01 2.02e-03  2.48e-01   136s
+  84   1.37324800e+15  1.37324823e+15  2.52e-01 1.99e-03  1.68e-01   137s
+  85   1.37324800e+15  1.37324823e+15  2.52e-01 1.91e-03  1.43e-01   138s
+  86   1.37324800e+15  1.37324823e+15  2.52e-01 1.87e-03  1.28e-01   139s
+  87   1.37324800e+15  1.37324823e+15  2.52e-01 1.78e-03  1.13e-01   140s
+  88   1.37324800e+15  1.37324823e+15  2.52e-01 1.69e-03  9.38e-02   141s
+  89   1.37324800e+15  1.37324823e+15  2.53e-01 1.30e-03  3.34e-02   142s
+  90   1.37324800e+15  1.37324823e+15  2.53e-01 1.14e-03  8.83e-03   144s
+  91   1.37324800e+15  1.37324823e+15  2.54e-01 1.15e-03  3.91e-03   145s
+  92   1.37324800e+15  1.37324823e+15  2.03e-01 1.15e-03  2.68e-03   146s
+  93   1.37324800e+15  1.37324823e+15  2.18e-01 1.14e-03  2.19e-03   147s
+  94   1.37324800e+15  1.37324823e+15  2.22e-01 8.03e-04  1.88e-03   148s
+  95   1.37324800e+15  1.37324823e+15  1.49e-01 5.90e-04  4.08e-04   149s
+  96   1.37324800e+15  1.37324823e+15  1.42e-01 5.30e-04  2.57e-04   150s
+  97   1.37324800e+15  1.37324823e+15  1.14e+00 5.30e-04  1.11e-04   151s
+  98   1.37324800e+15  1.37324823e+15  7.36e-01 5.30e-04  7.47e-05   152s
+  99   1.37324800e+15  1.37324823e+15  6.87e-01 5.30e-04  7.13e-05   153s
+ 100   1.37324800e+15  1.37324823e+15  6.32e-01 5.30e-04  6.74e-05   154s
+ 101   1.37324800e+15  1.37324823e+15  3.37e-01 5.30e-04  4.30e-05   155s
+ 102   1.37324800e+15  1.37324823e+15  4.05e-01 5.30e-04  4.07e-05   156s
+ 103   1.37324800e+15  1.37324823e+15  2.78e-01 5.30e-04  1.39e-05   157s
+ 104   1.37324800e+15  1.37324823e+15  1.64e-01 5.30e-04  6.44e-06   158s
+ 105   1.37324800e+15  1.37324823e+15  8.52e-02 5.30e-04  1.77e-06   158s
+ 106   1.37324800e+15  1.37324823e+15  8.51e-02 3.55e-04  1.64e-06   160s
+ 107   1.37324800e+15  1.37324823e+15  1.08e-01 3.55e-04  5.21e-07   160s
+ 108   1.37324800e+15  1.37324823e+15  7.01e-02 3.55e-04  4.44e-07   162s
+ 109   1.37324800e+15  1.37324823e+15  9.54e-02 1.61e-03  1.87e-06   163s
+ 110   1.37324800e+15  1.37324823e+15  1.88e-01 6.74e-04  1.03e-06   164s
+ 111   1.37324800e+15  1.37324823e+15  2.84e-01 3.02e-04  5.17e-07   165s
+ 112   1.37324800e+15  1.37324823e+15  3.79e-01 3.02e-04  2.08e-07   165s
+ 113   1.37324800e+15  1.37324823e+15  3.82e-01 3.02e-04  1.14e-07   166s
+ 114   1.37324800e+15  1.37324823e+15  3.90e-01 3.02e-04  2.20e-07   168s
+ 115   1.37324800e+15  1.37324823e+15  3.90e-01 3.02e-04  1.33e-07   169s
+ 116   1.37324800e+15  1.37324823e+15  3.93e-01 3.02e-04  1.63e-07   170s
+ 117   1.37324800e+15  1.37324823e+15  3.93e-01 3.02e-04  2.87e-08   171s
+ 118   1.37324800e+15  1.37324823e+15  3.92e-01 3.02e-04  4.71e-08   173s
+ 119   1.37324800e+15  1.37324823e+15  3.94e-01 3.02e-04  5.39e-09   174s
+ 120   1.37324800e+15  1.37324823e+15  3.97e-01 3.02e-04  1.86e-09   175s
+ 121   1.37324800e+15  1.37324823e+15  4.00e-01 3.02e-04  1.32e-09   176s
+ 122   1.37324800e+15  1.37324823e+15  3.97e-01 3.02e-04  2.68e-10   176s
+ 123   1.37324800e+15  1.37324823e+15  3.98e-01 3.02e-04  5.58e-11   177s
+ 124   1.37324800e+15  1.37324823e+15  3.95e-01 3.30e-03  2.79e-06   179s
+ 125   1.37324800e+15  1.37324823e+15  3.95e-01 3.14e-03  2.67e-06   180s
+ 126   1.37324800e+15  1.37324823e+15  3.96e-01 2.89e-03  2.50e-06   181s
+ 127   1.37324800e+15  1.37324823e+15  3.95e-01 2.17e-03  1.90e-06   182s
+ 128   1.37324800e+15  1.37324823e+15  3.93e-01 2.99e-04  1.37e-07   183s
+ 129   1.37324800e+15  1.37324823e+15  3.87e-01 2.99e-04  1.04e-07   184s
+ 130   1.37324800e+15  1.37324823e+15  3.87e-01 2.99e-04  1.34e-08   185s
+ 131   1.37324800e+15  1.37324823e+15  3.89e-01 2.99e-04  2.12e-09   186s
+ 132   1.37324800e+15  1.37324823e+15  3.88e-01 2.99e-04  1.41e-09   187s
+ 133   1.37324800e+15  1.37324823e+15  3.91e-01 2.99e-04  1.33e-09   188s
+ 134   1.37324800e+15  1.37324823e+15  3.88e-01 4.08e-04  4.52e-08   190s
+ 135   1.37324800e+15  1.37324823e+15  3.88e-01 2.99e-04  1.60e-08   191s
+ 136   1.37324800e+15  1.37324823e+15  3.88e-01 2.99e-04  1.14e-08   192s
+ 137   1.37324800e+15  1.37324823e+15  3.95e-01 2.64e-04  5.73e-08   192s
+ 138   1.37324800e+15  1.37324823e+15  4.00e-01 2.64e-04  1.22e-08   193s
+ 139   1.37324800e+15  1.37324823e+15  4.05e-01 2.64e-04  6.62e-09   194s
+ 140   1.37324800e+15  1.37324823e+15  4.00e-01 2.64e-04  5.15e-09   195s
+ 141   1.37324800e+15  1.37324823e+15  3.91e-01 2.64e-04  1.10e-09   196s
+ 142   1.37324800e+15  1.37324823e+15  3.95e-01 2.64e-04  9.82e-11   197s
+ 143   1.37324800e+15  1.37324823e+15  3.99e-01 2.64e-04  4.96e-11   198s
+ 144   1.37324800e+15  1.37324823e+15  3.99e-01 2.64e-04  4.10e-11   199s
+ 145   1.37324800e+15  1.37324823e+15  3.99e-01 2.64e-04  3.83e-11   199s
+ 146   1.37324800e+15  1.37324823e+15  3.96e-01 2.64e-04  2.14e-11   200s
+ 147   1.37324800e+15  1.37324823e+15  3.96e-01 2.64e-04  2.17e-11   201s
+ 148   1.37324800e+15  1.37324823e+15  3.95e-01 2.07e-04  3.20e-08   202s
+ 149   1.37324800e+15  1.37324823e+15  3.95e-01 2.07e-04  2.84e-08   203s
+ 150   1.37324800e+15  1.37324823e+15  3.95e-01 2.07e-04  2.30e-08   204s
+ 151   1.37324800e+15  1.37324823e+15  3.96e-01 2.16e-04  1.61e-08   205s
+ 152   1.37324800e+15  1.37324823e+15  3.94e-01 2.44e-04  6.03e-09   206s
+ 153   1.37324800e+15  1.37324823e+15  3.94e-01 2.36e-04  5.99e-09   208s
+ 154   1.37324800e+15  1.37324823e+15  3.92e-01 2.39e-04  3.72e-09   208s
+ 155   1.37324800e+15  1.37324823e+15  4.03e-01 2.07e-04  5.10e-09   210s
+ 156   1.37324800e+15  1.37324823e+15  4.01e-01 2.07e-04  7.13e-09   211s
+ 157   1.37324800e+15  1.37324823e+15  4.08e-01 2.07e-04  6.41e-09   212s
+ 158   1.37324800e+15  1.37324823e+15  4.06e-01 2.07e-04  1.01e-09   213s
+ 159   1.37324800e+15  1.37324823e+15  4.02e-01 2.07e-04  2.36e-10   214s
+ 160   1.37324800e+15  1.37324823e+15  3.95e-01 2.07e-04  1.08e-10   215s
+ 161   1.37324800e+15  1.37324823e+15  3.94e-01 2.07e-04  1.09e-10   216s
+ 162   1.37324800e+15  1.37324823e+15  3.89e-01 2.07e-04  9.08e-11   218s
+ 163   1.37324800e+15  1.37324823e+15  3.91e-01 2.07e-04  4.67e-11   219s
+ 164   1.37324800e+15  1.37324823e+15  3.92e-01 9.25e-05  2.74e-07   221s
+ 165   1.37324800e+15  1.37324823e+15  3.92e-01 8.47e-05  2.31e-07   223s
+ 166   1.37324800e+15  1.37324823e+15  3.92e-01 8.47e-05  2.23e-07   224s
+ 167   1.37324800e+15  1.37324823e+15  3.92e-01 8.47e-05  1.22e-07   225s
+ 168   1.37324800e+15  1.37324823e+15  3.92e-01 1.86e-04  2.00e-08   226s
+ 169   1.37324800e+15  1.37324823e+15  3.91e-01 1.96e-04  6.17e-09   228s
+ 170   1.37324800e+15  1.37324823e+15  3.96e-01 2.00e-04  2.74e-09   229s
+ 171   1.37324800e+15  1.37324823e+15  3.99e-01 2.03e-04  1.49e-09   230s
+ 172   1.37324800e+15  1.37324823e+15  3.71e-01 1.60e-04  4.57e-09   232s
+ 173   1.37324800e+15  1.37324823e+15  3.69e-01 1.32e-04  3.42e-09   234s
+ 174   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  7.89e-10   235s
+ 175   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  8.69e-10   236s
+ 176   1.37324800e+15  1.37324823e+15  3.78e-01 8.47e-05  8.44e-10   237s
+ 177   1.37324800e+15  1.37324823e+15  3.79e-01 8.47e-05  7.27e-10   238s
+ 178   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  2.15e-10   239s
+ 179   1.37324800e+15  1.37324823e+15  3.93e-01 8.47e-05  2.29e-11   241s
+ 180   1.37324800e+15  1.37324823e+15  3.92e-01 8.47e-05  1.43e-11   242s
+ 181   1.37324800e+15  1.37324823e+15  3.96e-01 8.47e-05  7.33e-12   244s
+ 182   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  2.53e-12   245s
+ 183   1.37324800e+15  1.37324823e+15  3.90e-01 8.47e-05  2.35e-12   247s
+ 184   1.37324800e+15  1.37324823e+15  3.93e-01 8.47e-05  1.12e-12   248s
+ 185   1.37324800e+15  1.37324823e+15  3.94e-01 8.47e-05  7.81e-11   249s
+ 186   1.37324800e+15  1.37324823e+15  3.93e-01 8.47e-05  6.68e-11   250s
+ 187   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  3.27e-11   252s
+ 188   1.37324800e+15  1.37324823e+15  3.79e-01 8.47e-05  6.23e-12   253s
+ 189   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  1.71e-12   254s
+ 190   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  9.08e-13   255s
+ 191   1.37324800e+15  1.37324823e+15  3.87e-01 8.47e-05  3.47e-13   256s
+ 192   1.37324800e+15  1.37324823e+15  3.78e-01 8.47e-05  2.16e-13   258s
+ 193   1.37324800e+15  1.37324823e+15  3.77e-01 8.47e-05  1.29e-13   260s
+ 194   1.37324800e+15  1.37324823e+15  3.77e-01 8.47e-05  1.16e-13   261s
+ 195   1.37324800e+15  1.37324823e+15  3.91e-01 8.47e-05  7.05e-14   262s
+ 196   1.37324800e+15  1.37324823e+15  3.92e-01 8.47e-05  1.84e-11   264s
+ 197   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  3.96e-12   266s
+ 198   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  1.39e-12   267s
+ 199   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  6.95e-13   268s
+ 200   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  3.71e-13   268s
+ 201   1.37324800e+15  1.37324823e+15  3.95e-01 8.47e-05  9.58e-14   269s
+ 202   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  2.93e-14   270s
+ 203   1.37324800e+15  1.37324823e+15  3.85e-01 8.47e-05  1.10e-13   272s
+ 204   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  5.58e-14   273s
+ 205   1.37324800e+15  1.37324823e+15  3.85e-01 8.47e-05  1.23e-13   274s
+ 206   1.37324800e+15  1.37324823e+15  3.82e-01 8.47e-05  6.85e-14   275s
+ 207   1.37324800e+15  1.37324823e+15  3.82e-01 8.47e-05  8.60e-14   277s
+ 208   1.37324800e+15  1.37324823e+15  3.90e-01 8.47e-05  5.49e-14   278s
+ 209   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  3.04e-14   280s
+ 210   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  1.55e-13   281s
+ 211   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  2.47e-12   282s
+ 212   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  2.90e-12   284s
+ 213   1.37324800e+15  1.37324823e+15  3.90e-01 8.47e-05  2.61e-12   285s
+ 214   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  5.88e-12   287s
+ 215   1.37324800e+15  1.37324823e+15  3.87e-01 8.47e-05  2.86e-12   288s
+ 216   1.37324800e+15  1.37324823e+15  3.97e-01 8.47e-05  1.71e-12   289s
+ 217   1.37324800e+15  1.37324823e+15  3.98e-01 8.47e-05  1.65e-12   291s
+ 218   1.37324800e+15  1.37324823e+15  3.98e-01 8.47e-05  2.45e-12   293s
+ 219   1.37324800e+15  1.37324823e+15  3.95e-01 8.47e-05  1.42e-12   294s
+ 220   1.37324800e+15  1.37324823e+15  3.85e-01 8.47e-05  1.21e-12   296s
+ 221   1.37324800e+15  1.37324823e+15  3.85e-01 8.47e-05  1.06e-12   297s
+ 222   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  7.77e-13   299s
+ 223   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  6.96e-13   300s
+ 224   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  6.95e-13   301s
+ 225   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  6.28e-13   302s
+ 226   1.37324800e+15  1.37324823e+15  3.83e-01 8.47e-05  6.70e-13   303s
+ 227   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  2.39e-13   305s
+ 228   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  2.20e-13   307s
+ 229   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  2.06e-13   309s
+ 230   1.37324800e+15  1.37324823e+15  3.88e-01 8.47e-05  1.72e-13   311s
+ 231   1.37324800e+15  1.37324823e+15  3.84e-01 8.47e-05  5.52e-13   312s
+ 232   1.37324800e+15  1.37324823e+15  3.85e-01 8.47e-05  1.04e-12   313s
+ 233   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  9.39e-13   314s
+ 234   1.37324800e+15  1.37324823e+15  3.86e-01 8.47e-05  1.34e-12   316s
+ 235   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  5.27e-13   317s
+ 236   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  1.61e-13   319s
+ 237   1.37324800e+15  1.37324823e+15  3.89e-01 8.47e-05  7.61e-14   320s
+ 238   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.08e-05   323s
+ 239   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.08e-05   325s
+ 240   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.08e-05   328s
+ 241   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.09e-05   330s
+ 242   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.09e-05   332s
+ 243   1.37324800e+15  1.37324823e+15  3.90e-01 7.34e-04  1.09e-05   334s
+
+Barrier performed 243 iterations in 333.83 seconds (136.01 work units)
+Sub-optimal termination - objective 1.37324800e+15
+
+Crossover log...
+
+   50765 DPushes remaining with DInf 2.3841502e-05               335s
+    2725 DPushes remaining with DInf 3.4055957e-05               338s
+     295 DPushes remaining with DInf 5.4751430e-04               341s
+       0 DPushes remaining with DInf 5.9821446e-04               341s
+
+  220701 PPushes remaining with PInf 0.0000000e+00               342s
+   98018 PPushes remaining with PInf 0.0000000e+00               345s
+   83225 PPushes remaining with PInf 0.0000000e+00               350s
+   50750 PPushes remaining with PInf 0.0000000e+00               355s
+   21664 PPushes remaining with PInf 0.0000000e+00               360s
+   13656 PPushes remaining with PInf 0.0000000e+00               365s
+    7193 PPushes remaining with PInf 0.0000000e+00               370s
+       0 PPushes remaining with PInf 0.0000000e+00               375s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 4.7738756e+10    375s
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+  254248    1.3732483e+15   0.000000e+00   4.773876e+10    375s
+  255648    1.3732483e+15   0.000000e+00   3.696406e-03    376s
+  261436    1.3732483e+15   0.000000e+00   1.537833e-03    380s
+  267005   -6.0446293e+24   3.651924e+33   3.520474e-05    397s
+  268198    1.3732483e+15   0.000000e+00   1.484366e-03    432s
+  269051   -7.8925479e+25   3.649558e+34   2.120297e-04    437s
+  269759    1.3732483e+15   0.000000e+00   0.000000e+00    443s
+Extra simplex iterations after uncrush: 3475
+
+Solved with barrier
+Solved in 269759 iterations and 447.28 seconds (242.28 work units)
+Optimal objective  1.373248251e+15
+Warning: unscaled dual violation = 1.7463e-06 and residual = 1.70469e-05
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.linopf:Optimization successful. Objective value: 1.37e+15
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;SolverStatus.ok: &#39;ok&#39;&gt;, &lt;TerminationCondition.optimal: &#39;optimal&#39;&gt;)
+(&#39;ok&#39;, &#39;optimal&#39;)
 </pre></div></div>
 </div>
 </div>
 <div class="section" id="Outputs">
 <h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">now</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">139</span><span class="p">]</span>
@@ -924,24 +1213,24 @@ With the linear load flow, there is the following per unit loading:
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 count    99.000000
-mean      0.794297
-std       2.226934
-min      -2.280371
-25%      -0.112106
-50%       0.310353
-75%       0.793969
-max      11.824865
+mean      1.028934
+std       2.648959
+min      -1.642279
+25%      -0.161878
+50%       0.387773
+75%       0.937469
+max      14.046506
 dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
@@ -952,14 +1241,14 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;matplotlib.collections.PatchCollection at 0x14defe473a0&gt;,
- &lt;matplotlib.collections.LineCollection at 0x150054d59a0&gt;,
- &lt;matplotlib.collections.LineCollection at 0x14f1b5860d0&gt;)
+(&lt;matplotlib.collections.PatchCollection at 0x1eb15cc1e80&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x1eb15cbee80&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x1eb15cc1c70&gt;)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -970,7 +1259,7 @@ dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
@@ -1001,7 +1290,7 @@ dtype: float64
 <div class="section" id="Line-expansion-results">
 <h2>Line expansion results<a class="headerlink" href="#Line-expansion-results" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span>
@@ -1011,7 +1300,7 @@ dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -1027,7 +1316,7 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1043,7 +1332,7 @@ Text(0.5, 0, &#39;Line&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -1059,7 +1348,7 @@ Text(0.5, 0, &#39;Line&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1089,7 +1378,7 @@ Text(0.5, 0, &#39;Line&#39;)
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="6%20-%20Unit%20Commitment.html" class="btn btn-neutral float-left" title="Unit Commitment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="9%20-%20Comparison%20To%20Historical%20Data.html" class="btn btn-neutral float-left" title="Comparison To Historical Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../seasonal_thermal_energy_storage.html" class="btn btn-neutral float-right" title="Seasonal Thermal Energy Storage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

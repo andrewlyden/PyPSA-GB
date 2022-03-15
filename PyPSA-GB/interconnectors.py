@@ -29,6 +29,7 @@ def read_interconnectors():
 
     return df
 
+
 def write_interconnectors(start, end, freq):
 
     # add lines which are used to handle flows of interconnectors
@@ -54,12 +55,6 @@ def write_interconnectors(start, end, freq):
     filePath = 'UC_data/links.csv'
     if os.path.exists(filePath):
         os.remove(filePath)
-
-    # df_IC = df_IC.copy()
-    # df_IC['p_min_pu'] = -1
-    # # dont want them to act as links in historical years, see below
-    # df_IC['p_nom'] = 0
-    # df_IC.to_csv('LOPF_data/links.csv', index=True, header=True)
 
     # going to add interconnectors as import -> gen, export -> load
     # first add the interconnectors as named loads
@@ -102,8 +97,6 @@ def write_interconnectors(start, end, freq):
     # use row zero as a template
     IC_gen2 = df_gen2.iloc[[0]]
     df_gen2 = pd.read_csv('LOPF_data/generators.csv', index_col=0, parse_dates=True)
-    # use Cottam row as a template
-    IC_gen2 = df_gen2.loc[['Cottam']]
     result2 = df_gen2
     for i in name_dic['name']:
         IC_gen2.index = [i]
@@ -165,10 +158,6 @@ def write_interconnectors(start, end, freq):
 
     result1 = pd.concat([df_load_series, df_IC_load], axis=1)
 
-    # (From Lukas: The line after this raised an error, I dont fully understand where
-    # a column with 'name' should have come in, maybe sth is lost here
-    # result1.drop(columns=['name'], inplace=True)
-
     result1.to_csv('UC_data/loads-p_set.csv', header=True)
 
     # do similar for LOPF
@@ -181,9 +170,7 @@ def write_interconnectors(start, end, freq):
                  'IFA': 'France1', 'IFA2': 'France2'}, inplace=True)
 
     result1 = pd.concat([df_load_series2, df_IC_load], axis=1)
-    # (Lukas) here again, I dont know if we are losing sth by 
-    # commenting out the following row
-    # result1.drop(columns=['name'], inplace=True)
+
     result1.to_csv('LOPF_data/loads-p_set.csv', header=True)
 
 

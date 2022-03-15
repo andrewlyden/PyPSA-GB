@@ -572,6 +572,7 @@ def write_marine_generators(year, scenario):
     df_tidal_lagoon['marginal_cost'] = 0.0
     df_tidal_lagoon['ramp_limit_up'] = 1.0
     df_tidal_lagoon['ramp_limit_down'] = 1.0
+    df_tidal_lagoon['p_max_pu'] = 1.0
 
     read_tidal_stream_ = read_tidal_stream(year, scenario)
 
@@ -585,6 +586,7 @@ def write_marine_generators(year, scenario):
     df_tidal_stream['marginal_cost'] = 0.0
     df_tidal_stream['ramp_limit_up'] = 1.0
     df_tidal_stream['ramp_limit_down'] = 1.0
+    df_tidal_stream['p_max_pu'] = 1.0
 
     read_wave_power_ = read_wave_power(year, scenario)
 
@@ -598,9 +600,11 @@ def write_marine_generators(year, scenario):
     df_wave_power['marginal_cost'] = 0.0
     df_wave_power['ramp_limit_up'] = 1.0
     df_wave_power['ramp_limit_down'] = 1.0
+    df_wave_power['p_max_pu'] = 1.0
 
     # in shape to add to LOPF generators
     df_LOPF = df_LOPF.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
+    df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
     # additional params for UC problem
     df_tidal_lagoon['committable'] = False
@@ -627,9 +631,7 @@ def write_marine_generators(year, scenario):
     # in shape to add to UC generators
     df_UC = df_UC.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
     df_UC.bus = 'bus'
-
     df_UC.to_csv('UC_data/generators.csv', header=True)
-    df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
 
 def add_marine_timeseries(year, year_baseline, scenario, time_step):
@@ -1595,10 +1597,10 @@ if __name__ == "__main__":
     # year = 2027
     # future_offshore_capacity(year)
 
-    # year = 2017
-    # tech = 'Solar Photovoltaics'
-    # historical_RES_timeseries(year, tech)['norm']
-    # historical_RES_timeseries(year, tech)['timeseries']
+    year = 2017
+    tech = 'Solar Photovoltaics'
+    historical_RES_timeseries(year, tech)['norm']
+    historical_RES_timeseries(year, tech)['timeseries']
 
     # RES_correction_factors()
 
@@ -1623,13 +1625,13 @@ if __name__ == "__main__":
 
     # scenario = 'Consumer Transformation'
     # scenario = 'Leading The Way'
-    scenario = 'System Transformation'
+    # scenario = 'System Transformation'
     # scenario = 'Steady Progression'
-    year = 2050
+    # year = 2050
     # print(read_tidal_lagoon(year, scenario))
     # print(read_tidal_stream(year, scenario))
     # print(read_wave_power(year, scenario))
 
     # write_marine_generators(year, scenario)
-    year_baseline = 2012
-    add_marine_timeseries(year, year_baseline, scenario, time_step=0.5)
+    # year_baseline = 2012
+    # add_marine_timeseries(year, year_baseline, scenario, time_step=0.5)

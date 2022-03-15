@@ -35,12 +35,6 @@ def write_snapshots(start, end, time_step):
     df = pd.DataFrame(index=dti)
     df['weightings'] = time_step
 
-    if time_step == 1.:
-        appendix = df[-1:]
-        new_index = df.index[-1] + pd.Timedelta(minutes=30)
-        appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
-        df = df.append(appendix)
-
     df.index.name = 'name'
     df.to_csv('UC_data/snapshots.csv', header=True)
     df.to_csv('LOPF_data/snapshots.csv', header=True)

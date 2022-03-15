@@ -52,6 +52,7 @@ PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets
    notebooks/5b - LOPF Future.ipynb
    notebooks/6 - Unit Commitment.ipynb
    .. notebooks/8 - Two Step Dispatch.ipynb
+   notebooks/9 - Comparison To Historical Data.ipynb
 
 .. toctree::
    :maxdepth: 1

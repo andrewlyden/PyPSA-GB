@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
+import os
 
 import osgb
 
 import renewables
 import distance_calculator as dc
 from utils.cleaning import unify_index
+from utils.cleaning import remove_double
 
 
 def read_power_stations_data(year):
@@ -238,8 +240,8 @@ def write_generators(time_step, year):
     df_res_PV['type'] = 'Solar Photovoltaics'
 
     # scale the PV to real data, see correction factors in Atlite
-    # if year <= 2020:
-    #     df_res_PV.loc[:, 'p_nom'] *= df_correction.loc['PV', str(year)]
+    if year <= 2020:
+        df_res_PV.loc[:, 'p_nom'] *= df_correction.loc['PV', str(year)]
 
     df_res_PV_UC = df_res_PV.drop(
         columns=['x', 'y'])
@@ -562,6 +564,29 @@ def generator_additional_data(df, time_step):
                  df_data['p_min_pu']['CCS Biomass'],
                  df_data['p_min_pu']['Hydrogen']]
 
+    p_max_pu_ = [df_data['p_max_pu']['Coal'],
+                 df_data['p_max_pu']['Oil'],
+                 df_data['p_max_pu']['CCGT'],
+                 df_data['p_max_pu']['OCGT'],
+                 df_data['p_max_pu']['Sour gas'],
+                 df_data['p_max_pu']['Nuclear'],
+                 df_data['p_max_pu']['Wind Offshore'],
+                 df_data['p_max_pu']['Large Hydro'],
+                 df_data['p_max_pu']['Small Hydro'],
+                 df_data['p_max_pu']['Anaerobic Digestion'],
+                 df_data['p_max_pu']['EfW Incineration'],
+                 df_data['p_max_pu']['Landfill Gas'],
+                 df_data['p_max_pu']['Sewage Sludge Digestion'],
+                 df_data['p_max_pu']['Shoreline Wave'],
+                 df_data['p_max_pu']['Tidal Barrage and Tidal Stream'],
+                 df_data['p_max_pu']['Biomass (dedicated)'],
+                 df_data['p_max_pu']['Biomass (co-firing)'],
+                 df_data['p_max_pu']['Wind Onshore'],
+                 df_data['p_max_pu']['Solar Photovoltaics'],
+                 df_data['p_max_pu']['CCS Gas'],
+                 df_data['p_max_pu']['CCS Biomass'],
+                 df_data['p_max_pu']['Hydrogen']]
+
     up_time_before_ = [df_data['up_time_before']['Coal'],
                        df_data['up_time_before']['Oil'],
                        df_data['up_time_before']['CCGT'],
@@ -624,6 +649,7 @@ def generator_additional_data(df, time_step):
     df.loc[:, 'ramp_limit_down'] = np.select(conditions, ramp_limit_down_) * (time_step * 60) / 100
     df.loc[:, 'ramp_limit_down'].values[df['ramp_limit_down'].values > 1.0] = 1.0
     df.loc[:, 'p_min_pu'] = np.select(conditions, p_min_pu_) / 100
+    df.loc[:, 'p_max_pu'] = np.select(conditions, p_max_pu_) / 100
     # df.loc[:, 'p_min_pu'] = 0
     df.loc[:, 'up_time_before'] = np.select(conditions, up_time_before_)
     df.loc[:, 'up_time_before'] = df['up_time_before'].astype('int')
@@ -1324,19 +1350,23 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
     elif year > 2020:
         df_offshore = renewables.future_offshore_timeseries(year, year_baseline, scenario)['norm']
     df_offshore = df_offshore.loc[start:end]
-    # resample to half hourly timesteps
-    df_offshore = df_offshore.resample(freq).interpolate('polynomial', order=2)
-    # need to add a row at end
-    # the data being passed is the values of the last row
-    # the tail function is used to get the last index value
-    df_offshore_new = pd.DataFrame(
-        data=[df_offshore.loc[df_offshore.tail(1).index.values].values[0]],
-        columns=df_offshore.columns,
-        index=[end])
-    # add to existing dataframe
-    df_offshore = df_offshore.append(df_offshore_new, sort=False)
+
+    if freq == '0.5H':
+        # resample to half hourly timesteps
+        df_offshore = df_offshore.resample(freq).interpolate('polynomial', order=2)
+        # need to add a row at end
+        # the data being passed is the values of the last row
+        # the tail function is used to get the last index value
+        df_offshore_new = pd.DataFrame(
+            data=[df_offshore.loc[df_offshore.tail(1).index.values].values[0]],
+            columns=df_offshore.columns,
+            index=[end])
+        # add to existing dataframe
+        df_offshore = df_offshore.append(df_offshore_new, sort=False)
+
     # name the index
     df_offshore.index.name = 'name'
+    df_offshore.index = pd.to_datetime(df_offshore.index)
 
     # WIND ONSHORE
 
@@ -1355,27 +1385,30 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         df_onshore = renewables.historical_RES_timeseries(year, tech, future=False)['norm']
 
     df_onshore = df_onshore.loc[start:end]
-    # resample to half hourly timesteps
-    df_onshore = df_onshore.resample(freq).interpolate('polynomial', order=2)
-    # need to add a row at end
-    # the data being passed is the values of the last row
-    # the tail function is used to get the last index value
-    df_new_onshore = pd.DataFrame(
-        data=[df_onshore.loc[df_onshore.tail(1).index.values].values[0]],
-        columns=df_onshore.columns,
-        index=[end])
-    # add to existing dataframe
-    df_onshore = df_onshore.append(df_new_onshore, sort=False)
+
+    if freq == '0.5H':
+        # resample to half hourly timesteps
+        df_onshore = df_onshore.resample(freq).interpolate('polynomial', order=2)
+        # need to add a row at end
+        # the data being passed is the values of the last row
+        # the tail function is used to get the last index value
+        df_new_onshore = pd.DataFrame(
+            data=[df_onshore.loc[df_onshore.tail(1).index.values].values[0]],
+            columns=df_onshore.columns,
+            index=[end])
+        # add to existing dataframe
+        df_onshore = df_onshore.append(df_new_onshore, sort=False)
     # name the index
     df_onshore.index.name = 'name'
-    df_onshore.index = pd.to_datetime(df_onshore.index)
+    df_onshore.index = df_offshore.index
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
-    if year_baseline % 4 == 0:
-        # and the year modelled is also not a leap year
-        if year % 4 != 0:
-            # remove 29th Feb
-            df_onshore = df_onshore[~((df_onshore.index.month == 2) & (df_onshore.index.day == 29))]
+    if year_baseline is not None:
+        if year_baseline % 4 == 0:
+            # and the year modelled is also not a leap year
+            if year % 4 != 0:
+                # remove 29th Feb
+                df_onshore = df_onshore[~((df_onshore.index.month == 2) & (df_onshore.index.day == 29))]
 
     # PV
 
@@ -1399,27 +1432,28 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
     df_PV = df_PV.loc[start:end]
 
     # resample to half hourly timesteps
-    df_PV = df_PV.resample(freq).interpolate('polynomial', order=1)
-
-    # need to add a row at end
-    # the data being passed is the values of the last row
-    # the tail function is used to get the last index value
-    df_new_PV = pd.DataFrame(
-        data=[df_PV.loc[df_PV.tail(1).index.values].values[0]],
-        columns=df_PV.columns,
-        index=[end])
-    # add to existing dataframe
-    df_PV = df_PV.append(df_new_PV, sort=False)
+    if freq == '0.5H':
+        df_PV = df_PV.resample(freq).interpolate('polynomial', order=1)
+        # need to add a row at end
+        # the data being passed is the values of the last row
+        # the tail function is used to get the last index value
+        df_new_PV = pd.DataFrame(
+            data=[df_PV.loc[df_PV.tail(1).index.values].values[0]],
+            columns=df_PV.columns,
+            index=[end])
+        # add to existing dataframe
+        df_PV = df_PV.append(df_new_PV, sort=False)
     # name the index
     df_PV.index.name = 'name'
-    df_PV.index = pd.to_datetime(df_PV.index)
+    df_PV.index = df_offshore.index
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
-    if year_baseline % 4 == 0:
-        # and the year modelled is also not a leap year
-        if year % 4 != 0:
-            # remove 29th Feb
-            df_PV = df_PV[~((df_PV.index.month == 2) & (df_PV.index.day == 29))]
+    if year_baseline is not None:
+        if year_baseline % 4 == 0:
+            # and the year modelled is also not a leap year
+            if year % 4 != 0:
+                # remove 29th Feb
+                df_PV = df_PV[~((df_PV.index.month == 2) & (df_PV.index.day == 29))]
 
     # HYDRO
     # hydro data is between 2015-02-22 and 2020-12-31
@@ -1445,34 +1479,47 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         end = '2016' + end[4:]
         df_hydro = df_hydro1.loc[start:end]
 
-    # check if baseline year is a leap year and simulated year is not and remove 29th Feb
-    if year_baseline % 4 == 0:
-        # and the year modelled is also not a leap year
-        if year % 4 != 0:
-            # remove 29th Feb
-            df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+    df_hydro = df_hydro.resample(freq).mean()
+    if freq == 'H':
+        df_hydro = df_hydro.resample(freq).interpolate('polynomial', order=1)
+        # df_hydro = df_hydro.iloc[:-1, :]
+        # # need to add a row at end
+        # # the data being passed is the values of the last row
+        # # the tail function is used to get the last index value
+        # df_new_hydro = pd.DataFrame(
+        #     data=[df_hydro.loc[df_hydro.tail(1).index.values].values[0]],
+        #     columns=df_hydro.columns,
+        #     index=[end])
+        # # add to existing dataframe
+        # df_hydro = df_hydro.append(df_new_hydro, sort=False)
 
     if year > 2020:
-        df_onshore.index = df_offshore.index
-        df_PV.index = df_offshore.index
-
-        try:
-            df_hydro.index = df_offshore.index
-        except ValueError:
-            df_hydro = df_hydro.resample(freq).mean().append(df_hydro.iloc[-1])
-            df_hydro.index = df_offshore.index
+        if year_baseline % 4 == 0:
+            # and the year modelled is also not a leap year
+            if year % 4 != 0:
+                # remove 29th Feb
+                df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+    df_hydro.index = df_offshore.index
 
     # MARINE TECHNOLOGIES
 
     # want to join the three dataframes together
     dfs = [df_offshore, df_onshore, df_PV, df_hydro]
-    if year <= 2020:
-        dfs = unify_index(dfs, freq)
+    # if year <= 2020:
+    #     dfs = unify_index(dfs, freq)
     df = pd.concat(dfs, axis=1)
 
-    # just to ensure no negative values
+    # make sure there are no missing values
+    df = df.fillna(0)
+
+    # make sure there are no negative values
     df[df < 0] = 0
-    # df = df.round(2)
+    df[df > 1] = 1
+    # fix the column names
+    df.columns = df.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+    df.columns = df.columns.astype(str).str.replace(u'\xa0', '')
+    df.columns = df.columns.astype(str).str.replace('ì', 'i')
+    df.columns = df.columns.str.strip()
 
     # want to ensure no duplicate names
     cols = pd.Series(df.columns)
@@ -1480,17 +1527,6 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         cols[cols[cols == dup].index.values.tolist()] = [dup + '.' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
     # rename the columns with the cols list.
     df.columns = cols
-
-    # make sure there are no missing values
-    df = df.fillna(0)
-
-    # make sure there are no negative values
-    df[df < 0] = 0
-    # fix the column names
-    df.columns = df.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
-    df.columns = df.columns.astype(str).str.replace(u'\xa0', '')
-    df.columns = df.columns.astype(str).str.replace('ì', 'i')
-    df.columns = df.columns.str.strip()
 
     df.to_csv('UC_data/generators-p_max_pu.csv', header=True)
     df.to_csv('LOPF_data/generators-p_max_pu.csv', header=True)
@@ -1514,7 +1550,6 @@ def future_p_nom(year, time_step, scenario):
     renewables.future_RES_scale_p_nom(year, 'Wind Onshore', scenario)
     renewables.future_RES_scale_p_nom(year, 'Solar Photovoltaics', scenario)
     renewables.future_RES_scale_p_nom(year, 'Hydro', scenario)
-    renewables.write_marine_generators(year, scenario)
 
     # ensure all generator data is added
     df_UC = pd.read_csv('UC_data/generators.csv', index_col=0)
@@ -1531,6 +1566,8 @@ def future_p_nom(year, time_step, scenario):
     # save the dataframes to csv
     df_UC.to_csv('UC_data/generators.csv', index=True, header=True)
     df_LOPF.to_csv('LOPF_data/generators.csv', index=True, header=True)
+
+    renewables.write_marine_generators(year, scenario)
 
 
 def unmet_load():
@@ -1558,7 +1595,8 @@ def unmet_load():
                  'committable': True, 'min_up_time': 0,
                  'min_down_time': 0, 'ramp_limit_up': 1,
                  'ramp_limit_down': 1, 'p_min_pu': 0,
-                 'up_time_before': 0, 'start_up_cost': 0}
+                 'up_time_before': 0, 'start_up_cost': 0,
+                 'p_max_pu': 1}
     df_unmet = pd.DataFrame(dic_unmet, index=['Unmet Load'])
     df_UC = df_UC.append(df_unmet)
     df_UC.index.name = 'name'
@@ -1572,7 +1610,8 @@ def unmet_load():
         dic_unmet = {'carrier': 'Unmet Load',
                      'type': 'Unmet Load', 'p_nom': 999999999,
                      'bus': bus, 'marginal_cost': 999999999,
-                     'ramp_limit_up': 1, 'ramp_limit_down': 1}
+                     'ramp_limit_up': 1, 'ramp_limit_down': 1,
+                     'p_max_pu': 1}
         index = 'Unmet Load ' + bus
         df_unmet = pd.DataFrame(dic_unmet, index=[index])
         df_LOPF = df_LOPF.append(df_unmet)
@@ -1581,6 +1620,86 @@ def unmet_load():
 
     df_UC.to_csv('UC_data/generators.csv', header=True)
     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
+
+
+def merge_generation_buses(year):
+
+    # get generators
+    path = 'LOPF_data/generators.csv'
+    df_gen = pd.read_csv(path, index_col=0)
+
+    path = 'LOPF_data/generators-p_max_pu.csv'
+    df_gen_p = pd.read_csv(path, index_col=0)
+
+    carriers = ['Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Interconnector']
+    buses = df_gen['bus'].unique()
+    df_list = []
+    df_gen_p_list = []
+
+    for c in carriers:
+        for b in buses:
+            df_carrier_bus = df_gen.loc[(df_gen.carrier == c) & (df_gen.bus == b)]
+            carrier_bus_aggregated = df_carrier_bus.p_nom.sum()
+            index = [c + ' ' + b]
+
+            # change the p-max_pu
+            list_of_sites = df_gen.loc[(df_gen.carrier == c) & (df_gen.bus == b)].index
+            gen_p_bus = []
+            for gen in list_of_sites:
+
+                try:
+                    gen_p_bus.append(df_gen_p.loc[:, gen] * df_carrier_bus.loc[gen, 'p_nom'])
+                except KeyError:
+                    pass
+            try:
+                df_gen_p_new = pd.concat(gen_p_bus, axis=1)
+                df_gen_p_new['sum'] = df_gen_p_new.sum(axis=1)
+                df_gen_p_new[c + ' ' + b] = df_gen_p_new['sum'] / carrier_bus_aggregated
+                df_gen_p_list.append(df_gen_p_new[c + ' ' + b])
+            except ValueError:
+                pass
+
+            # change generators
+            if carrier_bus_aggregated > 0:
+                df_carrier_bus = pd.DataFrame([df_carrier_bus.iloc[-1, :]], index=index)
+                df_carrier_bus.p_nom = carrier_bus_aggregated
+                df_list.append(df_carrier_bus)
+
+        df_gen = df_gen[~df_gen.carrier.str.contains(c)]
+
+    df_gen_p = pd.concat(df_gen_p_list, axis=1)
+    df_gen_p = df_gen_p.fillna(0)
+    # just to ensure no negative values
+    df_gen_p[df_gen_p < 0] = 0
+    # add in interconnectors p_max_pu
+
+    df_gen_res = pd.concat(df_list)
+    # add in new generators
+    df_gen = df_gen.append(df_gen_res)
+
+    df_gen.to_csv('LOPF_data/generators.csv', header=True)
+    df_gen_p.to_csv('LOPF_data/generators-p_max_pu.csv', header=True)
+    if year < 2021:
+        # fix interconnectors
+        # inter_cols = [col for col in df_gen_p.columns if 'Interconnector' in col]
+        # print(inter_cols)
+        # df_interconnectors = df_gen_p[[inter_cols]]
+        df_interconnectors = df_gen_p.filter(regex='Interconnector')
+        df_interconnectors.to_csv('LOPF_data/generators-p_min_pu.csv', header=True)
+
+    if year >= 2021:
+        # check if generators-p_min_pu exists and delete if so
+        # used in historical simulations but not wanted in future sims
+        try:
+            file = 'LOPF_data/generators-p_min_pu.csv'
+            os.remove(file)
+        except Exception:
+            pass
+        try:
+            file = 'UC_data/generators-p_min_pu.csv'
+            os.remove(file)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
@@ -1596,4 +1715,5 @@ if __name__ == "__main__":
     # future_waste_p_nom(year)
     # future_gas_CCS(year)
     # future_biomass_CCS(year)
-    future_hydrogen(year)
+    # future_hydrogen(year)
+    merge_generation_buses()

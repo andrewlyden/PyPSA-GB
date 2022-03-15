@@ -18,7 +18,7 @@ end = '2050-06-06 23:30:00'
 # year of simulation
 year = int(start[0:4])
 # time step as fraction of hour
-time_step = 0.5
+time_step = 1
 
 if year > 2020:
 
@@ -30,14 +30,19 @@ if year > 2020:
 
     year_baseline = 2012
 
-    data_reader_writer.data_writer(start, end, time_step, year, year_baseline=year_baseline, scenario=scenario)
+    data_reader_writer.data_writer(
+        start, end, time_step, year,
+        year_baseline=year_baseline, scenario=scenario, merge_generators=True)
 
 elif year <= 2020:
-    data_reader_writer.data_writer(start, end, time_step, year)
+    data_reader_writer.data_writer(start, end, time_step, year, merge_generators=True)
 
 network = pypsa.Network()
 
 network.import_from_csv_folder('LOPF_data')
+
+setup_t = time.time()
+print((setup_t - start_t) / 60, 'minutes taken to write/read csv files and create network object.')
 
 # print(network.links)
 
@@ -53,7 +58,10 @@ elif year > 2020:
     contingency_factor = 10000
     network.lines.s_max_pu *= contingency_factor
 
-network.lopf(network.snapshots, solver_name="gurobi")
+network.lopf(network.snapshots, solver_name="gurobi", pyomo=False)
+
+opt_t = time.time()
+print((opt_t - setup_t) / 60, 'minutes taken to perform optimisation.')
 
 print(network.buses_t.marginal_price)
 # print(network.generators_t.status)
@@ -64,7 +72,7 @@ p_by_carrier = network.generators_t.p.groupby(
 
 storage_by_carrier = network.storage_units_t.p.groupby(
     network.storage_units.carrier, axis=1).sum()
-print(network.storage_units_t.p)
+# print(network.storage_units_t.p)
 
 # to show on graph set the negative storage values to zero
 storage_by_carrier[storage_by_carrier < 0] = 0
@@ -80,20 +88,20 @@ if year <= 2020:
     interconnector_export = exports[['Interconnectors Export']]
 
 elif year > 2020:
-    print(network.links_t.p0)
-    print(network.links_t.p1)
+    # print(network.links_t.p0)
+    # print(network.links_t.p1)
     imp = network.links_t.p0.copy()
     imp[imp < 0] = 0
     imp['Interconnectors Import'] = imp.sum(axis=1)
     interconnector_import = imp[['Interconnectors Import']]
-    print(interconnector_import)
+    # print(interconnector_import)
     p_by_carrier = pd.concat([p_by_carrier, interconnector_import], axis=1)
 
     exp = network.links_t.p0.copy()
     exp[exp > 0] = 0
     exp['Interconnectors Export'] = exp.sum(axis=1)
     interconnector_export = exp[['Interconnectors Export']]
-    print(interconnector_export)
+    # print(interconnector_export)
 
 # group biomass stuff
 p_by_carrier['Biomass'] = (
@@ -107,7 +115,6 @@ p_by_carrier = p_by_carrier.rename(
 p_by_carrier = p_by_carrier.rename(
     columns={'Interconnector': 'Interconnectors Import'})
 
-print(p_by_carrier['Marine'])
 # cols = ["Nuclear", "Coal", "Diesel/Gas oil", "Diesel/gas Diesel/Gas oil",
 #         "Natural Gas", "Sour gas",
 #         'Shoreline Wave', 'Tidal Barrage and Tidal Stream',
@@ -130,7 +137,7 @@ if year > 2020:
             ]
 
 else:
-    cols = ["Nuclear", 'Shoreline Wave', 'Marine', 'Biomass',
+    cols = ["Nuclear", 'Shoreline Wave', 'Biomass',
             'EfW Incineration',
             "Coal", "Oil", "Natural Gas",
             "Pumped Storage Hydroelectric", 'Hydro',
@@ -270,5 +277,5 @@ ax.legend()
 plt.show()
 
 end_t = time.time()
-print(end_t - start_t, 'time taken in seconds.')
-print((end_t - start_t) / 60, 'time taken in minutes.')
+print(end_t - start_t, 'total time taken in seconds.')
+print((end_t - start_t) / 60, 'total time taken in minutes.')

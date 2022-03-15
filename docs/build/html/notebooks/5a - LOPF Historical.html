@@ -60,13 +60,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../high_temperature_thermal_energy_storage.html">High Temperature Thermal Energy Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../marine_energy.html">Marine Energy</a></li>
 </ul>
 <p class="caption"><span class="caption-text">References</span></p>
 <ul>
@@ -407,7 +406,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">merge_generators</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -437,9 +436,9 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 <div class="highlight"><pre>
 WARNING:pypsa.io:
 Importing PyPSA from older version of PyPSA than current version.
-Please read the release notes at https://pypsa.org/doc/release_notes.html
+Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
 carefully to prepare your network for import.
-Currently used PyPSA version [0, 18, 1], imported network file PyPSA version None.
+Currently used PyPSA version [0, 19, 2], imported network file PyPSA version None.
 
 INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
 INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, storage_units
@@ -462,7 +461,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -471,10 +470,9 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-INFO:pypsa.opf:Performed preliminary steps
-INFO:pypsa.opf:Building pyomo model using `kirchhoff` formulation
-INFO:pypsa.opf:Solving model using gurobi
-INFO:pypsa.opf:Optimization successful
+INFO:pypsa.linopf:Prepare linear problem
+INFO:pypsa.linopf:Total preparation time: 2.31s
+INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -482,42 +480,89 @@ INFO:pypsa.opf:Optimization successful
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-# ==========================================================
-# = Solver Results                                         =
-# ==========================================================
-# ----------------------------------------------------------
-#   Problem Information
-# ----------------------------------------------------------
-Problem:
-- Name: x400321_copy
-  Lower bound: 57759095.217732854
-  Upper bound: 57759095.217732854
-  Number of objectives: 1
-  Number of constraints: 808275
-  Number of variables: 400321
-  Number of binary variables: 0
-  Number of integer variables: 0
-  Number of continuous variables: 400321
-  Number of nonzeros: 1998721
-  Sense: minimize
-# ----------------------------------------------------------
-#   Solver Information
-# ----------------------------------------------------------
-Solver:
-- Status: ok
-  Return code: 0
-  Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Termination condition: optimal
-  Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 2.074451446533203
-  Error rc: 0
-  Time: 11.558006525039673
-# ----------------------------------------------------------
-#   Solution Information
-# ----------------------------------------------------------
-Solution:
-- number of solutions: 0
-  number of solutions displayed: 0
+Set parameter Username
+Academic license - for non-commercial use only - expires 2022-09-03
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-gh5kxx3z.lp
+Reading time = 1.14 seconds
+obj: 462242 rows, 120385 columns, 817632 nonzeros
+Gurobi Optimizer version 9.5.1 build v9.5.1rc2 (win64)
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+Optimize a model with 462242 rows, 120385 columns and 817632 nonzeros
+Model fingerprint: 0xbf79f08e
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+00]
+  Objective range  [1e+00, 6e+01]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e-06, 9e+03]
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 454330 rows and 98401 columns
+Presolve time: 0.52s
+Presolved: 7912 rows, 23128 columns, 49230 nonzeros
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA&#39; NZ     : 3.496e+04
+ Factor NZ  : 1.682e+05 (roughly 14 MB of memory)
+ Factor Ops : 4.940e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   3.52710967e+09 -1.35991375e+10  6.81e+04 6.59e+00  1.58e+06     1s
+   1   7.06393005e+08 -4.21786126e+09  1.22e+04 9.95e-14  2.82e+05     1s
+   2   1.69407533e+08 -1.07396214e+09  1.45e+03 1.71e-13  4.28e+04     1s
+   3   9.64902915e+07 -6.89910575e+07  5.32e+01 5.97e-13  3.90e+03     1s
+   4   8.42763673e+07  4.00276771e+07  1.51e+01 1.14e-13  9.83e+02     1s
+   5   7.86201090e+07  5.84023855e+07  7.32e+00 5.68e-14  4.41e+02     1s
+   6   7.51233284e+07  6.55147087e+07  3.74e+00 2.93e-14  2.08e+02     1s
+   7   7.35304329e+07  6.84613716e+07  2.23e+00 2.53e-14  1.09e+02     1s
+   8   7.25518091e+07  6.96572550e+07  1.35e+00 2.82e-14  6.22e+01     1s
+   9   7.18724861e+07  7.01363807e+07  7.27e-01 3.24e-14  3.73e+01     1s
+  10   7.15771567e+07  7.07120288e+07  4.61e-01 2.85e-14  1.85e+01     1s
+  11   7.13933926e+07  7.08249731e+07  2.99e-01 2.33e-14  1.22e+01     1s
+  12   7.12485574e+07  7.09417975e+07  1.69e-01 2.52e-14  6.57e+00     1s
+  13   7.11425525e+07  7.10205703e+07  7.51e-02 2.79e-14  2.61e+00     1s
+  14   7.10949387e+07  7.10371733e+07  3.37e-02 2.54e-14  1.24e+00     1s
+  15   7.10896270e+07  7.10400712e+07  2.92e-02 2.91e-14  1.06e+00     1s
+  16   7.10777816e+07  7.10473780e+07  1.91e-02 2.27e-14  6.50e-01     1s
+  17   7.10648662e+07  7.10519933e+07  8.16e-03 2.43e-14  2.75e-01     1s
+  18   7.10602958e+07  7.10543329e+07  4.34e-03 3.02e-14  1.27e-01     1s
+  19   7.10557279e+07  7.10547953e+07  5.19e-04 3.62e-14  2.00e-02     1s
+  20   7.10550390e+07  7.10549873e+07  8.71e-08 2.74e-14  1.12e-03     1s
+  21   7.10550249e+07  7.10550248e+07  4.47e-09 1.04e-12  2.53e-06     1s
+  22   7.10550249e+07  7.10550249e+07  1.96e-08 2.88e-13  1.64e-09     1s
+
+Barrier solved model in 22 iterations and 0.91 seconds (0.51 work units)
+Optimal objective 7.10550249e+07
+
+Crossover log...
+
+    1244 DPushes remaining with DInf 0.0000000e+00                 1s
+       0 DPushes remaining with DInf 0.0000000e+00                 1s
+
+    3756 PPushes remaining with PInf 0.0000000e+00                 1s
+       0 PPushes remaining with PInf 0.0000000e+00                 1s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 1.9989232e-11      1s
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    3862    7.1055025e+07   0.000000e+00   0.000000e+00      1s
+
+Solved with dual simplex
+Solved in 6711 iterations and 1.38 seconds (0.65 work units)
+Optimal objective  7.105502486e+07
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.linopf:Optimization successful. Objective value: 7.11e+07
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -526,7 +571,7 @@ Solution:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;SolverStatus.ok: &#39;ok&#39;&gt;, &lt;TerminationCondition.optimal: &#39;optimal&#39;&gt;)
+(&#39;ok&#39;, &#39;optimal&#39;)
 </pre></div></div>
 </div>
 </div>
@@ -642,16 +687,16 @@ Solution:
   <tbody>
     <tr>
       <th>2019-12-01 00:00:00</th>
-      <td>317.600000</td>
+      <td>317.6</td>
       <td>0.0</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>3996.0</td>
+      <td>450.072</td>
+      <td>3996.000109</td>
       <td>743.5</td>
-      <td>283.227801</td>
-      <td>10792.935727</td>
-      <td>9314.0</td>
+      <td>283.227800</td>
+      <td>12379.843579</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>24.0</td>
@@ -660,90 +705,90 @@ Solution:
       <td>10.5</td>
       <td>2638.214991</td>
       <td>1048.849282</td>
-      <td>740.000000</td>
-      <td>1111.300000</td>
+      <td>2468.000000</td>
+      <td>1111.300</td>
     </tr>
     <tr>
       <th>2019-12-01 00:30:00</th>
-      <td>317.600000</td>
+      <td>317.6</td>
       <td>0.0</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>3997.0</td>
+      <td>450.072</td>
+      <td>3997.000108</td>
       <td>743.5</td>
       <td>281.457627</td>
-      <td>9983.717528</td>
-      <td>9314.0</td>
+      <td>11210.625592</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>24.0</td>
-      <td>36.542373</td>
+      <td>36.542372</td>
       <td>0.0</td>
       <td>10.5</td>
       <td>2526.737364</td>
-      <td>1082.545108</td>
-      <td>740.000000</td>
-      <td>1111.300000</td>
+      <td>1082.545109</td>
+      <td>2828.000000</td>
+      <td>1111.300</td>
     </tr>
     <tr>
       <th>2019-12-01 01:00:00</th>
-      <td>317.600000</td>
+      <td>317.6</td>
       <td>0.0</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>3997.0</td>
+      <td>450.072</td>
+      <td>3997.000108</td>
       <td>743.5</td>
       <td>280.572540</td>
-      <td>9687.155351</td>
-      <td>9314.0</td>
+      <td>11704.629706</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>24.0</td>
-      <td>36.427460</td>
+      <td>36.427459</td>
       <td>0.0</td>
       <td>10.5</td>
       <td>2482.670493</td>
-      <td>1095.174156</td>
-      <td>740.000000</td>
-      <td>1111.300000</td>
+      <td>1095.174159</td>
+      <td>2037.433503</td>
+      <td>1111.300</td>
     </tr>
     <tr>
       <th>2019-12-01 01:30:00</th>
-      <td>317.600000</td>
+      <td>317.6</td>
       <td>0.0</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>3998.0</td>
+      <td>450.072</td>
+      <td>3998.000128</td>
       <td>743.5</td>
       <td>280.572540</td>
-      <td>9582.374535</td>
-      <td>9314.0</td>
+      <td>12897.538197</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>24.0</td>
-      <td>36.427460</td>
+      <td>36.427459</td>
       <td>0.0</td>
       <td>10.5</td>
-      <td>2506.014377</td>
-      <td>1101.611088</td>
+      <td>2505.758841</td>
+      <td>1101.611089</td>
       <td>740.000000</td>
-      <td>1111.300000</td>
+      <td>1111.300</td>
     </tr>
     <tr>
       <th>2019-12-01 02:00:00</th>
-      <td>317.600000</td>
+      <td>317.6</td>
       <td>0.0</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>3998.0</td>
+      <td>450.072</td>
+      <td>3998.000128</td>
       <td>743.5</td>
-      <td>271.721671</td>
-      <td>9245.435816</td>
-      <td>9314.0</td>
+      <td>271.721673</td>
+      <td>12560.343575</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>24.0</td>
@@ -751,9 +796,9 @@ Solution:
       <td>0.0</td>
       <td>10.5</td>
       <td>2530.801553</td>
-      <td>1120.762631</td>
+      <td>1120.762632</td>
       <td>740.000000</td>
-      <td>1111.300000</td>
+      <td>1111.300</td>
     </tr>
     <tr>
       <th>...</th>
@@ -780,118 +825,118 @@ Solution:
     </tr>
     <tr>
       <th>2019-12-03 21:30:00</th>
-      <td>312.600000</td>
+      <td>315.6</td>
       <td>0.0</td>
-      <td>99.6</td>
+      <td>0.000</td>
       <td>0.0</td>
-      <td>1250.2</td>
-      <td>2463.0</td>
-      <td>723.3</td>
-      <td>232.571687</td>
-      <td>19022.092523</td>
-      <td>9206.9</td>
-      <td>0.0</td>
-      <td>50.2</td>
-      <td>24.0</td>
-      <td>23.870580</td>
-      <td>0.0</td>
-      <td>10.5</td>
-      <td>2173.181209</td>
-      <td>4720.815096</td>
-      <td>2150.168904</td>
-      <td>1185.700000</td>
-    </tr>
-    <tr>
-      <th>2019-12-03 22:00:00</th>
-      <td>317.553953</td>
-      <td>0.0</td>
-      <td>99.6</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>2159.0</td>
-      <td>726.7</td>
-      <td>281.402462</td>
-      <td>19111.070000</td>
-      <td>9191.6</td>
-      <td>0.0</td>
-      <td>50.2</td>
-      <td>24.0</td>
-      <td>32.727854</td>
-      <td>0.0</td>
-      <td>10.5</td>
-      <td>2093.402636</td>
-      <td>4362.951631</td>
-      <td>816.091463</td>
-      <td>1194.053953</td>
-    </tr>
-    <tr>
-      <th>2019-12-03 22:30:00</th>
-      <td>312.600000</td>
-      <td>0.0</td>
-      <td>99.6</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>2049.0</td>
-      <td>729.1</td>
-      <td>272.406780</td>
-      <td>18047.364455</td>
-      <td>9176.3</td>
-      <td>0.0</td>
-      <td>50.2</td>
-      <td>24.0</td>
-      <td>30.350282</td>
-      <td>0.0</td>
-      <td>10.5</td>
-      <td>2090.567636</td>
-      <td>4140.073316</td>
-      <td>7.737532</td>
-      <td>1191.500000</td>
-    </tr>
-    <tr>
-      <th>2019-12-03 23:00:00</th>
-      <td>315.600000</td>
-      <td>0.0</td>
-      <td>99.6</td>
-      <td>0.0</td>
-      <td>1250.2</td>
-      <td>2111.0</td>
-      <td>722.3</td>
-      <td>155.582560</td>
-      <td>15234.070000</td>
-      <td>9161.0</td>
+      <td>450.072</td>
+      <td>2462.999973</td>
+      <td>743.5</td>
+      <td>167.760899</td>
+      <td>23446.460289</td>
+      <td>6799.22</td>
       <td>0.0</td>
       <td>50.2</td>
       <td>23.0</td>
-      <td>19.307110</td>
+      <td>22.414454</td>
       <td>0.0</td>
       <td>10.5</td>
-      <td>2164.676208</td>
-      <td>4243.075476</td>
-      <td>1609.888645</td>
-      <td>1187.700000</td>
+      <td>2173.181209</td>
+      <td>4958.626267</td>
+      <td>839.465130</td>
+      <td>1109.300</td>
+    </tr>
+    <tr>
+      <th>2019-12-03 22:00:00</th>
+      <td>315.6</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>0.0</td>
+      <td>450.072</td>
+      <td>2158.999995</td>
+      <td>743.5</td>
+      <td>183.713623</td>
+      <td>21323.146074</td>
+      <td>6799.22</td>
+      <td>0.0</td>
+      <td>50.2</td>
+      <td>23.0</td>
+      <td>24.545891</td>
+      <td>0.0</td>
+      <td>10.5</td>
+      <td>2093.402637</td>
+      <td>4905.467416</td>
+      <td>1445.632954</td>
+      <td>1109.300</td>
+    </tr>
+    <tr>
+      <th>2019-12-03 22:30:00</th>
+      <td>307.4</td>
+      <td>0.0</td>
+      <td>72.708</td>
+      <td>0.0</td>
+      <td>450.072</td>
+      <td>2049.000000</td>
+      <td>717.4</td>
+      <td>218.192090</td>
+      <td>18545.072991</td>
+      <td>6783.92</td>
+      <td>0.0</td>
+      <td>50.2</td>
+      <td>23.0</td>
+      <td>22.282487</td>
+      <td>0.0</td>
+      <td>10.5</td>
+      <td>2090.567636</td>
+      <td>4853.950187</td>
+      <td>2095.734709</td>
+      <td>1147.708</td>
+    </tr>
+    <tr>
+      <th>2019-12-03 23:00:00</th>
+      <td>315.6</td>
+      <td>0.0</td>
+      <td>72.708</td>
+      <td>0.0</td>
+      <td>450.072</td>
+      <td>2111.000005</td>
+      <td>743.5</td>
+      <td>164.673275</td>
+      <td>17519.185635</td>
+      <td>6768.62</td>
+      <td>0.0</td>
+      <td>50.2</td>
+      <td>23.0</td>
+      <td>21.592581</td>
+      <td>0.0</td>
+      <td>10.5</td>
+      <td>2164.676210</td>
+      <td>4650.471324</td>
+      <td>2104.200909</td>
+      <td>1182.008</td>
     </tr>
     <tr>
       <th>2019-12-03 23:30:00</th>
-      <td>309.600000</td>
+      <td>307.4</td>
       <td>0.0</td>
-      <td>99.6</td>
+      <td>72.708</td>
       <td>0.0</td>
-      <td>1250.2</td>
-      <td>1975.0</td>
-      <td>720.2</td>
-      <td>189.082542</td>
-      <td>15539.543818</td>
-      <td>9145.7</td>
+      <td>450.072</td>
+      <td>1975.000035</td>
+      <td>717.4</td>
+      <td>126.264791</td>
+      <td>16037.253074</td>
+      <td>6753.32</td>
       <td>0.0</td>
       <td>50.2</td>
-      <td>24.0</td>
-      <td>21.112568</td>
+      <td>23.0</td>
+      <td>16.869523</td>
       <td>0.0</td>
       <td>10.5</td>
-      <td>2164.676208</td>
-      <td>3928.134929</td>
-      <td>9.449934</td>
-      <td>1179.600000</td>
+      <td>2164.676210</td>
+      <td>4634.888926</td>
+      <td>2097.447298</td>
+      <td>1147.708</td>
     </tr>
   </tbody>
 </table>
@@ -1064,12 +1109,12 @@ With the linear load flow, there is the following per unit loading:
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 count    105.000000
-mean       0.127009
-std        0.229369
-min       -0.270731
-25%       -0.010994
-50%        0.084382
-75%        0.231317
+mean       0.081570
+std        0.235478
+min       -0.607773
+25%       -0.064385
+50%        0.050207
+75%        0.200096
 max        0.700000
 dtype: float64
 </pre></div></div>
@@ -1091,8 +1136,8 @@ dtype: float64
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;matplotlib.collections.PatchCollection at 0x1dd5795bfd0&gt;,
- &lt;matplotlib.collections.LineCollection at 0x1dd577f9be0&gt;)
+(&lt;matplotlib.collections.PatchCollection at 0x27c06396ee0&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x27c06389a30&gt;)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1163,7 +1208,7 @@ dtype: float64
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>name</th>
+      <th>Bus</th>
       <th>Beauly</th>
       <th>Peterhead</th>
       <th>Errochty</th>
@@ -1214,123 +1259,123 @@ dtype: float64
   <tbody>
     <tr>
       <th>2019-12-01 00:00:00</th>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
       <td>...</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
     </tr>
     <tr>
       <th>2019-12-01 00:30:00</th>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
       <td>...</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
     </tr>
     <tr>
       <th>2019-12-01 01:00:00</th>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
       <td>...</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
     </tr>
     <tr>
       <th>2019-12-01 01:30:00</th>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
       <td>...</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
     </tr>
     <tr>
       <th>2019-12-01 02:00:00</th>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
       <td>...</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
-      <td>43.874195</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
+      <td>43.874196</td>
     </tr>
     <tr>
       <th>...</th>
@@ -1359,121 +1404,121 @@ dtype: float64
     <tr>
       <th>2019-12-03 21:30:00</th>
       <td>0.000000</td>
-      <td>2.906604</td>
+      <td>0.128583</td>
       <td>43.747186</td>
-      <td>17.885474</td>
-      <td>0.000000</td>
-      <td>16.843500</td>
-      <td>28.557646</td>
-      <td>28.600868</td>
-      <td>27.437625</td>
-      <td>36.164723</td>
+      <td>42.603094</td>
+      <td>41.870348</td>
+      <td>42.560418</td>
+      <td>43.040302</td>
+      <td>43.042087</td>
+      <td>42.994451</td>
+      <td>43.351972</td>
       <td>...</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>43.729092</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>48.911252</td>
-      <td>0.000000</td>
+      <td>43.657017</td>
+      <td>43.658736</td>
+      <td>43.661166</td>
+      <td>43.661889</td>
+      <td>43.657017</td>
+      <td>43.658736</td>
+      <td>43.658736</td>
+      <td>43.661166</td>
+      <td>43.874196</td>
+      <td>41.870348</td>
     </tr>
     <tr>
       <th>2019-12-03 22:00:00</th>
       <td>0.000000</td>
-      <td>2.906604</td>
+      <td>0.157499</td>
       <td>43.747186</td>
-      <td>17.885474</td>
-      <td>0.000000</td>
-      <td>16.843500</td>
-      <td>28.557646</td>
-      <td>28.600868</td>
-      <td>27.437625</td>
-      <td>36.164723</td>
+      <td>42.345810</td>
+      <td>41.464748</td>
+      <td>42.294495</td>
+      <td>42.871513</td>
+      <td>42.873659</td>
+      <td>42.816381</td>
+      <td>43.246269</td>
       <td>...</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>43.729092</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>48.911252</td>
-      <td>0.000000</td>
+      <td>43.613057</td>
+      <td>43.615124</td>
+      <td>43.618046</td>
+      <td>43.618916</td>
+      <td>43.613057</td>
+      <td>43.615124</td>
+      <td>43.615124</td>
+      <td>43.618046</td>
+      <td>43.874196</td>
+      <td>41.464748</td>
     </tr>
     <tr>
       <th>2019-12-03 22:30:00</th>
       <td>0.000000</td>
-      <td>2.906604</td>
+      <td>2.906582</td>
       <td>43.747186</td>
-      <td>17.885474</td>
+      <td>17.885353</td>
       <td>0.000000</td>
-      <td>16.843500</td>
-      <td>28.557646</td>
-      <td>28.600868</td>
-      <td>27.437625</td>
-      <td>36.164723</td>
+      <td>16.843671</td>
+      <td>28.556999</td>
+      <td>28.600566</td>
+      <td>27.437846</td>
+      <td>36.164461</td>
       <td>...</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>43.729092</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>48.911252</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>43.729106</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>48.911240</td>
       <td>0.000000</td>
     </tr>
     <tr>
       <th>2019-12-03 23:00:00</th>
       <td>0.000000</td>
-      <td>2.906604</td>
+      <td>2.906582</td>
       <td>43.747186</td>
-      <td>17.885474</td>
+      <td>17.885353</td>
       <td>0.000000</td>
-      <td>16.843500</td>
-      <td>28.557646</td>
-      <td>28.600868</td>
-      <td>27.437625</td>
-      <td>36.164723</td>
+      <td>16.843671</td>
+      <td>28.556999</td>
+      <td>28.600566</td>
+      <td>27.437846</td>
+      <td>36.164461</td>
       <td>...</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>43.729092</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>48.911252</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>43.729106</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>48.911240</td>
       <td>0.000000</td>
     </tr>
     <tr>
       <th>2019-12-03 23:30:00</th>
       <td>0.000000</td>
-      <td>2.906604</td>
+      <td>2.906582</td>
       <td>43.747186</td>
-      <td>17.885474</td>
+      <td>17.885353</td>
       <td>0.000000</td>
-      <td>16.843500</td>
-      <td>28.557646</td>
-      <td>28.600868</td>
-      <td>27.437625</td>
-      <td>36.164723</td>
+      <td>16.843671</td>
+      <td>28.556999</td>
+      <td>28.600566</td>
+      <td>27.437846</td>
+      <td>36.164461</td>
       <td>...</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>43.729092</td>
-      <td>43.610187</td>
-      <td>43.652143</td>
-      <td>43.652143</td>
-      <td>43.711448</td>
-      <td>48.911252</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>43.729106</td>
+      <td>43.610186</td>
+      <td>43.652148</td>
+      <td>43.652148</td>
+      <td>43.711460</td>
+      <td>48.911240</td>
       <td>0.000000</td>
     </tr>
   </tbody>
@@ -1516,7 +1561,7 @@ dtype: float64
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x1dd43454dc0&gt;
+&lt;matplotlib.legend.Legend at 0x27c048217f0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
