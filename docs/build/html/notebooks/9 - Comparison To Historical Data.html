@@ -372,6 +372,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dotenv</span> <span class="kn">import</span> <span class="n">find_dotenv</span><span class="p">,</span> <span class="n">load_dotenv</span>
+
+<span class="n">load_dotenv</span><span class="p">(</span><span class="n">find_dotenv</span><span class="p">())</span>
+<span class="n">src_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PROJECT_SRC&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">src_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -385,7 +398,7 @@ div.rendered_html tbody tr:hover {
 <h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># write csv files for import</span>
@@ -400,7 +413,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>data_reader_writer is a script written to read in data from the various sources and write csv files in the format required for populating a PyPSA network object</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">merge_generators</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -417,7 +430,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.p
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
@@ -443,7 +456,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </div>
 <p>To approximate n-1 security and allow room for reactive power flows, don’t allow any line to be loaded above 70% of their thermal rating</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">contingency_factor</span> <span class="o">=</span> <span class="mf">0.7</span>
@@ -453,7 +466,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </div>
 <p>LOPF does not account for losses through lines. Here we add a 10% margin to the load in order to account for these losses.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">29</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1.1</span>
@@ -464,7 +477,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 <div class="section" id="Running-the-optimisation">
 <h2>Running the optimisation<a class="headerlink" href="#Running-the-optimisation" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -477,7 +490,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
 INFO:pypsa.linopf:Prepare linear problem
-INFO:pypsa.linopf:Total preparation time: 126.27s
+INFO:pypsa.linopf:Total preparation time: 122.86s
 INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 </pre></div></div>
 </div>
@@ -488,13 +501,13 @@ INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 <div class="highlight"><pre>
 Set parameter Username
 Academic license - for non-commercial use only - expires 2022-09-03
-Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-v4xz918u.lp
-Reading time = 73.15 seconds
-obj: 27855382 rows, 7235761 columns, 49245880 nonzeros
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-jstq_tfy.lp
+Reading time = 76.98 seconds
+obj: 27855382 rows, 7235761 columns, 49237120 nonzeros
 Gurobi Optimizer version 9.5.1 build v9.5.1rc2 (win64)
 Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
-Optimize a model with 27855382 rows, 7235761 columns and 49245880 nonzeros
-Model fingerprint: 0xbf5cf689
+Optimize a model with 27855382 rows, 7235761 columns and 49237120 nonzeros
+Model fingerprint: 0xf7092188
 Coefficient statistics:
   Matrix range     [6e-05, 1e+00]
   Objective range  [1e+00, 1e+02]
@@ -505,94 +518,98 @@ Concurrent LP optimizer: dual simplex and barrier
 Showing barrier log only...
 
 Presolve removed 0 rows and 0 columns (presolve time = 15s) ...
-Presolve removed 26795438 rows and 43801 columns (presolve time = 19s) ...
-Presolve removed 26795438 rows and 231476 columns (presolve time = 21s) ...
+Presolve removed 26795438 rows and 43801 columns (presolve time = 24s) ...
 Presolve removed 26795438 rows and 231476 columns (presolve time = 25s) ...
-Presolve removed 26795438 rows and 5372573 columns (presolve time = 45s) ...
-Presolve removed 26802865 rows and 5380000 columns (presolve time = 51s) ...
-Presolve removed 27307778 rows and 5884913 columns (presolve time = 69s) ...
-Presolve removed 27307778 rows and 5885307 columns (presolve time = 71s) ...
-Presolve removed 27307778 rows and 5902962 columns (presolve time = 75s) ...
-Presolve removed 27377850 rows and 5902962 columns
-Presolve time: 79.85s
-Presolved: 477532 rows, 1402871 columns, 2921075 nonzeros
+Presolve removed 26795438 rows and 231476 columns (presolve time = 30s) ...
+Presolve removed 26795438 rows and 5106930 columns (presolve time = 35s) ...
+Presolve removed 26795438 rows and 5372573 columns (presolve time = 48s) ...
+Presolve removed 26802865 rows and 5380000 columns (presolve time = 50s) ...
+Presolve removed 27302865 rows and 5880000 columns (presolve time = 55s) ...
+Presolve removed 27308463 rows and 5885598 columns (presolve time = 70s) ...
+Presolve removed 27308463 rows and 5885598 columns (presolve time = 70s) ...
+Presolve removed 27308463 rows and 5903647 columns (presolve time = 76s) ...
+Presolve removed 27378535 rows and 5903647 columns
+Presolve time: 80.99s
+Presolved: 476847 rows, 1402186 columns, 2824930 nonzeros
 
-Ordering time: 0.33s
+Ordering time: 0.39s
 
 Barrier statistics:
- AA&#39; NZ     : 1.974e+06
- Factor NZ  : 1.191e+07 (roughly 900 MB of memory)
- Factor Ops : 5.660e+08 (less than 1 second per iteration)
+ AA&#39; NZ     : 1.781e+06
+ Factor NZ  : 1.029e+07 (roughly 800 MB of memory)
+ Factor Ops : 3.453e+08 (less than 1 second per iteration)
  Threads    : 3
 
                   Objective                Residual
 Iter       Primal          Dual         Primal    Dual     Compl     Time
-   0   2.78746600e+11 -1.34225032e+12  3.64e+04 1.75e+01  2.20e+06    82s
-   1   4.84865814e+10 -4.58764024e+11  5.04e+03 2.56e-13  3.56e+05    83s
-   2   1.75304416e+10 -1.19868173e+11  7.76e+02 3.41e-13  6.85e+04    84s
-   3   1.14862821e+10 -1.01409172e+10  3.12e+01 1.71e-12  8.13e+03    85s
-   4   9.85558062e+09  2.93072933e+09  6.68e+00 5.26e-13  2.50e+03    86s
-   5   9.30831116e+09  6.27088544e+09  3.10e+00 2.13e-13  1.09e+03    87s
-   6   9.03318792e+09  7.26921281e+09  1.77e+00 1.23e-13  6.30e+02    88s
-   7   8.85282625e+09  7.94784136e+09  9.65e-01 1.14e-13  3.22e+02    89s
-   8   8.71764615e+09  8.30479040e+09  4.30e-01 1.71e-13  1.47e+02    90s
-   9   8.66819671e+09  8.43158005e+09  2.50e-01 1.71e-13  8.42e+01    91s
-  10   8.63166501e+09  8.52513686e+09  1.23e-01 1.71e-13  3.79e+01    92s
-  11   8.61397237e+09  8.56331759e+09  6.48e-02 1.14e-13  1.80e+01    94s
-  12   8.60440353e+09  8.57028876e+09  3.51e-02 1.14e-13  1.21e+01    95s
-  13   8.60142667e+09  8.57816839e+09  2.57e-02 1.14e-13  8.27e+00    96s
-  14   8.59923054e+09  8.58379480e+09  1.89e-02 1.14e-13  5.48e+00    96s
-  15   8.59736015e+09  8.58687098e+09  1.34e-02 1.14e-13  3.73e+00    97s
-  16   8.59639921e+09  8.58872020e+09  1.05e-02 1.14e-13  2.73e+00    98s
-  17   8.59558316e+09  8.58982515e+09  8.06e-03 1.14e-13  2.05e+00    99s
-  18   8.59490787e+09  8.59117008e+09  6.14e-03 6.98e-14  1.33e+00   100s
-  19   8.59469141e+09  8.59133304e+09  5.51e-03 1.14e-13  1.19e+00   101s
-  20   8.59451156e+09  8.59152545e+09  5.03e-03 1.14e-13  1.06e+00   103s
-  21   8.59415033e+09  8.59196989e+09  4.01e-03 8.53e-14  7.74e-01   104s
-  22   8.59352172e+09  8.59226855e+09  2.23e-03 8.21e-14  4.45e-01   105s
-  23   8.59334057e+09  8.59243695e+09  1.70e-03 7.42e-14  3.21e-01   107s
-  24   8.59307231e+09  8.59248704e+09  9.57e-04 1.14e-13  2.08e-01   108s
-  25   8.59301349e+09  8.59254211e+09  7.76e-04 1.14e-13  1.67e-01   109s
-  26   8.59298534e+09  8.59260573e+09  6.88e-04 6.82e-14  1.35e-01   110s
-  27   8.59296241e+09  8.59261896e+09  6.18e-04 6.53e-14  1.22e-01   111s
-  28   8.59293736e+09  8.59263103e+09  5.40e-04 7.73e-14  1.09e-01   112s
-  29   8.59286623e+09  8.59268250e+09  3.32e-04 7.78e-14  6.52e-02   113s
-  30   8.59281233e+09  8.59272641e+09  1.61e-04 8.06e-14  3.05e-02   114s
-  31   8.59278026e+09  8.59274572e+09  6.03e-05 6.72e-14  1.23e-02   115s
-  32   8.59276434e+09  8.59275391e+09  1.13e-05 8.11e-14  3.71e-03   116s
-  33   8.59276162e+09  8.59275950e+09  3.42e-06 8.85e-14  7.52e-04   117s
-  34   8.59276066e+09  8.59276013e+09  8.27e-07 1.01e-11  1.88e-04   118s
-  35   8.59276048e+09  8.59276040e+09  1.72e-06 3.24e-12  3.06e-05   119s
-  36   8.59276046e+09  8.59276045e+09  1.48e-07 1.14e-12  3.69e-06   120s
-  37   8.59276046e+09  8.59276046e+09  3.33e-08 9.96e-14  1.77e-08   121s
-  38   8.59276046e+09  8.59276046e+09  4.66e-10 7.18e-14  8.64e-13   122s
+   0   3.00373062e+11 -1.40106615e+12  3.85e+04 1.76e+01  2.31e+06    84s
+   1   5.06710932e+10 -4.63552194e+11  5.24e+03 2.27e-13  3.65e+05    84s
+   2   1.91080323e+10 -1.10216755e+11  9.81e+02 9.09e-13  7.04e+04    85s
+   3   1.15937390e+10 -9.91601444e+09  3.45e+01 3.87e-12  8.15e+03    86s
+   4   9.92187483e+09  2.97232177e+09  7.19e+00 1.17e-12  2.51e+03    87s
+   5   9.41152048e+09  6.30938183e+09  3.75e+00 4.69e-13  1.11e+03    88s
+   6   9.10663502e+09  7.32379529e+09  2.18e+00 2.49e-13  6.37e+02    88s
+   7   8.89812663e+09  7.97526834e+09  1.21e+00 1.71e-13  3.29e+02    89s
+   8   8.74185270e+09  8.31317887e+09  5.53e-01 1.71e-13  1.53e+02    90s
+   9   8.68159500e+09  8.43045825e+09  3.18e-01 1.14e-13  8.93e+01    91s
+  10   8.64511494e+09  8.51586383e+09  1.81e-01 1.14e-13  4.60e+01    92s
+  11   8.63150544e+09  8.53793219e+09  1.32e-01 1.14e-13  3.33e+01    92s
+  12   8.61738385e+09  8.56422521e+09  8.26e-02 1.71e-13  1.89e+01    93s
+  13   8.60880419e+09  8.57517505e+09  5.36e-02 1.14e-13  1.19e+01    94s
+  14   8.60224668e+09  8.58224472e+09  3.12e-02 7.18e-14  7.11e+00    95s
+  15   8.59890468e+09  8.58583231e+09  1.99e-02 6.90e-14  4.64e+00    96s
+  16   8.59798935e+09  8.58823896e+09  1.69e-02 8.04e-14  3.46e+00    96s
+  17   8.59691452e+09  8.58885797e+09  1.33e-02 9.55e-14  2.86e+00    97s
+  18   8.59627855e+09  8.58973437e+09  1.13e-02 7.94e-14  2.32e+00    98s
+  19   8.59523707e+09  8.59036662e+09  8.08e-03 7.11e-14  1.73e+00    98s
+  20   8.59501639e+09  8.59078833e+09  7.39e-03 9.92e-14  1.50e+00    99s
+  21   8.59437711e+09  8.59119262e+09  5.49e-03 9.17e-14  1.13e+00   101s
+  22   8.59391477e+09  8.59199513e+09  4.13e-03 7.25e-14  6.81e-01   102s
+  23   8.59350838e+09  8.59225198e+09  2.67e-03 6.86e-14  4.46e-01   104s
+  24   8.59317206e+09  8.59244783e+09  1.49e-03 7.72e-14  2.57e-01   105s
+  25   8.59305155e+09  8.59256849e+09  1.04e-03 7.43e-14  1.71e-01   106s
+  26   8.59296933e+09  8.59263409e+09  7.44e-04 6.59e-14  1.19e-01   107s
+  27   8.59287844e+09  8.59268413e+09  4.16e-04 8.17e-14  6.89e-02   107s
+  28   8.59282537e+09  8.59271180e+09  2.22e-04 6.71e-14  4.03e-02   108s
+  29   8.59279016e+09  8.59272797e+09  9.80e-05 8.72e-14  2.21e-02   109s
+  30   8.59278040e+09  8.59274520e+09  6.46e-05 8.07e-14  1.25e-02   109s
+  31   8.59276822e+09  8.59275150e+09  2.39e-05 7.44e-14  5.94e-03   110s
+  32   8.59276254e+09  8.59275809e+09  6.00e-06 9.84e-14  1.58e-03   110s
+  33   8.59276138e+09  8.59275978e+09  2.58e-06 2.34e-13  5.65e-04   111s
+  34   8.59276066e+09  8.59276039e+09  9.97e-07 1.22e-11  9.66e-05   112s
+  35   8.59276049e+09  8.59276044e+09  5.37e-06 9.99e-12  1.64e-05   113s
+  36   8.59276046e+09  8.59276045e+09  1.84e-07 1.41e-11  6.12e-07   113s
+  37   8.59276046e+09  8.59276046e+09  7.19e-10 1.12e-13  3.75e-11   114s
 
-Barrier solved model in 38 iterations and 121.90 seconds (46.90 work units)
+Barrier solved model in 37 iterations and 113.88 seconds (45.61 work units)
 Optimal objective 8.59276046e+09
 
 Crossover log...
 
-   66085 DPushes remaining with DInf 0.0000000e+00               125s
-     822 DPushes remaining with DInf 0.0000000e+00               126s
-       0 DPushes remaining with DInf 0.0000000e+00               127s
+  399882 variables added to crossover basis                      115s
 
-  160827 PPushes remaining with PInf 0.0000000e+00               127s
-   64171 PPushes remaining with PInf 0.0000000e+00               131s
-   43780 PPushes remaining with PInf 0.0000000e+00               136s
-   36718 PPushes remaining with PInf 0.0000000e+00               140s
-   23893 PPushes remaining with PInf 0.0000000e+00               147s
-   17989 PPushes remaining with PInf 0.0000000e+00               150s
-    4201 PPushes remaining with PInf 0.0000000e+00               158s
-    2937 PPushes remaining with PInf 0.0000000e+00               160s
+   58928 DPushes remaining with DInf 0.0000000e+00               117s
+       0 DPushes remaining with DInf 0.0000000e+00               119s
+
+  156593 PPushes remaining with PInf 0.0000000e+00               119s
+   86769 PPushes remaining with PInf 0.0000000e+00               121s
+   42879 PPushes remaining with PInf 0.0000000e+00               126s
+   26821 PPushes remaining with PInf 0.0000000e+00               133s
+   20244 PPushes remaining with PInf 0.0000000e+00               137s
+   14138 PPushes remaining with PInf 0.0000000e+00               142s
+    8919 PPushes remaining with PInf 0.0000000e+00               146s
+    5441 PPushes remaining with PInf 0.0000000e+00               151s
+    3029 PPushes remaining with PInf 0.0000000e+00               157s
+    2633 PPushes remaining with PInf 0.0000000e+00               160s
        0 PPushes remaining with PInf 0.0000000e+00               164s
 
-  Push phase complete: Pinf 0.0000000e+00, Dinf 2.4542101e-09    164s
+  Push phase complete: Pinf 0.0000000e+00, Dinf 2.2193220e-09    164s
 
 Iteration    Objective       Primal Inf.    Dual Inf.      Time
-  188622    8.5927605e+09   0.000000e+00   0.000000e+00    203s
+  181486    8.5927605e+09   0.000000e+00   0.000000e+00    211s
 
 Solved with barrier
-Solved in 188622 iterations and 202.82 seconds (85.09 work units)
+Solved in 181486 iterations and 210.70 seconds (94.08 work units)
 Optimal objective  8.592760455e+09
 </pre></div></div>
 </div>
@@ -605,7 +622,7 @@ INFO:pypsa.linopf:Optimization successful. Objective value: 8.59e+09
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -618,7 +635,7 @@ INFO:pypsa.linopf:Optimization successful. Objective value: 8.59e+09
 <h2>Power output by generation type<a class="headerlink" href="#Power-output-by-generation-type" title="Permalink to this headline">¶</a></h2>
 <p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
@@ -665,7 +682,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -766,7 +783,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>2756.500024</td>
       <td>743.5</td>
       <td>308.010233</td>
-      <td>9723.029280</td>
+      <td>9747.058320</td>
       <td>6833.530000</td>
       <td>0.0</td>
       <td>50.2</td>
@@ -776,7 +793,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>8.0</td>
       <td>5318.656864</td>
       <td>6233.178739</td>
-      <td>24.029040</td>
+      <td>0.000000</td>
       <td>1108.900000</td>
     </tr>
     <tr>
@@ -789,7 +806,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>2771.499986</td>
       <td>743.5</td>
       <td>293.406300</td>
-      <td>10007.058937</td>
+      <td>9981.267285</td>
       <td>6833.530000</td>
       <td>0.0</td>
       <td>50.2</td>
@@ -799,7 +816,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>8.0</td>
       <td>5315.245105</td>
       <td>6067.016448</td>
-      <td>67.273469</td>
+      <td>93.065121</td>
       <td>1108.900000</td>
     </tr>
     <tr>
@@ -881,7 +898,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>3055.999925</td>
       <td>734.8</td>
       <td>228.226867</td>
-      <td>15647.362909</td>
+      <td>15472.300000</td>
       <td>6270.701406</td>
       <td>0.0</td>
       <td>50.2</td>
@@ -890,8 +907,8 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
       <td>0.0</td>
       <td>0.0</td>
       <td>4056.750335</td>
-      <td>7740.773294</td>
-      <td>543.480018</td>
+      <td>7759.746806</td>
+      <td>699.569415</td>
       <td>3878.803000</td>
     </tr>
     <tr>
@@ -993,7 +1010,7 @@ Stored &#39;p_by_carrier&#39; (DataFrame)
 </div>
 <p>Graph the power output of the different generation types…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
@@ -1072,7 +1089,7 @@ C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matpl
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1084,7 +1101,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_9_-_Comparison_To_Historical_Data_19_2.png" src="../_images/notebooks_9_-_Comparison_To_Historical_Data_19_2.png" />
+<img alt="../_images/notebooks_9_-_Comparison_To_Historical_Data_20_2.png" src="../_images/notebooks_9_-_Comparison_To_Historical_Data_20_2.png" />
 </div>
 </div>
 </div>
@@ -1092,7 +1109,7 @@ Text(0.5, 0, &#39;&#39;)
 <h2>Simulated vs historical data power generation<a class="headerlink" href="#Simulated-vs-historical-data-power-generation" title="Permalink to this headline">¶</a></h2>
 <p>We can group the generators by type and sum to calculate the total simulated power generation over the year in TWh.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">store</span> -r p_by_carrier
@@ -1107,7 +1124,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1116,21 +1133,21 @@ carrier
 Coal                              3.041580
 EfW Incineration                  3.474006
 Interconnectors Import           21.929185
-Hydro                             2.988822
+Hydro                             2.989967
 Natural Gas                     139.369596
 Nuclear                          59.480659
 Oil                               0.000000
 Solar Photovoltaics              14.709476
-Wind Offshore                    26.039234
-Wind Onshore                     29.114726
-Pumped Storage Hydroelectric      0.444488
-Biomass                          30.997990
+Wind Offshore                    26.039266
+Wind Onshore                     29.113913
+Pumped Storage Hydroelectric      0.444903
+Biomass                          30.997940
 dtype: float64
 </pre></div></div>
 </div>
 <p>Then the total of all simulated power generation is:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -1138,17 +1155,17 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-331.5897624571445
+331.59049179683797
 </pre></div></div>
 </div>
 <p>BEIS publish reports on power generation, and here we extract the data for 2018 from X and Y <a class="reference external" href="https://www.gov.uk/government/statistics/energy-trends-section-6-renewables">https://www.gov.uk/government/statistics/energy-trends-section-6-renewables</a></p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Coal&#39;</span><span class="p">:</span> <span class="mf">16.0</span><span class="p">,</span>
@@ -1170,7 +1187,7 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1191,7 +1208,7 @@ dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_series</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -1199,7 +1216,7 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1208,7 +1225,7 @@ dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_series</span><span class="o">.</span><span class="n">index</span>
@@ -1216,7 +1233,7 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1228,7 +1245,7 @@ Index([&#39;Coal&#39;, &#39;EfW Incineration&#39;, &#39;Interconnectors Import&#
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># mylabels = data_series.index</span>
@@ -1281,11 +1298,11 @@ Index([&#39;Coal&#39;, &#39;EfW Incineration&#39;, &#39;Interconnectors Import&#
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_9_-_Comparison_To_Historical_Data_29_0.png" src="../_images/notebooks_9_-_Comparison_To_Historical_Data_29_0.png" />
+<img alt="../_images/notebooks_9_-_Comparison_To_Historical_Data_30_0.png" src="../_images/notebooks_9_-_Comparison_To_Historical_Data_30_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">simulated_generation</span><span class="p">,</span> <span class="n">data_series</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Simulated&#39;</span><span class="p">,</span> <span class="s1">&#39;Historical&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -1300,7 +1317,7 @@ Index([&#39;Coal&#39;, &#39;EfW Incineration&#39;, &#39;Interconnectors Import&#
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">

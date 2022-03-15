@@ -362,6 +362,19 @@ div.rendered_html tbody tr:hover {
 <p><strong>NOT STABLE. DOES NOT SOLVE FOR ALL TIMESTEPS. BELOW IS OUTDATED CODE, DO NOT RUN</strong></p>
 <p>PyPSA-GB can model the GB power system in two steps by (i) optimising the dispatch of generators by solving a Unit Commitment (UC) problem and fixing the commitment schedule, and (ii) re-dispatching the committed generator units by solving a network constrained Linear Optimal Power Flow (LOPF) problem. The UC problem simulates the wholesale market and the LOPF problem simulates the balancing mechanism.</p>
 <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dotenv</span> <span class="kn">import</span> <span class="n">find_dotenv</span><span class="p">,</span> <span class="n">load_dotenv</span>
+
+<span class="n">load_dotenv</span><span class="p">(</span><span class="n">find_dotenv</span><span class="p">())</span>
+<span class="n">src_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PROJECT_SRC&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">src_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
@@ -7229,7 +7242,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_10_2.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_10_2.png" />
+<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_11_2.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_11_2.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -7264,7 +7277,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_11_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_11_1.png" />
+<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_12_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_12_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -7321,7 +7334,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_13_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_13_1.png" />
+<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_14_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_14_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -7349,7 +7362,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_14_0.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_14_0.png" />
+<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_15_0.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_15_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -7393,7 +7406,7 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_15_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_15_1.png" />
+<img alt="../_images/notebooks_8_-_Two_Step_Dispatch_16_1.png" src="../_images/notebooks_8_-_Two_Step_Dispatch_16_1.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">

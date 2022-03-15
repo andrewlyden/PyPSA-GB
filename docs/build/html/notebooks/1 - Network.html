@@ -372,8 +372,22 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Voronoi-cells">
 <h2>Voronoi cells<a class="headerlink" href="#Voronoi-cells" title="Permalink to this headline">¶</a></h2>
 <p>Generators are connected to the buses by calculating the nearest bus by distance. Voronoi cells have been generated for the diagram below to illustrate the areas which correspond to the nearest bus. Voronoi cells show regions where all the points in one region are closer to one bus than any other bus.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">dotenv</span> <span class="kn">import</span> <span class="n">find_dotenv</span><span class="p">,</span> <span class="n">load_dotenv</span>
+
+<span class="n">load_dotenv</span><span class="p">(</span><span class="n">find_dotenv</span><span class="p">())</span>
+<span class="n">src_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PROJECT_SRC&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">src_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../pics/voronoi_reduced_model.png&#39;</span>
@@ -383,11 +397,11 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_1_-_Network_4_0.png" src="../_images/notebooks_1_-_Network_4_0.png" />
+<img alt="../_images/notebooks_1_-_Network_5_0.png" src="../_images/notebooks_1_-_Network_5_0.png" />
 </div>
 </div>
 </div>
@@ -395,7 +409,7 @@ div.rendered_html tbody tr:hover {
 <h2>Reduced network GB<a class="headerlink" href="#Reduced-network-GB" title="Permalink to this headline">¶</a></h2>
 <p>The reduced GB network has been adapted from the openly available Reduced GB Network which was developed at the University of Strathclyde in 2010 (<a class="reference external" href="https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/">https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/</a>). The main change is the addition of the Western HVDC link which strengthens the connection between Scotland and England, as well as upgrades of various lines.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -415,7 +429,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Data for the buses and lines is read in…</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/buses.csv&#39;</span><span class="p">)</span>
@@ -433,7 +447,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>The coordinates of the buses between lines is extracted for plotting.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
@@ -449,7 +463,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>This data is plotted using the geo package cartopy and plotting package matplotlib which is used extensively in this documentation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
@@ -489,12 +503,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_1_-_Network_13_0.png" src="../_images/notebooks_1_-_Network_13_0.png" />
+<img alt="../_images/notebooks_1_-_Network_14_0.png" src="../_images/notebooks_1_-_Network_14_0.png" />
 </div>
 </div>
 <p>This shows the underlying bus data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_buses</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">29</span><span class="p">,</span> <span class="p">:]</span>
@@ -502,7 +516,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -747,7 +761,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>This shows the underlying line data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span>
@@ -755,7 +769,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -904,7 +918,7 @@ div.rendered_html tbody tr:hover {
 <h2>Interconnectors<a class="headerlink" href="#Interconnectors" title="Permalink to this headline">¶</a></h2>
 <p>The historical years model interconnectors as fixed import/export from historical data. There are 6 existing interconnectors and their use is reflected in the historical data. Interconnectors which have only recently become operational, such as IFA2 which begun operation in January 2021, will not be operational before that date in the model and will have fixed zero imports/exports.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/interconnectors/links.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -913,7 +927,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -954,7 +968,7 @@ div.rendered_html tbody tr:hover {
       <td>Netherlands</td>
       <td>Kemsley</td>
       <td>DC</td>
-      <td>1000</td>
+      <td>1100</td>
     </tr>
     <tr>
       <th>EastWest</th>
@@ -975,21 +989,21 @@ div.rendered_html tbody tr:hover {
       <td>Belgium</td>
       <td>Sellindge</td>
       <td>DC</td>
-      <td>1000</td>
+      <td>1100</td>
     </tr>
     <tr>
       <th>IFA</th>
       <td>France1</td>
       <td>Sellindge</td>
       <td>DC</td>
-      <td>2000</td>
+      <td>2100</td>
     </tr>
     <tr>
       <th>IFA2</th>
       <td>France2</td>
       <td>Lovedean</td>
       <td>DC</td>
-      <td>1000</td>
+      <td>1100</td>
     </tr>
   </tbody>
 </table>
@@ -997,7 +1011,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>The interconnectors are plotted alongside the reduced network model below.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1051,7 +1065,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_1_-_Network_22_0.png" src="../_images/notebooks_1_-_Network_22_0.png" />
+<img alt="../_images/notebooks_1_-_Network_23_0.png" src="../_images/notebooks_1_-_Network_23_0.png" />
 </div>
 </div>
 </div>
@@ -1059,7 +1073,7 @@ div.rendered_html tbody tr:hover {
 <h2>Future interconnectors<a class="headerlink" href="#Future-interconnectors" title="Permalink to this headline">¶</a></h2>
 <p>Future interconnectors are modelled as bi-directional controllable links with fixed marginal costs (see PyPSA documentation). The pipeline of interconnector projects can be found up to 2030 and is shown below, along with assumptions for marginal costs.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors_future</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/interconnectors/links_future.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1068,7 +1082,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1240,7 +1254,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Future interconnectors are plotted alongside the reduced network model and current interconnectors below.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1301,7 +1315,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_1_-_Network_27_0.png" src="../_images/notebooks_1_-_Network_27_0.png" />
+<img alt="../_images/notebooks_1_-_Network_28_0.png" src="../_images/notebooks_1_-_Network_28_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
 </div>
 </div>
 </div>
