@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 
 from utils.cleaning import unify_index
 
+
 def fuel_prices_df(df):
 
     # from https://www.gov.uk/government/statistical-data-sets/prices-of-fuels-purchased-by-major-power-producers
     dti_quarterly = pd.date_range(
         start='2009-12-31', end='2020-12',
-        freq='QS', tz='GMT')
+        freq='QS')
 
     fuel_prices = df['Fuel prices']
     fuel_prices.set_index(dti_quarterly, inplace=True)
@@ -18,7 +19,7 @@ def fuel_prices_df(df):
 
     dti_end = pd.date_range(
         start='2020-10-01 00:30:00', end='2020-12-31 23:30:00',
-        freq='0.5H', tz='GMT')
+        freq='0.5H')
     cols = ['Coal (p/kWh)', 'Oil (p/kWh)', 'Gas (p/kWh)']
     # data = [0.752, 2.815, 1.167] * len(dti_end)
     df_end = pd.DataFrame(columns=cols, index=dti_end)
@@ -36,6 +37,7 @@ def fuel_prices_df(df):
 
     return fuel_prices
 
+
 def future_fuel_prices_df():
 
     df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
@@ -46,11 +48,11 @@ def future_fuel_prices_df():
 
     df_FES = df_FES.T
     df_FES.drop(range(2010, 2021), inplace=True)
-    df_FES.index = pd.to_datetime(df_FES.index, format='%Y', utc=True)
+    df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
     df_FES = df_FES.resample('0.5H').pad()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
-        freq='0.5H', tz='GMT')
+        freq='0.5H')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
     df_FES = df_FES.append(df_2050)
@@ -64,7 +66,7 @@ def carbon_support_price_df(df):
     # datetimeindex from 2010 to 2020 to match the fuel prices dataframe
     dti = pd.date_range(
         start='2010-01-01 00:00:00', end='2020-12-31 23:30:00',
-        freq='0.5H', tz='GMT')
+        freq='0.5H')
     csp_df = pd.DataFrame(columns=['Carbon support price (Pounds/tonne)'], index=dti)
     csp_df.loc['2010-01-01':'2013-03-31 23:30'] = 0.0
     csp_df.loc['2013-04-01':'2014-04-01'] = csp.loc[0, 'Carbon Support Price (£/tonne)']
@@ -73,6 +75,7 @@ def carbon_support_price_df(df):
     csp_df.loc['2016-04-01':'2020-12-31'] = csp.loc[3, 'Carbon Support Price (£/tonne)']
 
     return csp_df
+
 
 def EU_ETS_df(df):
 
@@ -91,7 +94,7 @@ def EU_ETS_df(df):
     # need to add last day of values
     dti_end = pd.date_range(
         start='2020-12-31 00:30:00', end='2020-12-31 23:30:00',
-        freq='0.5H', tz='GMT')
+        freq='0.5H')
     cols = ['EU ETS (Euros/tonne)']
     # data = [0.752, 2.815, 1.167] * len(dti_end)
     df_end = pd.DataFrame(columns=cols, index=dti_end)
@@ -111,11 +114,11 @@ def future_carbon_prices_df():
     df_FES.drop(['Year'], inplace=True)
     # remove last three rows
     df_FES = df_FES[:-3].T
-    df_FES.index = pd.to_datetime(df_FES.index, format='%Y', utc=True)
+    df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
     df_FES = df_FES.resample('0.5H').pad()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
-        freq='0.5H', tz='GMT')
+        freq='0.5H')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
     df_FES = df_FES.append(df_2050)
@@ -139,6 +142,7 @@ def exchange_year_average():
             2020: 0.8897}
 
     return data
+
 
 def marginal_price_dataframe():
 
@@ -263,8 +267,8 @@ def write_marginal_costs_series(start, end, freq, year):
     # this will be the same for unit commitment and LOPF
     # read in the list of generators
     df_gens = pd.read_csv('LOPF_data/generators.csv')
-    start_ = pd.to_datetime(start, utc=True)
-    end_ = pd.to_datetime(end, utc=True)
+    start_ = pd.to_datetime(start)
+    end_ = pd.to_datetime(end)
     marginal_cost_df = marginal_price_dataframe().loc[start_:end_]
 
     # now add the coal marginal prices
@@ -298,23 +302,22 @@ def write_marginal_costs_series(start, end, freq, year):
     df = pd.concat([df1, df2, df3, df4], axis=1)
     df.index.name = 'name'
 
-    if year <= 2020:
-        # use the snapshots index
-        df_snapshots = pd.read_csv('LOPF_data/snapshots.csv', index_col=0, parse_dates=True)
+    if freq == 'H':
 
-        df, df_snapshots = unify_index([df, df_snapshots], freq)
+        df = df.astype(float)
+        df = df.resample(freq).mean()
+        # appendix = df.iloc[-1:]
+        # appendix.index = appendix.index + pd.Timedelta(minutes=30)
+        # df = df.append(appendix)
 
-        df.index = df_snapshots.index
-    else:
-
+    elif year > 2020:
         if freq == 'H':
-            appendix = df.iloc[-1:]
+            # appendix = df.iloc[-1:]
             # appendix.index = appendix.index + pd.Timedelta(minutes=30)
-            appendix.index = appendix.index # + pd.Timedelta(minutes=30)
+            # appendix.index = appendix.index  + pd.Timedelta(minutes=30)
             # df = df.resample(freq).mean()
             df = df.iloc[::2, :]
-            df = df.append(appendix)
-        
+            # df = df.append(appendix)
 
     df.to_csv('UC_data/generators-marginal_cost.csv', header=True)
     df.to_csv('LOPF_data/generators-marginal_cost.csv', header=True)

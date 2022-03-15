@@ -22,12 +22,11 @@ import interconnectors
 import distribution
 import pandas as pd
 
-from utils.cleaning import unify_snapshots
 # turn off chained assignment errors
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def data_writer(start, end, time_step, year, year_baseline=None, scenario=None):
+def data_writer(start, end, time_step, year, year_baseline=None, scenario=None, merge_generators=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -46,7 +45,7 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None):
 
     # make sure that end time is in accordance with timestep
     if time_step == 1. or time_step == 'H' or time_step == '1H':
-        end = pd.Timestamp(end) 
+        end = pd.Timestamp(end)
         end = end.replace(minute=0)
         end = str(end)
 
@@ -72,40 +71,26 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None):
         generators.write_generators_p_max_pu(start, end, freq, year)
 
     marginal_costs.write_marginal_costs_series(start, end, freq, year)
-    # renewables.aggregate_renewable_generation(start, end, year, time_step)
 
     if year > 2020:
         interconnectors.future_interconnectors(year)
     elif year <= 2020:
         interconnectors.write_interconnectors(start, end, freq)
 
-    if year <= 2020:
-        unify_snapshots('snapshots.csv',
-                        ['generators-marginal_cost.csv',
-                         'generators-p_max_pu.csv',
-                         'generators-p_min_pu.csv',
-                         'loads-p_set.csv'],
-                        'LOPF_data')
-
-    '''
-    elif year > 2020:
-        unify_snapshots('snapshots.csv', [
-                                    'generators-marginal_cost.csv',
-                                    'generators-p_max_pu.csv',
-                                    'loads-p_set.csv'
-                                    ], 'LOPF_data')
-    '''
+    # merge the non-dispatchable generators at each bus to lower memory requirements
+    if merge_generators is True:
+        generators.merge_generation_buses(year)
 
 
 if __name__ == "__main__":
 
-    start = '2050-12-02 00:00:00'
-    end = '2050-12-02 03:30:00'
+    start = '2050-06-02 00:00:00'
+    end = '2050-06-02 23:30:00'
     # year of simulation
     year = int(start[0:4])
     # time step as fraction of hour
     time_step = 0.5
     if year > 2020:
-        data_writer(start, end, time_step, year, year_baseline=2020, scenario='Leading The Way')
+        data_writer(start, end, time_step, year, year_baseline=2020, scenario='Leading The Way', merge_generators=True)
     if year <= 2020:
         data_writer(start, end, time_step, year)

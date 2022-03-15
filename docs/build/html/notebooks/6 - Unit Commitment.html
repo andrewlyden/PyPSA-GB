@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Two Step Dispatch" href="8%20-%20Two%20Step%20Dispatch.html" />
+    <link rel="next" title="Comparison To Historical Data" href="9%20-%20Comparison%20To%20Historical%20Data.html" />
     <link rel="prev" title="Future Network Constrained Linear Optimal Power Flow" href="5b%20-%20LOPF%20Future.html" /> 
 </head>
 
@@ -45,17 +45,29 @@
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Unit Commitment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Setting-up-simulation">Setting up simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Running-MILP-and/or-LP">Running MILP and/or LP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Outputs">Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
         </div>
@@ -367,6 +379,8 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+<div class="section" id="Setting-up-simulation">
+<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the unit commitment: the start, end and year of simulation, the timestep, and true/false on outputting marginal prices</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -444,6 +458,9 @@ INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings
 INFO:pypsa.io:Imported network UC_data has buses, generators, links, loads, storage_units
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="Running-MILP-and/or-LP">
+<h2>Running MILP and/or LP<a class="headerlink" href="#Running-MILP-and/or-LP" title="Permalink to this headline">¶</a></h2>
 <p>The below cell runs the unit commitment. If marginal prices are not required then one MILP optimisation step is needed. If marginal prices are required then the MILP step is followed by fixing the generator status to convert to a LP which when solved gives marginal prices.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -561,6 +578,9 @@ Solution:
   number of solutions displayed: 0
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="Outputs">
+<h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -2108,7 +2128,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_6_-_Unit_Commitment_17_2.png" src="../_images/notebooks_6_-_Unit_Commitment_17_2.png" />
+<img alt="../_images/notebooks_6_-_Unit_Commitment_20_2.png" src="../_images/notebooks_6_-_Unit_Commitment_20_2.png" />
 </div>
 </div>
 <p>Graph the pumped hydro dispatch and state of charge…</p>
@@ -2144,7 +2164,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_6_-_Unit_Commitment_19_1.png" src="../_images/notebooks_6_-_Unit_Commitment_19_1.png" />
+<img alt="../_images/notebooks_6_-_Unit_Commitment_22_1.png" src="../_images/notebooks_6_-_Unit_Commitment_22_1.png" />
 </div>
 </div>
 <p>Graph the curtailment of onshore wind…</p>
@@ -2187,7 +2207,7 @@ Text(0.5, 0, &#39;&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_6_-_Unit_Commitment_21_1.png" src="../_images/notebooks_6_-_Unit_Commitment_21_1.png" />
+<img alt="../_images/notebooks_6_-_Unit_Commitment_24_1.png" src="../_images/notebooks_6_-_Unit_Commitment_24_1.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -2199,13 +2219,14 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 </div>
+</div>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="5b%20-%20LOPF%20Future.html" class="btn btn-neutral float-left" title="Future Network Constrained Linear Optimal Power Flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="8%20-%20Two%20Step%20Dispatch.html" class="btn btn-neutral float-right" title="Two Step Dispatch" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="9%20-%20Comparison%20To%20Historical%20Data.html" class="btn btn-neutral float-right" title="Comparison To Historical Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

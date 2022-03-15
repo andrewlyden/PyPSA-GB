@@ -85,8 +85,18 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_hd.rename(columns={'POWER_ESPENI_MW': 'load'}, inplace=True)
 
     # need an index for the period to be simulated
-    frequency = str(time_step) + 'H'
-    dti = pd.date_range(start=start, end=end, freq=frequency)
+    if time_step == 0.5:
+        freq = '0.5H'
+    elif time_step == 1.0:
+        freq = 'H'
+    else:
+        raise Exception("Time step not recognised")
+
+    dti = pd.date_range(
+        start=start,
+        end=end,
+        freq=freq)
+
     df_distribution = pd.read_csv(
         '../data/demand/Demand_Distribution.csv', index_col=0)
     df_distribution = df_distribution.loc[:, ~df_distribution.columns.str.contains('^Unnamed')]
@@ -116,6 +126,15 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
             # scale load for each node/bus
             df_loads_p_set_LOPF[j] = df['load'] * norm[j].values
 
+        if time_step == 0.5:
+            df_loads_p_set_LOPF.index = dti
+        elif time_step == 1:
+            df_loads_p_set_LOPF = df_loads_p_set_LOPF.resample(freq).mean()
+        if time_step == 0.5:
+            df_loads_p_set_UC.index = dti
+        elif time_step == 1:
+            df_loads_p_set_UC = df_loads_p_set_UC.resample(freq).mean()
+
     elif year > 2020:
         # if future scenarios need to scale historical
         # data using FES demand data
@@ -128,7 +147,7 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         date = str(year) + '-01-01 00:00:00'
         df_FES_demand.columns = df_FES_demand.columns.astype(str)
         # future demand in GWh/yr
-        future_demand = float(df_FES_demand[date].values[0]) * time_step
+        future_demand = float(df_FES_demand[date].values[0])
 
         # scale historical demand using baseline year
         year_start = str(year_baseline) + '-01-01 00:00:00'
@@ -137,7 +156,8 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         # load timeseries in baseline year
         df_year = df_hd.loc[year_start:year_end]
         # summed load in baseline year
-        historical_demand = df_year.sum().values[0] * time_step / 1000
+        # factor of two because historical demand is read in half hourly, so need to convert to GWh/yr
+        historical_demand = df_year.sum().values[0] * 0.5 / 1000
         scale_factor = float(future_demand) / float(historical_demand)
 
         # load for simulation dates in baseline year
@@ -147,10 +167,24 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         df_sim = df_year[start_yr:end_yr]
         scaled_load = scale_factor * df_sim
 
-        try:
+        # check if baseline year is a leap year and simulated year is not and remove 29th Feb
+        if year_baseline % 4 == 0:
+            # and the year modelled is also not a leap year
+            if year % 4 != 0:
+                # remove 29th Feb
+                scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
+
+        if time_step == 0.5:
             scaled_load.index = dti
-        except ValueError:
-            scaled_load = scaled_load.resample(frequency).mean()
+        elif time_step == 1:
+            scaled_load = scaled_load.resample(freq).mean()
+            # for some reason need to get rid of this date again?
+            # probably due to resampling step...
+            if year_baseline % 4 == 0:
+                # and the year modelled is also not a leap year
+                if year % 4 != 0:
+                    # remove 29th Feb
+                    scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
             scaled_load.index = dti
 
         # can use this for UC
@@ -164,17 +198,17 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_loads_p_set_UC.index.name = 'name'
     df_loads_p_set_LOPF.index.name = 'name'
 
-    if year > 2020 and time_step == 1.:
+    # if time_step == 0.5:
 
-        appendix = df_loads_p_set_LOPF.iloc[-1:]
-        new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
-        appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
-        df_loads_p_set_LOPF = df_loads_p_set_LOPF.append(appendix)
+    #     appendix = df_loads_p_set_LOPF.iloc[-1:]
+    #     new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
+    #     appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
+    #     df_loads_p_set_LOPF = df_loads_p_set_LOPF.append(appendix)
 
-        appendix = df_loads_p_set_UC.iloc[-1:]
-        new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
-        appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
-        df_loads_p_set_UC = df_loads_p_set_UC.append(appendix)
+    #     appendix = df_loads_p_set_UC.iloc[-1:]
+    #     new_index = df_loads_p_set_LOPF.index[-1] + pd.Timedelta(minutes=30)
+    #     appendix.rename(index={appendix.index[0]: new_index}, inplace=True)
+    #     df_loads_p_set_UC = df_loads_p_set_UC.append(appendix)
 
     df_loads_p_set_LOPF.to_csv('LOPF_data/loads-p_set.csv', header=True)
     df_loads_p_set_UC.to_csv('UC_data/loads-p_set.csv', header=True)

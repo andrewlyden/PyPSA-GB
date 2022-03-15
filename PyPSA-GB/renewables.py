@@ -572,6 +572,7 @@ def write_marine_generators(year, scenario):
     df_tidal_lagoon['marginal_cost'] = 0.0
     df_tidal_lagoon['ramp_limit_up'] = 1.0
     df_tidal_lagoon['ramp_limit_down'] = 1.0
+    df_tidal_lagoon['p_max_pu'] = 1.0
 
     read_tidal_stream_ = read_tidal_stream(year, scenario)
 
@@ -585,6 +586,7 @@ def write_marine_generators(year, scenario):
     df_tidal_stream['marginal_cost'] = 0.0
     df_tidal_stream['ramp_limit_up'] = 1.0
     df_tidal_stream['ramp_limit_down'] = 1.0
+    df_tidal_stream['p_max_pu'] = 1.0
 
     read_wave_power_ = read_wave_power(year, scenario)
 
@@ -598,9 +600,11 @@ def write_marine_generators(year, scenario):
     df_wave_power['marginal_cost'] = 0.0
     df_wave_power['ramp_limit_up'] = 1.0
     df_wave_power['ramp_limit_down'] = 1.0
+    df_wave_power['p_max_pu'] = 1.0
 
     # in shape to add to LOPF generators
     df_LOPF = df_LOPF.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
+    df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
     # additional params for UC problem
     df_tidal_lagoon['committable'] = False
@@ -627,9 +631,7 @@ def write_marine_generators(year, scenario):
     # in shape to add to UC generators
     df_UC = df_UC.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
     df_UC.bus = 'bus'
-
     df_UC.to_csv('UC_data/generators.csv', header=True)
-    df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
 
 def add_marine_timeseries(year, year_baseline, scenario, time_step):
@@ -662,7 +664,7 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_lagoon = pd.read_excel('../data/renewables/Marine/tidal_lagoon_full.xlsx', sheet_name=str(year))
     df_tidal_lagoon.index = df_tidal_lagoon['Date/time']
     df_tidal_lagoon.drop(['Date/time'], axis=1, inplace=True)
-    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True, utc=True)
+    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True)
     df_tidal_lagoon.index = df_tidal_lagoon.index.round('H')
     df_tidal_lagoon.drop(df_tidal_lagoon.tail(1).index, inplace=True)
     df_tidal_lagoon.dropna(axis='columns', inplace=True)
@@ -673,8 +675,24 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_lagoon.rename(columns={'Colwyn Bay': 'Colwyn'}, inplace=True)
     # interpolate to correct timestep
     df_tidal_lagoon = df_tidal_lagoon.resample(freq).interpolate('polynomial', order=2)
+
+    if len(df_tidal_lagoon.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_tidal_lagoon = pd.DataFrame(
+            data=df_tidal_lagoon.tail(1).values,
+            columns=df_tidal_lagoon.columns,
+            index=[end])
+        # add to existing dataframe
+        df_tidal_lagoon = df_tidal_lagoon.append(df_new_tidal_lagoon, sort=False)
+
     df_tidal_lagoon[df_tidal_lagoon < 0] = 0
     df_tidal_lagoon[df_tidal_lagoon > 1] = 1
+
+    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+
     # pick out required timeseries
     df_tidal_lagoon = df_tidal_lagoon.loc[df_LOPF.index.values]
     df_tidal_lagoon.index = df_LOPF.index
@@ -685,13 +703,29 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_stream = pd.read_excel(path)
     df_tidal_stream.index = df_tidal_stream['Date/time']
     df_tidal_stream.drop(['Date/time'], axis=1, inplace=True)
-    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True, utc=True)
+    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True)
     df_tidal_stream.index = df_tidal_stream.index.round('H')
     df_tidal_stream.drop(df_tidal_stream.tail(1).index, inplace=True)
     # interpolate to correct timestep
     df_tidal_stream = df_tidal_stream.resample(freq).interpolate('polynomial', order=2)
+
+    if len(df_tidal_stream.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_tidal_stream = pd.DataFrame(
+            data=df_tidal_stream.tail(1).values,
+            columns=df_tidal_stream.columns,
+            index=[end])
+        # add to existing dataframe
+        df_tidal_stream = df_tidal_stream.append(df_new_tidal_stream, sort=False)
+
     df_tidal_stream[df_tidal_stream < 0] = 0
     df_tidal_stream[df_tidal_stream > 1] = 1
+
+    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+
     # pick out required timeseries
     df_tidal_stream = df_tidal_stream.loc[df_LOPF.index.values]
     df_tidal_stream.index = df_LOPF.index
@@ -703,11 +737,27 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     # df_wave_power.index = df_wave_power.index.round('H')
     # interpolate to correct timestep
     df_wave_power = df_wave_power.resample(freq).interpolate('linear').round(5)
+
+    if len(df_wave_power.index) < len(df_LOPF.index):
+
+        # add end value
+        end = df_LOPF.index.values[-1]
+        df_new_wave_power = pd.DataFrame(
+            data=df_wave_power.tail(1).values,
+            columns=df_wave_power.columns,
+            index=[end])
+        # add to existing dataframe
+        df_wave_power = df_wave_power.append(df_new_wave_power, sort=False)
+
     df_wave_power[df_wave_power < 0] = 0
     df_wave_power[df_wave_power > 1] = 1
+
+    df_wave_power.index = pd.to_datetime(df_wave_power.index, infer_datetime_format=True)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+
     # pick out required timeseries
     period = df_LOPF.index
-    period = pd.to_datetime(period, infer_datetime_format=True, utc=True)
+    period = pd.to_datetime(period, infer_datetime_format=True)
     # change year to baseline year
     period = period.map(lambda t: t.replace(year=year_baseline))
     df_wave_power = df_wave_power.loc[period.values]
@@ -1120,11 +1170,22 @@ def future_offshore_timeseries(year, year_baseline, scenario):
     path = '../data/renewables/atlite/outputs/Wind_Offshore/wind_offshore_pipeline/'
     file = 'wind_offshore_pipeline_' + str(year_baseline) + '.csv'
     df_pipeline = pd.read_csv(path + file, index_col=0)
+    df_pipeline.index = df_baseline.index
 
     # first get the timeseries for these areas
     path = '../data/renewables/atlite/outputs/Wind_Offshore/wind_offshore_future/'
     file = 'wind_offshore_future_' + str(year_baseline) + '.csv'
     df_future = pd.read_csv(path + file, index_col=0)
+    df_future.index = df_baseline.index
+
+    # check if baseline year is a leap year and simulated year is not and remove 29th Feb
+    if year_baseline % 4 == 0:
+        # and the year modelled is also not a leap year
+        if year % 4 != 0:
+            # remove 29th Feb
+            df_baseline = df_baseline[~((df_baseline.index.month == 2) & (df_baseline.index.day == 29))]
+            df_pipeline = df_pipeline[~((df_pipeline.index.month == 2) & (df_pipeline.index.day == 29))]
+            df_future = df_future[~((df_future.index.month == 2) & (df_future.index.day == 29))]
 
     # now want to normalise using capacities...
     path = 'LOPF_data/generators.csv'
@@ -1137,8 +1198,6 @@ def future_offshore_timeseries(year, year_baseline, scenario):
     gen_tech_UC = generators_UC.loc[generators_UC['carrier'] == 'Wind Offshore']
 
     # combine the timeseries
-    df_pipeline.index = df_baseline.index
-    df_future.index = df_baseline.index
     result = pd.concat([df_baseline, df_pipeline, df_future], axis=1)
 
     # clean up strings in these original dataframes
@@ -1538,10 +1597,10 @@ if __name__ == "__main__":
     # year = 2027
     # future_offshore_capacity(year)
 
-    # year = 2017
-    # tech = 'Solar Photovoltaics'
-    # historical_RES_timeseries(year, tech)['norm']
-    # historical_RES_timeseries(year, tech)['timeseries']
+    year = 2017
+    tech = 'Solar Photovoltaics'
+    historical_RES_timeseries(year, tech)['norm']
+    historical_RES_timeseries(year, tech)['timeseries']
 
     # RES_correction_factors()
 
@@ -1566,13 +1625,13 @@ if __name__ == "__main__":
 
     # scenario = 'Consumer Transformation'
     # scenario = 'Leading The Way'
-    scenario = 'System Transformation'
+    # scenario = 'System Transformation'
     # scenario = 'Steady Progression'
-    year = 2050
+    # year = 2050
     # print(read_tidal_lagoon(year, scenario))
     # print(read_tidal_stream(year, scenario))
     # print(read_wave_power(year, scenario))
 
     # write_marine_generators(year, scenario)
-    year_baseline = 2012
+    # year_baseline = 2012
     # add_marine_timeseries(year, year_baseline, scenario, time_step=0.5)

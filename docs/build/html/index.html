@@ -44,17 +44,24 @@
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/1%20-%20Network.html">Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
+</ul>
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
 </ul>
 
         </div>
@@ -107,9 +114,13 @@
 </style>
 <div class="section" id="pypsa-gb-an-open-source-model-of-the-gb-power-system-for-future-energy-scenarios">
 <h1>PyPSA-GB: An open source model of the GB power system for future energy scenarios<a class="headerlink" href="#pypsa-gb-an-open-source-model-of-the-gb-power-system-for-future-energy-scenarios" title="Permalink to this headline">¶</a></h1>
-<p>Energy system models with high spatial and temporal resolution are required to analyse systems reliant on variable renewable generation. This documentation describes PyPSA-GB which is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and for future energy scenarios. Two aspects of the GB electricity market can be readily modelled: (i) the wholesale electricity market, by solving a single bus unit commitment optimisation problem to dispatch generators and storage, and (ii) the balancing mechanism, by solving a network constrained linear optimal power flow. The model is showcased through an analysis of network expansion for National Grid’s net zero future energy scenarios.</p>
+<p>PyPSA-GB is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and National Grid’s Future Energy Scenarios for future years.</p>
+<p>Two aspects of the GB electricity market can be readily modelled: (i) the wholesale electricity market, by solving a single bus unit commitment optimisation problem to dispatch generators and storage, and (ii) the balancing mechanism, by solving a network constrained linear optimal power flow.</p>
+<p>National Grid’s Future Energy Scenarios (Steady Progression, System Transformation, Consumer Transformation, and Leading The Way) can be simulated for the years 2021 to 2050. This requires the choice of a baseline year for weather data and demand, and this can be chosen for 2010-2020. The historical years 2010-2020 can also be simulated. Simulations can be carried out in half-hourly or hourly timesteps.</p>
+<p>Assumptions made in the model are transparent and can be modified directly through the appropriate data files. It is the intention of the developers that this model and dataset can provide a foundation for active development and improvement. The ‘Issues’ section on the GitHub page contains suggestions for improvements. Contributions are welcomed and encouraged.</p>
 <p><strong>Developers</strong></p>
-<p>PyPSA-GB is developed at the Institute for Energy Systems, University of Edinburgh. The following people have so far contributed to the developed code:</p>
+<p>PyPSA-GB is developed at the Institute for Energy Systems, University of Edinburgh.</p>
+<p>Contributors:</p>
 <ul class="simple">
 <li><p>Andrew Lyden</p></li>
 <li><p>Iain Struthers</p></li>
@@ -117,7 +128,7 @@
 <li><p>Lukas Franken</p></li>
 </ul>
 <p><strong>Licence</strong></p>
-<p>To do…</p>
+<p>PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets are used under a CC-BY-4.0 licence.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
@@ -128,22 +139,29 @@
 <p class="caption"><span class="caption-text">Data and Functionality</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/1%20-%20Network.html">Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/2%20-%20Demand.html">Demand Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/8%20-%20Two%20Step%20Dispatch.html">Two Step Dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/7%20-%20Network%20Expansion.html">Network Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="API_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
 </div>
 </div>
 
