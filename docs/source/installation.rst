@@ -14,6 +14,8 @@ Clone the repository from GitHub through a terminal using Git. Using a terminal 
 
 	git clone https://github.com/andrewlyden/PyPSA-GB.git
 
+Specify the path to the /PyPSA-GB folder in the .env file.
+
 Install Gurobi solver
 #####################
 

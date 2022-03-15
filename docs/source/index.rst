@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-PyPSA-GB: An open source model of the GB power system for future energy scenarios
-=================================================================================
+PyPSA-GB: An open source model of the GB power system for simulating future energy scenarios
+============================================================================================
 
 PyPSA-GB is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and National Grid's Future Energy Scenarios for future years. 
 
