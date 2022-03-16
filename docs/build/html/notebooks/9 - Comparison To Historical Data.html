@@ -367,7 +367,7 @@ div.rendered_html tbody tr:hover {
 </style>
 <div class="section" id="Comparison-To-Historical-Data">
 <h1>Comparison To Historical Data<a class="headerlink" href="#Comparison-To-Historical-Data" title="Permalink to this headline">¶</a></h1>
-<p>PyPSA-GB can model the GB power system by solving a network constrained Linear Optimal Power Flow (LOPF) problem. This notebook shows the example application of a historical 3 day period.</p>
+<p>This notebook simulates 2018 using the network constrained LOPF functionality and compares the generation output to historical data published by BEIS.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -1163,7 +1163,7 @@ dtype: float64
 331.59049179683797
 </pre></div></div>
 </div>
-<p>BEIS publish reports on power generation, and here we extract the data for 2018 from X and Y <a class="reference external" href="https://www.gov.uk/government/statistics/energy-trends-section-6-renewables">https://www.gov.uk/government/statistics/energy-trends-section-6-renewables</a></p>
+<p>BEIS publish reports on power generation. We extracted the data for 2018 from “Table 5c: electricity supplied by fuel 1998 to 2020 (TWh)” in ET5.1 (power generation) and ET5.6 (imports) <a class="reference external" href="https://www.gov.uk/government/statistics/electricity-section-5-energy-trends">https://www.gov.uk/government/statistics/electricity-section-5-energy-trends</a>. Additional data for EfW Incineration was obtained from the DUKES dataset <a class="reference external" href="https://www.gov.uk/government/collections/digest-of-uk-energy-statistics-dukes">https://www.gov.uk/government/collections/digest-of-uk-energy-statistics-dukes</a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -1469,8 +1469,8 @@ Index([&#39;Coal&#39;, &#39;EfW Incineration&#39;, &#39;Interconnectors Import&#
 </table>
 </div></div>
 </div>
-<p>Looking at table above we can see - Gas too high - Coal too low</p>
-<p>Likely due to price dynamics of gas and coal which are not fully captured in marginal cost.</p>
+<p>Looking at table above we can see (i) Gas too high, and (ii) Coal too low.</p>
+<p>Likely due to price dynamics of gas and coal which are not fully captured in marginal cost, e.g., capacity markets.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
