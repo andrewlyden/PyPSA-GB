@@ -8,11 +8,14 @@ Install Python
 The code for PyPSA-GB is written in Python and relies on a number of standard Python packages. Python has emerged as a popular programming language for energy system modellers. Installing Anaconda (https://www.anaconda.com/) is a highly recommended starting point for beginners looking to get Python running quickly on their computer. Anaconda includes several of the necessary scientific packages and the conda package can be used to manage virtual environments. The following installation instructions assume an Anaconda installation including, but alternative setup routes are possible. 
 
 Clone repository using Git
-############################
+##########################
 
 Clone the repository from GitHub through a terminal using Git. Using a terminal navigate to a target folder where the repo will be cloned and run the following Git clone command (https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for the PyPSA-GB repository. (Warning: this may take a long time and repository size is around 2GB)::
 
 	git clone https://github.com/andrewlyden/PyPSA-GB.git
+
+Modify .env file to own path
+############################
 
 Please modify the path to your own directory for the /PyPSA-GB folder in the .env file. This allows scripts to be imported in any directory.
 
@@ -57,6 +60,7 @@ Checklist
 
 #. Anaconda installation
 #. Clone repository via GitHub using Git
+#. Modify .env file to own path
 #. Install solver
 #. Create and activate conda environment
 #. Install conda environment as kernel for jupyter notebooks
