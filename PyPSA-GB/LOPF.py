@@ -127,7 +127,7 @@ p_by_carrier = p_by_carrier.rename(
 
 if year > 2020:
 
-    cols = ["Nuclear", 'Shoreline Wave', 'Marine', 'Biomass',
+    cols = ["Nuclear", 'Marine', 'Biomass',
             'EfW Incineration', "Oil", "Natural Gas",
             'Hydrogen', 'CCS Gas', 'CCS Biomass',
             "Pumped Storage Hydroelectric", 'Hydro',

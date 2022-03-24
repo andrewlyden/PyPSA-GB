@@ -558,6 +558,14 @@ def write_marine_generators(year, scenario):
     path_UC = 'UC_data/generators.csv'
     df_UC = pd.read_csv(path_UC, index_col=0)
 
+    # want to remove historical marine generators
+    tech1 = 'Shoreline Wave'
+    tech2 = 'Tidal Barrage and Tidal Stream'
+    df_LOPF = df_LOPF[~df_LOPF.carrier.str.contains(tech1)]
+    df_LOPF = df_LOPF[~df_LOPF.carrier.str.contains(tech2)]
+    df_UC = df_UC[~df_UC.carrier.str.contains(tech1)]
+    df_UC = df_UC[~df_UC.carrier.str.contains(tech2)]
+
     # read marine generators
     read_tidal_lagoon_ = read_tidal_lagoon(year, scenario)
 
