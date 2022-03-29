@@ -1400,7 +1400,6 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         df_onshore = df_onshore.append(df_new_onshore, sort=False)
     # name the index
     df_onshore.index.name = 'name'
-    df_onshore.index = df_offshore.index
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
     if year_baseline is not None:
@@ -1409,6 +1408,8 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
             if year % 4 != 0:
                 # remove 29th Feb
                 df_onshore = df_onshore[~((df_onshore.index.month == 2) & (df_onshore.index.day == 29))]
+
+    df_onshore.index = df_offshore.index
 
     # PV
 
@@ -1445,7 +1446,6 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         df_PV = df_PV.append(df_new_PV, sort=False)
     # name the index
     df_PV.index.name = 'name'
-    df_PV.index = df_offshore.index
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
     if year_baseline is not None:
@@ -1454,6 +1454,8 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
             if year % 4 != 0:
                 # remove 29th Feb
                 df_PV = df_PV[~((df_PV.index.month == 2) & (df_PV.index.day == 29))]
+
+    df_PV.index = df_offshore.index
 
     # HYDRO
     # hydro data is between 2015-02-22 and 2020-12-31
@@ -1499,6 +1501,7 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
             if year % 4 != 0:
                 # remove 29th Feb
                 df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+
     df_hydro.index = df_offshore.index
 
     # MARINE TECHNOLOGIES
