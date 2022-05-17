@@ -1400,6 +1400,7 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         df_onshore = df_onshore.append(df_new_onshore, sort=False)
     # name the index
     df_onshore.index.name = 'name'
+    df_onshore.index = pd.to_datetime(df_onshore.index)
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
     if year_baseline is not None:
@@ -1446,6 +1447,7 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
         df_PV = df_PV.append(df_new_PV, sort=False)
     # name the index
     df_PV.index.name = 'name'
+    df_PV.index = pd.to_datetime(df_PV.index)
 
     # check if baseline year is a leap year and simulated year is not and remove 29th Feb
     if year_baseline is not None:
