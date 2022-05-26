@@ -1595,8 +1595,8 @@ def unmet_load():
 
     # add one to the UC problem
     dic_unmet = {'carrier': 'Unmet Load',
-                 'type': 'Unmet Load', 'p_nom': 999999999,
-                 'bus': 'bus', 'marginal_cost': 999999999,
+                 'type': 'Unmet Load', 'p_nom': 200,
+                 'bus': 'bus', 'marginal_cost': 200,
                  'committable': True, 'min_up_time': 0,
                  'min_down_time': 0, 'ramp_limit_up': 1,
                  'ramp_limit_down': 1, 'p_min_pu': 0,
