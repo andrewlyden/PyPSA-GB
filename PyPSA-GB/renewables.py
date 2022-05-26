@@ -574,7 +574,7 @@ def write_marine_generators(year, scenario):
     # GW to MW
     df_tidal_lagoon.loc[:, 'p_nom'] *= 1000
     df_tidal_lagoon.index.name = 'name'
-    df_tidal_lagoon['carrier'] = 'Marine'
+    df_tidal_lagoon['carrier'] = 'Tidal lagoon'
     df_tidal_lagoon['type'] = 'Tidal lagoon'
     df_tidal_lagoon['bus'] = read_tidal_lagoon_['locations']['bus']
     df_tidal_lagoon['marginal_cost'] = 0.0
@@ -588,7 +588,7 @@ def write_marine_generators(year, scenario):
     df_tidal_stream.columns = ['p_nom']
     df_tidal_stream.loc[:, 'p_nom'] *= 1000
     df_tidal_stream.index.name = 'name'
-    df_tidal_stream['carrier'] = 'Marine'
+    df_tidal_stream['carrier'] = 'Tidal stream'
     df_tidal_stream['type'] = 'Tidal stream'
     df_tidal_stream['bus'] = read_tidal_stream_['locations']['bus']
     df_tidal_stream['marginal_cost'] = 0.0
@@ -602,7 +602,7 @@ def write_marine_generators(year, scenario):
     df_wave_power.columns = ['p_nom']
     df_wave_power.loc[:, 'p_nom'] *= 1000
     df_wave_power.index.name = 'name'
-    df_wave_power['carrier'] = 'Marine'
+    df_wave_power['carrier'] = 'Wave power'
     df_wave_power['type'] = 'Wave power'
     df_wave_power['bus'] = read_wave_power_['locations']['bus']
     df_wave_power['marginal_cost'] = 0.0
@@ -921,6 +921,45 @@ def aggregate_renewable_generation(start, end, year, time_step):
     df_offshore_aggregated_norm = df_offshore_aggregated_norm.append(df_new_offshore, sort=False)
     df_offshore_aggregated_norm.index.name = 'name'
 
+#     # FLOATING WIND
+#     df_floating = df.loc[df['carrier'] == 'Floating Wind'].reset_index(drop=True)
+#     # delete PV from original dataframe
+#     df = df[df.carrier != 'Floating Wind']
+#     # add in row of total PV power
+#     df = df.append({'name': 'floating_wind',
+#                     'carrier': 'Floating Wind',
+#                     'type': 'Floating Wind',
+#                     'p_nom': df_floating['p_nom'].sum(),
+#                     'bus': 'bus',
+#                     'marginal_cost': df_floating['marginal_cost'].mean(),
+#                     'committable': df_floating['committable'][0],
+#                     'min_up_time': df_floating['min_up_time'][0],
+#                     'min_down_time': df_floating['min_down_time'][0],
+#                     'ramp_limit_up': df_floating['ramp_limit_up'][0],
+#                     'ramp_limit_down': df_floating['ramp_limit_down'][0],
+#                     'up_time_before': df_floating['up_time_before'][0],
+#                     'p_min_pu': df_floating['p_min_pu'][0],
+#                     'start_up_cost': df_floating['start_up_cost'][0]}, ignore_index=True)
+#     # print(df)
+#     # read in the floating wind time series
+#     df_floating_series = renewables_ninja_data_analysis.floating_wind_corrected_series(year)
+#     df_floating_series = df_floating_series.loc[start:end]
+
+#     df_floating_aggregated_norm = df_floating_series.sum(axis=1) / 1000. / df_floating['p_nom'].sum()
+#     df_floating_aggregated_norm = pd.DataFrame(df_floating_aggregated_norm, columns=['floating_wind'])
+#     # resample to half hourly timesteps
+#     df_floating_aggregated_norm = df_floating_aggregated_norm.resample(freq).interpolate('polynomial', order=1)
+#     # need to add a row at end
+#     # the data being passed is the values of the last row
+#     # the tail function is used to get the last index value
+#     df_new_floating = pd.DataFrame(
+#         data=[df_floating_aggregated_norm.loc[df_floating_aggregated_norm.tail(1).index.values].values[0]],
+#         columns=df_floating_aggregated_norm.columns,
+#         index=[end])
+#     # add to existing dataframe
+#     df_floating_aggregated_norm = df_floating_aggregated_norm.append(df_new_floating, sort=False)
+#     df_floating_aggregated_norm.index.name = 'name'
+        
     # HYDRO
 
     df_hydro_small = df.loc[df['carrier'] == 'Small Hydro'].reset_index(drop=True)
