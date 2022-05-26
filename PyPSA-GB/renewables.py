@@ -647,6 +647,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     path = 'LOPF_data/generators-p_max_pu.csv'
     df_LOPF = pd.read_csv(path, index_col=0)
 
+    year_orig = year
+
     # in 5 year increments
     if year < 2030:
         year = 2025
@@ -699,6 +701,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_lagoon[df_tidal_lagoon > 1] = 1
 
     df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True)
+    # change the year to the df_LOPF year
+    df_tidal_lagoon.index = df_tidal_lagoon.index.map(lambda x : x.replace(year=year_orig))
     df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
 
     # pick out required timeseries
@@ -735,6 +739,7 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
 
     # pick out required timeseries
+    df_tidal_stream.index = df_tidal_stream.index.map(lambda x : x.replace(year=year_orig))
     df_tidal_stream = df_tidal_stream.loc[df_LOPF.index.values]
     df_tidal_stream.index = df_LOPF.index
 
