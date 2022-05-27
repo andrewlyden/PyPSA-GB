@@ -580,7 +580,6 @@ def write_marine_generators(year, scenario):
     df_tidal_lagoon['marginal_cost'] = 0.0
     df_tidal_lagoon['ramp_limit_up'] = 1.0
     df_tidal_lagoon['ramp_limit_down'] = 1.0
-    df_tidal_lagoon['p_max_pu'] = 1.0
 
     read_tidal_stream_ = read_tidal_stream(year, scenario)
 
@@ -594,7 +593,6 @@ def write_marine_generators(year, scenario):
     df_tidal_stream['marginal_cost'] = 0.0
     df_tidal_stream['ramp_limit_up'] = 1.0
     df_tidal_stream['ramp_limit_down'] = 1.0
-    df_tidal_stream['p_max_pu'] = 1.0
 
     read_wave_power_ = read_wave_power(year, scenario)
 
@@ -608,7 +606,6 @@ def write_marine_generators(year, scenario):
     df_wave_power['marginal_cost'] = 0.0
     df_wave_power['ramp_limit_up'] = 1.0
     df_wave_power['ramp_limit_down'] = 1.0
-    df_wave_power['p_max_pu'] = 1.0
 
     # in shape to add to LOPF generators
     df_LOPF = df_LOPF.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])

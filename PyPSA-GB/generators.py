@@ -1683,7 +1683,7 @@ def merge_generation_buses(year):
     path = 'LOPF_data/generators-p_max_pu.csv'
     df_gen_p = pd.read_csv(path, index_col=0)
 
-    carriers = ['Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Interconnector', 'Floating Wind']
+    carriers = ['Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Interconnector', 'Tidal lagoon', 'Tidal stream', 'Wave power']
     buses = df_gen['bus'].unique()
     df_list = []
     df_gen_p_list = []
