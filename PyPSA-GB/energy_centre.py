@@ -1,3 +1,4 @@
+from operator import index
 import pypsa
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,14 +22,14 @@ class EnergyCentre(object):
         # read in data here
         # half-hourly
         heat_demand = pd.read_csv('..\data\easter_bush_data\heat_demand.csv', index_col=0)[['Values']].loc[timestamp_from:timestamp_to]['Values']
-        heat_demand.index = pd.to_datetime(heat_demand.index, infer_datetime_format=True)
+        heat_demand.index = pd.to_datetime(heat_demand.index, dayfirst=True)
         self.heat_demand = heat_demand / 1000
         # half-hourly
         elec_demand = pd.read_csv('..\data\easter_bush_data\elec_demand.csv', index_col=0)[['Values']].loc[timestamp_from:timestamp_to]['Values']
         elec_demand.index = self.network.snapshots
         self.elec_demand = elec_demand / 1000
         temperature = pd.read_csv(r'..\data\easter_bush_data\air_temp.csv', index_col=0, skiprows=3).dropna(axis=1).drop(columns=['local_time'])
-        temperature.index = pd.to_datetime(temperature.index, infer_datetime_format=True)
+        temperature.index = pd.to_datetime(temperature.index, dayfirst=True)
         temp = pd.DataFrame(temperature.temperature.resample('0.5H').interpolate())
         df_temp_new = pd.DataFrame(
             data=[temp.loc[temp.tail(1).index.values].values[0]],
@@ -62,7 +63,7 @@ class EnergyCentre(object):
         # self.heat_demand = heat_demand / 1000
     
         heat_demand = pd.read_csv('..\data\scottish_borders_data\heat_demand.csv', index_col=0)
-        heat_demand.index = pd.to_datetime(heat_demand.index, infer_datetime_format=True)
+        heat_demand.index = pd.to_datetime(heat_demand.index, dayfirst=True)
         heat = pd.DataFrame(heat_demand.Values.resample('0.5H').interpolate())
         df_heat_demand_new = pd.DataFrame(
             data=[heat.loc[heat.tail(1).index.values].values[0]],
@@ -74,9 +75,9 @@ class EnergyCentre(object):
         date_time_1 = pd.to_datetime([timestamp_from])
         date_time_2 = pd.to_datetime([timestamp_to])
         self.heat_demand = heat[date_time_1[0]:date_time_2[0]]['Values'] / 1000
-    
+
         elec_demand = pd.read_csv('..\data\scottish_borders_data\elec_demand.csv', index_col=0)
-        elec_demand.index = pd.to_datetime(elec_demand.index, infer_datetime_format=True)
+        elec_demand.index = pd.to_datetime(elec_demand.index, dayfirst=True)
         elec = pd.DataFrame(elec_demand.Values.resample('0.5H').interpolate())
         df_elec_demand_new = pd.DataFrame(
             data=[elec.loc[elec.tail(1).index.values].values[0]],
@@ -90,7 +91,7 @@ class EnergyCentre(object):
         self.elec_demand = elec[date_time_1[0]:date_time_2[0]]['Values'] / 1000
     
         temperature = pd.read_csv(r'..\data\easter_bush_data\air_temp.csv', index_col=0, skiprows=3).dropna(axis=1).drop(columns=['local_time'])
-        temperature.index = pd.to_datetime(temperature.index, infer_datetime_format=True)
+        temperature.index = pd.to_datetime(temperature.index, dayfirst=True)
         temp = pd.DataFrame(temperature.temperature.resample('0.5H').interpolate())
         df_temp_new = pd.DataFrame(
             data=[temp.loc[temp.tail(1).index.values].values[0]],
@@ -111,7 +112,29 @@ class EnergyCentre(object):
         tariff[tariff < 0] = 0
         # multiply by 10 to convert from p/kWh to £/MWh
         self.tariff = tariff.loc[timestamp_from:timestamp_to] * 10
+        self.tariff = self.tariff.rename('Wholesale price (£/MWh)')
         self.tariff.index = self.network.snapshots
+
+    def constrained_wind_data(self):
+
+        df = pd.read_csv(r'..\data\scottish_borders_data\2019_Scottish_wind_farms.csv', index_col=0)
+        df = df[['T_CRYRW-2_Energy_[MWh]', 'T_CRYRW-2_Payment_[GBP]']]
+        df.index = pd.to_datetime(df.index, dayfirst=True)
+        df['£/MWh'] = df['T_CRYRW-2_Payment_[GBP]'] / df['T_CRYRW-2_Energy_[MWh]']
+        df = df.fillna(0)
+
+        print(df['T_CRYRW-2_Payment_[GBP]'].sum())
+        print(df['£/MWh'])
+
+        df['£/MWh'].to_csv('see.csv')
+
+        return df
+
+    def apply_constraint_discount(self):
+
+        constraint_payment = self.constrained_wind_data()['£/MWh']
+        # plus because constraint payment data is negative
+        self.tariff = self.tariff + constraint_payment
 
     def add_bus(self, carrier):
         # carrier can be 'heat', 'elec', 'hydrogen'
@@ -137,13 +160,28 @@ class EnergyCentre(object):
             )
 
     def add_heat_pump(self):
+
+        perf = pd.read_csv('../data/scottish_borders_data/heat_pump_performance.csv', index_col=0)
+        perf.index = pd.to_datetime(perf.index, dayfirst=True)
+        p = pd.DataFrame(perf.cop.resample('0.5H').interpolate())
+        df_perf_new = pd.DataFrame(
+            data=[p.loc[p.tail(1).index.values].values[0]],
+            columns=p.columns,
+            index=[pd.to_datetime(['2019-12-31 23:30:00'])][0])
+        # add to existing dataframe
+        p = p.append(df_perf_new, sort=False)
+        # half-hourly
+        date_time_1 = pd.to_datetime([self.timestamp_from])
+        date_time_2 = pd.to_datetime([self.timestamp_to])
+        cop = p[date_time_1[0]:date_time_2[0]]['cop']
+
         self.network.add(
             'Link',
             name="Heat_Pump",
             bus0="elec",
             bus1="heat",
             p_nom=1000000,
-            efficiency=3.0,
+            efficiency=cop,
             # marginal_cost=self.tariff,
             # p_nom_extendable=True,
             # p_nom_min=0,
@@ -167,7 +205,8 @@ class EnergyCentre(object):
     def add_short_term_store(self,
                 sts_cap=14,
                 sts_charge=2.940,
-                sts_discharge=1.260
+                sts_discharge=1.260,
+                sts_standing_loss=0.000
                 ):
         '''
         Default parameters are as in Renaldi, Friedrich 2018
@@ -185,6 +224,7 @@ class EnergyCentre(object):
                     name='sts', 
                     bus='heat_sts', 
                     e_nom=sts_cap,
+                    standing_loss=sts_standing_loss,
                     )
 
         self.network.add('Link', 
@@ -204,6 +244,7 @@ class EnergyCentre(object):
                 lts_cap=900,
                 lts_charge=0.17,
                 lts_discharge=0.17,
+                lts_standing_loss=0.000
                 ):
         '''
         Default parameters are as in Renaldi, Friedrich 2018
@@ -221,6 +262,7 @@ class EnergyCentre(object):
                     name='lts', 
                     bus='heat_lts', 
                     e_nom=lts_cap,
+                    standing_loss=lts_standing_loss,
                     )
 
         self.network.add('Link', 
@@ -243,62 +285,65 @@ if __name__ == '__main__':
     timestamp_to = '2019-12-31 23:30:00'
     myEC = EnergyCentre(timestep=timestep, timestamp_from=timestamp_from, timestamp_to=timestamp_to)
     # read in the data for easter bush
-    myEC.get_data_easter_bush()
-    # print(myEC.__dict__)
+    myEC.get_data_scottish_borders()
+    # # print(myEC.__dict__)
 
-    # add heat and elec buses
-    myEC.add_bus('heat')
-    myEC.add_bus('elec')
-    # print(myEC.network.buses)
+    myEC.constrained_wind_data()
+    # myEC.apply_constraint_discount()
 
-    # add heat and elec demands
-    myEC.add_heat_demand()
-    myEC.add_elec_demand()
-    # print(myEC.network.loads_t.p_set)
+    # # add heat and elec buses
+    # myEC.add_bus('heat')
+    # myEC.add_bus('elec')
+    # # print(myEC.network.buses)
 
-    # add grid connection as elec generator
-    myEC.add_grid_connection()
+    # # add heat and elec demands
+    # myEC.add_heat_demand()
+    # myEC.add_elec_demand()
+    # # print(myEC.network.loads_t.p_set)
+
+    # # add grid connection as elec generator
+    # myEC.add_grid_connection()
+    # # print(myEC.network.generators_t.marginal_cost)
+    # # add gas boiler
+    # myEC.add_gas_boiler()
+
+    # # add heat pump as link
+    # myEC.add_heat_pump()
+    # # add resistive heater as link
+    # myEC.add_resistive_heater()
+    # # print(myEC.network.links)
+    # # print(myEC.network.links_t.marginal_cost)
+
+    # # add storage
+    # myEC.add_short_term_store()
+    # myEC.add_long_term_store()
+
+    # # run LOPF
+    # myEC.network.lopf(myEC.network.snapshots,
+    #                   solver_name="gurobi",
+    #                 #   pyomo=False,
+    #                 #   keep_shadowprices=True,
+    #                   )
+    # print(myEC.network.links_t.p0)
+    # print(myEC.network.links_t.p1)
+    # print(myEC.network.generators_t.p)
+    # print(myEC.network.loads_t.p)
+    # # print(myEC.network.generators)
     # print(myEC.network.generators_t.marginal_cost)
-    # add gas boiler
-    myEC.add_gas_boiler()
+    # # print(myEC.network.buses_t.marginal_price)
 
-    # add heat pump as link
-    myEC.add_heat_pump()
-    # add resistive heater as link
-    myEC.add_resistive_heater()
-    # print(myEC.network.links)
-    # print(myEC.network.links_t.marginal_cost)
+    # myEC.network.generators_t.p['Heat_Pump'] = myEC.network.links_t.p1.Heat_Pump * -1
+    # myEC.network.generators_t.p['Resistive_Heater'] = myEC.network.links_t.p1.Resistive_Heater * -1
+    # myEC.network.generators_t.marginal_cost['Gas_Boiler'] = myEC.network.generators.marginal_cost.Gas_Boiler
 
-    # add storage
-    myEC.add_short_term_store()
-    myEC.add_long_term_store()
+    # fig, axs = plt.subplots(4, 1, figsize=(16, 16))
 
-    # run LOPF
-    myEC.network.lopf(myEC.network.snapshots,
-                      solver_name="gurobi",
-                    #   pyomo=False,
-                    #   keep_shadowprices=True,
-                      )
-    print(myEC.network.links_t.p0)
-    print(myEC.network.links_t.p1)
-    print(myEC.network.generators_t.p)
-    print(myEC.network.loads_t.p)
-    # print(myEC.network.generators)
-    print(myEC.network.generators_t.marginal_cost)
-    # print(myEC.network.buses_t.marginal_price)
+    # myEC.network.loads_t.p_set.rename_axis('').plot(ax=axs[0], title='Demands')
+    # myEC.network.generators_t.p.rename_axis('').drop(columns=['Grid']).plot.area(ax=axs[1], linewidth=0, title='Heat production')
+    # myEC.network.generators_t.marginal_cost.rename_axis('').plot(ax=axs[2], title='Grid and gas costs')
+    # myEC.network.stores_t.e.rename_axis('').plot(ax=axs[3], title='Storages state of charge')
 
-    myEC.network.generators_t.p['Heat_Pump'] = myEC.network.links_t.p1.Heat_Pump * -1
-    myEC.network.generators_t.p['Resistive_Heater'] = myEC.network.links_t.p1.Resistive_Heater * -1
-    myEC.network.generators_t.marginal_cost['Gas_Boiler'] = myEC.network.generators.marginal_cost.Gas_Boiler
-
-    fig, axs = plt.subplots(4, 1, figsize=(16, 16))
-
-    myEC.network.loads_t.p_set.rename_axis('').plot(ax=axs[0], title='Demands')
-    myEC.network.generators_t.p.rename_axis('').drop(columns=['Grid']).plot.area(ax=axs[1], linewidth=0, title='Heat production')
-    myEC.network.generators_t.marginal_cost.rename_axis('').plot(ax=axs[2], title='Grid and gas costs')
-    myEC.network.stores_t.e.rename_axis('').plot(ax=axs[3], title='Storages state of charge')
-
-    for ax in axs:
-        ax.legend()
-    plt.tight_layout()
-    plt.show()
+    # for ax in axs:
+    #     ax.legend()
+    # plt.tight_layout()
+    # plt.show()
