@@ -56,11 +56,6 @@ class EnergyCentre(object):
 
         timestamp_from = self.timestamp_from
         timestamp_to = self.timestamp_to
-
-        # read in data here
-        # heat_demand = pd.read_csv('..\data\scottish_borders_data\heat_demand.csv', index_col=0)[['Values']].loc[timestamp_from:timestamp_to]['Values']
-        # heat_demand.index = self.network.snapshots
-        # self.heat_demand = heat_demand / 1000
     
         heat_demand = pd.read_csv('..\data\scottish_borders_data\heat_demand.csv', index_col=0)
         heat_demand.index = pd.to_datetime(heat_demand.index, dayfirst=True)
@@ -89,31 +84,25 @@ class EnergyCentre(object):
         date_time_1 = pd.to_datetime([timestamp_from])
         date_time_2 = pd.to_datetime([timestamp_to])
         self.elec_demand = elec[date_time_1[0]:date_time_2[0]]['Values'] / 1000
-    
-        temperature = pd.read_csv(r'..\data\easter_bush_data\air_temp.csv', index_col=0, skiprows=3).dropna(axis=1).drop(columns=['local_time'])
-        temperature.index = pd.to_datetime(temperature.index, dayfirst=True)
-        temp = pd.DataFrame(temperature.temperature.resample('0.5H').interpolate())
-        df_temp_new = pd.DataFrame(
-            data=[temp.loc[temp.tail(1).index.values].values[0]],
-            columns=temp.columns,
-            index=[pd.to_datetime(['2020-12-31 23:30:00'])][0])
-        # add to existing dataframe
-        temp = temp.append(df_temp_new, sort=False)
-        # half-hourly
-        date_time_1 = pd.to_datetime([timestamp_from])
-        date_time_2 = pd.to_datetime([timestamp_to])
-        self.temperature = temp[date_time_1[0]:date_time_2[0]]
 
         # half-hourly
-        self.carbon_intensity = pd.read_csv(r'..\data\easter_bush_data\regional_emissions.csv', index_col=0).loc[timestamp_from:timestamp_to]
+        self.carbon_intensity = pd.read_csv(r'..\data\scottish_borders_data\country_carbon_intensity_data.csv', index_col=0).loc[timestamp_from:timestamp_to]['Scotland']
+        self.carbon_intensity.index = pd.to_datetime(self.carbon_intensity.index, dayfirst=True)
+    
         # half-hourly
-        tariff = pd.read_csv(r'..\data\easter_bush_data\tariffs.csv', index_col=0)['Wholesale price (p/kWh)']
+        tariff = pd.read_csv(r'..\data\scottish_borders_data\tariffs.csv', index_col=0)['Wholesale price (p/kWh)']
         tariff.index = pd.to_datetime(tariff.index)
-        tariff[tariff < 0] = 0
         # multiply by 10 to convert from p/kWh to £/MWh
         self.tariff = tariff.loc[timestamp_from:timestamp_to] * 10
         self.tariff = self.tariff.rename('Wholesale price (£/MWh)')
         self.tariff.index = self.network.snapshots
+
+    def carbon_calculator(self, grid_import, gas_boiler=None):
+        self.carbon_emissions_grid = self.carbon_intensity * grid_import
+        # gas_carbon_intensity = 215
+        # self.carbon_emissions_gas_boiler = gas_carbon_intensity * gas_boiler
+
+        self.carbon_emissions = self.carbon_emissions_grid #+ self.carbon_emissions_gas_boiler
 
     def constrained_wind_data(self):
 
@@ -122,11 +111,6 @@ class EnergyCentre(object):
         df.index = pd.to_datetime(df.index, dayfirst=True)
         df['£/MWh'] = df['T_CRYRW-2_Payment_[GBP]'] / df['T_CRYRW-2_Energy_[MWh]']
         df = df.fillna(0)
-
-        print(df['T_CRYRW-2_Payment_[GBP]'].sum())
-        print(df['£/MWh'])
-
-        df['£/MWh'].to_csv('see.csv')
 
         return df
 
@@ -159,7 +143,17 @@ class EnergyCentre(object):
             efficiency=0.9,
             )
 
-    def add_heat_pump(self):
+    def add_oil_boiler(self):
+        self.network.add(
+            'Generator',
+            name='Oil_Boiler', 
+            bus='heat', 
+            marginal_cost=30, 
+            p_nom=5000,
+            efficiency=0.9,
+            )
+
+    def add_heat_pump(self, extendable=False):
 
         perf = pd.read_csv('../data/scottish_borders_data/heat_pump_performance.csv', index_col=0)
         perf.index = pd.to_datetime(perf.index, dayfirst=True)
@@ -180,15 +174,13 @@ class EnergyCentre(object):
             name="Heat_Pump",
             bus0="elec",
             bus1="heat",
-            p_nom=1000000,
+            p_nom=10,
             efficiency=cop,
-            # marginal_cost=self.tariff,
-            # p_nom_extendable=True,
-            # p_nom_min=0,
-            # p_nom_max=5000,
+            p_nom_extendable=extendable,
+            capital_cost=1200000,
             )
 
-    def add_resistive_heater(self):
+    def add_resistive_heater(self, extendable=False):
         self.network.add(
             'Link',
             name="Resistive_Heater",
@@ -197,16 +189,16 @@ class EnergyCentre(object):
             p_nom=1000000,
             efficiency=1.0,
             marginal_cost=0.001,
-            # p_nom_extendable=True,
-            # p_nom_min=0,
-            # p_nom_max=5000,
+            p_nom_extendable=extendable,
+            capital_cost=130000,
             )
 
     def add_short_term_store(self,
                 sts_cap=14,
                 sts_charge=2.940,
                 sts_discharge=1.260,
-                sts_standing_loss=0.000
+                sts_standing_loss=0.001,
+                extendable=False
                 ):
         '''
         Default parameters are as in Renaldi, Friedrich 2018
@@ -225,6 +217,8 @@ class EnergyCentre(object):
                     bus='heat_sts', 
                     e_nom=sts_cap,
                     standing_loss=sts_standing_loss,
+                    e_nom_extendable=extendable,
+                    capital_cost=3000,
                     )
 
         self.network.add('Link', 
@@ -242,9 +236,10 @@ class EnergyCentre(object):
 
     def add_long_term_store(self,
                 lts_cap=900,
-                lts_charge=0.17,
-                lts_discharge=0.17,
-                lts_standing_loss=0.000
+                lts_charge=0.34,
+                lts_discharge=0.34,
+                lts_standing_loss=0.001,
+                extendable=False
                 ):
         '''
         Default parameters are as in Renaldi, Friedrich 2018
@@ -263,6 +258,8 @@ class EnergyCentre(object):
                     bus='heat_lts', 
                     e_nom=lts_cap,
                     standing_loss=lts_standing_loss,
+                    e_nom_extendable=extendable,
+                    capital_cost=500,
                     )
 
         self.network.add('Link', 
@@ -288,7 +285,7 @@ if __name__ == '__main__':
     myEC.get_data_scottish_borders()
     # # print(myEC.__dict__)
 
-    myEC.constrained_wind_data()
+    # myEC.constrained_wind_data()
     # myEC.apply_constraint_discount()
 
     # # add heat and elec buses
