@@ -61,13 +61,7 @@
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-</ul>
-<p class="caption"><span class="caption-text">References</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Future Network Constrained Linear Optimal Power Flow - with Floating Wind &amp; Marine, and Emissions Modelling</a></li>
 </ul>
 
         </div>
@@ -368,7 +362,7 @@ div.rendered_html tbody tr:hover {
 <h1>Unit Commitment<a class="headerlink" href="#Unit-Commitment" title="Permalink to this headline">¶</a></h1>
 <p>PyPSA-GB can model the GB power system by optimising the dispatch of generators by solving a Unit Commitment (UC) problem and fixing the commitment schedule. This notebook shows the solving of the Unit Commitment (UC) problem for a 3 day period.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -381,12 +375,13 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">data_reader_writer</span>
 </pre></div>
@@ -396,7 +391,7 @@ div.rendered_html tbody tr:hover {
 <h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
 <p>Set the required inputs for the unit commitment: the start, end and year of simulation, the timestep, and true/false on outputting marginal prices</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># attributes for running unit commitment</span>
@@ -413,7 +408,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>data_reader_writer is a script written to read in data from the various sources and write csv files in the format required for populating a PyPSA network object</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">year</span> <span class="o">&gt;</span> <span class="mi">2020</span><span class="p">:</span>
@@ -438,17 +433,17 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
   warnings.warn(
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\interconnectors.py:199: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:201: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
 </pre></div></div>
 </div>
 <p>Initilise and prepare network…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
@@ -463,9 +458,9 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB\interconnecto
 <div class="highlight"><pre>
 WARNING:pypsa.io:
 Importing PyPSA from older version of PyPSA than current version.
-Please read the release notes at https://pypsa.org/doc/release_notes.html
+Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
 carefully to prepare your network for import.
-Currently used PyPSA version [0, 18, 1], imported network file PyPSA version None.
+Currently used PyPSA version [0, 19, 2], imported network file PyPSA version None.
 
 INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
 INFO:pypsa.io:Imported network UC_data has buses, generators, links, loads, storage_units
@@ -476,7 +471,7 @@ INFO:pypsa.io:Imported network UC_data has buses, generators, links, loads, stor
 <h2>Running MILP and/or LP<a class="headerlink" href="#Running-MILP-and/or-LP" title="Permalink to this headline">¶</a></h2>
 <p>The below cell runs the unit commitment. If marginal prices are not required then one MILP optimisation step is needed. If marginal prices are required then the MILP step is followed by fixing the generator status to convert to a LP which when solved gives marginal prices.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">marginal_price</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
@@ -524,16 +519,16 @@ INFO:pypsa.opf:Building pyomo model using `angles` formulation
 #   Problem Information
 # ----------------------------------------------------------
 Problem:
-- Name: x503281
-  Lower bound: 6997314.197075764
-  Upper bound: 6997922.711035956
+- Name: x510193
+  Lower bound: 0.0
+  Upper bound: 0.0
   Number of objectives: 1
-  Number of constraints: 996579
-  Number of variables: 503281
-  Number of binary variables: 35136
-  Number of integer variables: 35136
-  Number of continuous variables: 468145
-  Number of nonzeros: 3074159
+  Number of constraints: 1011317
+  Number of variables: 510193
+  Number of binary variables: 35712
+  Number of integer variables: 35712
+  Number of continuous variables: 474481
+  Number of nonzeros: 3119228
   Sense: minimize
 # ----------------------------------------------------------
 #   Solver Information
@@ -544,9 +539,9 @@ Solver:
   Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
   Termination condition: optimal
   Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 108.64711380004883
+  Wall time: 6.549442291259766
   Error rc: 0
-  Time: 118.4186224937439
+  Time: 15.881700277328491
 # ----------------------------------------------------------
 #   Solution Information
 # ----------------------------------------------------------
@@ -560,16 +555,16 @@ Solution:
 #   Problem Information
 # ----------------------------------------------------------
 Problem:
-- Name: x503281_copy
-  Lower bound: 6997922.711035919
-  Upper bound: 6997922.711035919
+- Name: x510193_copy
+  Lower bound: 0.0
+  Upper bound: 0.0
   Number of objectives: 1
-  Number of constraints: 996579
-  Number of variables: 468145
+  Number of constraints: 1011317
+  Number of variables: 474481
   Number of binary variables: 0
   Number of integer variables: 0
-  Number of continuous variables: 468145
-  Number of nonzeros: 2200678
+  Number of continuous variables: 474481
+  Number of nonzeros: 2232762
   Sense: minimize
 # ----------------------------------------------------------
 #   Solver Information
@@ -580,9 +575,9 @@ Solver:
   Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
   Termination condition: optimal
   Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 3.0578460693359375
+  Wall time: 3.150636672973633
   Error rc: 0
-  Time: 13.520206928253174
+  Time: 13.868595361709595
 # ----------------------------------------------------------
 #   Solution Information
 # ----------------------------------------------------------
@@ -595,7 +590,7 @@ Solution:
 <div class="section" id="Outputs">
 <h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># can now see marginal prices</span>
@@ -604,7 +599,7 @@ Solution:
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -625,18 +620,18 @@ Solution:
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>name</th>
+      <th>Bus</th>
       <th>bus</th>
+      <th>Norway</th>
       <th>N. Ireland</th>
-      <th>Ireland</th>
+      <th>France2</th>
       <th>Denmark</th>
       <th>Germany</th>
       <th>Belgium</th>
-      <th>France1</th>
-      <th>Norway</th>
-      <th>Ireland2</th>
-      <th>France2</th>
       <th>Netherlands</th>
+      <th>Ireland</th>
+      <th>Ireland2</th>
+      <th>France1</th>
     </tr>
     <tr>
       <th>snapshot</th>
@@ -656,73 +651,73 @@ Solution:
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>88.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>68.642659</td>
-      <td>68.642659</td>
-      <td>73.642659</td>
-      <td>87.642659</td>
-      <td>81.642659</td>
-      <td>73.642659</td>
-      <td>68.642659</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-02 00:30:00</th>
-      <td>88.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>68.642659</td>
-      <td>68.642659</td>
-      <td>73.642659</td>
-      <td>87.642659</td>
-      <td>81.642659</td>
-      <td>73.642659</td>
-      <td>68.642659</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>88.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>68.642659</td>
-      <td>68.642659</td>
-      <td>73.642659</td>
-      <td>87.642659</td>
-      <td>81.642659</td>
-      <td>73.642659</td>
-      <td>68.642659</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-02 01:30:00</th>
-      <td>88.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>68.642659</td>
-      <td>68.642659</td>
-      <td>73.642659</td>
-      <td>87.642659</td>
-      <td>81.642659</td>
-      <td>73.642659</td>
-      <td>68.642659</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>88.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>81.642659</td>
-      <td>68.642659</td>
-      <td>68.642659</td>
-      <td>73.642659</td>
-      <td>87.642659</td>
-      <td>81.642659</td>
-      <td>73.642659</td>
-      <td>68.642659</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>...</th>
@@ -740,73 +735,73 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 21:30:00</th>
-      <td>80.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>60.000000</td>
-      <td>60.000000</td>
-      <td>65.000000</td>
-      <td>79.000000</td>
-      <td>73.000000</td>
-      <td>65.000000</td>
-      <td>60.000000</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>80.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>60.000000</td>
-      <td>60.000000</td>
-      <td>65.000000</td>
-      <td>79.000000</td>
-      <td>73.000000</td>
-      <td>65.000000</td>
-      <td>60.000000</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-04 22:30:00</th>
-      <td>80.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>60.000000</td>
-      <td>60.000000</td>
-      <td>65.000000</td>
-      <td>79.000000</td>
-      <td>73.000000</td>
-      <td>65.000000</td>
-      <td>60.000000</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>80.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>60.000000</td>
-      <td>60.000000</td>
-      <td>65.000000</td>
-      <td>79.000000</td>
-      <td>73.000000</td>
-      <td>65.000000</td>
-      <td>60.000000</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
     <tr>
       <th>2050-06-04 23:30:00</th>
-      <td>80.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>73.000000</td>
-      <td>60.000000</td>
-      <td>60.000000</td>
-      <td>65.000000</td>
-      <td>79.000000</td>
-      <td>73.000000</td>
-      <td>65.000000</td>
-      <td>60.000000</td>
+      <td>0.0</td>
+      <td>-1.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
+      <td>-7.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-20.0</td>
+      <td>-7.0</td>
+      <td>-7.0</td>
+      <td>-15.0</td>
     </tr>
   </tbody>
 </table>
@@ -814,7 +809,7 @@ Solution:
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">status</span>
@@ -822,7 +817,7 @@ Solution:
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -843,9 +838,7 @@ Solution:
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>name</th>
-      <th>Wilton GT*</th>
-      <th>Connahs Quay</th>
+      <th>Generator</th>
       <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
       <th>Beatrice Demonstrator</th>
       <th>Burbo Bank</th>
@@ -854,16 +847,18 @@ Solution:
       <th>Gunfleet Sands Offshore Wind Scheme</th>
       <th>Inner Dowsing</th>
       <th>Kentish Flats</th>
+      <th>Lynn</th>
+      <th>North Hoyle</th>
       <th>...</th>
-      <th>Seabank Hydrogen</th>
-      <th>Peterhead Hydrogen</th>
-      <th>Keadby Hydrogen</th>
-      <th>Medway Hydrogen</th>
-      <th>Saltend* Hydrogen</th>
-      <th>Cottam Development Centre Hydrogen</th>
-      <th>Enfield Hydrogen</th>
-      <th>Grain CHP* Hydrogen</th>
-      <th>VPI Immingham* Hydrogen</th>
+      <th>Pem-Dem</th>
+      <th>Pen</th>
+      <th>Sca</th>
+      <th>St-Mar</th>
+      <th>Tir</th>
+      <th>Wav-Hub</th>
+      <th>Wes-Heb</th>
+      <th>Wes-Lew</th>
+      <th>Wes-Ork</th>
       <th>Unmet Load</th>
     </tr>
     <tr>
@@ -905,15 +900,15 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>...</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -929,15 +924,15 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>...</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -953,15 +948,15 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>...</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>0.0</td>
-      <td>-0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -977,15 +972,15 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>...</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1001,15 +996,15 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>...</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1053,11 +1048,11 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1077,11 +1072,11 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1101,11 +1096,11 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1125,11 +1120,11 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
     <tr>
@@ -1149,20 +1144,20 @@ Solution:
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
       <td>1.0</td>
     </tr>
   </tbody>
 </table>
-<p>144 rows × 2804 columns</p>
+<p>144 rows × 2847 columns</p>
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span>
@@ -1170,7 +1165,7 @@ Solution:
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1191,9 +1186,7 @@ Solution:
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>name</th>
-      <th>Wilton GT*</th>
-      <th>Connahs Quay</th>
+      <th>Generator</th>
       <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
       <th>Beatrice Demonstrator</th>
       <th>Burbo Bank</th>
@@ -1202,16 +1195,18 @@ Solution:
       <th>Gunfleet Sands Offshore Wind Scheme</th>
       <th>Inner Dowsing</th>
       <th>Kentish Flats</th>
+      <th>Lynn</th>
+      <th>North Hoyle</th>
       <th>...</th>
-      <th>Seabank Hydrogen</th>
-      <th>Peterhead Hydrogen</th>
-      <th>Keadby Hydrogen</th>
-      <th>Medway Hydrogen</th>
-      <th>Saltend* Hydrogen</th>
-      <th>Cottam Development Centre Hydrogen</th>
-      <th>Enfield Hydrogen</th>
-      <th>Grain CHP* Hydrogen</th>
-      <th>VPI Immingham* Hydrogen</th>
+      <th>Pem-Dem</th>
+      <th>Pen</th>
+      <th>Sca</th>
+      <th>St-Mar</th>
+      <th>Tir</th>
+      <th>Wav-Hub</th>
+      <th>Wes-Heb</th>
+      <th>Wes-Lew</th>
+      <th>Wes-Ork</th>
       <th>Unmet Load</th>
     </tr>
     <tr>
@@ -1242,21 +1237,21 @@ Solution:
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>37.802509</td>
-      <td>9.564270</td>
+      <td>0.0000</td>
       <td>0.000000</td>
-      <td>2.689194</td>
-      <td>17.560330</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
       <td>29.267216</td>
-      <td>0.423283</td>
+      <td>0.0</td>
       <td>26.207389</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>0.000</td>
-      <td>661.98</td>
-      <td>0.000</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1266,21 +1261,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 00:30:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>35.989392</td>
-      <td>9.259101</td>
+      <td>0.0000</td>
       <td>0.000000</td>
-      <td>2.587217</td>
-      <td>16.883210</td>
-      <td>28.138684</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
       <td>0.315504</td>
-      <td>25.298955</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>0.000</td>
-      <td>661.98</td>
-      <td>0.000</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>29.69967</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1290,21 +1285,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>33.742755</td>
-      <td>8.858908</td>
+      <td>0.0000</td>
       <td>0.000000</td>
-      <td>2.507691</td>
-      <td>16.354519</td>
-      <td>27.257531</td>
-      <td>0.263239</td>
-      <td>24.447807</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>0.000</td>
-      <td>661.98</td>
-      <td>0.000</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1314,21 +1309,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 01:30:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>31.062597</td>
-      <td>8.363690</td>
-      <td>0.046990</td>
-      <td>2.450615</td>
-      <td>15.974256</td>
-      <td>26.623759</td>
-      <td>0.266487</td>
-      <td>23.653944</td>
+      <td>0.0000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>0.000</td>
-      <td>661.98</td>
-      <td>0.000</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1338,21 +1333,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>28.118313</td>
-      <td>7.747481</td>
-      <td>0.069015</td>
-      <td>2.397688</td>
-      <td>15.618914</td>
-      <td>26.031523</td>
-      <td>0.267781</td>
-      <td>22.814367</td>
+      <td>0.0000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>0.000</td>
-      <td>661.98</td>
-      <td>0.000</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1386,21 +1381,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 21:30:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>17.287142</td>
+      <td>0.0000</td>
       <td>3.679971</td>
-      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.507826</td>
       <td>3.109866</td>
       <td>5.183110</td>
+      <td>0.0</td>
       <td>0.000000</td>
-      <td>1.390142</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>692.274</td>
-      <td>661.98</td>
-      <td>412.335</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>8.42800</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1410,21 +1405,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>10.333100</td>
+      <td>10.3331</td>
       <td>2.624134</td>
-      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.000000</td>
       <td>0.158964</td>
       <td>0.264940</td>
-      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.035283</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>692.274</td>
-      <td>661.98</td>
-      <td>412.335</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>8.42800</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1434,21 +1429,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 22:30:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>6.631107</td>
-      <td>2.109159</td>
-      <td>0.001324</td>
+      <td>0.0000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>1.978586</td>
+      <td>0.0</td>
       <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>692.274</td>
-      <td>661.98</td>
-      <td>412.335</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1458,21 +1453,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>6.181162</td>
-      <td>2.135048</td>
+      <td>0.0000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.012077</td>
-      <td>0.020128</td>
-      <td>5.527669</td>
       <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>692.274</td>
-      <td>661.98</td>
-      <td>412.335</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1482,21 +1477,21 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 23:30:00</th>
-      <td>120.0</td>
-      <td>1380.0</td>
-      <td>6.181162</td>
-      <td>2.135048</td>
+      <td>0.0000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.012077</td>
-      <td>0.020128</td>
-      <td>5.527669</td>
       <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>692.274</td>
-      <td>661.98</td>
-      <td>412.335</td>
-      <td>423.555</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1506,12 +1501,12 @@ Solution:
     </tr>
   </tbody>
 </table>
-<p>144 rows × 2804 columns</p>
+<p>144 rows × 2847 columns</p>
 </div></div>
 </div>
 <p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
@@ -1570,93 +1565,93 @@ Solution:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-name                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
+Link                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
 snapshot
-2050-06-02 00:00:00      0.0       0.0    0.0   0.0   700.0  1750.0  2450.0
-2050-06-02 00:30:00      0.0       0.0    0.0   0.0  3500.0  1750.0  2450.0
-2050-06-02 01:00:00      0.0       0.0    0.0   0.0  3500.0  1750.0 -2450.0
+2050-06-02 00:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
+2050-06-02 00:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
+2050-06-02 01:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
 2050-06-02 01:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
-2050-06-02 02:00:00      0.0       0.0    0.0   0.0  3500.0  1750.0  2450.0
+2050-06-02 02:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
 ...                      ...       ...    ...   ...     ...     ...     ...
-2050-06-04 21:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
-2050-06-04 22:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
-2050-06-04 22:30:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
-2050-06-04 23:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
-2050-06-04 23:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
+2050-06-04 21:30:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
+2050-06-04 22:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
+2050-06-04 22:30:00      0.0       0.0    0.0   0.0  3500.0  1750.0 -2450.0
+2050-06-04 23:00:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
+2050-06-04 23:30:00      0.0       0.0    0.0   0.0  3500.0  1750.0  2450.0
 
-name                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
+Link                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
 snapshot
 2050-06-02 00:00:00    1750.0          0.0        0.0   -2450.0         0.0
-2050-06-02 00:30:00   -1050.0          0.0        0.0   -2450.0         0.0
-2050-06-02 01:00:00   -1050.0          0.0        0.0   -2450.0         0.0
+2050-06-02 00:30:00    1750.0          0.0        0.0    1750.0         0.0
+2050-06-02 01:00:00    1750.0          0.0        0.0    1750.0         0.0
 2050-06-02 01:30:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-02 02:00:00   -1750.0          0.0        0.0   -1750.0         0.0
+2050-06-02 02:00:00    1050.0          0.0        0.0    2450.0         0.0
 ...                       ...          ...        ...       ...         ...
-2050-06-04 21:30:00    1750.0          0.0        0.0    1750.0         0.0
+2050-06-04 21:30:00   -1750.0          0.0        0.0    2450.0         0.0
 2050-06-04 22:00:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-04 22:30:00   -1750.0          0.0        0.0    2450.0         0.0
-2050-06-04 23:00:00    1750.0          0.0        0.0   -2450.0         0.0
-2050-06-04 23:30:00    1750.0          0.0        0.0    1750.0         0.0
+2050-06-04 22:30:00   -1750.0          0.0        0.0   -1750.0         0.0
+2050-06-04 23:00:00   -1750.0          0.0        0.0    2450.0         0.0
+2050-06-04 23:30:00   -1750.0          0.0        0.0   -1750.0         0.0
 
-name                 NorthConnect  FAB Link
+Link                 NorthConnect  FAB Link
 snapshot
-2050-06-02 00:00:00       -2450.0   -1750.0
+2050-06-02 00:00:00        2450.0   -1750.0
 2050-06-02 00:30:00       -2450.0   -1750.0
-2050-06-02 01:00:00        2450.0   -1750.0
+2050-06-02 01:00:00       -2450.0   -1750.0
 2050-06-02 01:30:00        2450.0   -1750.0
 2050-06-02 02:00:00       -2450.0   -1750.0
 ...                           ...       ...
-2050-06-04 21:30:00        2450.0   -1750.0
-2050-06-04 22:00:00       -2450.0   -1750.0
-2050-06-04 22:30:00       -2450.0   -1750.0
-2050-06-04 23:00:00        2450.0   -1750.0
+2050-06-04 21:30:00       -2450.0   -1750.0
+2050-06-04 22:00:00        2450.0   -1750.0
+2050-06-04 22:30:00        2450.0   -1750.0
+2050-06-04 23:00:00       -2450.0   -1750.0
 2050-06-04 23:30:00       -2450.0   -1750.0
 
 [144 rows x 14 columns]
-name                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
+Link                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
 snapshot
-2050-06-02 00:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0 -2450.0
-2050-06-02 00:30:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0 -2450.0
-2050-06-02 01:00:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0  2450.0
+2050-06-02 00:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
+2050-06-02 00:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
+2050-06-02 01:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
 2050-06-02 01:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
-2050-06-02 02:00:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0 -2450.0
+2050-06-02 02:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
 ...                      ...       ...    ...   ...     ...     ...     ...
-2050-06-04 21:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
-2050-06-04 22:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
-2050-06-04 22:30:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
-2050-06-04 23:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
-2050-06-04 23:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
+2050-06-04 21:30:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
+2050-06-04 22:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
+2050-06-04 22:30:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0  2450.0
+2050-06-04 23:00:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
+2050-06-04 23:30:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0 -2450.0
 
-name                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
+Link                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
 snapshot
 2050-06-02 00:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
-2050-06-02 00:30:00    1050.0         -0.0       -0.0    2450.0        -0.0
-2050-06-02 01:00:00    1050.0         -0.0       -0.0    2450.0        -0.0
+2050-06-02 00:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
+2050-06-02 01:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
 2050-06-02 01:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-02 02:00:00    1750.0         -0.0       -0.0    1750.0        -0.0
+2050-06-02 02:00:00   -1050.0         -0.0       -0.0   -2450.0        -0.0
 ...                       ...          ...        ...       ...         ...
-2050-06-04 21:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
+2050-06-04 21:30:00    1750.0         -0.0       -0.0   -2450.0        -0.0
 2050-06-04 22:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-04 22:30:00    1750.0         -0.0       -0.0   -2450.0        -0.0
-2050-06-04 23:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
-2050-06-04 23:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
+2050-06-04 22:30:00    1750.0         -0.0       -0.0    1750.0        -0.0
+2050-06-04 23:00:00    1750.0         -0.0       -0.0   -2450.0        -0.0
+2050-06-04 23:30:00    1750.0         -0.0       -0.0    1750.0        -0.0
 
-name                 NorthConnect  FAB Link
+Link                 NorthConnect  FAB Link
 snapshot
-2050-06-02 00:00:00        2450.0    1750.0
+2050-06-02 00:00:00       -2450.0    1750.0
 2050-06-02 00:30:00        2450.0    1750.0
-2050-06-02 01:00:00       -2450.0    1750.0
+2050-06-02 01:00:00        2450.0    1750.0
 2050-06-02 01:30:00       -2450.0    1750.0
 2050-06-02 02:00:00        2450.0    1750.0
 ...                           ...       ...
-2050-06-04 21:30:00       -2450.0    1750.0
-2050-06-04 22:00:00        2450.0    1750.0
-2050-06-04 22:30:00        2450.0    1750.0
-2050-06-04 23:00:00       -2450.0    1750.0
+2050-06-04 21:30:00        2450.0    1750.0
+2050-06-04 22:00:00       -2450.0    1750.0
+2050-06-04 22:30:00       -2450.0    1750.0
+2050-06-04 23:00:00        2450.0    1750.0
 2050-06-04 23:30:00        2450.0    1750.0
 
 [144 rows x 14 columns]
-name                 Interconnectors Import
+Link                 Interconnectors Import
 snapshot
 2050-06-02 00:00:00                  6650.0
 2050-06-02 00:30:00                  7700.0
@@ -1664,14 +1659,14 @@ snapshot
 2050-06-02 01:30:00                  7700.0
 2050-06-02 02:00:00                  7700.0
 ...                                     ...
-2050-06-04 21:30:00                  7700.0
+2050-06-04 21:30:00                  6650.0
 2050-06-04 22:00:00                  7700.0
-2050-06-04 22:30:00                  6650.0
+2050-06-04 22:30:00                  7700.0
 2050-06-04 23:00:00                  6650.0
 2050-06-04 23:30:00                  7700.0
 
 [144 rows x 1 columns]
-name                 Interconnectors Export
+Link                 Interconnectors Export
 snapshot
 2050-06-02 00:00:00                 -6650.0
 2050-06-02 00:30:00                 -7700.0
@@ -1679,9 +1674,9 @@ snapshot
 2050-06-02 01:30:00                 -7700.0
 2050-06-02 02:00:00                 -7700.0
 ...                                     ...
-2050-06-04 21:30:00                 -7700.0
+2050-06-04 21:30:00                 -6650.0
 2050-06-04 22:00:00                 -7700.0
-2050-06-04 22:30:00                 -6650.0
+2050-06-04 22:30:00                 -7700.0
 2050-06-04 23:00:00                 -6650.0
 2050-06-04 23:30:00                 -7700.0
 
@@ -1689,7 +1684,7 @@ snapshot
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1722,8 +1717,8 @@ snapshot
       <th>Hydro</th>
       <th>Natural Gas</th>
       <th>...</th>
-      <th>Tidal Barrage and Tidal Stream</th>
       <th>Unmet Load</th>
+      <th>Wave power</th>
       <th>Wind Offshore</th>
       <th>Wind Onshore</th>
       <th>Battery</th>
@@ -1761,123 +1756,123 @@ snapshot
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>35.500000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>2218.755</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>86.24556</td>
+      <td>0.0</td>
+      <td>121.6</td>
+      <td>6.456553</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>32274.122591</td>
-      <td>1885.815397</td>
-      <td>4440.734115</td>
-      <td>2277.111517</td>
-      <td>1195.737931</td>
-      <td>1867.004950</td>
+      <td>0.00000</td>
+      <td>3781.290640</td>
+      <td>211.615586</td>
+      <td>0.000000</td>
+      <td>1182.690320</td>
+      <td>6.180672</td>
+      <td>1357.821782</td>
       <td>6650.0</td>
-      <td>1770.612</td>
+      <td>170.100000</td>
     </tr>
     <tr>
       <th>2050-06-02 00:30:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>75.899999</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>2218.755</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>337.96440</td>
+      <td>0.0</td>
+      <td>297.4</td>
+      <td>15.621690</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>32194.678048</td>
-      <td>1985.695420</td>
-      <td>2180.190278</td>
-      <td>1035.050690</td>
-      <td>403.965517</td>
-      <td>4188.880198</td>
+      <td>29.69967</td>
+      <td>10154.120655</td>
+      <td>625.421781</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>383.099999</td>
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>2218.755</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>32251.245853</td>
-      <td>2095.387252</td>
-      <td>1626.862989</td>
-      <td>1200.810938</td>
-      <td>648.612845</td>
-      <td>4188.880198</td>
+      <td>0.00000</td>
+      <td>0.000000</td>
+      <td>24.145913</td>
+      <td>2537.432294</td>
+      <td>519.099196</td>
+      <td>179.254689</td>
+      <td>509.183168</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>2050-06-02 01:30:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>2218.755</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>32446.679570</td>
-      <td>2254.122865</td>
-      <td>700.203935</td>
-      <td>786.638524</td>
-      <td>867.179310</td>
-      <td>4188.880198</td>
+      <td>0.00000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>838.725619</td>
+      <td>1092.247782</td>
+      <td>0.000000</td>
+      <td>1255.985149</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>2218.755</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>32416.766249</td>
-      <td>2411.548779</td>
+      <td>0.00000</td>
+      <td>3998.849889</td>
+      <td>78.720000</td>
+      <td>3331.879018</td>
       <td>0.000000</td>
-      <td>537.609258</td>
       <td>0.000000</td>
-      <td>4799.900000</td>
+      <td>0.000000</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>...</th>
@@ -1905,137 +1900,137 @@ snapshot
     </tr>
     <tr>
       <th>2050-06-04 21:30:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>216.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>5106.222</td>
-      <td>743.5</td>
-      <td>98.250648</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>500.60592</td>
+      <td>0.0</td>
+      <td>521.6</td>
+      <td>56.018134</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>22150.233683</td>
-      <td>2155.387627</td>
-      <td>10438.165727</td>
-      <td>6003.294000</td>
-      <td>3905.000000</td>
-      <td>4799.900000</td>
-      <td>7700.0</td>
-      <td>1770.612</td>
+      <td>12.53448</td>
+      <td>18700.927991</td>
+      <td>8051.476913</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>6650.0</td>
+      <td>772.800000</td>
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>317.600000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>5106.222</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>831.12156</td>
+      <td>0.0</td>
       <td>743.5</td>
       <td>98.250648</td>
-      <td>1500.0</td>
-      <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>14.25200</td>
       <td>14592.991632</td>
-      <td>2293.541494</td>
-      <td>17628.098296</td>
-      <td>6003.294000</td>
-      <td>3905.000000</td>
-      <td>4799.900000</td>
+      <td>8793.902621</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>291.388394</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>1111.300000</td>
     </tr>
     <tr>
       <th>2050-06-04 22:30:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>5106.222</td>
-      <td>743.5</td>
-      <td>88.225071</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>11224.823357</td>
-      <td>2310.124846</td>
-      <td>19490.562665</td>
-      <td>6003.294000</td>
-      <td>3905.000000</td>
-      <td>4799.900000</td>
-      <td>6650.0</td>
-      <td>1770.612</td>
+      <td>0.00000</td>
+      <td>0.000000</td>
+      <td>6880.841128</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>2998.646032</td>
+      <td>7700.0</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>5106.222</td>
-      <td>743.5</td>
-      <td>65.166246</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>11922.060244</td>
-      <td>2132.259481</td>
-      <td>17326.625688</td>
-      <td>6003.294000</td>
-      <td>3905.000000</td>
-      <td>4799.900000</td>
+      <td>0.00000</td>
+      <td>0.000000</td>
+      <td>7071.081128</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>1065.890099</td>
       <td>6650.0</td>
-      <td>1770.612</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>2050-06-04 23:30:00</th>
-      <td>317.6</td>
-      <td>108.8</td>
-      <td>550.512</td>
+      <td>0.000000</td>
       <td>0.0</td>
       <td>0.0</td>
-      <td>2308.671</td>
-      <td>5106.222</td>
-      <td>743.5</td>
-      <td>64.163688</td>
-      <td>1500.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
       <td>...</td>
-      <td>10.5</td>
       <td>0.0</td>
-      <td>11922.060244</td>
-      <td>2132.259481</td>
-      <td>12916.480096</td>
-      <td>6003.294000</td>
-      <td>3905.000000</td>
-      <td>4799.900000</td>
+      <td>0.00000</td>
+      <td>0.000000</td>
+      <td>7038.281128</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>776.454669</td>
       <td>7700.0</td>
-      <td>1770.612</td>
+      <td>0.000000</td>
     </tr>
   </tbody>
 </table>
-<p>144 rows × 26 columns</p>
+<p>144 rows × 27 columns</p>
 </div></div>
 </div>
 <p>Graph the power output of the different generation types…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">year</span> <span class="o">&gt;</span> <span class="mi">2020</span><span class="p">:</span>
 
-    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
             <span class="s1">&#39;EfW Incineration&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
             <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">,</span>
             <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
@@ -2045,7 +2040,7 @@ snapshot
             <span class="p">]</span>
 
 <span class="k">else</span><span class="p">:</span>
-    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
             <span class="s1">&#39;EfW Incineration&#39;</span><span class="p">,</span>
             <span class="s2">&quot;Coal&quot;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
@@ -2080,7 +2075,6 @@ snapshot
           <span class="s1">&#39;CCS Gas&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
           <span class="s1">&#39;Hydrogen&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
           <span class="s2">&quot;Nuclear&quot;</span><span class="p">:</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span>
-          <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
           <span class="s1">&#39;Tidal Barrage and Tidal Stream&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
           <span class="s1">&#39;Hydro&#39;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
           <span class="s2">&quot;Large Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
@@ -2124,12 +2118,12 @@ snapshot
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matplotlib\core.py:1391: UserWarning: Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matplotlib\core.py:1391: UserWarning: Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.
   ax.set_ylim(None, 0)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2146,7 +2140,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 <p>Graph the pumped hydro dispatch and state of charge…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -2165,7 +2159,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2182,7 +2176,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 <p>Graph the curtailment of onshore wind…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">carrier</span> <span class="o">=</span> <span class="s2">&quot;Wind Onshore&quot;</span>
@@ -2208,12 +2202,12 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x2710819c2b0&gt;
+&lt;matplotlib.legend.Legend at 0x2a99989e970&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

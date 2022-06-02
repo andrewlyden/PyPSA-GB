@@ -40,7 +40,7 @@ Then to activate the new environment::
 Run jupyter notebooks
 #####################
 
-This environment can be used to easily run the Jupyter notebooks by navigating to PyPSA-GB directory and installing the environment as a kernel::
+This environment can be used to easily run the Jupyter notebooks by navigating to /notebooks directory and installing the environment as a kernel::
 
 	python -m ipykernel install --user --name=PyPSA-GB
 
