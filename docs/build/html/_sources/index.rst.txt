@@ -59,14 +59,8 @@ PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets
    :caption: Examples
 
    notebooks/7 - Network Expansion.ipynb
-   seasonal_thermal_energy_storage
+   notebooks/5c - LOPF Future - Floating Wind, Marine and Emissions Modelling.ipynb
+
+   .. seasonal_thermal_energy_storage
    .. high_temperature_thermal_energy_storage
    .. marine_energy
-
-.. toctree::
-   :maxdepth: 1
-   :caption: References
-
-   API_reference
-   release_notes
-   contributing

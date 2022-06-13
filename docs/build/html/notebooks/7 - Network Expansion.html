@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Seasonal Thermal Energy Storage" href="../seasonal_thermal_energy_storage.html" />
+    <link rel="next" title="Floating Wind &amp; Marine, and Emissions" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html" />
     <link rel="prev" title="Comparison To Historical Data" href="9%20-%20Comparison%20To%20Historical%20Data.html" /> 
 </head>
 
@@ -62,13 +62,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Line-expansion-results">Line expansion results</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-</ul>
-<p class="caption"><span class="caption-text">References</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
 </ul>
 
         </div>
@@ -387,6 +381,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
 
@@ -447,9 +442,9 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
   warnings.warn(
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
 C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:201: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
@@ -839,11 +834,40 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 <p>99 rows × 29 columns</p>
 </div></div>
 </div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">marginal_cost</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Generator
+Green&#39;s Lodge Farm                                                 0.0
+Oak Grove Biomass Facility                                         0.0
+Land at Grange Farm                                                0.0
+North Tamar Environ Project - Holsworthy  (Farm AD)                0.0
+Deerdykes Composting and Organics Recycling Facility (Waste AD)    0.0
+                                                                  ...
+Small Hydro Ratcliffe                                              0.0
+Small Hydro Denny/Bonnybridge                                      0.0
+Small Hydro Feckenham                                              0.0
+Small Hydro Errochty                                               0.0
+Small Hydro N. Ireland                                             0.0
+Name: marginal_cost, Length: 878, dtype: float64
+</pre></div></div>
+</div>
 </div>
 <div class="section" id="Run-the-optimisation">
 <h2>Run the optimisation<a class="headerlink" href="#Run-the-optimisation" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -856,7 +880,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
 INFO:pypsa.linopf:Prepare linear problem
-INFO:pypsa.linopf:Total preparation time: 27.5s
+INFO:pypsa.linopf:Total preparation time: 24.2s
 INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 </pre></div></div>
 </div>
@@ -867,13 +891,13 @@ INFO:pypsa.linopf:Solve linear problem using Gurobi solver
 <div class="highlight"><pre>
 Set parameter Username
 Academic license - for non-commercial use only - expires 2022-09-03
-Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-bdx0pxmj.lp
-Reading time = 16.84 seconds
-obj: 6491192 rows, 1828900 columns, 11693493 nonzeros
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-zuq0updm.lp
+Reading time = 14.33 seconds
+obj: 6456644 rows, 1820260 columns, 11628717 nonzeros
 Gurobi Optimizer version 9.5.1 build v9.5.1rc2 (win64)
 Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
-Optimize a model with 6491192 rows, 1828900 columns and 11693493 nonzeros
-Model fingerprint: 0x0be53d72
+Optimize a model with 6456644 rows, 1820260 columns and 11628717 nonzeros
+Model fingerprint: 0x1a946a93
 Coefficient statistics:
   Matrix range     [6e-05, 1e+00]
   Objective range  [5e-01, 5e+08]
@@ -886,266 +910,299 @@ Warning: Model contains large bounds
 Concurrent LP optimizer: dual simplex and barrier
 Showing barrier log only...
 
-Presolve removed 6000168 rows and 1193783 columns (presolve time = 6s) ...
-Presolve removed 6011680 rows and 1193783 columns
-Presolve time: 8.68s
-Presolved: 479512 rows, 646629 columns, 1928023 nonzeros
+Presolve removed 5967060 rows and 1186583 columns (presolve time = 5s) ...
+Presolve removed 5978572 rows and 1186583 columns
+Presolve time: 7.88s
+Presolved: 478072 rows, 645189 columns, 1925143 nonzeros
 
-Ordering time: 5.13s
+Ordering time: 4.53s
 
 Barrier statistics:
  Dense cols : 99
- Free vars  : 50400
- AA&#39; NZ     : 3.856e+06
- Factor NZ  : 2.444e+07 (roughly 700 MB of memory)
- Factor Ops : 5.789e+09 (less than 1 second per iteration)
+ Free vars  : 48960
+ AA&#39; NZ     : 3.899e+06
+ Factor NZ  : 2.371e+07 (roughly 600 MB of memory)
+ Factor Ops : 5.437e+09 (less than 1 second per iteration)
  Threads    : 3
 
                   Objective                Residual
 Iter       Primal          Dual         Primal    Dual     Compl     Time
-   0   2.61137432e+22 -7.46174020e+22  1.67e+09 2.25e+08  1.33e+18    16s
-   1   7.07411687e+21 -1.62003443e+22  2.26e+08 1.99e+08  1.77e+17    17s
-   2   1.42394386e+21 -1.65090988e+21  4.01e+07 1.85e+07  2.93e+16    18s
-   3   1.15763118e+18 -2.65038180e+19  3.04e+04 2.37e+05  7.07e+13    19s
-   4   4.14857779e+17 -3.97295317e+18  1.02e+04 2.66e+04  1.27e+13    20s
-   5   1.48443497e+17 -1.30280128e+18  2.91e+03 5.04e+03  3.24e+12    21s
-   6   5.68266841e+16 -3.58027219e+17  3.61e+02 3.78e+02  4.80e+11    22s
-   7   3.73239185e+16 -1.86542084e+17  8.57e+01 1.68e+02  2.01e+11    24s
-   8   2.64809207e+16 -9.33679025e+16  4.88e+01 7.29e+01  1.01e+11    25s
-   9   1.65582297e+16 -3.78223776e+16  2.08e+01 2.52e+01  4.27e+10    26s
-  10   8.42747162e+15 -1.73723282e+16  7.37e+00 9.34e+00  1.91e+10    27s
-  11   6.18956572e+15 -8.77767588e+15  4.74e+00 3.45e+00  1.08e+10    28s
-  12   5.41666225e+15 -1.98868881e+15  3.92e+00 2.98e-01  5.27e+09    29s
-  13   3.86977371e+15 -1.05342568e+15  2.48e+00 2.07e-01  3.46e+09    30s
-  14   3.26651655e+15 -5.57794983e+14  1.93e+00 1.60e-01  2.67e+09    31s
-  15   3.06127285e+15 -7.90694369e+13  1.73e+00 1.15e-01  2.19e+09    32s
-  16   2.54835180e+15  2.62890113e+14  1.23e+00 8.45e-02  1.58e+09    33s
-  17   2.09821625e+15  7.70439535e+14  7.94e-01 4.23e-02  9.15e+08    35s
-  18   1.90651539e+15  1.01052908e+15  6.20e-01 2.45e-02  6.16e+08    36s
-  19   1.70633963e+15  1.09787994e+15  4.19e-01 1.79e-02  4.17e+08    37s
-  20   1.63196820e+15  1.15471254e+15  3.56e+00 1.39e-02  3.27e+08    39s
-  21   1.53471585e+15  1.19699326e+15  5.80e+00 1.09e-02  2.31e+08    41s
-  22   1.46282043e+15  1.27080993e+15  9.94e+00 6.02e-03  1.31e+08    44s
-  23   1.38774870e+15  1.32736230e+15  2.26e+01 2.53e-03  4.10e+07    48s
-  24   1.37593193e+15  1.37012208e+15  3.80e+01 1.42e-04  3.95e+06    51s
-  25   1.37352604e+15  1.37278021e+15  3.11e+01 3.52e-03  5.10e+05    53s
-  26   1.37340855e+15  1.37295725e+15  1.90e+01 3.15e-02  3.11e+05    54s
-  27   1.37336002e+15  1.37300465e+15  1.41e+01 2.60e-02  2.46e+05    55s
-  28   1.37335531e+15  1.37304112e+15  1.36e+01 2.16e-02  2.18e+05    57s
-  29   1.37334078e+15  1.37306138e+15  1.21e+01 2.00e-02  1.94e+05    58s
-  30   1.37331568e+15  1.37309809e+15  9.68e+00 1.64e-02  1.52e+05    61s
-  31   1.37329400e+15  1.37312595e+15  7.53e+00 1.38e-02  1.19e+05    63s
-  32   1.37328873e+15  1.37313982e+15  6.97e+00 1.31e-02  1.06e+05    64s
-  33   1.37327451e+15  1.37314759e+15  5.51e+00 1.19e-02  9.09e+04    67s
-  34   1.37326775e+15  1.37315818e+15  4.72e+00 1.01e-02  7.92e+04    68s
-  35   1.37326250e+15  1.37316368e+15  4.08e+00 8.73e-03  7.19e+04    70s
-  36   1.37325747e+15  1.37318591e+15  3.32e+00 9.14e-03  5.34e+04    71s
-  37   1.37325474e+15  1.37319246e+15  2.92e+00 8.21e-03  4.71e+04    73s
-  38   1.37325267e+15  1.37320346e+15  2.55e+00 5.97e-03  3.83e+04    74s
-  39   1.37325156e+15  1.37320677e+15  2.36e+00 8.93e-03  3.53e+04    76s
-  40   1.37324917e+15  1.37321283e+15  1.91e+00 7.95e-03  2.96e+04    77s
-  41   1.37324801e+15  1.37321711e+15  1.91e+00 6.08e-03  2.59e+04    79s
-  42   1.37324633e+15  1.37322322e+15  1.91e+00 4.17e-03  2.06e+04    80s
-  43   1.37324545e+15  1.37322417e+15  1.91e+00 4.00e-03  1.94e+04    82s
-  44   1.37324489e+15  1.37322722e+15  1.91e+00 3.94e-03  1.69e+04    83s
-  45   1.37324463e+15  1.37322864e+15  1.91e+00 3.77e-03  1.58e+04    85s
-  46   1.37324370e+15  1.37323576e+15  1.92e+00 1.48e-02  1.03e+04    86s
-  47   1.37324298e+15  1.37323981e+15  1.92e+00 4.46e-03  7.10e+03    88s
-  48   1.37324197e+15  1.37324262e+15  1.92e+00 3.69e-03  4.51e+03    89s
-  49   1.37324151e+15  1.37324411e+15  1.92e+00 2.74e-03  3.20e+03    91s
-  50   1.37324134e+15  1.37324457e+15  1.92e+00 3.71e-03  2.77e+03    92s
-  51   1.37324125e+15  1.37324537e+15  1.92e+00 5.09e-03  2.17e+03    93s
-  52   1.37324108e+15  1.37324570e+15  1.92e+00 4.42e-03  1.83e+03    94s
-  53   1.37324100e+15  1.37324629e+15  1.92e+00 7.17e-03  1.38e+03    96s
-  54   1.37324094e+15  1.37324652e+15  1.92e+00 8.16e-03  1.18e+03    97s
-  55   1.37324084e+15  1.37324687e+15  1.92e+00 9.79e-03  8.76e+02    98s
-  56   1.37324072e+15  1.37324716e+15  1.92e+00 1.03e-02  6.02e+02    99s
-  57   1.37324068e+15  1.37324726e+15  1.92e+00 1.12e-02  5.04e+02   101s
-  58   1.37324062e+15  1.37324736e+15  1.92e+00 1.52e-02  3.99e+02   102s
-  59   1.37324048e+15  1.37324746e+15  1.92e+00 1.64e-02  2.37e+02   104s
-  60   1.37324045e+15  1.37324751e+15  1.92e+00 1.55e-02  1.80e+02   105s
-  61   1.37324041e+15  1.37324755e+15  1.92e+00 1.46e-02  1.34e+02   106s
-  62   1.37324039e+15  1.37324757e+15  1.92e+00 1.32e-02  9.95e+01   108s
-  63   1.37324037e+15  1.37324759e+15  1.92e+00 1.13e-02  7.63e+01   109s
-  64   1.37324035e+15  1.37324760e+15  1.92e+00 1.01e-02  5.46e+01   110s
-  65   1.37324035e+15  1.37324762e+15  1.92e+00 8.86e-03  4.58e+01   112s
-  66   1.37324034e+15  1.37324762e+15  1.92e+00 7.84e-03  3.40e+01   113s
-  67   1.37324034e+15  1.37324763e+15  1.92e+00 6.75e-03  2.69e+01   115s
-  68   1.37324033e+15  1.37324764e+15  1.92e+00 5.93e-03  2.10e+01   116s
-  69   1.37324033e+15  1.37324764e+15  1.92e+00 5.66e-03  1.91e+01   117s
-  70   1.37324033e+15  1.37324765e+15  1.92e+00 4.59e-03  1.40e+01   119s
-  71   1.37324033e+15  1.37324765e+15  1.92e+00 4.58e-03  1.19e+01   120s
-  72   1.37324033e+15  1.37324765e+15  1.92e+00 6.85e-03  8.72e+00   121s
-  73   1.37324033e+15  1.37324766e+15  1.92e+00 6.81e-03  6.65e+00   123s
-  74   1.37324032e+15  1.37324766e+15  1.92e+00 6.69e-03  5.90e+00   124s
-  75   1.37324032e+15  1.37324766e+15  1.92e+00 6.54e-03  5.30e+00   125s
-  76   1.37324032e+15  1.37324766e+15  1.92e+00 5.40e-03  3.73e+00   127s
-  77   1.37324032e+15  1.37324766e+15  1.92e+00 4.20e-03  2.45e+00   128s
-  78   1.37324032e+15  1.37324767e+15  1.92e+00 4.20e-03  1.62e+00   129s
-  79   1.37324032e+15  1.37324767e+15  1.92e+00 4.47e-03  1.05e+00   131s
-  80   1.37324032e+15  1.37324767e+15  1.92e+00 4.48e-03  9.55e-01   132s
-  81   1.37324032e+15  1.37324767e+15  1.92e+00 4.50e-03  8.62e-01   133s
-  82   1.37324032e+15  1.37324767e+15  1.92e+00 4.51e-03  7.20e-01   134s
-  83   1.37324032e+15  1.37324767e+15  1.92e+00 4.52e-03  5.67e-01   135s
-  84   1.37324032e+15  1.37324767e+15  1.92e+00 4.51e-03  5.46e-01   136s
-  85   1.37324032e+15  1.37324767e+15  1.92e+00 4.48e-03  4.55e-01   138s
-  86   1.37324032e+15  1.37324767e+15  1.92e+00 4.42e-03  4.00e-01   139s
-  87   1.37324032e+15  1.37324767e+15  1.92e+00 4.32e-03  3.05e-01   140s
-  88   1.37324032e+15  1.37324768e+15  1.92e+00 4.14e-03  1.87e-01   141s
-  89   1.37324032e+15  1.37324768e+15  1.92e+00 4.03e-03  1.35e-01   143s
-  90   1.37324032e+15  1.37324768e+15  1.92e+00 4.06e-03  9.86e-02   144s
-  91   1.37324032e+15  1.37324768e+15  1.92e+00 3.47e-03  7.32e-02   145s
-  92   1.37324032e+15  1.37324768e+15  1.92e+00 3.43e-03  6.50e-02   147s
-  93   1.37324032e+15  1.37324768e+15  1.92e+00 3.13e-03  5.35e-02   148s
-  94   1.37324032e+15  1.37324768e+15  1.92e+00 1.13e-03  2.83e-02   150s
-  95   1.37324032e+15  1.37324769e+15  1.92e+00 1.14e-03  9.85e-03   151s
-  96   1.37324032e+15  1.37324769e+15  1.91e+00 1.15e-03  4.21e-03   152s
-  97   1.37324032e+15  1.37324769e+15  1.91e+00 1.15e-03  2.63e-03   153s
-  98   1.37324032e+15  1.37324769e+15  1.94e+00 1.15e-03  2.10e-03   154s
-  99   1.37324032e+15  1.37324770e+15  1.96e+00 1.14e-03  1.20e-03   156s
- 100   1.37324032e+15  1.37324770e+15  1.89e+00 9.55e-04  1.03e-03   157s
- 101   1.37324032e+15  1.37324770e+15  2.26e+00 8.13e-04  4.99e-04   158s
- 102   1.37324032e+15  1.37324771e+15  2.21e+00 5.30e-04  3.70e-04   159s
- 103   1.37324032e+15  1.37324771e+15  3.62e+00 7.98e-04  1.78e-04   160s
- 104   1.37324032e+15  1.37324771e+15  3.17e+00 5.30e-04  1.36e-04   161s
- 105   1.37324032e+15  1.37324772e+15  2.09e+00 5.30e-04  1.16e-04   163s
- 106   1.37324032e+15  1.37324771e+15  2.81e+00 5.30e-04  4.40e-05   164s
- 107   1.37324032e+15  1.37324772e+15  2.80e+00 5.30e-04  3.96e-05   166s
- 108   1.37324032e+15  1.37324772e+15  3.34e+00 5.30e-04  1.66e-05   167s
- 109   1.37324032e+15  1.37324772e+15  5.44e+00 5.30e-04  8.37e-06   168s
- 110   1.37324032e+15  1.37324772e+15  6.10e+00 3.55e-04  4.28e-06   170s
- 111   1.37324032e+15  1.37324772e+15  5.69e+00 3.55e-04  2.59e-06   171s
- 112   1.37324032e+15  1.37324772e+15  3.92e+00 3.55e-04  2.11e-06   173s
- 113   1.37324032e+15  1.37324772e+15  6.98e+00 3.55e-04  1.73e-06   174s
- 114   1.37324032e+15  1.37324772e+15  4.02e+00 3.55e-04  1.12e-06   175s
- 115   1.37324032e+15  1.37324772e+15  2.56e+00 7.92e-04  1.27e-06   176s
- 116   1.37324032e+15  1.37324772e+15  2.28e+00 6.14e-04  1.05e-06   178s
- 117   1.37324032e+15  1.37324772e+15  3.54e+00 3.02e-04  7.17e-07   179s
- 118   1.37324032e+15  1.37324772e+15  3.52e+00 3.02e-04  6.74e-07   180s
- 119   1.37324032e+15  1.37324772e+15  4.17e+00 3.02e-04  5.06e-07   181s
- 120   1.37324032e+15  1.37324772e+15  5.93e+00 3.02e-04  2.16e-07   182s
- 121   1.37324032e+15  1.37324772e+15  3.62e+00 3.02e-04  1.37e-07   183s
- 122   1.37324032e+15  1.37324772e+15  2.09e+00 3.02e-04  1.10e-07   184s
- 123   1.37324032e+15  1.37324772e+15  2.93e+00 3.02e-04  9.30e-08   186s
- 124   1.37324032e+15  1.37324772e+15  6.17e+00 3.02e-04  7.45e-08   187s
- 125   1.37324032e+15  1.37324772e+15  6.27e+00 3.02e-04  6.40e-08   188s
- 126   1.37324032e+15  1.37324772e+15  6.35e+00 3.02e-04  5.70e-08   189s
- 127   1.37324032e+15  1.37324771e+15  6.41e+00 3.02e-04  5.05e-08   190s
- 128   1.37324032e+15  1.37324771e+15  6.65e+00 3.02e-04  2.95e-08   192s
- 129   1.37324032e+15  1.37324771e+15  6.72e+00 3.02e-04  2.16e-08   194s
- 130   1.37324032e+15  1.37324771e+15  6.73e+00 3.02e-04  2.14e-08   195s
- 131   1.37324032e+15  1.37324771e+15  6.73e+00 3.02e-04  2.06e-08   197s
- 132   1.37324032e+15  1.37324771e+15  6.78e+00 3.02e-04  1.58e-08   198s
- 133   1.37324032e+15  1.37324771e+15  6.81e+00 3.02e-04  1.32e-08   199s
- 134   1.37324032e+15  1.37324770e+15  6.82e+00 3.02e-04  1.17e-08   200s
- 135   1.37324032e+15  1.37324770e+15  6.88e+00 3.02e-04  6.28e-09   202s
- 136   1.37324032e+15  1.37324770e+15  6.89e+00 3.02e-04  5.72e-09   203s
- 137   1.37324032e+15  1.37324770e+15  6.89e+00 3.02e-04  5.36e-09   204s
- 138   1.37324032e+15  1.37324770e+15  6.91e+00 3.02e-04  3.82e-09   205s
- 139   1.37324032e+15  1.37324770e+15  6.91e+00 3.02e-04  3.27e-09   206s
- 140   1.37324032e+15  1.37324770e+15  6.92e+00 3.02e-04  2.34e-09   207s
- 141   1.37324032e+15  1.37324770e+15  6.92e+00 3.02e-04  1.90e-09   209s
- 142   1.37324032e+15  1.37324769e+15  6.93e+00 3.02e-04  1.56e-09   210s
- 143   1.37324032e+15  1.37324769e+15  6.93e+00 3.02e-04  1.21e-09   212s
- 144   1.37324032e+15  1.37324769e+15  6.93e+00 3.02e-04  1.07e-09   213s
- 145   1.37324032e+15  1.37324769e+15  6.93e+00 3.02e-04  9.31e-10   214s
- 146   1.37324032e+15  1.37324769e+15  6.93e+00 3.02e-04  8.12e-10   215s
- 147   1.37324032e+15  1.37324768e+15  6.94e+00 3.02e-04  6.91e-10   217s
- 148   1.37324032e+15  1.37324768e+15  6.94e+00 3.02e-04  6.60e-10   218s
- 149   1.37324032e+15  1.37324768e+15  6.94e+00 3.02e-04  4.89e-10   220s
- 150   1.37324032e+15  1.37324768e+15  6.94e+00 3.02e-04  3.41e-10   221s
- 151   1.37324032e+15  1.37324768e+15  6.95e+00 3.02e-04  2.79e-10   222s
- 152   1.37324032e+15  1.37324768e+15  6.95e+00 3.02e-04  2.75e-10   223s
- 153   1.37324032e+15  1.37324768e+15  6.95e+00 1.55e-03  1.64e-06   225s
- 154   1.37324032e+15  1.37324768e+15  6.95e+00 1.42e-03  1.52e-06   226s
- 155   1.37324032e+15  1.37324768e+15  6.95e+00 1.11e-03  1.27e-06   227s
- 156   1.37324032e+15  1.37324768e+15  6.95e+00 7.25e-04  9.02e-07   229s
- 157   1.37324032e+15  1.37324767e+15  6.96e+00 2.99e-04  1.51e-07   230s
- 158   1.37324032e+15  1.37324768e+15  5.87e+00 2.99e-04  5.62e-08   231s
- 159   1.37324032e+15  1.37324768e+15  5.34e+00 2.99e-04  5.26e-08   232s
- 160   1.37324032e+15  1.37324767e+15  3.54e+00 2.99e-04  5.14e-08   234s
- 161   1.37324032e+15  1.37324767e+15  3.40e+00 2.99e-04  5.00e-08   235s
- 162   1.37324032e+15  1.37324767e+15  3.08e+00 2.87e-04  1.70e-07   236s
- 163   1.37324032e+15  1.37324766e+15  2.29e+00 2.64e-04  1.06e-07   238s
- 164   1.37324032e+15  1.37324766e+15  2.55e+00 2.64e-04  1.07e-07   239s
- 165   1.37324032e+15  1.37324766e+15  3.81e+00 2.64e-04  9.80e-08   241s
- 166   1.37324032e+15  1.37324766e+15  4.73e+00 2.64e-04  9.22e-08   242s
- 167   1.37324032e+15  1.37324766e+15  4.94e+00 2.64e-04  6.19e-08   244s
- 168   1.37324032e+15  1.37324766e+15  5.29e+00 2.64e-04  3.27e-08   245s
- 169   1.37324032e+15  1.37324766e+15  1.04e+01 2.64e-04  2.08e-08   246s
- 170   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  1.23e-08   248s
- 171   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  1.10e-08   249s
- 172   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  1.09e-08   250s
- 173   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  1.06e-08   251s
- 174   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  9.63e-09   252s
- 175   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  9.28e-09   254s
- 176   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  8.26e-09   255s
- 177   1.37324032e+15  1.37324765e+15  1.06e+01 2.64e-04  7.57e-09   257s
- 178   1.37324032e+15  1.37324765e+15  1.07e+01 2.64e-04  6.08e-09   258s
- 179   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  5.07e-09   260s
- 180   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  4.06e-09   261s
- 181   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  3.51e-09   262s
- 182   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  2.95e-09   264s
- 183   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  2.44e-09   265s
- 184   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  1.83e-09   266s
- 185   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  1.47e-09   267s
- 186   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  1.12e-09   269s
- 187   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  9.95e-10   270s
- 188   1.37324032e+15  1.37324764e+15  1.07e+01 2.64e-04  8.54e-10   272s
- 189   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  7.71e-10   273s
- 190   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  7.31e-10   275s
- 191   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  6.89e-10   276s
- 192   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  6.84e-10   278s
- 193   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  6.75e-10   279s
- 194   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  6.64e-10   280s
- 195   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  6.23e-10   281s
- 196   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  5.48e-10   283s
- 197   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  4.64e-10   285s
- 198   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  4.13e-10   286s
- 199   1.37324032e+15  1.37324763e+15  1.07e+01 2.64e-04  3.51e-10   288s
- 200   1.37324032e+15  1.37324762e+15  1.07e+01 2.64e-04  2.70e-10   289s
- 201   1.37324032e+15  1.37324762e+15  1.07e+01 2.64e-04  2.63e-10   290s
- 202   1.37324032e+15  1.37324762e+15  1.07e+01 2.07e-04  6.09e-09   292s
+   0   5.00374613e+22 -7.08803282e+22  3.29e+09 1.09e+09  2.59e+18    14s
+   1   8.24708860e+21 -2.78512229e+22  2.26e+08 1.07e+08  1.88e+17    15s
+   2   1.32945360e+21 -2.06970483e+21  3.56e+07 6.66e+06  2.62e+16    16s
+   3   1.71159393e+18 -8.51567467e+18  3.78e+04 1.23e+04  3.35e+13    17s
+   4   3.44421522e+17 -1.22508465e+18  6.79e+03 1.58e+02  5.18e+12    19s
+   5   9.61576827e+16 -6.01102391e+17  1.06e+03 1.11e+01  1.02e+12    20s
+   6   4.30100226e+16 -2.69645744e+17  1.28e+02 3.22e+00  2.59e+11    21s
+   7   3.45403575e+16 -1.55053387e+17  8.48e+01 1.74e+00  1.51e+11    22s
+   8   2.44131745e+16 -7.27101708e+16  4.80e+01 7.37e-01  7.45e+10    22s
+   9   1.16593180e+16 -3.07663902e+16  1.60e+01 2.92e-01  3.06e+10    23s
+  10   7.25004289e+15 -1.58850733e+16  8.43e+00 1.51e-01  1.64e+10    24s
+  11   4.30906165e+15 -4.82594036e+15  4.05e+00 4.82e-02  6.40e+09    25s
+  12   2.95403107e+15 -1.83846934e+15  2.27e+00 2.34e-02  3.33e+09    26s
+  13   2.49449110e+15 -9.00943109e+14  1.64e+00 1.61e-02  2.35e+09    27s
+  14   2.20282431e+15 -2.96475408e+14  1.24e+00 1.15e-02  1.73e+09    28s
+  15   1.96438819e+15  1.84114127e+14  8.91e-01 7.92e-03  1.23e+09    29s
+  16   1.74036896e+15  8.21684238e+14  4.80e+00 3.40e-03  6.31e+08    30s
+  17   1.58666430e+15  1.00419179e+15  1.02e+01 2.21e-03  3.99e+08    32s
+  18   1.53150663e+15  1.17222804e+15  1.06e+01 1.19e-03  2.46e+08    34s
+  19   1.47623902e+15  1.25726006e+15  8.05e+00 6.41e-04  1.50e+08    36s
+  20   1.42825933e+15  1.32083678e+15  6.06e+00 2.83e-04  7.34e+07    38s
+  21   1.39237107e+15  1.36362919e+15  1.64e+00 4.45e-05  1.96e+07    40s
+  22   1.38033914e+15  1.37764343e+15  7.77e+00 6.89e-06  1.84e+06    42s
+  23   1.37875027e+15  1.37812577e+15  1.41e+01 4.75e-06  4.22e+05    44s
+  24   1.37865880e+15  1.37816467e+15  1.41e+01 4.46e-06  3.33e+05    46s
+  25   1.37857542e+15  1.37820523e+15  1.34e+01 2.85e-03  2.49e+05    48s
+  26   1.37854009e+15  1.37821979e+15  1.25e+01 2.35e-03  2.15e+05    50s
+  27   1.37849953e+15  1.37822754e+15  1.11e+01 1.87e-03  1.82e+05    53s
+  28   1.37846531e+15  1.37823742e+15  9.69e+00 2.85e-03  1.52e+05    56s
+  29   1.37844595e+15  1.37824437e+15  8.71e+00 2.44e-03  1.34e+05    58s
+  30   1.37842435e+15  1.37825474e+15  7.64e+00 1.64e-03  1.12e+05    60s
+  31   1.37840126e+15  1.37825797e+15  6.75e+00 1.40e-03  9.38e+04    62s
+  32   1.37839523e+15  1.37826140e+15  6.74e+00 1.22e-03  8.73e+04    64s
+  33   1.37839106e+15  1.37826407e+15  6.72e+00 1.07e-03  8.27e+04    66s
+  34   1.37837662e+15  1.37826740e+15  6.64e+00 9.59e-04  7.06e+04    68s
+  35   1.37837131e+15  1.37827172e+15  6.55e+00 2.53e-03  6.41e+04    71s
+  36   1.37836777e+15  1.37827486e+15  6.42e+00 3.10e-03  5.96e+04    73s
+  37   1.37836416e+15  1.37827730e+15  6.23e+00 2.32e-03  5.56e+04    75s
+  38   1.37835528e+15  1.37828157e+15  5.58e+00 4.51e-03  4.70e+04    78s
+  39   1.37834384e+15  1.37828310e+15  4.66e+00 4.36e-03  3.87e+04    80s
+  40   1.37833558e+15  1.37828718e+15  3.74e+00 3.56e-03  3.08e+04    82s
+  41   1.37832934e+15  1.37828935e+15  3.04e+00 3.13e-03  2.55e+04    84s
+  42   1.37832578e+15  1.37829345e+15  2.58e+00 2.38e-03  2.05e+04    85s
+  43   1.37832240e+15  1.37829509e+15  2.15e+00 2.10e-03  1.74e+04    86s
+  44   1.37831935e+15  1.37829908e+15  1.75e+00 5.13e-03  1.28e+04    87s
+  45   1.37831573e+15  1.37830196e+15  1.25e+00 3.75e-03  8.67e+03    89s
+  46   1.37831418e+15  1.37830343e+15  1.01e+00 2.84e-03  6.75e+03    90s
+  47   1.37831112e+15  1.37830449e+15  5.51e-01 3.05e-03  4.20e+03    91s
+  48   1.37830985e+15  1.37830563e+15  3.54e-01 3.12e-03  2.67e+03    93s
+  49   1.37830919e+15  1.37830635e+15  2.54e-01 2.52e-03  1.79e+03    94s
+  50   1.37830893e+15  1.37830685e+15  2.13e-01 1.94e-03  1.30e+03    95s
+  51   1.37830877e+15  1.37830706e+15  1.87e-01 1.38e-03  1.06e+03    96s
+  52   1.37830857e+15  1.37830715e+15  1.54e-01 1.14e-03  8.81e+02    98s
+  53   1.37830840e+15  1.37830730e+15  1.25e-01 1.12e-03  6.82e+02    99s
+  54   1.37830824e+15  1.37830738e+15  9.78e-02 8.23e-04  5.28e+02   101s
+  55   1.37830796e+15  1.37830744e+15  5.28e-02 6.19e-04  3.23e+02   102s
+  56   1.37830788e+15  1.37830749e+15  4.09e-02 4.52e-04  2.46e+02   104s
+  57   1.37830781e+15  1.37830752e+15  2.85e-02 3.58e-04  1.81e+02   106s
+  58   1.37830778e+15  1.37830753e+15  2.42e-02 3.12e-04  1.56e+02   107s
+  59   1.37830771e+15  1.37830755e+15  1.20e-02 3.42e-04  9.82e+01   109s
+  60   1.37830769e+15  1.37830758e+15  8.45e-03 2.32e-04  6.84e+01   111s
+  61   1.37830768e+15  1.37830760e+15  6.19e-03 1.69e-04  5.00e+01   113s
+  62   1.37830766e+15  1.37830761e+15  4.09e-03 1.26e-04  3.56e+01   115s
+  63   1.37830766e+15  1.37830762e+15  3.17e-03 9.68e-05  2.70e+01   117s
+  64   1.37830765e+15  1.37830762e+15  2.15e-03 7.89e-05  2.04e+01   120s
+  65   1.37830765e+15  1.37830762e+15  1.85e-03 6.51e-05  1.70e+01   123s
+  66   1.37830765e+15  1.37830763e+15  1.21e-03 4.81e-05  1.22e+01   126s
+  67   1.37830765e+15  1.37830763e+15  8.63e-04 3.87e-05  9.13e+00   129s
 
-Barrier performed 202 iterations in 291.66 seconds (119.09 work units)
-Sub-optimal termination - objective 1.37324032e+15
+Barrier solved model in 67 iterations and 129.42 seconds (56.71 work units)
+Optimal objective 1.37830765e+15
 
 Crossover log...
 
-   50332 DPushes remaining with DInf 0.0000000e+00               292s
-     297 DPushes remaining with DInf 2.4318695e-05               295s
-       0 DPushes remaining with DInf 1.7404556e-05               296s
+  410018 DPushes remaining with DInf 0.0000000e+00               130s
+  241355 DPushes remaining with DInf 0.0000000e+00               130s
+   80166 DPushes remaining with DInf 0.0000000e+00               135s
+   73093 DPushes remaining with DInf 0.0000000e+00               140s
+   68468 DPushes remaining with DInf 0.0000000e+00               146s
+   64583 DPushes remaining with DInf 0.0000000e+00               150s
+   59726 DPushes remaining with DInf 0.0000000e+00               155s
+   54800 DPushes remaining with DInf 0.0000000e+00               160s
+   50546 DPushes remaining with DInf 0.0000000e+00               165s
+   46896 DPushes remaining with DInf 0.0000000e+00               171s
+   43906 DPushes remaining with DInf 0.0000000e+00               176s
+   41369 DPushes remaining with DInf 0.0000000e+00               181s
+   39339 DPushes remaining with DInf 0.0000000e+00               185s
+   36973 DPushes remaining with DInf 0.0000000e+00               191s
+   35386 DPushes remaining with DInf 0.0000000e+00               195s
+   32719 DPushes remaining with DInf 0.0000000e+00               201s
+   30544 DPushes remaining with DInf 0.0000000e+00               205s
+   27527 DPushes remaining with DInf 0.0000000e+00               211s
+   25272 DPushes remaining with DInf 0.0000000e+00               215s
+   23352 DPushes remaining with DInf 0.0000000e+00               221s
+   22233 DPushes remaining with DInf 0.0000000e+00               225s
+   21116 DPushes remaining with DInf 0.0000000e+00               230s
+   20013 DPushes remaining with DInf 0.0000000e+00               235s
+   18926 DPushes remaining with DInf 0.0000000e+00               240s
+   17835 DPushes remaining with DInf 0.0000000e+00               245s
+   16741 DPushes remaining with DInf 0.0000000e+00               250s
+   15689 DPushes remaining with DInf 0.0000000e+00               256s
+   14728 DPushes remaining with DInf 0.0000000e+00               262s
+   14107 DPushes remaining with DInf 0.0000000e+00               266s
+   13023 DPushes remaining with DInf 0.0000000e+00               271s
+   11941 DPushes remaining with DInf 0.0000000e+00               275s
+   10141 DPushes remaining with DInf 0.0000000e+00               281s
+    9421 DPushes remaining with DInf 0.0000000e+00               285s
+    8341 DPushes remaining with DInf 0.0000000e+00               292s
+    7741 DPushes remaining with DInf 0.0000000e+00               297s
+    7381 DPushes remaining with DInf 0.0000000e+00               300s
+    6881 DPushes remaining with DInf 0.0000000e+00               308s
+    6521 DPushes remaining with DInf 0.0000000e+00               310s
+    3855 DPushes remaining with DInf 0.0000000e+00               315s
+     973 DPushes remaining with DInf 4.4839084e-03               320s
+       0 DPushes remaining with DInf 5.3889900e-03               326s
 
-  219401 PPushes remaining with PInf 0.0000000e+00               296s
-   90157 PPushes remaining with PInf 3.4632482e-05               300s
-   73862 PPushes remaining with PInf 0.0000000e+00               306s
-   54703 PPushes remaining with PInf 0.0000000e+00               310s
-   33795 PPushes remaining with PInf 0.0000000e+00               315s
-   18242 PPushes remaining with PInf 0.0000000e+00               320s
-   11890 PPushes remaining with PInf 0.0000000e+00               325s
-    6203 PPushes remaining with PInf 0.0000000e+00               330s
-       0 PPushes remaining with PInf 0.0000000e+00               335s
+Restart crossover...
 
-  Push phase complete: Pinf 0.0000000e+00, Dinf 3.8841799e+10    335s
+  410018 DPushes remaining with DInf 0.0000000e+00               326s
+   85212 DPushes remaining with DInf 0.0000000e+00               330s
+   77659 DPushes remaining with DInf 0.0000000e+00               335s
+   71724 DPushes remaining with DInf 0.0000000e+00               340s
+   68219 DPushes remaining with DInf 0.0000000e+00               345s
+   64326 DPushes remaining with DInf 0.0000000e+00               350s
+   60202 DPushes remaining with DInf 0.0000000e+00               355s
+   55923 DPushes remaining with DInf 0.0000000e+00               360s
+   51171 DPushes remaining with DInf 0.0000000e+00               365s
+   47898 DPushes remaining with DInf 0.0000000e+00               371s
+   45684 DPushes remaining with DInf 0.0000000e+00               375s
+   43992 DPushes remaining with DInf 0.0000000e+00               381s
+   42260 DPushes remaining with DInf 0.0000000e+00               385s
+   39767 DPushes remaining with DInf 0.0000000e+00               390s
+   38201 DPushes remaining with DInf 0.0000000e+00               395s
+   35467 DPushes remaining with DInf 0.0000000e+00               401s
+   32941 DPushes remaining with DInf 0.0000000e+00               406s
+   31193 DPushes remaining with DInf 0.0000000e+00               411s
+   29019 DPushes remaining with DInf 0.0000000e+00               415s
+   27144 DPushes remaining with DInf 0.0000000e+00               421s
+   25429 DPushes remaining with DInf 0.0000000e+00               425s
+   24292 DPushes remaining with DInf 0.0000000e+00               430s
+   22777 DPushes remaining with DInf 0.0000000e+00               435s
+   21233 DPushes remaining with DInf 0.0000000e+00               441s
+   20110 DPushes remaining with DInf 0.0000000e+00               446s
+   18988 DPushes remaining with DInf 0.0000000e+00               452s
+   18246 DPushes remaining with DInf 0.0000000e+00               455s
+   17149 DPushes remaining with DInf 0.0000000e+00               460s
+   15688 DPushes remaining with DInf 0.0000000e+00               467s
+   14964 DPushes remaining with DInf 0.0000000e+00               471s
+   14240 DPushes remaining with DInf 0.0000000e+00               478s
+   13879 DPushes remaining with DInf 0.0000000e+00               483s
+   13517 DPushes remaining with DInf 0.0000000e+00               486s
+   12794 DPushes remaining with DInf 0.0000000e+00               493s
+   12434 DPushes remaining with DInf 0.0000000e+00               497s
+   12073 DPushes remaining with DInf 0.0000000e+00               502s
+   11353 DPushes remaining with DInf 0.0000000e+00               507s
+   10633 DPushes remaining with DInf 0.0000000e+00               510s
+    9553 DPushes remaining with DInf 0.0000000e+00               515s
+    8113 DPushes remaining with DInf 0.0000000e+00               523s
+    7753 DPushes remaining with DInf 0.0000000e+00               528s
+    7393 DPushes remaining with DInf 0.0000000e+00               531s
+    6673 DPushes remaining with DInf 0.0000000e+00               537s
+    5593 DPushes remaining with DInf 0.0000000e+00               541s
+    2372 DPushes remaining with DInf 0.0000000e+00               547s
+     914 DPushes remaining with DInf 0.0000000e+00               552s
+       0 DPushes remaining with DInf 0.0000000e+00               556s
+
+  355351 PPushes remaining with PInf 1.1045498e+03               557s
+  342453 PPushes remaining with PInf 1.1403586e+07               611s
+  339318 PPushes remaining with PInf 1.1339268e+07               630s
+  338041 PPushes remaining with PInf 1.1290677e+07               640s
+  336439 PPushes remaining with PInf 1.1256418e+07               647s
+  335092 PPushes remaining with PInf 1.1231601e+07               652s
+  333878 PPushes remaining with PInf 1.1218077e+07               657s
+  332257 PPushes remaining with PInf 1.1200761e+07               664s
+  330419 PPushes remaining with PInf 1.1183503e+07               671s
+  328514 PPushes remaining with PInf 1.1169223e+07               678s
+  326318 PPushes remaining with PInf 1.1117842e+07               686s
+  324034 PPushes remaining with PInf 1.1076649e+07               694s
+  321005 PPushes remaining with PInf 1.1043786e+07               705s
+  318767 PPushes remaining with PInf 1.1026840e+07               711s
+  315852 PPushes remaining with PInf 1.0967827e+07               720s
+  312613 PPushes remaining with PInf 1.0929462e+07               729s
+  310256 PPushes remaining with PInf 1.0919152e+07               735s
+  307898 PPushes remaining with PInf 1.0914391e+07               741s
+  305657 PPushes remaining with PInf 1.0905352e+07               747s
+  303144 PPushes remaining with PInf 1.0902070e+07               752s
+  301508 PPushes remaining with PInf 1.0898166e+07               757s
+  299070 PPushes remaining with PInf 1.0896080e+07               761s
+  296942 PPushes remaining with PInf 1.0888359e+07               767s
+  294238 PPushes remaining with PInf 1.0883562e+07               774s
+  291011 PPushes remaining with PInf 1.0879694e+07               784s
+  288276 PPushes remaining with PInf 1.0871499e+07               790s
+  283923 PPushes remaining with PInf 1.0866973e+07               798s
+  282184 PPushes remaining with PInf 1.0865274e+07               803s
+  280391 PPushes remaining with PInf 1.0864883e+07               805s
+  276262 PPushes remaining with PInf 1.0863485e+07               812s
+  274469 PPushes remaining with PInf 1.0862994e+07               815s
+  272892 PPushes remaining with PInf 1.0855125e+07               820s
+  271342 PPushes remaining with PInf 1.0852005e+07               826s
+  268781 PPushes remaining with PInf 1.0841239e+07               831s
+  266910 PPushes remaining with PInf 9.6318660e+06               837s
+  265481 PPushes remaining with PInf 8.4391459e+06               843s
+  264269 PPushes remaining with PInf 8.4089535e+06               846s
+  261669 PPushes remaining with PInf 8.3993221e+06               850s
+  255075 PPushes remaining with PInf 8.3920433e+06               855s
+  234946 PPushes remaining with PInf 5.3060537e+06               860s
+  224722 PPushes remaining with PInf 5.3032527e+06               897s
+  222270 PPushes remaining with PInf 5.3031976e+06               914s
+  218188 PPushes remaining with PInf 5.3005017e+06               918s
+  212620 PPushes remaining with PInf 5.3004907e+06               922s
+  204577 PPushes remaining with PInf 5.3004700e+06               926s
+  195290 PPushes remaining with PInf 5.3004346e+06               931s
+  188623 PPushes remaining with PInf 5.3004080e+06               935s
+  181858 PPushes remaining with PInf 5.3003768e+06               940s
+  166588 PPushes remaining with PInf 4.6889166e+06               945s
+  136192 PPushes remaining with PInf 4.6885936e+06               950s
+  107587 PPushes remaining with PInf 4.6862842e+06               955s
+   90777 PPushes remaining with PInf 4.6862842e+06               960s
+   75870 PPushes remaining with PInf 4.6862807e+06               965s
+   64482 PPushes remaining with PInf 4.6780704e+06               971s
+   54248 PPushes remaining with PInf 4.3368301e+06               975s
+   46208 PPushes remaining with PInf 4.3368300e+06               980s
+   34666 PPushes remaining with PInf 4.3179218e+06               985s
+   25321 PPushes remaining with PInf 4.3179218e+06               990s
+   20615 PPushes remaining with PInf 4.3179211e+06               995s
+   17230 PPushes remaining with PInf 4.2628054e+06              1000s
+   14678 PPushes remaining with PInf 4.2561301e+06              1005s
+    9782 PPushes remaining with PInf 4.2561050e+06              1010s
+    2044 PPushes remaining with PInf 4.1882097e+06              1019s
+       1 PPushes remaining with PInf 4.1602305e+06              1020s
+       0 PPushes remaining with PInf 4.1602284e+06              1020s
+
+  Push phase complete: Pinf 4.1602284e+06, Dinf 3.0590156e+08   1021s
 
 Iteration    Objective       Primal Inf.    Dual Inf.      Time
-  253417    1.3732483e+15   0.000000e+00   3.884180e+10    335s
-  255245    1.3732483e+15   0.000000e+00   1.423336e-03    336s
-  262364    1.3732483e+15   0.000000e+00   4.616082e-04    341s
-  262709    1.3732483e+15   0.000000e+00   2.768040e-04    346s
-  263737    1.3732483e+15   0.000000e+00   5.945891e-03    351s
-  270898    1.3732483e+15   0.000000e+00   4.722307e-03    362s
-  278481    1.3732483e+15   0.000000e+00   3.490902e-03    375s
-  282384    1.3732483e+15   0.000000e+00   1.183586e-04    383s
-  282527    2.3712995e+25   1.106622e+34   2.834140e-04    387s
-  282640    1.3732483e+15   0.000000e+00   0.000000e+00    392s
-Extra simplex iterations after uncrush: 19047
-  282784    1.3732483e+15   0.000000e+00   0.000000e+00    401s
+  694673    1.3783096e+15   0.000000e+00   3.059016e+08   1021s
+  694963    1.3783096e+15   0.000000e+00   8.716224e+09   1026s
+  695246    1.3783096e+15   0.000000e+00   4.283710e+10   1031s
+  695408    1.3783095e+15   0.000000e+00   1.441638e+11   1035s
+  695960    1.3783091e+15   0.000000e+00   6.071197e+07   1043s
+  696163    1.3783090e+15   0.000000e+00   2.369867e+08   1047s
+  696616    1.3783088e+15   0.000000e+00   4.087941e+07   1055s
+  696766    1.3783088e+15   0.000000e+00   2.051127e+09   1057s
+  697083    1.3783087e+15   0.000000e+00   5.664206e+08   1064s
+  697309    1.3783086e+15   0.000000e+00   3.840985e+09   1067s
+  697553    1.3783086e+15   0.000000e+00   3.839343e+08   1071s
+  698344    1.3783086e+15   0.000000e+00   5.766256e+07   1077s
+  698922    1.3783085e+15   0.000000e+00   1.224259e+07   1081s
+  700085    1.3783085e+15   0.000000e+00   4.041421e+07   1087s
+  700962    1.3783085e+15   0.000000e+00   6.924256e+08   1091s
+  701674    1.3783085e+15   0.000000e+00   1.184949e+07   1097s
+  702442    1.3783085e+15   0.000000e+00   2.993776e+05   1101s
+  704325    1.3783085e+15   0.000000e+00   3.598496e+04   1106s
+  705806    1.3783085e+15   0.000000e+00   5.124002e+03   1111s
+  708023    1.3783085e+15   0.000000e+00   5.753667e-04   1115s
+  711317    1.3783076e+15   0.000000e+00   0.000000e+00   1120s
+  712433    1.3783076e+15   0.000000e+00   3.009183e-04   1135s
+Warning: 1 variables dropped from basis
+  714037    1.3783076e+15   0.000000e+00   1.631724e-04   1150s
+  715260    1.3783076e+15   0.000000e+00   2.632803e-04   1161s
+  716510    1.3783076e+15   0.000000e+00   6.604405e-05   1182s
+  717279    3.9024016e+27   6.220459e+34   4.611016e-05   1194s
+  717633    1.3783076e+15   5.131450e+02   5.070457e+10   1223s
+  718053    1.3783076e+15   7.577056e+00   1.851796e+10   1254s
+  718313    1.3783076e+15   0.000000e+00   1.480054e+08   1273s
+  718473    1.3783076e+15   0.000000e+00   1.134398e+08   1286s
+  718623    1.3783076e+15   0.000000e+00   6.763377e+07   1299s
+  718783    1.3783076e+15   0.000000e+00   1.074723e+07   1311s
+  718983    1.3783076e+15   0.000000e+00   1.083568e+05   1325s
+  719558    1.3783076e+15   0.000000e+00   0.000000e+00   1337s
+Extra simplex iterations after uncrush: 5521
 
 Solved with barrier
-Solved in 282784 iterations and 400.54 seconds (238.96 work units)
-Optimal objective  1.373248251e+15
-Warning: unscaled dual violation = 3.09944e-06 and residual = 5.71012e-05
+Solved in 719558 iterations and 1337.16 seconds (1458.51 work units)
+Optimal objective  1.378307642e+15
+Warning: unscaled dual violation = 6.03675e-06 and residual = 1.04904e-05
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1153,11 +1210,11 @@ Warning: unscaled dual violation = 3.09944e-06 and residual = 5.71012e-05
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-INFO:pypsa.linopf:Optimization successful. Objective value: 1.37e+15
+INFO:pypsa.linopf:Optimization successful. Objective value: 1.38e+15
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1169,7 +1226,7 @@ INFO:pypsa.linopf:Optimization successful. Objective value: 1.37e+15
 <div class="section" id="Outputs">
 <h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">now</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">139</span><span class="p">]</span>
@@ -1189,24 +1246,24 @@ With the linear load flow, there is the following per unit loading:
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 count    99.000000
-mean      0.907018
-std       2.713788
-min      -4.353434
-25%      -0.139697
-50%       0.344685
-75%       0.898300
-max      14.026809
+mean      1.143251
+std       3.660503
+min      -3.970388
+25%      -0.156697
+50%       0.313797
+75%       0.953972
+max      22.164871
 dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
@@ -1217,25 +1274,25 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;matplotlib.collections.PatchCollection at 0x24724817700&gt;,
- &lt;matplotlib.collections.LineCollection at 0x24724a189a0&gt;,
- &lt;matplotlib.collections.LineCollection at 0x24724a181c0&gt;)
+(&lt;matplotlib.collections.PatchCollection at 0x1cabe4ec7f0&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x1cabddf6b20&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x1cabddf62b0&gt;)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_21_1.png" src="../_images/notebooks_7_-_Network_Expansion_21_1.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_22_1.png" src="../_images/notebooks_7_-_Network_Expansion_22_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
@@ -1259,14 +1316,14 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_22_0.png" src="../_images/notebooks_7_-_Network_Expansion_22_0.png" />
+<img alt="../_images/notebooks_7_-_Network_Expansion_23_0.png" src="../_images/notebooks_7_-_Network_Expansion_23_0.png" />
 </div>
 </div>
 </div>
 <div class="section" id="Line-expansion-results">
 <h2>Line expansion results<a class="headerlink" href="#Line-expansion-results" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span>
@@ -1276,7 +1333,7 @@ dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -1287,38 +1344,6 @@ dtype: float64
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;MVA&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Line&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Text(0.5, 0, &#39;Line&#39;)
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_7_-_Network_Expansion_25_1.png" src="../_images/notebooks_7_-_Network_Expansion_25_1.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
-
-<span class="n">relative_difference</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Relative line expansion&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Line&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1339,6 +1364,40 @@ Text(0.5, 0, &#39;Line&#39;)
 <img alt="../_images/notebooks_7_-_Network_Expansion_26_1.png" src="../_images/notebooks_7_-_Network_Expansion_26_1.png" />
 </div>
 </div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">relative_difference</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Relative line expansion&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Lines 0 to 99&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 0, &#39;Lines 0 to 99&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_7_-_Network_Expansion_27_1.png" src="../_images/notebooks_7_-_Network_Expansion_27_1.png" />
+</div>
+</div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1355,7 +1414,7 @@ Text(0.5, 0, &#39;Line&#39;)
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="9%20-%20Comparison%20To%20Historical%20Data.html" class="btn btn-neutral float-left" title="Comparison To Historical Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../seasonal_thermal_energy_storage.html" class="btn btn-neutral float-right" title="Seasonal Thermal Energy Storage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html" class="btn btn-neutral float-right" title="Floating Wind &amp; Marine, and Emissions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -154,19 +154,33 @@ def write_generators(time_step, year):
                                     'lat': 'y'}, inplace=True)
         df_pipeline.drop(columns=['X-coordinate', 'Y-coordinate'], inplace=True)
 
-        file2 = 'Sectoral Marine Plan 2020.csv'
-        df_future = pd.read_csv(path + file2, encoding='unicode_escape')
-        df_future['carrier'] = 'Wind Offshore'
-        df_future['type'] = 'Wind Offshore'
-        df_future.drop(columns=['area (km2)'], inplace=True)
-        df_future.rename(columns={'max capacity (GW)': 'p_nom',
+        file2 = 'Sectoral Marine Plan 2020 - Fixed.csv'
+        df_future_FBOW = pd.read_csv(path + file2, encoding='unicode_escape')
+        df_future_FBOW['carrier'] = 'Wind Offshore'
+        df_future_FBOW['type'] = 'Wind Offshore'
+        df_future_FBOW.drop(columns=['area (km2)'], inplace=True)
+        df_future_FBOW.rename(columns={'max capacity (GW)': 'p_nom',
                                   'lon': 'x',
                                   'lat': 'y'}, inplace=True)
+        
+        file3 = 'Sectoral Marine Plan 2020 - Floating.csv'
+        df_future_FOW = pd.read_csv(path + file3, encoding='unicode_escape')
+        df_future_FOW['carrier'] = 'Wind Offshore'
+        df_future_FOW['type'] = 'Floating Wind'
+        df_future_FOW.drop(columns=['area (km2)'], inplace=True)
+        df_future_FOW.rename(columns={'max capacity (GW)': 'p_nom',
+                                  'lon': 'x',
+                                  'lat': 'y'}, inplace=True)
+        
+#         df_future = df_future.append([df_future_FBOW, df_future_FOW], ignore_index=True)
+        
         # convert from GW to MW
-        df_future.loc[:, 'p_nom'] *= 1000
+        df_future_FBOW.loc[:, 'p_nom'] *= 1000
+        df_future_FOW.loc[:, 'p_nom'] *= 1000
 
-        df_res_offshore = df_res_offshore.append([df_pipeline, df_future], ignore_index=True)
-
+        df_res_offshore = df_res_offshore.append([df_pipeline, df_future_FBOW, df_future_FOW], ignore_index=True)
+             
+      
     df_res_offshore_UC = df_res_offshore.drop(
         columns=['x', 'y'])
     df_res_offshore_UC['bus'] = 'bus'
@@ -174,7 +188,8 @@ def write_generators(time_step, year):
     df_res_offshore_LOPF = df_res_offshore.drop(
         columns=['x', 'y'])
     df_res_offshore_LOPF['bus'] = dc.map_to_bus(df_res_offshore)
-
+    
+    
     # join to previous df of thermal power plants
     df_UC = df_pp_UC.append(df_res_offshore_UC, ignore_index=True, sort=False)
     df_LOPF = df_pp_LOPF.append(df_res_offshore_LOPF, ignore_index=True, sort=False)
@@ -1411,7 +1426,7 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
                 df_onshore = df_onshore[~((df_onshore.index.month == 2) & (df_onshore.index.day == 29))]
 
     df_onshore.index = df_offshore.index
-
+                
     # PV
 
     # file = 'data/renewables/' + str(year) + '/PV_time_series_norm.pkl'
@@ -1458,7 +1473,8 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
                 df_PV = df_PV[~((df_PV.index.month == 2) & (df_PV.index.day == 29))]
 
     df_PV.index = df_offshore.index
-
+           
+                
     # HYDRO
     # hydro data is between 2015-02-22 and 2020-12-31
     # if dates are before then ATM use 2016 data
@@ -1503,9 +1519,8 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
             if year % 4 != 0:
                 # remove 29th Feb
                 df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
-
     df_hydro.index = df_offshore.index
-
+    
     # MARINE TECHNOLOGIES
 
     # want to join the three dataframes together
@@ -1627,6 +1642,38 @@ def unmet_load():
     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
 
+    # DEFINING A NEW FUNCTION TO AMEND 'WIND OFFSHORE' TO 'FLOATING WIND' AT SITES I, E, F, G, NE8, NE7, E3, E2, NE1, E1, NE2, NE3, NE6, N2, N3 - FOR LOPF ONLY
+    
+# def floating_wind():
+        
+#     # read list of generators
+#     path = 'LOPF_data/generators.csv'
+#     df_FW = pd.read_csv(path, 'type')
+
+#     # for sites I, E, F, G, NE8, NE7, E3, E2, NE1, E1, NE2, NE3, NE6, N2, N3, change the type to 'Floating Wind'
+#     df_FW = d_FW.replace('I
+    
+    
+#     # read in all buses with loads
+#     df_buses = pd.read_csv('LOPF_data/loads.csv', index_col=0)
+    
+#     # add new type of 'Floating Wind' to each bus, under the carrier of 'Offshore Wind'
+#     for bus in df_buses.bus.values:
+#         dic_floating_wind = {'carrier': 'Wind Offshore',
+#                      'type': 'Floating Wind', 'p_nom': 999999999,
+#                      'bus': bus, 'marginal_cost': 999999999,
+#                      'ramp_limit_up': 1, 'ramp_limit_down': 1,
+#                      'p_max_pu': 1}
+#         index = 'Floating Wind' + bus
+#         df_floating_wind = pd.DataFrame(dic_floating_wind, index=[index])
+#         df_LOPF = df_LOPF.append(df_unmet)
+
+#     df_LOPF.index.name = 'name'
+    
+#     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
+    
+    
+    
 def merge_generation_buses(year):
 
     # get generators
@@ -1636,7 +1683,7 @@ def merge_generation_buses(year):
     path = 'LOPF_data/generators-p_max_pu.csv'
     df_gen_p = pd.read_csv(path, index_col=0)
 
-    carriers = ['Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Interconnector']
+    carriers = ['Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Interconnector', 'Tidal lagoon', 'Tidal stream', 'Wave power']
     buses = df_gen['bus'].unique()
     df_list = []
     df_gen_p_list = []
@@ -1681,7 +1728,7 @@ def merge_generation_buses(year):
     df_gen_res = pd.concat(df_list)
     # add in new generators
     df_gen = df_gen.append(df_gen_res)
-
+       
     df_gen.to_csv('LOPF_data/generators.csv', header=True)
     df_gen_p.to_csv('LOPF_data/generators-p_max_pu.csv', header=True)
     if year < 2021:
@@ -1722,3 +1769,8 @@ if __name__ == "__main__":
     # future_biomass_CCS(year)
     # future_hydrogen(year)
     merge_generation_buses()
+
+    
+  
+    
+    

@@ -60,13 +60,7 @@
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../seasonal_thermal_energy_storage.html">Seasonal Thermal Energy Storage</a></li>
-</ul>
-<p class="caption"><span class="caption-text">References</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../API_reference.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
 </ul>
 
         </div>
@@ -396,6 +390,7 @@ from <a class="reference external" href="https://www.imperial.ac.uk/media/imperi
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -428,9 +423,9 @@ from <a class="reference external" href="https://www.imperial.ac.uk/media/imperi
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
   warnings.warn(
-C:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
 C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:201: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
@@ -613,7 +608,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
     </tr>
   </tbody>
 </table>
-<p>2881 rows × 8 columns</p>
+<p>2875 rows × 8 columns</p>
 </div></div>
 </div>
 <div class="nbinput docutils container">
@@ -736,9 +731,20 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
       <td>...</td>
     </tr>
     <tr>
+      <th>NE7</th>
+      <td>Wind Offshore</td>
+      <td>Floating Wind</td>
+      <td>4770.000</td>
+      <td>Peterhead</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
       <th>NE8</th>
       <td>Wind Offshore</td>
-      <td>Wind Offshore</td>
+      <td>Floating Wind</td>
       <td>1590.000</td>
       <td>Peterhead</td>
       <td>0.0</td>
@@ -749,7 +755,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
     <tr>
       <th>E1</th>
       <td>Wind Offshore</td>
-      <td>Wind Offshore</td>
+      <td>Floating Wind</td>
       <td>4770.000</td>
       <td>Peterhead</td>
       <td>0.0</td>
@@ -760,7 +766,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
     <tr>
       <th>E2</th>
       <td>Wind Offshore</td>
-      <td>Wind Offshore</td>
+      <td>Floating Wind</td>
       <td>3180.000</td>
       <td>Peterhead</td>
       <td>0.0</td>
@@ -771,20 +777,9 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
     <tr>
       <th>E3</th>
       <td>Wind Offshore</td>
-      <td>Wind Offshore</td>
+      <td>Floating Wind</td>
       <td>1590.000</td>
       <td>Peterhead</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>W1</th>
-      <td>Wind Offshore</td>
-      <td>Wind Offshore</td>
-      <td>3180.000</td>
-      <td>Neilston</td>
       <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -805,6 +800,7 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
     <span class="n">generators_p_nom</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Unmet Load&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">generators_p_nom</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">generators_p_nom</span><span class="p">[</span><span class="n">generators_p_nom</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="c1"># bar chart</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">generators_p_nom</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">generators_p_nom</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
@@ -839,7 +835,6 @@ C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-
 <div class="highlight"><pre>
 carrier
 Biomass (dedicated)      550.512
-Marine                   630.400
 Landfill Gas             743.500
 Large Hydro             1826.660
 EfW Incineration        2308.671
