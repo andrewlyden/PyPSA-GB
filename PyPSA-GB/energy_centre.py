@@ -177,10 +177,14 @@ class EnergyCentre(object):
             p_nom=10,
             efficiency=cop,
             p_nom_extendable=extendable,
-            capital_cost=1200000,
+            # danish energy agency
+            capital_cost=1200000 / 3,
+            # star refrig
+            # capital_cost=700000 / 3,        
             )
 
     def add_resistive_heater(self, extendable=False):
+
         self.network.add(
             'Link',
             name="Resistive_Heater",
@@ -190,14 +194,16 @@ class EnergyCentre(object):
             efficiency=1.0,
             marginal_cost=0.001,
             p_nom_extendable=extendable,
+            # p_nom_min=self.network.loads_t.p_set.Heat_Demand.max(),
             capital_cost=130000,
             )
+        
 
     def add_short_term_store(self,
                 sts_cap=14,
                 sts_charge=2.940,
                 sts_discharge=1.260,
-                sts_standing_loss=0.001,
+                sts_standing_loss=0.0001,
                 extendable=False
                 ):
         '''
@@ -236,9 +242,9 @@ class EnergyCentre(object):
 
     def add_long_term_store(self,
                 lts_cap=900,
-                lts_charge=0.34,
-                lts_discharge=0.34,
-                lts_standing_loss=0.001,
+                lts_charge=0.6,
+                lts_discharge=0.6,
+                lts_standing_loss=0.00024,
                 extendable=False
                 ):
         '''
