@@ -31,11 +31,11 @@ if year > 2020:
     year_baseline = 2012
 
     data_reader_writer.data_writer(
-        start, end, time_step, year,
+        start, end, time_step, year, demand_dataset='historical',
         year_baseline=year_baseline, scenario=scenario, merge_generators=True)
 
 elif year <= 2020:
-    data_reader_writer.data_writer(start, end, time_step, year, merge_generators=True)
+    data_reader_writer.data_writer(start, end, time_step, year, demand_dataset='historical', merge_generators=True)
 
 network = pypsa.Network()
 

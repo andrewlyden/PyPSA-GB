@@ -26,10 +26,10 @@ if year > 2020:
 
     year_baseline = 2012
 
-    data_reader_writer.data_writer(start, end, time_step, year, year_baseline=year_baseline, scenario=scenario)
+    data_reader_writer.data_writer(start, end, time_step, year, demand_dataset='historical', year_baseline=year_baseline, scenario=scenario)
 
 elif year <= 2020:
-    data_reader_writer.data_writer(start, end, time_step, year)
+    data_reader_writer.data_writer(start, end, time_step, year, demand_dataset='historical')
 
 network = pypsa.Network()
 

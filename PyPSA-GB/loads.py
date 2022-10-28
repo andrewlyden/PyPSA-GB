@@ -37,8 +37,57 @@ def read_historical_demand_data():
     df = df.set_index(dti)
     df = df[['POWER_ESPENI_MW']]
     # df = df.drop(columns=['SETTLEMENT_DATE', 'SETTLEMENT_PERIOD'])
-
     return df
+
+
+def read_future_profile_data():
+    """reads the future demand profile data from Staffel et al - https://doi.org/10.1016/j.energy.2015.06.082
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    dataframe
+        eload and DESSTINEE demand data, see dates below
+    """
+
+    # this stuff can be used to get data from national grid csv files
+    # file1 = 'data/demand/DemandData_2005-2010.csv'
+    # file2 = 'data/demand/DemandData_2011-2016.csv'
+    # file3 = 'data/demand/DemandData_2017.csv'
+    # file4 = 'data/demand/DemandData_2018.csv'
+
+    # # reads csvs
+    # df1 = pd.read_csv(file1)
+    # df2 = pd.read_csv(file2)
+    # df3 = pd.read_csv(file3)
+    # df4 = pd.read_csv(file4)
+
+    # frames = [df2, df3, df4]
+    # df = df1.append(frames, ignore_index=True, sort=False)
+
+    # using espeni data set
+    file = '..\data\demand\egy_7649_mmc1.xlsx'
+    df = pd.read_excel(file, sheet_name=None)
+    df_eload = df['ELOAD'].drop([0, 1, 2, 3, 4, 5])[['eLOAD Model (2050).2']].reset_index(drop=True) * 1000
+    df_eload.rename(columns={'eLOAD Model (2050).2': 'eLOAD'}, inplace=True)
+    dti = pd.date_range(
+        start='2050-01-01 00:00:00', end='2050-12-31 23:00:00', freq='H')
+    df_eload = df_eload.set_index(dti)
+    # resample to half hour frequency
+    df_eload['eLOAD'] = pd.to_numeric(df_eload['eLOAD'])
+    df_eload = df_eload.resample('0.5H').interpolate('polynomial', order=2)
+
+    # add end value
+    df_new_eload = pd.DataFrame(
+        data=df_eload.tail(1).values,
+        columns=df_eload.columns,
+        index = pd.date_range(start='2050-12-31 23:30:00', end='2050-12-31 23:30:00', freq='0.5H'))
+    # add to existing dataframe
+    df_eload = df_eload.append(df_new_eload, sort=False)
+
+    return df_eload
 
 
 def write_loads(year):
@@ -68,7 +117,7 @@ def write_loads(year):
     df_buses.to_csv('LOPF_data/loads.csv', index=True, header=True)
 
 
-def write_loads_p_set(start, end, year, time_step, year_baseline=None):
+def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None):
     """writes the loads power timeseries csv file
 
     Parameters
@@ -77,12 +126,18 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         start of simulation period
     end : str
         end of simulation period
+    dataset : str
+        can be 'historical' or 'eload'
     Returns
     -------
     """
     # LOADS-P_SET CSV FILE
-    df_hd = read_historical_demand_data()
-    df_hd.rename(columns={'POWER_ESPENI_MW': 'load'}, inplace=True)
+    if dataset == 'historical':
+        df_hd = read_historical_demand_data()
+        df_hd.rename(columns={'POWER_ESPENI_MW': 'load'}, inplace=True)
+    elif dataset == 'eload':
+        df_hd = read_future_profile_data()
+        df_hd.rename(columns={'eLOAD': 'load'}, inplace=True)
 
     # need an index for the period to be simulated
     if time_step == 0.5:
@@ -114,7 +169,7 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     norm = pd.DataFrame(data=normalised, columns=data.columns)
     norm.index.name = 'name'
 
-    if year <= 2020:
+    if year <= 2020 and dataset == 'historical':
         # if using historical data then use this to
         # distribute to different nodes
         # locate from historical data load for simulated period
@@ -153,18 +208,29 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
         year_start = str(year_baseline) + '-01-01 00:00:00'
         year_end = str(year_baseline) + '-12-31 23:30:00'
         # using the baseline year as basis for demand distribution
-        # load timeseries in baseline year
-        df_year = df_hd.loc[year_start:year_end]
+
+        if dataset == 'historical':
+            # load timeseries in baseline year
+            df_year = df_hd.loc[year_start:year_end]
+        elif dataset == 'eload':
+            df_year = df_hd
+
         # summed load in baseline year
         # factor of two because historical demand is read in half hourly, so need to convert to GWh/yr
         historical_demand = df_year.sum().values[0] * 0.5 / 1000
         scale_factor = float(future_demand) / float(historical_demand)
 
         # load for simulation dates in baseline year
-        yr = str(year_baseline)[-2:]
-        start_yr = start[:2] + yr + start[4:]
-        end_yr = end[:2] + yr + end[4:]
-        df_sim = df_year[start_yr:end_yr]
+        if dataset == 'historical':
+            yr = str(year_baseline)[-2:]
+            start_yr = start[:2] + yr + start[4:]
+            end_yr = end[:2] + yr + end[4:]
+            df_sim = df_year[start_yr:end_yr]
+        elif dataset == 'eload':
+            yr = '50'
+            start_yr = start[:2] + yr + start[4:]
+            end_yr = end[:2] + yr + end[4:]
+            df_sim = df_year[start_yr:end_yr]
         scaled_load = scale_factor * df_sim
 
         # check if baseline year is a leap year and simulated year is not and remove 29th Feb
@@ -214,3 +280,7 @@ def write_loads_p_set(start, end, year, time_step, year_baseline=None):
     df_loads_p_set_UC.to_csv('UC_data/loads-p_set.csv', header=True)
 
     return df_loads_p_set_LOPF
+
+if __name__ == '__main__':
+    read_future_profile_data()
+    read_historical_demand_data()

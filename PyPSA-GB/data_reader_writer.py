@@ -26,7 +26,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def data_writer(start, end, time_step, year, year_baseline=None, scenario=None, merge_generators=False):
+def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None, scenario=None, merge_generators=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -54,7 +54,7 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None, 
     buses.write_buses(year)
     lines.write_lines()
     loads.write_loads(year)
-    loads.write_loads_p_set(start, end, year, time_step, year_baseline=year_baseline)
+    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline)
 
     generators.write_generators(time_step, year)
 
@@ -91,6 +91,6 @@ if __name__ == "__main__":
     # time step as fraction of hour
     time_step = 0.5
     if year > 2020:
-        data_writer(start, end, time_step, year, year_baseline=2020, scenario='Leading The Way', merge_generators=True)
+        data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=2020, scenario='Leading The Way', merge_generators=True)
     if year <= 2020:
         data_writer(start, end, time_step, year)
