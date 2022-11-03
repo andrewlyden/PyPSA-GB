@@ -174,7 +174,7 @@ def write_interconnectors(start, end, freq):
     result1.to_csv('LOPF_data/loads-p_set.csv', header=True)
 
 
-def future_interconnectors(year):
+def future_interconnectors(year, scenario, FES):
 
     # what interconnectors in future
     # read in future interconnector csv data
@@ -193,17 +193,24 @@ def future_interconnectors(year):
         IC_2025_cap = df_IC['p_nom'].sum() / 1000
         # need to scale the interconnectors for beyond 2025 using FES data
         # read in the FES data
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        if FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
         df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains('Interconnectors', case=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('(TWh)')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        scenario = 'Leading The Way'
         date = str(year) + '-01-01'
-        IC_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        try:
+            IC_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        except:
+            IC_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
         # then consider what scaling factor is required
         scaling_factor = round(IC_cap_FES / IC_2025_cap, 2)

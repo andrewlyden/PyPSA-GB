@@ -33,10 +33,14 @@ def read_storage_data(year):
     return df
 
 
-def future_storage():
+def future_storage(FES):
 
-    df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-                           sheet_name='FLX1', header=9)
+    if FES == 2021:
+        df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                            sheet_name='FLX1', header=9)
+    elif FES == 2022:
+        df_FES = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx',
+                            sheet_name='FLX1', header=9)
                 
     df_battery = df_FES[df_FES.Detail.str.contains('Battery', case=False)]
     cols = [0, 1, 3, 5, 6]
@@ -80,7 +84,7 @@ def future_storage():
     return df_storage
 
 
-def write_storage_units(year, scenario=None):
+def write_storage_units(year, scenario=None, FES=None):
     """writes the buses csv file
 
     Parameters
@@ -106,7 +110,7 @@ def write_storage_units(year, scenario=None):
         df_LOPF.to_csv('LOPF_data/storage_units.csv', index=False, header=True)
 
     elif year >= 2021:
-        df_future_storage = future_storage()
+        df_future_storage = future_storage(FES)
 
         # as first pass distribute the batteries across the nodes evenly
         # read in the buses

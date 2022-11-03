@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import pandas as pd
 
 
@@ -117,7 +118,7 @@ def write_loads(year):
     df_buses.to_csv('LOPF_data/loads.csv', index=True, header=True)
 
 
-def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None):
+def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, scenario=None, FES=None):
     """writes the loads power timeseries csv file
 
     Parameters
@@ -193,11 +194,20 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None):
     elif year > 2020:
         # if future scenarios need to scale historical
         # data using FES demand data
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ED1', header=4, dtype=str)
+        if scenario == 'Leading The Way':
+            scenario = 'Leading the Way'
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ED1', header=4, dtype=str)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ED1', header=4, dtype=str)
+        elif FES == None:
+            raise Exception("Please choose a FES year.")
+            
         df_FES_demand = df_FES.loc[df_FES['Data item'] == 'GBFES System Demand: Total']
-        scenario = 'Leading the Way'
         df_FES_demand = df_FES_demand.loc[df_FES_demand['Scenario'] == scenario]
         date = str(year) + '-01-01 00:00:00'
         df_FES_demand.columns = df_FES_demand.columns.astype(str)

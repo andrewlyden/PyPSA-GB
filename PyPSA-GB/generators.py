@@ -717,9 +717,9 @@ def future_coal_p_nom(year):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_gas_p_nom(year, scenario, tech):
+def future_gas_p_nom(year, scenario, tech, FES):
     # going to scale the OCGT and CCGT based on FES
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -756,7 +756,7 @@ def future_gas_p_nom(year, scenario, tech):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_nuclear_p_nom(year, scenario):
+def future_nuclear_p_nom(year, scenario, FES):
     # read in phase out of nuclear dates
     file = '../data/power stations/nuclear_phase_out_dates.csv'
     df = pd.read_csv(file, index_col=1)
@@ -816,7 +816,7 @@ def future_nuclear_p_nom(year, scenario):
     # for > 2030
     if year > 2030:
         tech = 'Nuclear'
-        future_capacities_dict = future_capacity(year, tech, scenario)
+        future_capacities_dict = future_capacity(year, tech, scenario, FES)
         tech_cap_year = future_capacities_dict['tech_cap_year']
         tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -854,10 +854,10 @@ def future_nuclear_p_nom(year, scenario):
     generators3.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_oil_p_nom(year, scenario):
+def future_oil_p_nom(year, scenario, FES):
     tech = 'Oil'
     # going to scale the oil based on FES
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -893,10 +893,10 @@ def future_oil_p_nom(year, scenario):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_waste_p_nom(year, scenario):
+def future_waste_p_nom(year, scenario, FES):
     tech = 'Waste'
     # going to scale the oil based on FES
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -933,11 +933,11 @@ def future_waste_p_nom(year, scenario):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_gas_CCS(year, scenario):
+def future_gas_CCS(year, scenario, FES):
     tech = 'CCS Gas'
     # going to scale the existing gas sites based on FES
     # but add as new tech
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -985,11 +985,11 @@ def future_gas_CCS(year, scenario):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_biomass_CCS(year, scenario):
+def future_biomass_CCS(year, scenario, FES):
     tech = 'CCS Biomass'
     # going to scale the existing gas sites based on FES
     # but add as new tech
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -1040,11 +1040,11 @@ def future_biomass_CCS(year, scenario):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_hydrogen(year, scenario):
+def future_hydrogen(year, scenario, FES):
     tech = 'Hydrogen'
     # going to scale the existing gas sites based on FES
     # but add as new tech
-    future_capacities_dict = future_capacity(year, tech, scenario)
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -1097,7 +1097,7 @@ def future_hydrogen(year, scenario):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_capacity(year, tech, scenario):
+def future_capacity(year, tech, scenario, FES):
 
     df_pp = read_power_stations_data(year)
     if tech == 'Nuclear' or tech == 'Oil':
@@ -1117,9 +1117,16 @@ def future_capacity(year, tech, scenario):
         tech_cap_year = df_pp['Installed Capacity (MW)'].sum() / 1000
 
     if tech == 'CCGT':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         df_FES = df_FES[df_FES.SubType.str.contains('CCGT', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [2, 3, 4]
@@ -1143,19 +1150,32 @@ def future_capacity(year, tech, scenario):
         df_FES_ST.drop([0, 1], inplace=True)
         df_FES_ST.dropna(axis='columns', inplace=True)
         df_FES_ST.index = ['System Transformation']
-
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1], inplace=True)
-        df_FES_SP.dropna(axis='columns', inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+        if FES == 2021:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Steady Progression']
+        if FES == 2022:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
 
         df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'OCGT':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         df_FES = df_FES[df_FES.SubType.str.contains('OCGT', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [2, 3, 4]
@@ -1180,18 +1200,32 @@ def future_capacity(year, tech, scenario):
         df_FES_ST.dropna(axis='columns', inplace=True)
         df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1], inplace=True)
-        df_FES_SP.dropna(axis='columns', inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+        if FES == 2021:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Steady Progression']
+        if FES == 2022:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
 
         df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'Nuclear':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains('Nuclear', case=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
@@ -1199,9 +1233,16 @@ def future_capacity(year, tech, scenario):
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
     elif tech == 'Oil':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         # df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains('Other Thermal', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
@@ -1210,30 +1251,57 @@ def future_capacity(year, tech, scenario):
 
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
         df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-        df_FES_LTW.drop([0, 1], inplace=True)
+        if FES == 2021:
+            df_FES_LTW.drop([0, 1], inplace=True)
+        elif FES == 2022:
+            # need to drop another row with FES22
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
         df_FES_LTW.index = ['Leading the Way']
 
         df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
         df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1], inplace=True)
+        if FES == 2021:
+            df_FES_CT.drop([0, 1], inplace=True)
+        elif FES == 2022:
+            # need to drop another row with FES22
+            df_FES_CT.drop([0, 1, 2], inplace=True)
         df_FES_CT.index = ['Consumer Transformation']
 
         df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
         df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1], inplace=True)
+        if FES == 2021:
+            df_FES_ST.drop([0, 1], inplace=True)
+        elif FES == 2022:
+            # need to drop another row with FES22
+            df_FES_ST.drop([0, 1, 2], inplace=True)
         df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1], inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+        if FES == 2021:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Steady Progression']
+        if FES == 2022:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
 
         df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'Waste':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         # df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains('Waste', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
@@ -1242,30 +1310,54 @@ def future_capacity(year, tech, scenario):
 
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
         df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-        df_FES_LTW.drop([0, 1, 2, 3], inplace=True)
+        if FES == 2021:
+            df_FES_LTW.drop([0, 1, 2, 3], inplace=True)
+        elif FES == 2022:
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
         df_FES_LTW.index = ['Leading the Way']
 
         df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
         df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1, 2, 3], inplace=True)
+        if FES == 2021:
+            df_FES_CT.drop([0, 1, 2, 3], inplace=True)
+        elif FES == 2022:
+            df_FES_CT.drop([0, 1, 2], inplace=True)
         df_FES_CT.index = ['Consumer Transformation']
 
         df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
         df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1, 2, 3], inplace=True)
+        if FES == 2021:
+            df_FES_ST.drop([0, 1, 2, 3], inplace=True)
+        elif FES == 2022:
+            df_FES_ST.drop([0, 1, 2], inplace=True)
         df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1, 2, 3], inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+        if FES == 2021:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2, 3], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Steady Progression']
+        if FES == 2022:
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2, 3], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
 
         df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'CCS Gas':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         df_FES = df_FES[df_FES.SubType.str.contains('CCS Gas', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
@@ -1275,27 +1367,49 @@ def future_capacity(year, tech, scenario):
         df_FES = df_FES.append([df_LTW, df_CT], sort=True)
 
     elif tech == 'CCS Biomass':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         df_FES = df_FES[df_FES.SubType.str.contains('CCS Biomass', case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
-        df_FES = df_FES.append(df_FES_SP, sort=True)
+        if FES == 2021:
+            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
+            df_FES = df_FES.append(df_FES_SP, sort=True)
+        if FES == 2022:
+            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Falling Short'])
+            df_FES = df_FES.append(df_FES_SP, sort=True)
 
     elif tech == 'Hydrogen':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        elif FES == None:
+            raise Exception('Please choose a FES year.')
         # df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.SubType.str.contains('Hydrogen', case=False, na=False)]
+        df_FES = df_FES[~df_FES.SubType.str.contains('Hydrogen CHP')]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+        if FES == 2022:
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1], inplace=True)
         df_FES_LTW.index = ['Leading the Way']
 
         df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
@@ -1308,22 +1422,30 @@ def future_capacity(year, tech, scenario):
         df_FES_ST.drop([0, 1], inplace=True)
         df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
-
+        if FES == 2021:
+            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
+        if FES == 2022:
+            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Falling Short'])
         df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'Marine':
         pass
-
+    
     date = str(year) + '-01-01'
 
     if scenario == 'Leading The Way':
         try:
             scenario = 'Leading the Way'
-            tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+            try:
+                tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+            except:
+                tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
         except:
             scenario = 'Leading The Way'
-            tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+            try:
+                tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+            except:
+                tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
     else:
         tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
@@ -1554,22 +1676,22 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
     # df.to_csv('UC_data/generators-p_min_pu.csv', header=True)
 
 
-def future_p_nom(year, time_step, scenario):
+def future_p_nom(year, time_step, scenario, FES):
     # need to do CCS first as they are scaling based on
     # 2020 data... make sure to do this before scaling gas p_nom
-    future_gas_CCS(year, scenario)
-    future_biomass_CCS(year, scenario)
-    future_hydrogen(year, scenario)
-    renewables.scale_biomass_p_nom(year, scenario)
+    future_gas_CCS(year, scenario, FES)
+    future_biomass_CCS(year, scenario, FES)
+    future_hydrogen(year, scenario, FES)
+    renewables.scale_biomass_p_nom(year, scenario, FES)
     future_coal_p_nom(year)
-    future_gas_p_nom(year, scenario, tech='CCGT')
-    future_gas_p_nom(year, scenario, tech='OCGT')
-    future_nuclear_p_nom(year, scenario)
-    future_oil_p_nom(year, scenario)
-    future_waste_p_nom(year, scenario)
-    renewables.future_RES_scale_p_nom(year, 'Wind Onshore', scenario)
-    renewables.future_RES_scale_p_nom(year, 'Solar Photovoltaics', scenario)
-    renewables.future_RES_scale_p_nom(year, 'Hydro', scenario)
+    future_gas_p_nom(year, scenario, 'CCGT', FES)
+    future_gas_p_nom(year, scenario, 'OCGT', FES)
+    future_nuclear_p_nom(year, scenario, FES)
+    future_oil_p_nom(year, scenario, FES)
+    future_waste_p_nom(year, scenario, FES)
+    renewables.future_RES_scale_p_nom(year, 'Wind Onshore', scenario, FES)
+    renewables.future_RES_scale_p_nom(year, 'Solar Photovoltaics', scenario, FES)
+    renewables.future_RES_scale_p_nom(year, 'Hydro', scenario, FES)
 
     # ensure all generator data is added
     df_UC = pd.read_csv('UC_data/generators.csv', index_col=0)
@@ -1758,16 +1880,16 @@ if __name__ == "__main__":
     year = 2050
     # future_coal_p_nom(year)
     # tech = 'Gas'
-    # future_capacity(year, tech)
+    # future_capacity(year, tech, FES)
     # tech = 'CCGT'
     # tech = 'OCGT'
-    # future_gas_p_nom(year, tech)
-    # future_nuclear_p_nom(year)
-    # future_oil_p_nom(year)
-    # future_waste_p_nom(year)
-    # future_gas_CCS(year)
-    # future_biomass_CCS(year)
-    # future_hydrogen(year)
+    # future_gas_p_nom(year, tech, FES)
+    # future_nuclear_p_nom(year, FES)
+    # future_oil_p_nom(year, FES)
+    # future_waste_p_nom(year, FES)
+    # future_gas_CCS(year, FES)
+    # future_biomass_CCS(year, FES)
+    # future_hydrogen(year, FES)
     merge_generation_buses()
 
     

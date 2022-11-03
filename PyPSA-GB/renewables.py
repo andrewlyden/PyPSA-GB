@@ -375,10 +375,10 @@ def read_biomass(year):
     return df_biomass
 
 
-def scale_biomass_p_nom(year, scenario):
+def scale_biomass_p_nom(year, scenario, FES):
 
     tech = 'Biomass'
-    future_capacities_dict = future_RES_capacity(year, tech, scenario)
+    future_capacities_dict = future_RES_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -1142,9 +1142,9 @@ def historical_RES_timeseries(year, tech, future=False):
     return return_dict
 
 
-def future_RES_scale_p_nom(year, tech, scenario):
+def future_RES_scale_p_nom(year, tech, scenario, FES):
 
-    future_capacities_dict = future_RES_capacity(year, tech, scenario)
+    future_capacities_dict = future_RES_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
@@ -1467,7 +1467,7 @@ def future_offshore_capacity(year, year_baseline, scenario):
     return capacity_dict
 
 
-def future_RES_capacity(year, tech, scenario):
+def future_RES_capacity(year, tech, scenario, FES):
 
     if tech == 'Hydro':
         df_hydro = read_hydro(year)
@@ -1490,101 +1490,253 @@ def future_RES_capacity(year, tech, scenario):
 
     # how much RES in year to be simulated
     if tech == 'Wind Onshore':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='SV.29', usecols="M:AS", header=6, dtype=str,
-            index_col=1)
-        df_FES.drop(columns=['Unnamed: 12'], inplace=True)
-        df_FES.dropna(axis='rows', inplace=True)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='SV.29', usecols="M:AS", header=6, dtype=str,
+                index_col=1)
+            df_FES.drop(columns=['Unnamed: 12'], inplace=True)
+            df_FES.dropna(axis='rows', inplace=True)
+        if FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES = df_FES[df_FES.SubType.str.contains('Onshore Wind', case=False, na=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Curtailment')]
+            cols = [0, 1, 2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
+
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
+
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2], inplace=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.index = ['System Transformation']
+
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
+
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = df_FES / 1000
 
     elif tech == 'Solar Photovoltaics':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='SV.31', usecols="L:AR", header=5, dtype=str,
-            index_col=1)
-        df_FES.drop(columns=['Unnamed: 11'], inplace=True)
-        df_FES.dropna(axis='rows', inplace=True)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='SV.31', usecols="L:AR", header=5, dtype=str,
+                index_col=1)
+            df_FES.drop(columns=['Unnamed: 11'], inplace=True)
+            df_FES.dropna(axis='rows', inplace=True)
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES = df_FES[df_FES.SubType.str.contains('Solar PV', case=False, na=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            cols = [0, 1, 2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
+
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
+
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2], inplace=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.index = ['System Transformation']
+
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
+
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = df_FES / 1000
 
     elif tech == 'Hydro':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
-        df_FES.dropna(axis='rows', inplace=True)
-        df_FES = df_FES[df_FES.Type.str.contains('Hydro', case=False)]
-        df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
-        # df_FES = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-        cols = [2, 3, 4]
-        df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES.dropna(axis='rows', inplace=True)
+            df_FES = df_FES[df_FES.Type.str.contains('Hydro', case=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            # df_FES = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            cols = [2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
-        df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-        df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-        df_FES_LTW.dropna(axis='columns', inplace=True)
-        df_FES_LTW.drop([0, 1], inplace=True)
-        df_FES_LTW.index = ['Leading the Way']
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.drop([0, 1], inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
 
-        df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-        df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.dropna(axis='columns', inplace=True)
-        df_FES_CT.drop([0, 1], inplace=True)
-        df_FES_CT.index = ['Consumer Transformation']
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.drop([0, 1], inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
 
-        df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-        df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.dropna(axis='columns', inplace=True)
-        df_FES_ST.drop([0, 1], inplace=True)
-        df_FES_ST.index = ['System Transformation']
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.drop([0, 1], inplace=True)
+            df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.dropna(axis='columns', inplace=True)
-        df_FES_SP.drop([0, 1], inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP.index = ['Steady Progression']
 
-        df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES.dropna(axis='rows', inplace=True)
+            df_FES = df_FES[df_FES.SubType.str.contains('Hydro', case=False, na=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            cols = [0, 1, 2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
+
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
+
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.index = ['System Transformation']
+
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
+
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'Biomass':
-        df_FES = pd.read_excel(
-            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-            sheet_name='ES1', header=9, index_col=1)
-        df_FES = df_FES[df_FES.Type.str.contains('Biomass', case=False, na=False)]
-        df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
-        cols = [2, 3, 4]
-        df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+        if FES == 2021:
+            df_FES = pd.read_excel(
+                '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES = df_FES[df_FES.Type.str.contains('Biomass', case=False, na=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            cols = [2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
-        df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-        df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-        df_FES_LTW.drop([0, 1, 2], inplace=True)
-        df_FES_LTW.dropna(axis='columns', inplace=True)
-        df_FES_LTW.index = ['Leading the Way']
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
 
-        df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-        df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1, 2], inplace=True)
-        df_FES_CT.dropna(axis='columns', inplace=True)
-        df_FES_CT.index = ['Consumer Transformation']
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
 
-        df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-        df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1, 2], inplace=True)
-        df_FES_ST.dropna(axis='columns', inplace=True)
-        df_FES_ST.index = ['System Transformation']
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2], inplace=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.index = ['System Transformation']
 
-        df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1, 2], inplace=True)
-        df_FES_SP.dropna(axis='columns', inplace=True)
-        df_FES_SP.index = ['Steady Progression']
+            df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Steady Progression']
 
-        df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+
+        elif FES == 2022:
+            df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+            df_FES.dropna(axis='rows', inplace=True)
+            df_FES = df_FES[df_FES.SubType.str.contains('Biomass', case=False, na=False)]
+            df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            cols = [0, 1, 2, 3, 4]
+            df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+
+            df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
+            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW.index = ['Leading the Way']
+
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
+
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2, 3], inplace=True)
+            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST.index = ['System Transformation']
+
+            df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+            df_FES_SP.drop([0, 1, 2, 3, 4], inplace=True)
+            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP.index = ['Falling Short']
+
+            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
 
     date = str(year) + '-01-01'
     if scenario == 'Leading The Way':
         scenario = 'Leading the Way'
 
     if tech == 'Wind Onshore' or tech == 'Solar Photovoltaics':
-        tech_cap_FES = float(df_FES.loc[scenario, date])
+        try:
+            tech_cap_FES = float(df_FES.loc[scenario, date])
+        except:
+            tech_cap_FES = float(df_FES.loc[scenario, year])
     else:
-        tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        try:
+            tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        except:
+            tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
     capacity_dict = {'tech_cap_year': tech_cap_year,
                      'tech_cap_FES': tech_cap_FES}
