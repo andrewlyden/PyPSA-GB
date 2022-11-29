@@ -61,10 +61,10 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
     if year > 2020:
         storage.write_storage_units(year, scenario=scenario, FES=FES)
         generators.future_p_nom(year, time_step, scenario, FES)
-        generators.write_generators_p_max_pu(start, end, freq, year, year_baseline=year_baseline, scenario=scenario)
+        generators.write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=year_baseline, scenario=scenario)
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
-        distribution.Distribution(year, scenario).update()
+        # distribution.Distribution(year, scenario).update()
 
     elif year <= 2020:
         storage.write_storage_units(year)

@@ -682,6 +682,8 @@ def future_coal_p_nom(year):
     end_date = str(year) + '-01-01'
     filtered_df = df.loc[:end_date]
     pp_to_remove = filtered_df.name.values
+    # need to remove this because it deletes CCS biomass, and actually is zero anyway
+    pp_to_remove = pp_to_remove[pp_to_remove != 'West Burton']
 
     # get generators dataframe with p_noms to be scaled
     path = 'LOPF_data/generators.csv'
@@ -712,6 +714,9 @@ def future_coal_p_nom(year):
             generators_UC = generators_UC.append(PV_ratcliffe_UC)
     except:
         pass
+    
+    if year > 2022:
+        generators['p_nom']['West Burton'] = 0
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -928,6 +933,10 @@ def future_waste_p_nom(year, scenario, FES):
     generators = generators.append(gen_tech)
     generators_UC = generators_UC.append(gen_tech_UC)
     # print(generators.loc[generators['carrier'] == tech])
+    generators['carrier'] = generators['carrier'].replace({'EfW Incineration':'Waste'})
+    generators_UC['carrier'] = generators_UC['carrier'].replace({'EfW Incineration':'Waste'})
+    generators['type'] = generators['type'].replace({'EfW Incineration':'Waste'})
+    generators_UC['type'] = generators_UC['type'].replace({'EfW Incineration':'Waste'})
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -953,7 +962,7 @@ def future_gas_CCS(year, scenario, FES):
     gen_tech_UC = generators_UC.loc[generators_UC['type'] == tech_]
 
     # then consider what scaling factor is required
-    scaling_factor = round(tech_cap_FES / tech_cap_year, 2)
+    scaling_factor = tech_cap_FES / tech_cap_year
 
     # don't want to scale original CCGT so need copy
     gen_tech2 = gen_tech.copy()
@@ -1009,7 +1018,7 @@ def future_biomass_CCS(year, scenario, FES):
     gen_tech_UC = generators_UC.loc[generators_UC['type'] == tech_]
 
     # then consider what scaling factor is required
-    scaling_factor = round(tech_cap_FES / tech_cap_year, 2)
+    scaling_factor = tech_cap_FES / tech_cap_year
 
     # don't want to scale original CCGT so need copy
     gen_tech2 = gen_tech.copy()
@@ -1034,7 +1043,6 @@ def future_biomass_CCS(year, scenario, FES):
     # then add the new p_nom tech
     generators = generators.append(gen_tech2)
     generators_UC = generators_UC.append(gen_tech_UC2)
-    # print(generators.loc[generators['carrier'] == 'Natural Gas'])
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -1090,7 +1098,6 @@ def future_hydrogen(year, scenario, FES):
     # then add the new p_nom tech
     generators = generators.append(gen_tech2)
     generators_UC = generators_UC.append(gen_tech_UC2)
-    # print(generators.loc[generators['carrier'] == 'Hydrogen'])
     # print(generators.loc[generators['carrier'] == 'CCS Biomass'])
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
@@ -1362,9 +1369,9 @@ def future_capacity(year, tech, scenario, FES):
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_LTW = pd.DataFrame(0, columns=df_FES.columns, index=['Leading the Way'])
-        df_CT = pd.DataFrame(0, columns=df_FES.columns, index=['Consumer Transformation'])
-        df_FES = df_FES.append([df_LTW, df_CT], sort=True)
+        # df_LTW = pd.DataFrame(0, columns=df_FES.columns, index=['Leading the Way'])
+        # df_CT = pd.DataFrame(0, columns=df_FES.columns, index=['Consumer Transformation'])
+        # df_FES = df_FES.append([df_LTW, df_CT], sort=True)
 
     elif tech == 'CCS Biomass':
         if FES == 2021:
@@ -1401,7 +1408,7 @@ def future_capacity(year, tech, scenario, FES):
             raise Exception('Please choose a FES year.')
         # df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.SubType.str.contains('Hydrogen', case=False, na=False)]
-        df_FES = df_FES[~df_FES.SubType.str.contains('Hydrogen CHP')]
+        # df_FES = df_FES[~df_FES.SubType.str.contains('Hydrogen CHP')]
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
@@ -1409,17 +1416,17 @@ def future_capacity(year, tech, scenario, FES):
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
         if FES == 2022:
             df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1], inplace=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
         df_FES_LTW.index = ['Leading the Way']
 
         df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
         df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1], inplace=True)
+        df_FES_CT.drop([0, 1, 2], inplace=True)
         df_FES_CT.index = ['Consumer Transformation']
 
         df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
         df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1], inplace=True)
+        df_FES_ST.drop([0, 1, 2], inplace=True)
         df_FES_ST.index = ['System Transformation']
 
         if FES == 2021:
@@ -1456,7 +1463,7 @@ def future_capacity(year, tech, scenario, FES):
     return capacity_dict
 
 
-def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenario=None):
+def write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=None, scenario=None):
     """writes the generators p_max_pu csv file
 
     writes the timeseries maximum power output file for the
@@ -1485,7 +1492,7 @@ def write_generators_p_max_pu(start, end, freq, year, year_baseline=None, scenar
     if year <= 2020:
         df_offshore = renewables.historical_RES_timeseries(year, tech, future=False)['norm']
     elif year > 2020:
-        df_offshore = renewables.future_offshore_timeseries(year, year_baseline, scenario)['norm']
+        df_offshore = renewables.future_offshore_timeseries(year, year_baseline, scenario, FES)['norm']
     df_offshore = df_offshore.loc[start:end]
 
     if freq == '0.5H':
@@ -1704,6 +1711,15 @@ def future_p_nom(year, time_step, scenario, FES):
     df_LOPF = df_LOPF.drop(
         columns=['committable', 'min_up_time', 'min_down_time',
                  'p_min_pu', 'up_time_before', 'start_up_cost'])
+
+    # remove old generator types
+    # df_LOPF = df_LOPF.loc[df_LOPF['carrier'] == 'Hydrogen']
+    df_LOPF = df_LOPF[~df_LOPF.type.str.contains('Landfill Gas')]
+    df_UC = df_UC[~df_UC.type.str.contains('Landfill Gas')]    
+    df_LOPF = df_LOPF[~df_LOPF.type.str.contains('Sewage Sludge Digestion')]
+    df_UC = df_UC[~df_UC.type.str.contains('Sewage Sludge Digestion')]
+    df_LOPF = df_LOPF[~df_LOPF.type.str.contains('Anaerobic Digestion')]
+    df_UC = df_UC[~df_UC.type.str.contains('Anaerobic Digestion')]
 
     # save the dataframes to csv
     df_UC.to_csv('UC_data/generators.csv', index=True, header=True)
