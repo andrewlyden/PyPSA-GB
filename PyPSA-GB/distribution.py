@@ -14,17 +14,75 @@ class Distribution(object):
         self.df_storage = pd.read_csv(path, index_col=0)
 
         self.year = year
+        self.scenario = scenario
 
-        if scenario == 'Leading The Way':
-            self.scenario = 'LW'
-        elif scenario == 'Consumer Transformation':
-            self.scenario = 'CT'
-        elif scenario == 'System Transformation':
-            self.scenario = 'ST'
-        elif scenario == 'Steady Progression':
-            self.scenario = 'SP'
+        # if scenario == 'Leading the Way':
+        #     self.scenario = 'LW'
+        # elif scenario == 'Consumer Transformation':
+        #     self.scenario = 'CT'
+        # elif scenario == 'System Transformation':
+        #     self.scenario = 'ST'
+        # elif scenario == 'Steady Progression':
+        #     self.scenario = 'SP'
+        # else:
+        #     raise NameError('Invalid scenario passed to Distribution class')
+
+        self.df_FES_bb = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx', sheet_name='BB1')
+        self.df_id = pd.read_excel('../data/FES2022/Building Block Definitions.xlsx', index_col=0)
+        self.df_gsp = pd.read_csv('../data/FES2022/GSP in Scotland.csv', encoding='cp1252')
+
+    def read_building_block(self, tech):
+
+        if tech == 'Hydro':
+            ids = ['Gen_BB018']
+        elif tech == 'Hydrogen':
+            ids = ['Gen_BB023']
+        elif tech == 'Natural Gas':
+            ids = ['Gen_BB008', 'Gen_BB009']
+        elif tech == 'Batteries':
+            ids = ['Srg_BB001']
+        elif tech == 'Domestic Batteries':
+            ids = ['Srg_BB002']
+        elif tech == 'Pumped Hydro':
+            ids = ['Srg_BB003']
+        elif tech == 'Other':
+            ids = ['Srg_BB004']
+        elif tech == 'V2G':
+            ids = ['Srg_BB005']
         else:
-            raise NameError('Invalid scenario passed to Distribution class')
+            ids = self.df_id.filter(like=tech, axis=0)['Building Block ID Number'].values
+
+        df_FES = self.df_FES_bb[self.df_FES_bb['FES Scenario'].str.contains(self.scenario, case=False, na=False)]
+        GSP_list = self.df_gsp['GSP'].values
+        df_FES = df_FES[df_FES['GSP'].isin(GSP_list)]
+        df_FES = df_FES[df_FES['Building Block ID Number'].isin(ids)]
+        return df_FES
+
+    def scotland_total_tech(self, tech):
+        df = self.read_building_block(tech)
+        # print(df)
+        return df[self.year].sum()
+
+    def generation_capacities(self):
+
+        df_id = self.df_id
+        df_FES = self.df_FES_bb
+        scenario = self.scenario
+        year = self.year
+        generation_caps = {'Marine': self.scotland_total_tech('Marine'),
+                           'Biomass': self.scotland_total_tech('Biomass & Energy Crops (including CHP)'),
+                           'Interconnector': self.scotland_total_tech('Interconnector'),
+                           'Natural Gas': self.scotland_total_tech('Natural Gas'),
+                           'Nuclear': self.scotland_total_tech('Nuclear'),
+                           'Hydrogen': self.scotland_total_tech('Hydrogen'),
+                           'Hydro': self.scotland_total_tech('Hydro'),
+                           'Solar Photovoltaics': self.scotland_total_tech('Solar Generation'),
+                           'Wind Onshore': self.scotland_total_tech('Wind Onshore'),
+                           'Wind Offshore': self.scotland_total_tech('Wind Offshore')}
+        return generation_caps
+
+    def read_scotland_generators(self):
+        print(self.df_generators)
 
     def PV_data(self):
 
@@ -155,11 +213,15 @@ class Distribution(object):
         # write storage file
         self.df_storage.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
 
+    
 
 if __name__ == '__main__':
     year = 2050
-    scenario = 'Leading The Way'
+    scenario = 'Leading the Way'
     myDistribution = Distribution(year, scenario)
+
+    # print(myDistribution.generation_capacities())
+    print(myDistribution.read_scotland_generators())
 
     # print(myDistribution.df_generators.loc[myDistribution.df_generators.carrier == 'Solar Photovoltaics'])
     # myDistribution.PV_scale()
@@ -169,6 +231,8 @@ if __name__ == '__main__':
     # myDistribution.wind_onshore_scale()
     # print(myDistribution.df_generators.loc[myDistribution.df_generators.carrier == 'Wind Onshore'])
 
-    print(myDistribution.df_storage)
-    myDistribution.storage_scale()
-    print(myDistribution.df_storage)
+    # print(myDistribution.df_storage)
+    # myDistribution.storage_scale()
+    # print(myDistribution.df_storage)
+
+
