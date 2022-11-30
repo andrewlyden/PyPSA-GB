@@ -2,6 +2,7 @@
 # using FES2021 data to do this.
 
 import pandas as pd
+import distance_calculator as dc
 
 
 class Distribution(object):
@@ -12,6 +13,9 @@ class Distribution(object):
 
         path = 'LOPF_data/storage_units.csv'
         self.df_storage = pd.read_csv(path, index_col=0)
+
+        path = 'LOPF_data/loads-p_set.csv'
+        self.df_loads = pd.read_csv(path, index_col=0)
 
         self.year = year
         self.scenario = scenario
@@ -273,7 +277,15 @@ class Distribution(object):
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Solar Photovoltaics') & (self.df_generators.bus == bus), "p_nom"])
 
         # Move nuclear to England
-        scaling_factor_nuclear_scotland = 0.
+        if self.year < 2028:
+            nuclear_unmodified_scotland = generators_p_nom_scotland['Nuclear']
+            nuclear_bb_scotland = generators_p_nom_bb_scotland['Nuclear']
+            if nuclear_bb_scotland > 0.:
+                scaling_factor_nuclear_scotland = nuclear_unmodified_scotland / nuclear_bb_scotland
+            else:
+                scaling_factor_nuclear_scotland = 1
+        else:
+            scaling_factor_nuclear_scotland = 1
 
         nuclear_unmodified_rgb = generators_p_nom_rgb['Nuclear']
         nuclear_bb_rgb = generators_p_nom_bb_rgb['Nuclear']
@@ -284,7 +296,9 @@ class Distribution(object):
         # bus = 'Harker'
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])
         for bus in buses_scotland:
-            self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] *= scaling_factor_nuclear_scotland
+            if scaling_factor_nuclear_scotland == 0.:
+                scaling_factor_nuclear_scotland = 1
+            self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_nuclear_scotland
         for bus in buses_rgb:
             self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_nuclear_rgb
         # bus = 'Beauly'
@@ -309,13 +323,22 @@ class Distribution(object):
         # Scale hydrogen at Peterhead bus
         hydrogen_unmodified_scotland = generators_p_nom_scotland['Hydrogen']
         hydrogen_bb_scotland = generators_p_nom_bb_scotland['Hydrogen']
-        scaling_factor_hydrogen_scotland = hydrogen_unmodified_scotland / hydrogen_bb_scotland
+        if hydrogen_bb_scotland > 0.:
+            scaling_factor_hydrogen_scotland = hydrogen_unmodified_scotland / hydrogen_bb_scotland
+        else:
+            scaling_factor_hydrogen_scotland = 1
 
         hydrogen_unmodified_rgb = generators_p_nom_rgb['Hydrogen']
         hydrogen_bb_rgb = generators_p_nom_bb_rgb['Hydrogen']
-        scaling_factor_hydrogen_rgb = hydrogen_unmodified_rgb / hydrogen_bb_rgb
+        # zero for falling short scenario so don't want infinite value
+        if hydrogen_bb_rgb > 0:
+            scaling_factor_hydrogen_rgb = hydrogen_unmodified_rgb / hydrogen_bb_rgb
+        else:
+            scaling_factor_hydrogen_rgb = 1
 
         for bus in buses_scotland:
+            if scaling_factor_hydrogen_scotland == 0.:
+                scaling_factor_hydrogen_scotland = 1
             self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_scotland
         for bus in buses_rgb:
             self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_rgb
@@ -527,7 +550,7 @@ class Distribution(object):
 
         # write storage file
         self.df_storage.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
-    
+
 
 if __name__ == '__main__':
     year = 2050
@@ -537,7 +560,9 @@ if __name__ == '__main__':
     # print(myDistribution.generation_capacities())
     # print(myDistribution.read_scotland_generators())
     # myDistribution.modify_generators()
-    myDistribution.modify_storage()
+    # myDistribution.modify_storage()
+    # myDistribution.read_regional_breakdown_load()
+    myDistribution.scale_load()
 
     # print(myDistribution.df_generators.loc[myDistribution.df_generators.carrier == 'Solar Photovoltaics'])
     # myDistribution.PV_scale()

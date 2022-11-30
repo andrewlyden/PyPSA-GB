@@ -1369,9 +1369,10 @@ def future_capacity(year, tech, scenario, FES):
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        # df_LTW = pd.DataFrame(0, columns=df_FES.columns, index=['Leading the Way'])
-        # df_CT = pd.DataFrame(0, columns=df_FES.columns, index=['Consumer Transformation'])
-        # df_FES = df_FES.append([df_LTW, df_CT], sort=True)
+        if FES == 2021:
+            df_LTW = pd.DataFrame(0, columns=df_FES.columns, index=['Leading the Way'])
+            df_CT = pd.DataFrame(0, columns=df_FES.columns, index=['Consumer Transformation'])
+            df_FES = df_FES.append([df_LTW, df_CT], sort=True)
 
     elif tech == 'CCS Biomass':
         if FES == 2021:
@@ -1391,9 +1392,6 @@ def future_capacity(year, tech, scenario, FES):
         if FES == 2021:
             df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
             df_FES = df_FES.append(df_FES_SP, sort=True)
-        if FES == 2022:
-            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Falling Short'])
-            df_FES = df_FES.append(df_FES_SP, sort=True)
 
     elif tech == 'Hydrogen':
         if FES == 2021:
@@ -1412,6 +1410,7 @@ def future_capacity(year, tech, scenario, FES):
         df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+        # df_FES = df_FES.fillna(0)
 
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
         if FES == 2022:
@@ -1419,15 +1418,27 @@ def future_capacity(year, tech, scenario, FES):
             df_FES_LTW.drop([0, 1, 2], inplace=True)
         df_FES_LTW.index = ['Leading the Way']
 
-        df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-        df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1, 2], inplace=True)
-        df_FES_CT.index = ['Consumer Transformation']
+        if FES == 2022:
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
 
-        df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-        df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1, 2], inplace=True)
-        df_FES_ST.index = ['System Transformation']
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1, 2], inplace=True)
+            df_FES_ST.index = ['System Transformation']
+
+        if FES == 2021:
+            df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+            df_FES_CT.drop([0, 1], inplace=True)
+            df_FES_CT.index = ['Consumer Transformation']
+
+            df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+            df_FES_ST.drop([0, 1], inplace=True)
+            df_FES_ST.index = ['System Transformation']
 
         if FES == 2021:
             df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=['Steady Progression'])
@@ -1455,7 +1466,10 @@ def future_capacity(year, tech, scenario, FES):
                 tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
     else:
-        tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        try:
+            tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.
+        except:
+            tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
     capacity_dict = {'tech_cap_year': tech_cap_year,
                      'tech_cap_FES': tech_cap_FES}

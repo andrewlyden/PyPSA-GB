@@ -26,7 +26,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None, scenario=None, FES=2021, merge_generators=False):
+def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None, scenario=None, FES=2021, merge_generators=False, scale_to_peak=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -54,7 +54,7 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
     buses.write_buses(year)
     lines.write_lines()
     loads.write_loads(year)
-    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline, scenario=scenario, FES=FES)
+    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline, scenario=scenario, FES=FES, scale_to_peak=scale_to_peak)
 
     generators.write_generators(time_step, year)
 
@@ -65,7 +65,8 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
-        distribution.Distribution(year, scenario).building_block_update()
+        if FES == 2022:
+            distribution.Distribution(year, scenario).building_block_update()
 
     elif year <= 2020:
         storage.write_storage_units(year)

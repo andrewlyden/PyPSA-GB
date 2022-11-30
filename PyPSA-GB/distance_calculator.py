@@ -21,7 +21,7 @@ def map_to_bus(df):
 
     # for the LOPF want to map the storage units to the closest bus
     # read buses data
-    df_buses = pd.read_csv('LOPF_data/buses.csv')
+    df_buses = pd.read_csv('LOPF_data/buses.csv')[:29]
     bus_location = []
     for i in range(len(df_buses)):
         bus_location.append({'lon': df_buses['x'][i], 'lat': df_buses['y'][i]})

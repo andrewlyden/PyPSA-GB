@@ -437,6 +437,9 @@ def read_tidal_lagoon(year, scenario):
         sheet_name = 'tidal_lagoon_ST'
     elif scenario == 'Steady Progression':
         sheet_name = 'tidal_lagoon_SP'
+    #just using the FES21 for this... Need to update to FES22 too
+    elif scenario == 'Falling Short':
+        sheet_name = 'tidal_lagoon_SP'
 
     df_tidal_lagoon_capacities = df_tidal_lagoon[sheet_name].T
     df_tidal_lagoon_capacities.columns = df_tidal_lagoon_capacities.iloc[0]
@@ -477,6 +480,8 @@ def read_tidal_stream(year, scenario):
     elif scenario == 'System Transformation':
         sheet_name = 'tidal_stream_ST'
     elif scenario == 'Steady Progression':
+        sheet_name = 'tidal_stream_SP'
+    elif scenario == 'Falling Short':
         sheet_name = 'tidal_stream_SP'
 
     df_tidal_stream_capacities = df_tidal_stream[sheet_name].T
@@ -519,6 +524,8 @@ def read_wave_power(year, scenario):
     elif scenario == 'System Transformation':
         sheet_name = 'wave_power_ST'
     elif scenario == 'Steady Progression':
+        sheet_name = 'wave_power_SP'
+    elif scenario == 'Falling Short':
         sheet_name = 'wave_power_SP'
 
     df_wave_power_capacities = df_wave_power[sheet_name].T

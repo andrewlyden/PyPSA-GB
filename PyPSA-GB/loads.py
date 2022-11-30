@@ -1,5 +1,6 @@
 from logging import raiseExceptions
 import pandas as pd
+import distance_calculator as dc
 
 
 def read_historical_demand_data():
@@ -118,7 +119,7 @@ def write_loads(year):
     df_buses.to_csv('LOPF_data/loads.csv', index=True, header=True)
 
 
-def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, scenario=None, FES=None):
+def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, scenario=None, FES=None, scale_to_peak=False):
     """writes the loads power timeseries csv file
 
     Parameters
@@ -270,6 +271,16 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
         df_loads_p_set_LOPF = pd.DataFrame(index=dti)
         for j in norm.columns:
             df_loads_p_set_LOPF[j] = scaled_load * norm[j].values
+    
+    if FES == 2022 and scale_to_peak == True:
+        # if FES is 22 then going to scale again using the peak demand from regional breakdown
+        df_year_LOPF = pd.DataFrame()
+        for j in norm.columns:
+            df_year_LOPF[j] = df_year * scale_factor * norm[j].values
+        peak_bus_regional = read_regional_breakdown_load(scenario, year)
+        for bus in df_year_LOPF.columns:
+            scaling_factor = peak_bus_regional[bus] / (df_year_LOPF[bus].max() * 0.5)
+            df_loads_p_set_LOPF[bus] *= scaling_factor
 
     df_loads_p_set_UC.index.name = 'name'
     df_loads_p_set_LOPF.index.name = 'name'
@@ -290,6 +301,42 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
     df_loads_p_set_UC.to_csv('UC_data/loads-p_set.csv', header=True)
 
     return df_loads_p_set_LOPF
+
+def read_regional_breakdown_load(scenario, year):
+
+    if scenario == 'Leading the Way':
+        df_regional = pd.read_excel('../data/FES2022/FES22_regional_peak_load_leading_the_way.xlsx', sheet_name=str(year), header=5)
+    elif scenario == 'Consumer Transformation':
+        df_regional = pd.read_excel('../data/FES2022/FES22_regional_peak_load_consumer_transformation.xlsx', sheet_name=str(year), header=5)
+    elif scenario == 'System Transformation':
+        df_regional = pd.read_excel('../data/FES2022/FES22_regional_peak_load_system_transformation.xlsx', sheet_name=str(year), header=5)
+    elif scenario == 'Falling Short':
+        df_regional = pd.read_excel('../data/FES2022/FES22_regional_peak_load_falling_short.xlsx', sheet_name=str(year), header=5)
+    # remove first row
+    df_regional = df_regional.iloc[1: , :].set_index('Name')
+    # delete all duplicates in index (removes electrolysis stuff which is zero for winter peak anyway)
+    df_regional = df_regional[~df_regional.index.duplicated(keep=False)]
+    # print(df_regional['P(Gross'])
+    df_regional = df_regional[['P(Gross)']]
+    df_regional = df_regional.loc[~(df_regional==0).all(axis=1)]
+
+    df_gsp_data = pd.read_csv('../data/FES2022/GSP_data.csv', encoding='cp1252', index_col=3)
+    df_gsp_data = df_gsp_data[['Latitude', 'Longitude']]
+    df_gsp_data.rename(columns={'Latitude': 'y', 'Longitude': 'x'}, inplace=True)
+    df_gsp_data['Bus'] = dc.map_to_bus(df_gsp_data)
+
+    # now
+    GSP_to_bus = []
+    for GSP in df_regional.index:
+        GSP_to_bus.append(df_gsp_data['Bus'][GSP])
+
+    df_regional['Bus'] = GSP_to_bus
+    # list of buses
+    peak_bus = {}
+    for bus in df_regional['Bus'].unique():
+        peak_bus[bus] = df_regional.loc[df_regional['Bus'] == bus]['P(Gross)'].sum()
+
+    return peak_bus
 
 if __name__ == '__main__':
     read_future_profile_data()
