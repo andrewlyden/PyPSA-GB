@@ -1,0 +1,147 @@
+import:
+    - overrides.yaml
+    - techs.yaml
+    ###
+    # Renewables
+    ###
+    - locations/locations_pv_rooftop.yaml
+    - locations/locations_pv_utility_scale.yaml
+    - locations/locations_wind_onshore.yaml
+    - locations/locations_wind_offshore.yaml
+    - locations/locations_hydro.yaml
+    - locations/locations_pumped_storage_existing_2030.yaml
+    ###
+    # Others
+    ###
+    - locations/locations_import_2030.yaml
+    - locations/transmission_grid_2030.yaml
+    - locations/locations_fossil_nuclear_no_new_nuclear_2030.yaml
+
+model:
+    name: UK-Calliope
+    calliope_version: 0.6.3
+    timeseries_data_path: data
+    reserve_margin:
+        electricity: 0.1
+    random_seed: 23
+
+run:
+    cyclic_storage: true
+    ensure_feasibility: true
+    bigM: 1e9
+
+techs:
+    battery:
+        constraints:
+            energy_cap_max: inf
+    hvac:
+        constraints:
+            energy_cap_scale: 1000
+    hvdc_subsea_new:
+        constraints:
+            energy_cap_scale: 1000
+    demand_electricity:
+        essentials:
+            name: 'Electricity demand'
+            carrier: electricity
+            parent: demand
+        constraints:
+            resource: file=demand.csv
+            resource_scale: 1000  # kW to MW
+
+locations:
+    Z1_1,Z1_2,Z1_3,Z1_4,Z2,Z3,Z4,Z5,Z6,Z7,Z8,Z9,Z10,Z11,Z12,Z13,Z14,Z15,Z16,Z17:
+        techs:  # Technologies to permit in all locations by default
+            demand_electricity:
+            hvdc_import:
+            hydro_existing:
+            pumped_storage_existing:
+            coal:
+            ocgt:
+            nuclear:
+            ccgt:
+            pv_rooftop:
+            pv_utility_scale:
+            battery:
+            wind_onshore:
+            wind_offshore:
+    Z1_1:
+        coordinates:
+            lat: 60.377
+            lon: -1.24
+    Z1_2:
+        coordinates:
+            lat: 57.944
+            lon: -6.834
+    Z1_3:
+        coordinates:
+            lat: 58.107
+            lon: -4.436
+    Z1_4:
+        coordinates:
+            lat: 57.119
+            lon: -5.2
+    Z2:
+        coordinates:
+            lat: 57.182
+            lon: -3.173
+    Z3:
+        coordinates:
+            lat: 56.442
+            lon: -4.05
+    Z4:
+        coordinates:
+            lat: 55.779
+            lon: -5.675
+    Z5:
+        coordinates:
+            lat: 55.777
+            lon: -3.83
+    Z6:
+        coordinates:
+            lat: 55.264
+            lon: -3.483
+    Z7:
+        coordinates:
+            lat: 54.884
+            lon: -2.186
+    Z8:
+        coordinates:
+            lat: 53.914
+            lon: -1.164
+    Z9:
+        coordinates:
+            lat: 53.386
+            lon: -3.01
+    Z10:
+        coordinates:
+            lat: 53.136
+            lon: -0.383
+    Z11:
+        coordinates:
+            lat: 52.569
+            lon: -1.647
+    Z12:
+        coordinates:
+            lat: 52.254
+            lon: 0.4507
+    Z13:
+        coordinates:
+            lat: 51.817
+            lon: -2.946
+    Z14:
+        coordinates:
+            lat: 51.536
+            lon: -0.157
+    Z15:
+        coordinates:
+            lat: 51.312
+            lon: 0.826
+    Z16:
+        coordinates:
+            lat: 51.039
+            lon: -0.725
+    Z17:
+        coordinates:
+            lat: 50.757
+            lon: -3.601
