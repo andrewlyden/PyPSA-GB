@@ -279,7 +279,7 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
             df_year_LOPF[j] = df_year * scale_factor * norm[j].values
         peak_bus_regional = read_regional_breakdown_load(scenario, year)
         for bus in df_year_LOPF.columns:
-            scaling_factor = peak_bus_regional[bus] / (df_year_LOPF[bus].max() * 0.5)
+            scaling_factor = peak_bus_regional[bus] / (df_year_LOPF[bus].max())
             df_loads_p_set_LOPF[bus] *= scaling_factor
 
     df_loads_p_set_UC.index.name = 'name'
