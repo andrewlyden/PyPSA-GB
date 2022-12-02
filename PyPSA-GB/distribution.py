@@ -17,6 +17,9 @@ class Distribution(object):
         path = 'LOPF_data/loads-p_set.csv'
         self.df_loads = pd.read_csv(path, index_col=0)
 
+        path = 'LOPF_data/links.csv'
+        self.df_interconnector = pd.read_csv(path, index_col=0)
+
         self.year = year
         self.scenario = scenario
 
@@ -145,6 +148,16 @@ class Distribution(object):
                            'V2G': self.rgb_total_tech('V2G')}
         return generation_caps
 
+    def interconnector_capacities_scotland(self):
+
+        generation_caps = {'Interconnector': self.scotland_total_tech('Interconnector')}
+        return generation_caps
+
+    def interconnector_capacities_rgb(self):
+
+        generation_caps = {'Interconnector': self.rgb_total_tech('Interconnector')}
+        return generation_caps
+
     def read_scotland_generators(self):
 
         buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
@@ -166,6 +179,24 @@ class Distribution(object):
         generators_p_nom.drop('Unmet Load', inplace=True)
         # generators_p_nom.drop(generators_p_nom[generators_p_nom < 50].index, inplace=True)
         return generators_p_nom
+
+    def read_scotland_interconnector(self):
+
+        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        # select generators in the buses in Scotland
+        df_interconnector = self.df_interconnector[self.df_interconnector.bus1.isin(buses_scotland)]
+        interconnector_p_nom = df_interconnector.p_nom.groupby(df_interconnector.carrier).sum().sort_values()
+        return interconnector_p_nom
+    
+    def read_rgb_interconnector(self):
+
+        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
+                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
+                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
+                     'Lovedean', 'S.W.Penisula']        # select generators in the buses in Scotland
+        df_interconnector = self.df_interconnector[self.df_interconnector.bus1.isin(buses_rgb)]
+        interconnector_p_nom = df_interconnector.p_nom.groupby(df_interconnector.carrier).sum().sort_values()
+        return interconnector_p_nom
 
     def read_scotland_storage(self):
 
@@ -410,6 +441,42 @@ class Distribution(object):
         # # storage according to building blocks data
         # print(pd.Series(self.storage_capacities_scotland()))
 
+    def modify_interconnector(self):
+
+        # modify the interconnector using the buildings block data 
+        # scales interconnector to match Scotland and rest of GB separately
+
+        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        # rgb is rest of GB
+        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
+                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
+                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
+                     'Lovedean', 'S.W.Penisula']
+
+        # interconnector from unmodified distribution
+        interconnector_p_nom_scotland = self.read_scotland_interconnector()
+        # interconnector according to building blocks data
+        interconnector_p_nom_bb_scotland = self.interconnector_capacities_scotland()
+
+        # interconnector from unmodified distribution
+        interconnector_p_nom_rgb = self.read_rgb_interconnector()
+        # interconnector according to building blocks data
+        interconnector_p_nom_bb_rgb = self.interconnector_capacities_rgb()
+
+        # Scale interconnector
+        interconnector_unmodified_scotland = interconnector_p_nom_scotland
+        interconnector_bb_scotland = interconnector_p_nom_bb_scotland['Interconnector']
+        scaling_factor_interconnector_scotland = interconnector_unmodified_scotland / interconnector_bb_scotland
+
+        interconnector_unmodified_rgb = interconnector_p_nom_rgb
+        interconnector_bb_rgb = interconnector_p_nom_bb_rgb['Interconnector']
+        scaling_factor_interconnector_rgb = interconnector_unmodified_rgb / interconnector_bb_rgb
+
+        for bus in buses_scotland:
+            self.df_interconnector.loc[self.df_interconnector.bus1 == bus, "p_nom"] /= scaling_factor_interconnector_scotland
+        for bus in buses_rgb:
+            self.df_interconnector.loc[self.df_interconnector.bus1 == bus, "p_nom"] /= scaling_factor_interconnector_rgb
+
     def PV_data(self):
 
         year = self.year
@@ -544,12 +611,14 @@ class Distribution(object):
         # run scaling functions
         self.modify_generators()
         self.modify_storage()
+        self.modify_interconnector()
 
         # write generators file
         self.df_generators.to_csv('LOPF_data/generators.csv', index=True, header=True)
-
         # write storage file
         self.df_storage.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
+        # write interconnector file
+        self.df_interconnector.to_csv('LOPF_data/links.csv', index=True, header=True)
 
 
 if __name__ == '__main__':
