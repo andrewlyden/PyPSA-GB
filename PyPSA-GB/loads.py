@@ -250,6 +250,13 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
             if year % 4 != 0:
                 # remove 29th Feb
                 scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
+        # check if using eload
+        if dataset == 'eload':
+            # and the year modelled is a leap year
+            if year % 4 == 0:
+                # remove 29th Feb from index
+                # scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
+                dti = dti[~((dti.month == 2) & (dti.day == 29))]
 
         if time_step == 0.5:
             scaled_load.index = dti

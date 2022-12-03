@@ -312,11 +312,11 @@ class Distribution(object):
             nuclear_unmodified_scotland = generators_p_nom_scotland['Nuclear']
             nuclear_bb_scotland = generators_p_nom_bb_scotland['Nuclear']
             if nuclear_bb_scotland > 0.:
-                scaling_factor_nuclear_scotland = nuclear_unmodified_scotland / nuclear_bb_scotland
+                scaling_factor_nuclear_scotland = nuclear_bb_scotland / nuclear_unmodified_scotland
             else:
-                scaling_factor_nuclear_scotland = 1
+                scaling_factor_nuclear_scotland = 0
         else:
-            scaling_factor_nuclear_scotland = 1
+            scaling_factor_nuclear_scotland = 0
 
         nuclear_unmodified_rgb = generators_p_nom_rgb['Nuclear']
         nuclear_bb_rgb = generators_p_nom_bb_rgb['Nuclear']
@@ -327,9 +327,7 @@ class Distribution(object):
         # bus = 'Harker'
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])
         for bus in buses_scotland:
-            if scaling_factor_nuclear_scotland == 0.:
-                scaling_factor_nuclear_scotland = 1
-            self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_nuclear_scotland
+            self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] *= scaling_factor_nuclear_scotland
         for bus in buses_rgb:
             self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_nuclear_rgb
         # bus = 'Beauly'
@@ -373,6 +371,29 @@ class Distribution(object):
             self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_scotland
         for bus in buses_rgb:
             self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_rgb
+
+        # Scale biomass
+        biomass_unmodified_scotland = generators_p_nom_scotland['Biomass (dedicated)']
+        biomass_bb_scotland = generators_p_nom_bb_scotland['Biomass']
+        if biomass_bb_scotland > 0.:
+            scaling_factor_biomass_scotland = biomass_unmodified_scotland / biomass_bb_scotland
+        else:
+            scaling_factor_biomass_scotland = 1
+
+        biomass_unmodified_rgb = generators_p_nom_rgb['Biomass (dedicated)']
+        biomass_bb_rgb = generators_p_nom_bb_rgb['Biomass']
+        # zero for falling short scenario so don't want infinite value
+        if biomass_bb_rgb > 0:
+            scaling_factor_biomass_rgb = biomass_unmodified_rgb / biomass_bb_rgb
+        else:
+            scaling_factor_biomass_rgb = 1
+
+        for bus in buses_scotland:
+            if scaling_factor_biomass_scotland == 0.:
+                scaling_factor_biomass_scotland = 1
+            self.df_generators.loc[(self.df_generators.carrier == 'Biomass (dedicated)') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_biomass_scotland
+        for bus in buses_rgb:
+            self.df_generators.loc[(self.df_generators.carrier == 'Biomass (dedicated)') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_biomass_rgb
 
         # # generation from unmodified distribution
         # print(self.read_scotland_generators())
