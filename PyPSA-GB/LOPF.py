@@ -14,7 +14,7 @@ start_t = time.time()
 
 # write csv files for import
 start = '2050-01-01 00:00:00'
-end = '2050-12-31 23:30:00'
+end = '2050-01-01 23:30:00'
 # year of simulation
 year = int(start[0:4])
 # time step as fraction of hour
@@ -26,13 +26,13 @@ if year > 2020:
     scenario = 'Leading The Way'
     # scenario = 'Consumer Transformation'
     # scenario = 'System Transformation'
+    # scenario = 'Falling Short'
     # scenario = 'Steady Progression'
 
-    year_baseline = 2012
+    year_baseline = 2019
 
-    data_reader_writer.data_writer(
-        start, end, time_step, year, demand_dataset='historical',
-        year_baseline=year_baseline, scenario=scenario, merge_generators=True)
+    data_reader_writer.data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=year_baseline,
+                                   scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True)
 
 elif year <= 2020:
     data_reader_writer.data_writer(start, end, time_step, year, demand_dataset='historical', merge_generators=True)
@@ -105,9 +105,7 @@ elif year > 2020:
 
 # group biomass stuff
 p_by_carrier['Biomass'] = (
-    p_by_carrier['Biomass (dedicated)'] + p_by_carrier['Biomass (co-firing)'] +
-    p_by_carrier['Landfill Gas'] + p_by_carrier['Anaerobic Digestion'] +
-    p_by_carrier['Sewage Sludge Digestion'])
+    p_by_carrier['Biomass (dedicated)'] + p_by_carrier['Biomass (co-firing)'])
 
 # rename the hydro and interconnector import
 p_by_carrier = p_by_carrier.rename(
@@ -127,8 +125,8 @@ p_by_carrier = p_by_carrier.rename(
 
 if year > 2020:
 
-    cols = ["Nuclear", 'Marine', 'Biomass',
-            'EfW Incineration', "Oil", "Natural Gas",
+    cols = ["Nuclear", 'Biomass',
+            'Waste', "Oil", "Natural Gas",
             'Hydrogen', 'CCS Gas', 'CCS Biomass',
             "Pumped Storage Hydroelectric", 'Hydro',
             'Battery', 'Compressed Air', 'Liquid Air',
@@ -158,7 +156,7 @@ colors = {"Coal": "grey",
           'Oil': 'black',
           'Unmet Load': 'black',
           'Anaerobic Digestion': 'green',
-          'EfW Incineration': 'chocolate',
+          'Waste': 'chocolate',
           'Sewage Sludge Digestion': 'green',
           'Landfill Gas': 'green',
           'Biomass (dedicated)': 'green',
@@ -173,10 +171,6 @@ colors = {"Coal": "grey",
           "Nuclear": "orange",
           'Shoreline Wave': 'aqua',
           'Tidal Barrage and Tidal Stream': 'aqua',
-          'Marine': 'aqua',
-          'Tidal Lagoon': 'aqua',
-          'Tidal Stream': 'aqua',
-          'Wave Power': 'aqua',
           'Hydro': "turquoise",
           "Large Hydro": "turquoise",
           "Small Hydro": "turquoise",

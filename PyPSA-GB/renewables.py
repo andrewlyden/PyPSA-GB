@@ -437,6 +437,9 @@ def read_tidal_lagoon(year, scenario):
         sheet_name = 'tidal_lagoon_ST'
     elif scenario == 'Steady Progression':
         sheet_name = 'tidal_lagoon_SP'
+    #just using the FES21 for this... Need to update to FES22 too
+    elif scenario == 'Falling Short':
+        sheet_name = 'tidal_lagoon_SP'
 
     df_tidal_lagoon_capacities = df_tidal_lagoon[sheet_name].T
     df_tidal_lagoon_capacities.columns = df_tidal_lagoon_capacities.iloc[0]
@@ -477,6 +480,8 @@ def read_tidal_stream(year, scenario):
     elif scenario == 'System Transformation':
         sheet_name = 'tidal_stream_ST'
     elif scenario == 'Steady Progression':
+        sheet_name = 'tidal_stream_SP'
+    elif scenario == 'Falling Short':
         sheet_name = 'tidal_stream_SP'
 
     df_tidal_stream_capacities = df_tidal_stream[sheet_name].T
@@ -519,6 +524,8 @@ def read_wave_power(year, scenario):
     elif scenario == 'System Transformation':
         sheet_name = 'wave_power_ST'
     elif scenario == 'Steady Progression':
+        sheet_name = 'wave_power_SP'
+    elif scenario == 'Falling Short':
         sheet_name = 'wave_power_SP'
 
     df_wave_power_capacities = df_wave_power[sheet_name].T
@@ -1159,7 +1166,7 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
         hydrogen = generators.loc[generators['carrier'] == 'Hydrogen']
         gen_tech1 = generators.loc[generators['carrier'] == t1]
         gen_tech2 = generators.loc[generators['carrier'] == t2]
-        gen_tech = gen_tech1.append([gen_tech2, hydrogen])
+        gen_tech = gen_tech1.append(gen_tech2)
 
         path_UC = 'UC_data/generators.csv'
         generators_UC = pd.read_csv(path_UC, index_col=0)
@@ -1167,9 +1174,9 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
         hydrogen_UC = generators_UC.loc[generators_UC['carrier'] == 'Hydrogen']
         gen_tech_UC1 = generators_UC.loc[generators_UC['carrier'] == t1]
         gen_tech_UC2 = generators_UC.loc[generators_UC['carrier'] == t2]
-        gen_tech_UC = gen_tech_UC1.append([gen_tech_UC2, hydrogen_UC])
+        gen_tech_UC = gen_tech_UC1.append(gen_tech_UC2)
 
-    elif tech == 'Wind Onshore' or tech == 'Solar Photovoltaics':
+    elif tech == 'Wind Onshore' or tech == 'Solar Photovoltaics' or 'Wind Offshore':
 
         # get generators dataframe with p_noms to be scaled
         path = 'LOPF_data/generators.csv'
@@ -1181,7 +1188,7 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
         gen_tech_UC = generators_UC.loc[generators_UC['carrier'] == tech]
 
     # then consider what scaling factor is required
-    scaling_factor = round(tech_cap_FES / tech_cap_year, 2)
+    scaling_factor = tech_cap_FES / tech_cap_year
 
     # scale the p_noms of the RES generators
     for g in gen_tech.index:
@@ -1197,14 +1204,17 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
     # then add the new p_nom tech
     generators = generators.append(gen_tech)
     generators_UC = generators_UC.append(gen_tech_UC)
+    if tech == 'Hydro':
+        generators = generators.append(hydrogen)
+        generators_UC = generators_UC.append(hydrogen_UC)       
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_offshore_timeseries(year, year_baseline, scenario):
+def future_offshore_timeseries(year, year_baseline, scenario, FES):
 
-    future_capacities_dict = future_offshore_capacity(year, year_baseline, scenario)
+    future_capacities_dict = future_offshore_capacity(year, year_baseline, scenario, FES)
     # print(future_capacities_dict)
     offshore_cap_year = future_capacities_dict['offshore_cap_year']
     offshore_cap_pipeline = future_capacities_dict['offshore_cap_pipeline']
@@ -1288,8 +1298,7 @@ def future_offshore_timeseries(year, year_baseline, scenario):
     # print(offshore_cap_pipeline, 'pipeline for year')
     # print(gen_tech.p_nom.sum(), 'sum to begin with')
     # then consider what capacity still needs to be built
-    cap_req = round(offshore_cap_FES - offshore_cap_year, 2)
-    # print(cap_req, 'capacity required over 2020 capacity')
+    cap_req = offshore_cap_FES - offshore_cap_year
 
     if cap_req <= offshore_cap_pipeline:
         # then pipeline available capacity should be scaled down
@@ -1409,10 +1418,10 @@ def future_offshore_sites(year):
     # need to simply scale up distributions by assuming far offshore from 2030
 
 
-def future_offshore_capacity(year, year_baseline, scenario):
+def future_offshore_capacity(year, year_baseline, scenario, FES):
     # how much wind in baseline year
     # read in the renewable generators
-    df_res = REPD_date_corrected(year_baseline)
+    df_res = REPD_date_corrected(2020)
     # start with the offshore wind farms
     df_res_offshore = df_res.loc[df_res['Technology Type'] == 'Wind Offshore'].reset_index(drop=True)
     # installed capacity in baseline year
@@ -1446,18 +1455,60 @@ def future_offshore_capacity(year, year_baseline, scenario):
                               encoding='unicode_escape')
     offshore_cap_scotland_planning = df_scotland['max capacity (GW)'].sum()
 
-    # offshore wind capacity from FES2021
-    df_FES = pd.read_excel(
-        '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-        sheet_name='SV.28', usecols="M:AS", header=7, dtype=str,
-        index_col=1)
-    df_FES.drop(columns=['Unnamed: 12'], inplace=True)
-    df_FES.dropna(axis='rows', inplace=True)
-    date = str(year) + '-01-01'
-    if scenario == 'Leading The Way':
-        scenario = 'Leading the Way'
-    offshore_cap_FES = float(df_FES.loc[scenario, date])
-    # print(type(offshore_cap_FES))
+    if FES == 2021:
+        # offshore wind capacity from FES2021
+        df_FES = pd.read_excel(
+            '../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+            sheet_name='SV.28', usecols="M:AS", header=7, dtype=str,
+            index_col=1)
+        df_FES.drop(columns=['Unnamed: 12'], inplace=True)
+        df_FES.dropna(axis='rows', inplace=True)
+        date = str(year) + '-01-01'
+        if scenario == 'Leading The Way':
+            scenario = 'Leading the Way'
+        offshore_cap_FES = float(df_FES.loc[scenario, date])
+        # print(type(offshore_cap_FES))
+    elif FES == 2022:
+        df_FES = pd.read_excel(
+                '../data/FES2022/FES2022 Workbook V4.xlsx',
+                sheet_name='ES1', header=9, index_col=1)
+        # df_FES.dropna(axis='rows', inplace=True)
+        df_FES.dropna(axis='rows', inplace=True)
+        df_FES = df_FES[df_FES.Type.str.contains('Offshore Wind', case=False)]
+        df_FES = df_FES[df_FES.Variable.str.contains('Capacity')]
+        df_FES = df_FES[~df_FES.Connection.str.contains('Non-Grid Connected')]
+
+        cols = [0, 1, 2, 3, 4]
+        df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
+
+        df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
+        df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
+        df_FES_LTW.drop([0, 1], inplace=True)
+        df_FES_LTW.dropna(axis='columns', inplace=True)
+        df_FES_LTW.index = ['Leading The Way']
+
+        df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
+        df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
+        df_FES_CT.drop([0, 1], inplace=True)
+        df_FES_CT.dropna(axis='columns', inplace=True)
+        df_FES_CT.index = ['Consumer Transformation']
+
+        df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
+        df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
+        df_FES_ST.drop([0, 1], inplace=True)
+        df_FES_ST.dropna(axis='columns', inplace=True)
+        df_FES_ST.index = ['System Transformation']
+
+        df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
+        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
+        df_FES_SP.drop([0, 1], inplace=True)
+        df_FES_SP.dropna(axis='columns', inplace=True)
+        df_FES_SP.index = ['Falling Short']
+
+        df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+        df_FES = df_FES / 1000.
+
+        offshore_cap_FES = df_FES.loc[scenario, year]
 
     capacity_dict = {'offshore_cap_year': offshore_cap_year,
                      'offshore_cap_pipeline': offshore_cap_pipeline,
@@ -1475,7 +1526,7 @@ def future_RES_capacity(year, tech, scenario, FES):
         df_hydro = df_hydro[~df_hydro.type.str.contains('Pumped Storage Hydroelectricity')]
         tech_cap_year = df_hydro['p_nom'].sum() / 1000
 
-    elif tech == 'Wind Onshore' or tech == 'Solar Photovoltaics':
+    elif tech == 'Wind Onshore' or tech == 'Solar Photovoltaics' or tech == 'Wind Offshore':
         # how much RES in year
         # read in the renewable generators
         df_res = REPD_date_corrected(year)
@@ -1621,31 +1672,33 @@ def future_RES_capacity(year, tech, scenario, FES):
                 sheet_name='ES1', header=9, index_col=1)
             df_FES.dropna(axis='rows', inplace=True)
             df_FES = df_FES[df_FES.SubType.str.contains('Hydro', case=False, na=False)]
+            # drop pumped hydro
+            df_FES = df_FES[~df_FES.SubType.str.contains('Pumped Hydro')]
             df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
             cols = [0, 1, 2, 3, 4]
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
             df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_LTW.drop([0, 1, 2], inplace=True)
             df_FES_LTW.dropna(axis='columns', inplace=True)
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
             df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_CT.drop([0, 1, 2], inplace=True)
             df_FES_CT.dropna(axis='columns', inplace=True)
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
             df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_ST.drop([0, 1, 2], inplace=True)
             df_FES_ST.dropna(axis='columns', inplace=True)
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
             df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2, 3, 4, 5], inplace=True)
+            df_FES_SP.drop([0, 1, 2], inplace=True)
             df_FES_SP.dropna(axis='columns', inplace=True)
             df_FES_SP.index = ['Falling Short']
 
@@ -1691,27 +1744,28 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES = pd.read_excel(
                 '../data/FES2022/FES2022 Workbook V4.xlsx',
                 sheet_name='ES1', header=9, index_col=1)
-            df_FES.dropna(axis='rows', inplace=True)
+            # df_FES.dropna(axis='rows', inplace=True)
             df_FES = df_FES[df_FES.SubType.str.contains('Biomass', case=False, na=False)]
             df_FES = df_FES[~df_FES.Variable.str.contains('Generation')]
+            df_FES = df_FES[~df_FES.SubType.str.contains('CCS Biomass')]
             cols = [0, 1, 2, 3, 4]
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
             df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2], inplace=True)
+            df_FES_LTW.drop([0, 1, 2, 3, 4], inplace=True)
             df_FES_LTW.dropna(axis='columns', inplace=True)
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
             df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2], inplace=True)
+            df_FES_CT.drop([0, 1, 2, 3, 4], inplace=True)
             df_FES_CT.dropna(axis='columns', inplace=True)
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
             df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2, 3], inplace=True)
+            df_FES_ST.drop([0, 1, 2, 3, 4], inplace=True)
             df_FES_ST.dropna(axis='columns', inplace=True)
             df_FES_ST.index = ['System Transformation']
 
