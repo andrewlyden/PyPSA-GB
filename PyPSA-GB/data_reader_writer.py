@@ -59,6 +59,7 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
     generators.write_generators(time_step, year)
 
     if year > 2020:
+        interconnectors.future_interconnectors(year, scenario, FES)
         storage.write_storage_units(year, scenario=scenario, FES=FES)
         generators.future_p_nom(year, time_step, scenario, FES)
         generators.write_generators_p_max_pu(start, end, freq, year, year_baseline=year_baseline, scenario=scenario)
@@ -68,7 +69,7 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
 
     elif year <= 2020:
         storage.write_storage_units(year)
-        generators.write_generators_p_max_pu(start, end, freq, year)
+        generators.write_generators_p_max_pu(start, end, freq, year, FES)
 
     marginal_costs.write_marginal_costs_series(start, end, freq, year)
 
