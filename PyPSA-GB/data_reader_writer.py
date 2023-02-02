@@ -65,6 +65,8 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
+        if FES == 2022:
+            distribution.Distribution(year, scenario).building_block_update()
 
     elif year <= 2020:
         storage.write_storage_units(year)
@@ -74,8 +76,7 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
 
     if year > 2020:
         interconnectors.future_interconnectors(year, scenario, FES)
-        if FES == 2022:
-            distribution.Distribution(year, scenario).building_block_update()
+        
     elif year <= 2020:
         interconnectors.write_interconnectors(start, end, freq)
 
