@@ -1477,7 +1477,7 @@ def future_capacity(year, tech, scenario, FES):
     return capacity_dict
 
 
-def write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=None, scenario=None):
+def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=None, scenario=None):
     """writes the generators p_max_pu csv file
 
     writes the timeseries maximum power output file for the
