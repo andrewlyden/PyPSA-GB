@@ -77,6 +77,7 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
 
     if year > 2020:
         interconnectors.future_interconnectors(year, scenario, FES)
+        
     elif year <= 2020:
         interconnectors.write_interconnectors(start, end, freq)
 
