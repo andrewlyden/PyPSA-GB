@@ -39,46 +39,48 @@ def sum_damand(csv_demand):
     sum_damand_df.columns = [x for x in range(2021, 2051)]
     return sum_damand_df
 
-if not os.path.exists('../data/ZonesBasedGBsystem/demand'):
-     os.makedirs('../data/ZonesBasedGBsystem/demand')
-if not os.path.exists('../data/FES2022/Distributions'):
-     os.makedirs('../data/FES2022/Distributions')
+    
+if __name__ == "__main__":
+    if not os.path.exists('../data/ZonesBasedGBsystem/demand'):
+        os.makedirs('../data/ZonesBasedGBsystem/demand')
+    if not os.path.exists('../data/FES2022/Distributions'):
+        os.makedirs('../data/FES2022/Distributions')
 
-# demandpk-all
-file_path = '../data/FES2022/FES-2021--Leading_the_Way--demandpk-all--gridsupplypoints.csv'
-csv_demand = pd.read_csv(file_path)
-file_path = '../data/FES2022/gsp_gnode_directconnect_region_lookup.csv'
-csv_GSP = pd.read_csv(file_path)
+    # demandpk-all
+    file_path = '../data/FES2022/FES-2021--Leading_the_Way--demandpk-all--gridsupplypoints.csv'
+    csv_demand = pd.read_csv(file_path)
+    file_path = '../data/FES2022/gsp_gnode_directconnect_region_lookup.csv'
+    csv_GSP = pd.read_csv(file_path)
 
-csv_demand[['x', 'y']] = csv_demand.apply(lambda r: gsp_location(r['Name'], csv_GSP), axis = 1)
-csv_demand['Node'] = allocate_to_zone.map_to_zone(csv_demand) # zone
+    csv_demand[['x', 'y']] = csv_demand.apply(lambda r: gsp_location(r['Name'], csv_GSP), axis = 1)
+    csv_demand['Node'] = allocate_to_zone.map_to_zone(csv_demand) # zone
 
-# print(csv_demand[csv_demand.isnull().values == True])
+    # print(csv_demand[csv_demand.isnull().values == True])
 
-sum_damand_df = sum_damand(csv_demand)
-sum_damand_df.to_csv('../data/ZonesBasedGBsystem/demand/Demand_Distribution.csv')
+    sum_damand_df = sum_damand(csv_demand)
+    sum_damand_df.to_csv('../data/ZonesBasedGBsystem/demand/Demand_Distribution.csv')
 
-# wind
-file_path = '../data/FES2022/FES-2021--Leading_the_Way--mxcapacity-wind--gridsupplypoints.csv'
-csv_capacity = pd.read_csv(file_path)
-file_path = '../data/FES2022/gsp_gnode_directconnect_region_lookup.csv'
-csv_GSP = pd.read_csv(file_path)
-
-csv_capacity[['x', 'y']] = csv_capacity.apply(lambda r: gsp_location(r['Name'], csv_GSP), axis = 1)
-csv_capacity['Node'] = allocate_to_zone.map_to_zone(csv_capacity) # zone
-sum_damand_df = sum_damand(csv_capacity)
-sum_damand_df.to_csv('../data/FES2022/Distributions/Wind Distribution LW.csv')
-sum_damand_df.to_csv('../data/ZonesBasedGBsystem/Wind Distribution LW.csv')
-
-# solar, storage, hydro
-for capacity in ['solar', 'storage', 'hydro', 'other']:
-    file_path = '../data/FES2022/FES-2021--Leading_the_Way--dxcapacity-' + capacity + '--gridsupplypoints.csv'
+    # wind
+    file_path = '../data/FES2022/FES-2021--Leading_the_Way--mxcapacity-wind--gridsupplypoints.csv'
     csv_capacity = pd.read_csv(file_path)
+    file_path = '../data/FES2022/gsp_gnode_directconnect_region_lookup.csv'
+    csv_GSP = pd.read_csv(file_path)
 
     csv_capacity[['x', 'y']] = csv_capacity.apply(lambda r: gsp_location(r['Name'], csv_GSP), axis = 1)
     csv_capacity['Node'] = allocate_to_zone.map_to_zone(csv_capacity) # zone
     sum_damand_df = sum_damand(csv_capacity)
-    sum_damand_df.to_csv('../data/FES2022/Distributions/'+ capacity.capitalize() + ' Distribution LW.csv')
-    sum_damand_df.to_csv('../data/ZonesBasedGBsystem/'+ capacity.capitalize() + ' Distribution LW.csv')
+    sum_damand_df.to_csv('../data/FES2022/Distributions/Wind Distribution LW.csv')
+    sum_damand_df.to_csv('../data/ZonesBasedGBsystem/Wind Distribution LW.csv')
+
+    # solar, storage, hydro
+    for capacity in ['solar', 'storage', 'hydro', 'other']:
+        file_path = '../data/FES2022/FES-2021--Leading_the_Way--dxcapacity-' + capacity + '--gridsupplypoints.csv'
+        csv_capacity = pd.read_csv(file_path)
+
+        csv_capacity[['x', 'y']] = csv_capacity.apply(lambda r: gsp_location(r['Name'], csv_GSP), axis = 1)
+        csv_capacity['Node'] = allocate_to_zone.map_to_zone(csv_capacity) # zone
+        sum_damand_df = sum_damand(csv_capacity)
+        sum_damand_df.to_csv('../data/FES2022/Distributions/'+ capacity.capitalize() + ' Distribution LW.csv')
+        sum_damand_df.to_csv('../data/ZonesBasedGBsystem/'+ capacity.capitalize() + ' Distribution LW.csv')
 
 

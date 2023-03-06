@@ -227,7 +227,7 @@ def probability_function(capacity, breakdwon_rate):
         cdf[i] = cdf_i
     return xx, yy, pdf, cdf
 
-def rate_table():
+def rate_table(nuclear=True):
     bd_conversion_type = [['Coal', 'Nuclear', 'Oil', 'Wind Offshore', 'Wind Onshore', 'Solar Photovoltaics', 'Large Hydro', 'Small Hydro', 'Anaerobic Digestion', 'EfW Incineration', 'Landfill Gas', 'Sewage Sludge Digestion', 'Shoreline Wave', 'Tidal Barrage and Tidal Stream', 'Biomass (co-firing)', 'Biomass (dedicated)','Pumped Storage Hydroelectric', 'Battery', 'Compressed Air', 'Liquid Air', 'Interconnector', 'Englandconnector',
                        'CCS Gas', 'CCS Biomass', 'Hydrogen', 'Unmet Load', 'Tidal lagoon', 'Tidal stream', 'Wave power', 'Waste'],
                       ['Coal', 'Nuclear', 'Simil-OCGT', 'Weather Dependent', 'Weather Dependent', 'Weather Dependent', 'Hydro', 'Hydro', 'Biomass', 'Biomass', 'Biomass', 'Biomass', 'Excluded', 'Excluded', 'Biomass', 'Biomass','Pumped storage', 'Battery', 'Simil-CCGT', 'Simil-CCGT', 'Interconnector', 'Englandconnector',
@@ -247,24 +247,39 @@ def rate_table():
         'Wind': 0.16,
         'Pumped storage': 0.03, # arbitrary, need to update
         'Interconnector': 0.2,
-        'Englandconnector': 0.2,
+        'Englandconnector': 0.36,
         'Weather Dependent': 0,
         'Excluded': 1
     }
 
+    if nuclear == False:
+        breakdowwn_rate['Nuclear'] = 1
+
     br_csv = pd.DataFrame.from_dict(breakdowwn_rate,orient='index',columns=['Breakdown Rate'])
     br_csv = br_csv.reset_index().rename(columns = {'index':'Type'})
 
+    # breakdowwn_rate_battery = {
+    #     '0.5h': 1-0.1789,
+    #     '1.0h': 1-0.3644,
+    #     '1.5h': 1-0.5228,
+    #     '2.0h': 1-0.6479,
+    #     '2.5h': 1-0.7547,
+    #     '3.0h': 1-0.8203,
+    #     '3.5h': 1-0.8575,
+    #     '4.0h': 1-0.9611 # 4+h
+    # }
+
     breakdowwn_rate_battery = {
-        '0.5h': 1-0.1789,
-        '1.0h': 1-0.3644,
-        '1.5h': 1-0.5228,
-        '2.0h': 1-0.6479,
-        '2.5h': 1-0.7547,
-        '3.0h': 1-0.8203,
-        '3.5h': 1-0.8575,
-        '4.0h': 1-0.9611 # 4+h
+        '0.5h': 0.1789,
+        '1.0h': 0.3644,
+        '1.5h': 0.5228,
+        '2.0h': 0.6479,
+        '2.5h': 0.7547,
+        '3.0h': 0.8203,
+        '3.5h': 0.8575,
+        '4.0h': 0.9611 # 4+h
     }
+    
     brb_csv = pd.DataFrame.from_dict(breakdowwn_rate_battery,orient='index',columns=['Breakdown Rate'])
     brb_csv = brb_csv.reset_index().rename(columns = {'index':'Duration'})
 
@@ -291,6 +306,10 @@ def rate_table():
         'Interconnector': 0.099,
         'Excluded': 0
     }
+
+    if nuclear == False:
+        de_rate['Nuclear'] = 0
+
     de_csv = pd.DataFrame.from_dict(de_rate,orient='index',columns=['De-Rate'])
     de_csv = de_csv.reset_index().rename(columns = {'index':'Type'})
 
@@ -303,19 +322,22 @@ def rate_table():
     de_csv.to_csv('../data/LOLE/de_rate.csv',index=False)
 
 
-def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_reserve_requirment = 1200, step=100):
+def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_reserve_requirment = 1200, step=100, nuclear=True):
     start = str(year) + '-01-01 00:00:00'
     end = str(year) + '-12-31 23:30:00'
     time_step = 1.
 
+    if nuclear == False:
+        rate_table(nuclear=False)
+
     try:
         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, year_baseline=year_baseline,
-            scenario=scenario, FES=2022, merge_generators=True)
+            scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True)
     except:
         shutil.rmtree('LOPF_data')
         os.mkdir('LOPF_data')
         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, year_baseline=year_baseline,
-            scenario=scenario, FES=2022, merge_generators=True)
+            scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True)
         
     scotland_network.scotland()
     scotland_network.interconnector()
@@ -412,10 +434,6 @@ def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_re
 
     # plt.plot(xx,cdf)
     # plt.show()
-
-    lolp = list()
-    for i in range(len(net_demand)):
-        lolp.append(yy[xx<net_demand[i] - expect_small_capacity + system_reserve_requirment].sum())
 
     lolp = list()
     for i in range(len(net_demand)):
@@ -783,6 +801,8 @@ def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_re
         print(f'for {i_*step}MW increased firm capacity, lole is {lole}')
     lole_loop.loc['Storage failures'] = dict([[i*step, lole_list[i]] for i in range(i_+1)])
 
+    if nuclear == False:
+        rate_table()
 
     output_lolp.to_csv('../data/LOLE/lolp_lole_'+str(year)+'_'+re.sub("[^A-Z]","", scenario)+'.csv')
     output_lolp_self.to_csv('../data/LOLE/self_lolp_lole_'+str(year)+'_'+re.sub("[^A-Z]","", scenario)+'.csv')
@@ -817,36 +837,78 @@ def main_plot(scenario, year_list):
     for case in pd_plot.index.get_level_values(0).drop_duplicates().tolist():
         sub_pd = pd_plot.loc[case]
         for col in sub_pd.columns.tolist():
-            plt.figure()
+            plt.figure(figsize=(10,4))
+            if col == 'lole':
+                plt.plot([min(year_list)-5,max(year_list)+5], [0.2,0.2], 'k:')
+                plt.plot([min(year_list)-5,max(year_list)+5], [0.3,0.3], 'k:')
+                plt.text(year_list[0]-4, 0.25 , 'The LOLE reported in National Grid’s Winter Outlook in 2021\nand 2022 were 0.3 and 0.2 hrs/year.' , fontsize = 14 , color = 'k' , ha = 'left' )
             plt.plot(sub_pd.index, sub_pd[col], color='dodgerblue')
             plt.scatter(sub_pd.index, sub_pd[col], color='darkorange', marker='o')
-            plt.title(case+' - '+col)
+            # plt.title(case+' - '+col)
+            plt.ylabel('Hours')
+            plt.grid(True)
             plt.xticks(year_list)
-            plt.savefig('../data/LOLE/'+case+'_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', dpi=600)
+            plt.xlim(min(year_list)-5,max(year_list)+5)
+            plt.savefig('../data/LOLE/'+case+'_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', bbox_inches='tight', dpi=600)
             plt.show()
 
     for col in pd_plot.columns.tolist():
-        plt.figure()
+        plt.figure(figsize=(10,4))
         # plt.axes(yscale='log')
         for case in pd_plot.index.get_level_values(0).drop_duplicates().tolist()[:-1]:
             sub_pd = pd_plot.loc[case]
+            if case == 'Gas supply issues':
+                case = 'Gas power generation in Scotland unavailable'
+            if case == 'Largest offshore failure':
+                case = 'Offshore wind farm failures'  
             plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
-        plt.title('all_scenario - '+col)
+        # if col == 'lole_week':
+        #     plt.title('all_scenario - '+'lole')
+        # else:
+        #     plt.title('all_scenario - '+col)
+        # plt.title('all_scenario - '+col)
+        plt.ylabel('Hours')
         plt.xticks(year_list)
+        plt.xlim(min(year_list)-5,max(year_list)+5)
+        plt.grid(True)
         plt.legend()
-        plt.savefig('../data/LOLE/all_scenario_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', dpi=600)
+        plt.savefig('../data/LOLE/all_scenario_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', bbox_inches='tight', dpi=600)
+        plt.show()
+
+        plt.figure(figsize=(10,4))
+        # plt.axes(yscale='log')
+        for case in pd_plot.index.get_level_values(0).drop_duplicates().tolist()[:-1]:
+            sub_pd = pd_plot.loc[case]
+            if case == 'Gas supply issues':
+                case = 'Gas power generation in Scotland unavailable'
+            if case == 'Largest offshore failure':
+                case = 'Offshore wind farm failures'  
+            plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
+        plt.plot([min(year_list)-5,max(year_list)+5], [3,3], 'r--')
+        plt.text(year_list[0]-4, 2 , 'The current reliability standard for LOLE in GB\nis set to no more than three hours a year.' , fontsize = 14 , color = 'k' , ha = 'left' )
+        # if col == 'lole_week':
+        #     plt.title('all_scenario - '+'lole')
+        # else:
+        #     plt.title('all_scenario - '+col)
+        plt.ylabel('Hours')
+        plt.xticks(year_list)
+        plt.xlim(min(year_list)-5,max(year_list)+5)
+        plt.grid(True)
+        plt.legend()
+        plt.savefig('../data/LOLE/all_scenario_'+col+'_l_'+re.sub("[^A-Z]","",scenario)+'.png', bbox_inches='tight', dpi=600)
         plt.show()
         
     for col in pd_plot_self.columns.tolist():
-        plt.figure()
+        plt.figure(figsize=(10,4))
         # plt.axes(yscale='log')
         for case in pd_plot_self.index.get_level_values(0).drop_duplicates().tolist():
             sub_pd = pd_plot_self.loc[case]
             plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
         plt.title('all_scenario - '+col + ' (self-sufficient)')
         plt.xticks(year_list)
+        plt.xlim(min(year_list)-5,max(year_list)+5)
         plt.legend()
-        plt.savefig('../data/LOLE/self_all_scenario'+'_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', dpi=600)
+        plt.savefig('../data/LOLE/self_all_scenario'+'_'+col+'_'+re.sub("[^A-Z]","",scenario)+'.png', bbox_inches='tight', dpi=600)
         plt.show()
 
     plt.figure()
@@ -854,6 +916,7 @@ def main_plot(scenario, year_list):
     plt.scatter(year_list, md_rate, color='darkorange', marker='o')
     plt.title('De-rated Supply margin')
     plt.xticks(year_list)
+    plt.xlim(min(year_list)-2,max(year_list)+2)
     plt.gca().yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1,decimals=0))
     plt.savefig('../data/LOLE/margin_demand.png', dpi=600)
     plt.show()
@@ -871,10 +934,11 @@ def main_plot(scenario, year_list):
         bottom += pd_de_rate.loc[carrier].to_numpy()
     plt.title('De-rated Supply margin in relation to De-rated generation capacity ')
     plt.xticks(year_list)
+    plt.xlim(min(year_list)-2,max(year_list)+2)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
           fancybox=True, shadow=True, ncol=5)
     plt.show()
-    pd_de_rate.to_csv('combi_de-rated_cap_types.csv')
+    pd_de_rate.to_csv('../data/LOLE/combi_de-rated_cap_types.csv')
 
 if __name__ == "__main__":
     rate_table()
@@ -890,13 +954,14 @@ if __name__ == "__main__":
     st = time.time()
 
     # main(2020, scenario, demand_dataset='historical')
-    main(2021, scenario)
+    # main(2021, scenario)
     main(2025, scenario)
-    main(2030, scenario)
-    main(2035, scenario)
-    main(2040, scenario, demand_dataset='historical')
-    main(2045, scenario)
+    # main(2025, scenario, nuclear=False)
+    # main(2030, scenario)
+    # main(2035, scenario)
+    # main(2040, scenario, demand_dataset='historical')
+    # main(2045, scenario)
 
-    main_plot(scenario, year_list)
+    # main_plot(scenario, year_list)
 
     print(time.time() - st)
