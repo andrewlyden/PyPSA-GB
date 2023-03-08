@@ -90,8 +90,8 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
-        if FES == 2022 and networkmodel:
-            distribution.Distribution(year, scenario).building_block_update()
+        if FES == 2022:
+            distribution.Distribution(year, scenario, networkmodel=networkmodel).building_block_update()
 
     elif year <= 2020:
         storage.write_storage_units(year, networkmodel=networkmodel)

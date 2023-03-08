@@ -7,7 +7,7 @@ import distance_calculator as dc
 
 class Distribution(object):
 
-    def __init__(self, year, scenario):
+    def __init__(self, year, scenario, networkmodel=True):
         path = 'LOPF_data/generators.csv'
         self.df_generators = pd.read_csv(path, index_col=0)
 
@@ -22,6 +22,18 @@ class Distribution(object):
 
         self.year = year
         self.scenario = scenario
+
+        if networkmodel:
+            self.buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+
+            self.buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
+                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
+                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
+                     'Lovedean', 'S.W.Penisula']
+        else:
+            self.buses_scotland = ['Z1_1', 'Z1_2','Z1_3', 'Z1_4', 'Z2', 'Z3', 'Z4', 'Z5', 'Z6']
+
+            self.buses_rgb = ['Z7', 'Z8', 'Z9', 'Z10','Z11', 'Z12', 'Z13', 'Z14', 'Z15', 'Z16', 'Z17']
 
         # if scenario == 'Leading the Way':
         #     self.scenario = 'LW'
@@ -160,29 +172,32 @@ class Distribution(object):
 
     def read_scotland_generators(self):
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # select generators in the buses in Scotland
         df_generators = self.df_generators[self.df_generators.bus.isin(buses_scotland)]
         generators_p_nom = df_generators.p_nom.groupby(df_generators.carrier).sum().sort_values()
-        generators_p_nom.drop('Unmet Load', inplace=True)
+        try:
+            generators_p_nom.drop('Unmet Load', inplace=True)
+        except:
+            pass
         # generators_p_nom.drop(generators_p_nom[generators_p_nom < 50].index, inplace=True)
         return generators_p_nom
     
     def read_rgb_generators(self):
 
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']        # select generators in the buses in Scotland
+        buses_rgb = self.buses_rgb        # select generators in the buses in Scotland
         df_generators = self.df_generators[self.df_generators.bus.isin(buses_rgb)]
         generators_p_nom = df_generators.p_nom.groupby(df_generators.carrier).sum().sort_values()
-        generators_p_nom.drop('Unmet Load', inplace=True)
+        try:
+            generators_p_nom.drop('Unmet Load', inplace=True)
+        except:
+            pass
         # generators_p_nom.drop(generators_p_nom[generators_p_nom < 50].index, inplace=True)
         return generators_p_nom
 
     def read_scotland_interconnector(self):
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # select generators in the buses in Scotland
         df_interconnector = self.df_interconnector[self.df_interconnector.bus1.isin(buses_scotland)]
         interconnector_p_nom = df_interconnector.p_nom.groupby(df_interconnector.carrier).sum().sort_values()
@@ -190,17 +205,14 @@ class Distribution(object):
     
     def read_rgb_interconnector(self):
 
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']        # select generators in the buses in Scotland
+        buses_rgb = self.buses_rgb        # select generators in the buses in Scotland
         df_interconnector = self.df_interconnector[self.df_interconnector.bus1.isin(buses_rgb)]
         interconnector_p_nom = df_interconnector.p_nom.groupby(df_interconnector.carrier).sum().sort_values()
         return interconnector_p_nom
 
     def read_scotland_storage(self):
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # select storage in the buses in Scotland
         df_storage = self.df_storage[self.df_storage.bus.isin(buses_scotland)]
         storage_p_nom = df_storage.p_nom.groupby(df_storage.carrier).sum().sort_values()
@@ -209,10 +221,7 @@ class Distribution(object):
     
     def read_rgb_storage(self):
 
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']        
+        buses_rgb = self.buses_rgb        
         # select storage in the buses in Scotland
         df_storage = self.df_storage[self.df_storage.bus.isin(buses_rgb)]
         storage_p_nom = df_storage.p_nom.groupby(df_storage.carrier).sum().sort_values()
@@ -224,13 +233,9 @@ class Distribution(object):
         # modify the generators using the buildings block data 
         # scales generation to match Scotland and rest of GB separately
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # rgb is rest of GB
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']
-
+        buses_rgb = self.buses_rgb
         # generation from unmodified distribution
         generators_p_nom_scotland = self.read_scotland_generators()
         # generation according to building blocks data
@@ -395,6 +400,8 @@ class Distribution(object):
         for bus in buses_rgb:
             self.df_generators.loc[(self.df_generators.carrier == 'Biomass (dedicated)') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_biomass_rgb
 
+        self.df_generators['p_nom'].fillna(0, inplace=True)
+        
         # # generation from unmodified distribution
         # print(self.read_scotland_generators())
         # # generation according to building blocks data
@@ -406,12 +413,9 @@ class Distribution(object):
         # modify the storage using the buildings block data 
         # scales storage to match Scotland and rest of GB separately
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # rgb is rest of GB
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']
+        buses_rgb = self.buses_rgb
 
         # storage from unmodified distribution
         storage_p_nom_scotland = self.read_scotland_storage()
@@ -467,13 +471,9 @@ class Distribution(object):
         # modify the interconnector using the buildings block data 
         # scales interconnector to match Scotland and rest of GB separately
 
-        buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+        buses_scotland = self.buses_scotland
         # rgb is rest of GB
-        buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
-                     'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
-                     'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                     'Lovedean', 'S.W.Penisula']
-
+        buses_rgb = self.buses_rgb
         # interconnector from unmodified distribution
         interconnector_p_nom_scotland = self.read_scotland_interconnector()
         # interconnector according to building blocks data
