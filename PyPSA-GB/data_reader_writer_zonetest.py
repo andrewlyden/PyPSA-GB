@@ -39,7 +39,8 @@ class copy_file():
             if os.path.isdir(file1):
                 self.__init__(file1,file2)
 
-def data_writer(start, end, time_step, year, year_baseline=None, scenario=None, merge_generators=False, networkmodel=True):
+
+def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None, scenario=None, FES=2021, merge_generators=False, scale_to_peak=False, networkmodel=True):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -55,75 +56,85 @@ def data_writer(start, end, time_step, year, year_baseline=None, scenario=None, 
     Returns
     -------
     """
-    # TODO: 
-    # networkmodel = true, busesnework will be used. networkmodel = false, zones model will be used
     if networkmodel:
-        copy_file('../data/BusesBasedGBsystem','../data')
+        copy_file('../data/BusesBasedGBsystem', '../data')
+    else:
+        copy_file('../data/ZonesBasedGBsystem', '../data')
+
+    if networkmodel:
         from distance_calculator import map_to_bus as map_to
     else:
-        copy_file('../data/ZoneBasedGBsystem','../data')
-        from allocate_to_zone import map_to_zones as map_to
+        from allocate_to_zone import map_to_zone as map_to
+
 
     # make sure that end time is in accordance with timestep
     if time_step == 1. or time_step == 'H' or time_step == '1H':
         end = pd.Timestamp(end)
         end = end.replace(minute=0)
         end = str(end)
-
+        
     freq = snapshots.write_snapshots(start, end, time_step)
 
     buses.write_buses(year)
-    lines.write_lines()
+    lines.write_lines(networkmodel=networkmodel)
     loads.write_loads(year)
-    loads.write_loads_p_set(start, end, year, time_step, year_baseline=year_baseline)
-    
-    # TODO:
-    #     if networkmodel:
-    #         import distance_calculator.map_to_bus as dc.map_to_bus
-    #     else:
-    #         import allocate_to_zone.map_to_zones as dc.map_to_bus
-    # the challeges are that imports occur within generators.py and storage.py renewables.py distribution.py
-    
+    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline, scenario=scenario, FES=FES, scale_to_peak=scale_to_peak)
+
     generators.write_generators(time_step, year)
 
     if year > 2020:
-        storage.write_storage_units(year, scenario=scenario)
-        generators.future_p_nom(year, time_step, scenario)
-        generators.write_generators_p_max_pu(start, end, freq, year, year_baseline=year_baseline, scenario=scenario)
+        interconnectors.future_interconnectors(year, scenario, FES)
+        storage.write_storage_units(year, scenario=scenario, FES=FES, networkmodel=networkmodel)
+        generators.future_p_nom(year, time_step, scenario, FES, networkmodel=networkmodel)
+        generators.write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=year_baseline, scenario=scenario)
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
-        distribution.Distribution(year, scenario).update()
+        # distribution.Distribution(year, scenario).update()
+        if FES == 2022 and networkmodel:
+            distribution.Distribution(year, scenario).building_block_update()
 
     elif year <= 2020:
-        storage.write_storage_units(year)
-        generators.write_generators_p_max_pu(start, end, freq, year)
+        storage.write_storage_units(year, networkmodel=networkmodel)
+        generators.write_generators_p_max_pu(start, end, freq, year, FES)
 
     marginal_costs.write_marginal_costs_series(start, end, freq, year)
 
     if year > 2020:
-        interconnectors.future_interconnectors(year)
+        interconnectors.future_interconnectors(year, scenario, FES)
+        
     elif year <= 2020:
         interconnectors.write_interconnectors(start, end, freq)
-
-    # TODO:
-    if networkmodel = false: #for zone model, combine links between zones and linke of interconeectors
-        append the links.csv genrated after interconnectors.write_interconnectors with links.csv at zonebasednetwork/network/links.csv
 
     # merge the non-dispatchable generators at each bus to lower memory requirements
     if merge_generators is True:
         generators.merge_generation_buses(year)
 
+    
+    # TODO:
+    # if networkmodel = false: #for zone model, combine links between zones and linke of interconeectors
+    #     append the links.csv genrated after interconnectors.write_interconnectors with links.csv at zonebasednetwork/network/links.csv
 
+    # merge the non-dispatchable generators at each bus to lower memory requirements
+    
+    if  networkmodel == False:
+        zone_postprocess()
+
+def zone_postprocess():
+    pd_lines = pd.read_csv('LOPF_data/lines.csv')
+    pd_links = pd.read_csv('LOPF_data/links.csv')
+
+    pd.concat([pd_links, pd_lines[pd_links.columns.tolist()]]).to_csv('LOPF_data/links.csv', index=False, header=True)
+    os.remove('LOPF_data/lines.csv')
 
 if __name__ == "__main__":
-
-    start = '2050-06-02 00:00:00'
-    end = '2050-06-02 23:30:00'
+    start = '2025-06-02 00:00:00'
+    end = '2025-06-02 23:30:00'
     # year of simulation
     year = int(start[0:4])
     # time step as fraction of hour
     time_step = 0.5
     if year > 2020:
-        data_writer(start, end, time_step, year, year_baseline=2020, scenario='Leading The Way', merge_generators=True)
+        data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=2020,
+            scenario='Leading The Way', FES=2022, networkmodel=False)
     if year <= 2020:
         data_writer(start, end, time_step, year)

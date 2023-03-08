@@ -4,7 +4,6 @@ import imageio
 
 import data_reader_writer
 import renewables
-import distance_calculator as dc
 
 
 def read_storage_data(year):
@@ -84,7 +83,7 @@ def future_storage(FES):
     return df_storage
 
 
-def write_storage_units(year, scenario=None, FES=None):
+def write_storage_units(year, scenario=None, FES=None, networkmodel=True):
     """writes the buses csv file
 
     Parameters
@@ -94,6 +93,11 @@ def write_storage_units(year, scenario=None, FES=None):
     Returns
     -------
     """
+
+    if networkmodel:
+        from distance_calculator import map_to_bus as map_to
+    else:
+        from allocate_to_zone import map_to_zone as map_to
 
     df = read_storage_data(year)
     df_storage_data_by_type = pd.read_csv('../data/storage_data_by_type.csv', index_col=0)
@@ -105,7 +109,7 @@ def write_storage_units(year, scenario=None, FES=None):
 
         # for the LOPF want to map the storage units to the closest bus
         df_LOPF = df.drop(columns=['x', 'y', 'bus'])
-        df_LOPF['bus'] = dc.map_to_bus(df)
+        df_LOPF['bus'] = map_to(df)
 
         df_LOPF.to_csv('LOPF_data/storage_units.csv', index=False, header=True)
 
@@ -247,7 +251,7 @@ def write_storage_units(year, scenario=None, FES=None):
 
         # for the LOPF want to map the storage units to the closest bus
         df_LOPF = df_storage.drop(columns=['x', 'y', 'bus'])
-        df_LOPF['bus'] = dc.map_to_bus(df_storage)
+        df_LOPF['bus'] = map_to(df_storage)
         df_LOPF.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
 
         return df_LOPF
