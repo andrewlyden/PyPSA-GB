@@ -23,6 +23,7 @@ import distribution
 import pandas as pd
 import os
 import shutil
+from allocate_to_zone import map_to_zone
 
 # turn off chained assignment errors
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -125,6 +126,15 @@ def zone_postprocess():
 
     pd.concat([pd_links, pd_lines[pd_links.columns.tolist()]]).to_csv('LOPF_data/links.csv', index=False, header=True)
     os.remove('LOPF_data/lines.csv')
+
+    path = 'LOPF_data/generators.csv'
+    df_generators = pd.read_csv(path, index_col=0)
+    df_buses = pd.read_csv('../data/BusesBasedGBsystem/network/buses.csv')
+    df_buses['zone']=map_to_zone(df_buses, warm=False)
+    bus_zone = df_buses.set_index(['name'])['zone'].to_dict()
+    df_generators['bus'].replace(bus_zone, inplace=True)
+    df_generators.to_csv('LOPF_data/generators.csv', index=True, header=True)
+
 
 if __name__ == "__main__":
     start = '2025-06-02 00:00:00'

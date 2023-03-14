@@ -23,7 +23,7 @@ def load_zone(json_file):
     return zones_list
 
 
-def map_to_zone(df, subzone=None):
+def map_to_zone(df, subzone=None, warm = True):
     file_path = '../data/zone/zones_json.geojson'
     json_file = json.loads(open(file_path).read())['features']
     zones_list = load_zone(json_file)
@@ -45,13 +45,15 @@ def map_to_zone(df, subzone=None):
                 object_to_zone.append(json_file[j]['properties']['Name_1'])
                 
         if (n == 0) & (not np.isnan(df['x'][i])) & (not np.isnan(df['y'][i])):
-            print('point {} is not inside any zone, use the nearest zone instead'.format((df['x'][i],df['y'][i])))
+            if warm:
+                print('point {} is not inside any zone, use the nearest zone instead'.format((df['x'][i],df['y'][i])))
             min_poly = min(zones_list, key=data_point.distance)
             index_min_poly = zones_list.index(min_poly)
             object_to_zone.append(json_file[index_min_poly]['properties']['Name_1'])
             
         elif n != 1:
-            print('Error while allocated for point {}, set to nan value'.format((df['x'][i],df['y'][i])))
+            if warm:
+                print('Error while allocated for point {}, set to nan value'.format((df['x'][i],df['y'][i])))
             object_to_zone.append(float('nan'))
 
     return object_to_zone
