@@ -1,5 +1,6 @@
 """distance calculator
-Allocate  points to the zone they belong to based on the divided zones
+Allocate points to the zone they belong to based on the divided zones
+Reference: https://github.com/calliope-project/uk-calliope
 """
 
 import json
@@ -7,6 +8,9 @@ import numpy as np
 from shapely.geometry import Point
 from shapely.geometry import Polygon
 from shapely.geometry import MultiPolygon
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
+from matplotlib.collections import PatchCollection
 
 def load_zone(json_file):
     zones_list = list()
@@ -57,6 +61,20 @@ def map_to_zone(df, subzone=None, warm = True):
             object_to_zone.append(float('nan'))
 
     return object_to_zone
+
+
+def plot_polygon(ax, poly, **kwargs):
+    path = Path.make_compound_path(
+        Path(np.asarray(poly.exterior.coords)[:, :2]),
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in poly.interiors])
+
+    patch = PathPatch(path, **kwargs)
+    collection = PatchCollection([patch], **kwargs)
+    
+    ax.add_collection(collection, autolim=True)
+    ax.autoscale_view()
+    return collection
+
 
 if __name__ == "__main__":
     # file_path = '../data/zone/zones_json.geojson'
