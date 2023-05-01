@@ -950,6 +950,10 @@ def future_gas_CCS(year, scenario, FES):
     tech_cap_year = future_capacities_dict['tech_cap_year']
     tech_cap_FES = future_capacities_dict['tech_cap_FES']
 
+    # CCS sometimes coming out as nan, replace with zero
+    if np.isnan(tech_cap_FES):
+        tech_cap_FES = 0.0
+
     tech_ = 'CCGT'
     # get CCGT generators as they are in year
     # need to ensure doing this function before scaling gas
@@ -1098,7 +1102,6 @@ def future_hydrogen(year, scenario, FES):
     # then add the new p_nom tech
     generators = generators.append(gen_tech2)
     generators_UC = generators_UC.append(gen_tech_UC2)
-    # print(generators.loc[generators['carrier'] == 'CCS Biomass'])
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -1662,6 +1665,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
             if year % 4 != 0:
                 # remove 29th Feb
                 df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+
     df_hydro.index = df_offshore.index
     
     # MARINE TECHNOLOGIES

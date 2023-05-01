@@ -17,8 +17,8 @@ class Distribution(object):
         path = 'LOPF_data/loads-p_set.csv'
         self.df_loads = pd.read_csv(path, index_col=0)
 
-        path = 'LOPF_data/links.csv'
-        self.df_interconnector = pd.read_csv(path, index_col=0)
+        # path = 'LOPF_data/links.csv'
+        # self.df_interconnector = pd.read_csv(path, index_col=0)
 
         self.year = year
         self.scenario = scenario
@@ -334,43 +334,44 @@ class Distribution(object):
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])
         # bus = 'Harker'
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])        
+        if self.year >= 2028:
+            # Scale and move CCS gas to Peterhead bus
+            CCS_gas_unmodified_scotland = generators_p_nom_scotland['CCS Gas']
+            CCS_gas_bb_scotland = generators_p_nom_bb_scotland['Natural Gas']
+            scaling_factor_CCS_gas_scotland = CCS_gas_unmodified_scotland / CCS_gas_bb_scotland
 
-        # Scale and move CCS gas to Peterhead bus
-        CCS_gas_unmodified_scotland = generators_p_nom_scotland['CCS Gas']
-        CCS_gas_bb_scotland = generators_p_nom_bb_scotland['Natural Gas']
-        scaling_factor_CCS_gas_scotland = CCS_gas_unmodified_scotland / CCS_gas_bb_scotland
+            CCS_gas_unmodified_rgb = generators_p_nom_rgb['CCS Gas']
+            CCS_gas_bb_rgb = generators_p_nom_bb_rgb['Natural Gas']
+            scaling_factor_CCS_gas_rgb = CCS_gas_unmodified_rgb / CCS_gas_bb_rgb
 
-        CCS_gas_unmodified_rgb = generators_p_nom_rgb['CCS Gas']
-        CCS_gas_bb_rgb = generators_p_nom_bb_rgb['Natural Gas']
-        scaling_factor_CCS_gas_rgb = CCS_gas_unmodified_rgb / CCS_gas_bb_rgb
+            for bus in buses_scotland:
+                self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_scotland
+            for bus in buses_rgb:
+                self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_rgb
 
-        for bus in buses_scotland:
-            self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_scotland
-        for bus in buses_rgb:
-            self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_rgb
-
-        # Scale hydrogen at Peterhead bus
-        hydrogen_unmodified_scotland = generators_p_nom_scotland['Hydrogen']
-        hydrogen_bb_scotland = generators_p_nom_bb_scotland['Hydrogen']
-        if hydrogen_bb_scotland > 0.:
-            scaling_factor_hydrogen_scotland = hydrogen_unmodified_scotland / hydrogen_bb_scotland
-        else:
-            scaling_factor_hydrogen_scotland = 1
-
-        hydrogen_unmodified_rgb = generators_p_nom_rgb['Hydrogen']
-        hydrogen_bb_rgb = generators_p_nom_bb_rgb['Hydrogen']
-        # zero for falling short scenario so don't want infinite value
-        if hydrogen_bb_rgb > 0:
-            scaling_factor_hydrogen_rgb = hydrogen_unmodified_rgb / hydrogen_bb_rgb
-        else:
-            scaling_factor_hydrogen_rgb = 1
-
-        for bus in buses_scotland:
-            if scaling_factor_hydrogen_scotland == 0.:
+        if self.year >= 2030:
+            # Scale hydrogen
+            hydrogen_unmodified_scotland = generators_p_nom_scotland['Hydrogen']
+            hydrogen_bb_scotland = generators_p_nom_bb_scotland['Hydrogen']
+            if hydrogen_bb_scotland > 0.:
+                scaling_factor_hydrogen_scotland = hydrogen_unmodified_scotland / hydrogen_bb_scotland
+            else:
                 scaling_factor_hydrogen_scotland = 1
-            self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_scotland
-        for bus in buses_rgb:
-            self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_rgb
+
+            hydrogen_unmodified_rgb = generators_p_nom_rgb['Hydrogen']
+            hydrogen_bb_rgb = generators_p_nom_bb_rgb['Hydrogen']
+            # zero for falling short scenario so don't want infinite value
+            if hydrogen_bb_rgb > 0:
+                scaling_factor_hydrogen_rgb = hydrogen_unmodified_rgb / hydrogen_bb_rgb
+            else:
+                scaling_factor_hydrogen_rgb = 1
+
+            for bus in buses_scotland:
+                if scaling_factor_hydrogen_scotland == 0.:
+                    scaling_factor_hydrogen_scotland = 1
+                self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_scotland
+            for bus in buses_rgb:
+                self.df_generators.loc[(self.df_generators.carrier == 'Hydrogen') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_hydrogen_rgb
 
         # Scale biomass
         biomass_unmodified_scotland = generators_p_nom_scotland['Biomass (dedicated)']
@@ -632,14 +633,14 @@ class Distribution(object):
         # run scaling functions
         self.modify_generators()
         self.modify_storage()
-        self.modify_interconnector()
+        # self.modify_interconnector()
 
         # write generators file
         self.df_generators.to_csv('LOPF_data/generators.csv', index=True, header=True)
         # write storage file
         self.df_storage.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
         # write interconnector file
-        self.df_interconnector.to_csv('LOPF_data/links.csv', index=True, header=True)
+        # self.df_interconnector.to_csv('LOPF_data/links.csv', index=True, header=True)
 
 
 if __name__ == '__main__':
