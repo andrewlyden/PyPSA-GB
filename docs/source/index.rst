@@ -24,6 +24,7 @@ Contributors:
 - Iain Struthers
 - Seb Hudson
 - Lukas Franken
+- Wei Sun
 
 **Licence**
 

@@ -66,20 +66,16 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
+        interconnectors.future_interconnectors(year, scenario, FES)
         if FES == 2022:
             distribution.Distribution(year, scenario).building_block_update()
 
     elif year <= 2020:
         storage.write_storage_units(year)
         generators.write_generators_p_max_pu(start, end, freq, year, FES)
+        interconnectors.write_interconnectors(start, end, freq)
 
     marginal_costs.write_marginal_costs_series(start, end, freq, year)
-
-    if year > 2020:
-        interconnectors.future_interconnectors(year, scenario, FES)
-        
-    elif year <= 2020:
-        interconnectors.write_interconnectors(start, end, freq)
 
     # merge the non-dispatchable generators at each bus to lower memory requirements
     if merge_generators is True:
