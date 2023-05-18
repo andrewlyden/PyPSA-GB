@@ -1743,7 +1743,7 @@ def future_p_nom(year, time_step, scenario, FES):
     df_UC.to_csv('UC_data/generators.csv', index=True, header=True)
     df_LOPF.to_csv('LOPF_data/generators.csv', index=True, header=True)
 
-    renewables.write_marine_generators(year, scenario)
+    renewables.write_marine_generators(year, scenario, FES)
 
 
 def unmet_load():

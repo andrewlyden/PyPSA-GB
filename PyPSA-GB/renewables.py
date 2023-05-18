@@ -424,78 +424,88 @@ def scale_biomass_p_nom(year, scenario, FES):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def read_tidal_lagoon(year, scenario):
+def read_tidal_lagoon(year, scenario, fes):
 
     df_tidal_lagoon = pd.read_excel('../data/renewables/Marine/tidal_lagoon_future_deployment_scenarios.xlsx', sheet_name=None)
     # print(df_tidal_lagoon)
 
     if scenario == 'Leading The Way':
-        sheet_name = 'tidal_lagoon_LW'
+        sheet_name = 'tidal_lagoon_LW_FES' + str(fes)
     elif scenario == 'Consumer Transformation':
-        sheet_name = 'tidal_lagoon_CT'
+        sheet_name = 'tidal_lagoon_CT_FES' + str(fes)
     elif scenario == 'System Transformation':
-        sheet_name = 'tidal_lagoon_ST'
+        sheet_name = 'tidal_lagoon_ST_FES' + str(fes)
     elif scenario == 'Steady Progression':
-        sheet_name = 'tidal_lagoon_SP'
-    #just using the FES21 for this... Need to update to FES22 too
+        sheet_name = 'tidal_lagoon_SP_FES' + str(fes)
     elif scenario == 'Falling Short':
-        sheet_name = 'tidal_lagoon_SP'
+        sheet_name = 'tidal_lagoon_FS_FES' + str(fes)
 
     df_tidal_lagoon_capacities = df_tidal_lagoon[sheet_name].T
     df_tidal_lagoon_capacities.columns = df_tidal_lagoon_capacities.iloc[0]
-    df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.drop(['Lat', 'Long', 'Suggested Bus', 'Site ID', 'Site Name'])
+    df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.drop(['Lat', 'Lon', 'Site ID', 'Site Name'])
     df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.drop(columns=['Total'])
 
-    # need to get values for years 2020 - 2050
-    index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
-    df_tidal_lagoon_capacities.index = index_
-    df_tidal_lagoon_capacities.index = pd.to_datetime(df_tidal_lagoon_capacities.index, infer_datetime_format=True, utc=True)
-    df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.resample('12MS').asfreq()
-    df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.astype(float)
-    df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.interpolate(method='linear', limit_direction='forward')
+    if fes == 2021:
+        # need to get values for years 2020 - 2050
+        index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
+        df_tidal_lagoon_capacities.index = index_
+        df_tidal_lagoon_capacities.index = pd.to_datetime(df_tidal_lagoon_capacities.index, infer_datetime_format=True, utc=True)
+        df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.resample('12MS').asfreq()
+        df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.astype(float)
+        df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.interpolate(method='linear', limit_direction='forward')  
     df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.fillna(0)
 
     df_tidal_lagoon_locations = df_tidal_lagoon[sheet_name].iloc[:, -3:]
     df_tidal_lagoon_locations.index = df_tidal_lagoon[sheet_name]['Site Name']
     # drop the last row as this is a total row
     df_tidal_lagoon_locations.drop(df_tidal_lagoon_locations.tail(1).index, inplace=True)
-    df_tidal_lagoon_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    df_tidal_lagoon_locations.rename(columns={'Lat': 'lat', 'Lon': 'lon'}, inplace=True)
+
+    # need to use lat and lon to figure out the nearest bus - then add column called bus
+    df = df_tidal_lagoon_locations.rename(columns={'lat': 'y', 'lon': 'x'})
+    buses = dc.map_to_bus(df)
+    df_tidal_lagoon_locations['bus'] = buses
+
     if year < 2025:
         year = 2025
-    date = str(year) + '-01-01'
+    if fes == 2021:
+        date = str(year) + '-01-01'
+    else:
+        date = year
     dic = {'capacities': df_tidal_lagoon_capacities.loc[date, :], 'locations': df_tidal_lagoon_locations}
 
     return dic
 
 
-def read_tidal_stream(year, scenario):
+def read_tidal_stream(year, scenario, fes):
 
     df_tidal_stream = pd.read_excel('../data/renewables/Marine/tidal_stream_future_deployment_scenarios.xlsx', sheet_name=None)
     # print(df_tidal_stream)
 
     if scenario == 'Leading The Way':
-        sheet_name = 'tidal_stream_LW'
+        sheet_name = 'tidal_stream_LW_FES' + str(fes)
     elif scenario == 'Consumer Transformation':
-        sheet_name = 'tidal_stream_CT'
+        sheet_name = 'tidal_stream_CT_FES' + str(fes)
     elif scenario == 'System Transformation':
-        sheet_name = 'tidal_stream_ST'
+        sheet_name = 'tidal_stream_ST_FES' + str(fes)
     elif scenario == 'Steady Progression':
-        sheet_name = 'tidal_stream_SP'
+        sheet_name = 'tidal_stream_SP_FES' + str(fes)
     elif scenario == 'Falling Short':
-        sheet_name = 'tidal_stream_SP'
+        sheet_name = 'tidal_stream_FS_FES' + str(fes)
 
     df_tidal_stream_capacities = df_tidal_stream[sheet_name].T
     df_tidal_stream_capacities.columns = df_tidal_stream_capacities.iloc[1]
-    df_tidal_stream_capacities = df_tidal_stream_capacities.drop(['Lat', 'Long', 'Suggested Bus', 'Site ID', 'Site Name'])
+    df_tidal_stream_capacities = df_tidal_stream_capacities.drop(['Lat', 'Lon', 'Site ID', 'Site Name'])
     df_tidal_stream_capacities = df_tidal_stream_capacities.iloc[:, :-1]
 
-    # need to get values for years 2020 - 2050
-    index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
-    df_tidal_stream_capacities.index = index_
-    df_tidal_stream_capacities.index = pd.to_datetime(df_tidal_stream_capacities.index, infer_datetime_format=True, utc=True)
-    df_tidal_stream_capacities = df_tidal_stream_capacities.resample('12MS').asfreq()
-    df_tidal_stream_capacities = df_tidal_stream_capacities.astype(float)
-    df_tidal_stream_capacities = df_tidal_stream_capacities.interpolate(method='linear', limit_direction='forward')
+    if fes == 2021:
+        # need to get values for years 2020 - 2050
+        index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
+        df_tidal_stream_capacities.index = index_
+        df_tidal_stream_capacities.index = pd.to_datetime(df_tidal_stream_capacities.index, infer_datetime_format=True, utc=True)
+        df_tidal_stream_capacities = df_tidal_stream_capacities.resample('12MS').asfreq()
+        df_tidal_stream_capacities = df_tidal_stream_capacities.astype(float)
+        df_tidal_stream_capacities = df_tidal_stream_capacities.interpolate(method='linear', limit_direction='forward')
     # replace NaN with zero
     df_tidal_stream_capacities = df_tidal_stream_capacities.fillna(0)
 
@@ -503,43 +513,53 @@ def read_tidal_stream(year, scenario):
     df_tidal_stream_locations.index = df_tidal_stream[sheet_name]['Site ID']
     # drop the last row as this is a total row
     df_tidal_stream_locations.drop(df_tidal_stream_locations.tail(1).index, inplace=True)
-    df_tidal_stream_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    df_tidal_stream_locations.rename(columns={'Lat': 'lat', 'Lon': 'lon'}, inplace=True)
+
+    # need to use lat and lon to figure out the nearest bus - then add column called bus
+    df = df_tidal_stream_locations.rename(columns={'lat': 'y', 'lon': 'x'})
+    buses = dc.map_to_bus(df)
+    df_tidal_stream_locations['bus'] = buses
+
     if year < 2025:
         year = 2025
-    date = str(year) + '-01-01'
+    if fes == 2021:
+        date = str(year) + '-01-01'
+    else:
+        date = year
     dic = {'capacities': df_tidal_stream_capacities.loc[date, :], 'locations': df_tidal_stream_locations}
 
     return dic
 
 
-def read_wave_power(year, scenario):
+def read_wave_power(year, scenario, fes):
 
     df_wave_power = pd.read_excel('../data/renewables/Marine/wave_power_future_deployment_scenarios.xlsx', sheet_name=None)
     # print(df_wave_power)
 
     if scenario == 'Leading The Way':
-        sheet_name = 'wave_power_LW'
+        sheet_name = 'wave_power_LW_FES' + str(fes)
     elif scenario == 'Consumer Transformation':
-        sheet_name = 'wave_power_CT'
+        sheet_name = 'wave_power_CT_FES' + str(fes)
     elif scenario == 'System Transformation':
-        sheet_name = 'wave_power_ST'
+        sheet_name = 'wave_power_ST_FES' + str(fes)
     elif scenario == 'Steady Progression':
-        sheet_name = 'wave_power_SP'
+        sheet_name = 'wave_power_SP_FES' + str(fes)
     elif scenario == 'Falling Short':
-        sheet_name = 'wave_power_SP'
+        sheet_name = 'wave_power_FS_FES' + str(fes)
 
     df_wave_power_capacities = df_wave_power[sheet_name].T
     df_wave_power_capacities.columns = df_wave_power_capacities.iloc[1]
-    df_wave_power_capacities = df_wave_power_capacities.drop(['Lat', 'Long', 'Suggested Bus', 'Site ID', 'Site Name'])
+    df_wave_power_capacities = df_wave_power_capacities.drop(['Lat', 'Lon', 'Site ID', 'Site Name'])
     df_wave_power_capacities = df_wave_power_capacities.iloc[:, :-1]
 
-    # need to get values for years 2020 - 2050
-    index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
-    df_wave_power_capacities.index = index_
-    df_wave_power_capacities.index = pd.to_datetime(df_wave_power_capacities.index, infer_datetime_format=True, utc=True)
-    df_wave_power_capacities = df_wave_power_capacities.resample('12MS').asfreq()
-    df_wave_power_capacities = df_wave_power_capacities.astype(float)
-    df_wave_power_capacities = df_wave_power_capacities.interpolate(method='linear', limit_direction='forward')
+    if fes == 2021:
+        # need to get values for years 2020 - 2050
+        index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
+        df_wave_power_capacities.index = index_
+        df_wave_power_capacities.index = pd.to_datetime(df_wave_power_capacities.index, infer_datetime_format=True, utc=True)
+        df_wave_power_capacities = df_wave_power_capacities.resample('12MS').asfreq()
+        df_wave_power_capacities = df_wave_power_capacities.astype(float)
+        df_wave_power_capacities = df_wave_power_capacities.interpolate(method='linear', limit_direction='forward')
     # replace NaN with zero
     df_wave_power_capacities = df_wave_power_capacities.fillna(0)
 
@@ -547,16 +567,25 @@ def read_wave_power(year, scenario):
     df_wave_power_locations.index = df_wave_power[sheet_name]['Site ID']
     # drop the last row as this is a total row
     df_wave_power_locations.drop(df_wave_power_locations.tail(1).index, inplace=True)
-    df_wave_power_locations.rename(columns={'Lat': 'lat', 'Long': 'lon', 'Suggested Bus': 'bus'}, inplace=True)
+    df_wave_power_locations.rename(columns={'Lat': 'lat', 'Lon': 'lon'}, inplace=True)
+
+    # need to use lat and lon to figure out the nearest bus - then add column called bus
+    df = df_wave_power_locations.rename(columns={'lat': 'y', 'lon': 'x'})
+    buses = dc.map_to_bus(df)
+    df_wave_power_locations['bus'] = buses
+
     if year < 2025:
         year = 2025
-    date = str(year) + '-01-01'
+    if fes == 2021:
+        date = str(year) + '-01-01'
+    else:
+        date = year
     dic = {'capacities': df_wave_power_capacities.loc[date, :], 'locations': df_wave_power_locations}
 
     return dic
 
 
-def write_marine_generators(year, scenario):
+def write_marine_generators(year, scenario, fes):
     # ADD NEW GENERATORS FOR MARINE
 
     # get generators
@@ -574,7 +603,7 @@ def write_marine_generators(year, scenario):
     df_UC = df_UC[~df_UC.carrier.str.contains(tech2)]
 
     # read marine generators
-    read_tidal_lagoon_ = read_tidal_lagoon(year, scenario)
+    read_tidal_lagoon_ = read_tidal_lagoon(year, scenario, fes)
 
     df_tidal_lagoon = pd.DataFrame(read_tidal_lagoon_['capacities'])
     df_tidal_lagoon.columns = ['p_nom']
@@ -588,7 +617,7 @@ def write_marine_generators(year, scenario):
     df_tidal_lagoon['ramp_limit_up'] = 1.0
     df_tidal_lagoon['ramp_limit_down'] = 1.0
 
-    read_tidal_stream_ = read_tidal_stream(year, scenario)
+    read_tidal_stream_ = read_tidal_stream(year, scenario, fes)
 
     df_tidal_stream = pd.DataFrame(read_tidal_stream_['capacities'])
     df_tidal_stream.columns = ['p_nom']
@@ -601,7 +630,7 @@ def write_marine_generators(year, scenario):
     df_tidal_stream['ramp_limit_up'] = 1.0
     df_tidal_stream['ramp_limit_down'] = 1.0
 
-    read_wave_power_ = read_wave_power(year, scenario)
+    read_wave_power_ = read_wave_power(year, scenario, fes)
 
     df_wave_power = pd.DataFrame(read_wave_power_['capacities'])
     df_wave_power.columns = ['p_nom']
@@ -1852,10 +1881,10 @@ if __name__ == "__main__":
     # year = 2027
     # future_offshore_capacity(year)
 
-    year = 2017
-    tech = 'Solar Photovoltaics'
-    historical_RES_timeseries(year, tech)['norm']
-    historical_RES_timeseries(year, tech)['timeseries']
+    # year = 2017
+    # tech = 'Solar Photovoltaics'
+    # historical_RES_timeseries(year, tech)['norm']
+    # historical_RES_timeseries(year, tech)['timeseries']
 
     # RES_correction_factors()
 
@@ -1890,3 +1919,15 @@ if __name__ == "__main__":
     # write_marine_generators(year, scenario)
     # year_baseline = 2012
     # add_marine_timeseries(year, year_baseline, scenario, time_step=0.5)
+    for scenario in ['Leading The Way', 'Falling Short', 'System Transformation', 'Consumer Transformation']:
+        for year in range(2021, 2050 + 1, 1):
+            for fes in [2021, 2022]:
+                if fes == 2021 and scenario == 'Falling Short':
+                    scenario = 'Steady Progression'
+                if fes == 2022 and scenario == 'Steady Progression':
+                    scenario = 'Falling Short'
+                print(scenario, year, fes)
+                # year = 2050
+                # scenario = 'Leading The Way'
+                # fes = 22
+                read_wave_power(year, scenario, fes)
