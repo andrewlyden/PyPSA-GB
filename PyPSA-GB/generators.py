@@ -5,7 +5,6 @@ import os
 import osgb
 
 import renewables
-import distance_calculator as dc
 from utils.cleaning import unify_index
 from utils.cleaning import remove_double
 
@@ -58,7 +57,11 @@ def read_generator_data_by_fuel():
     return df
 
 
-def write_generators(time_step, year):
+def write_generators(time_step, year, networkmodel=True):
+    if networkmodel:
+        from distance_calculator import map_to_bus as map_to
+    else:
+        from allocate_to_zone import map_to_zone as map_to
     """writes the generators csv file
 
     Parameters
@@ -95,7 +98,7 @@ def write_generators(time_step, year):
 
     df_pp_LOPF = df_pp.drop(
         columns=['x', 'y', 'Geolocation'])
-    df_pp_LOPF['bus'] = dc.map_to_bus(df_pp)
+    df_pp_LOPF['bus'] = map_to(df_pp)
 
     # corrections factors for RES generators: Onshore, Offshore, PV
     df_correction = pd.read_csv('../data/renewables/atlite/RES_correction_factors.csv', index_col=0)
@@ -187,7 +190,7 @@ def write_generators(time_step, year):
 
     df_res_offshore_LOPF = df_res_offshore.drop(
         columns=['x', 'y'])
-    df_res_offshore_LOPF['bus'] = dc.map_to_bus(df_res_offshore)
+    df_res_offshore_LOPF['bus'] = map_to(df_res_offshore)
     
     
     # join to previous df of thermal power plants
@@ -234,7 +237,7 @@ def write_generators(time_step, year):
 
     df_res_onshore_LOPF = df_res_onshore.drop(
         columns=['x', 'y'])
-    df_res_onshore_LOPF['bus'] = dc.map_to_bus(df_res_onshore)
+    df_res_onshore_LOPF['bus'] = map_to(df_res_onshore)
 
     # join to previous df of thermal power plants
     df_UC = df_UC.append(df_res_onshore_UC, ignore_index=True, sort=False)
@@ -264,7 +267,7 @@ def write_generators(time_step, year):
 
     df_res_PV_LOPF = df_res_PV.drop(
         columns=['x', 'y'])
-    df_res_PV_LOPF['bus'] = dc.map_to_bus(df_res_PV)
+    df_res_PV_LOPF['bus'] = map_to(df_res_PV)
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = df_UC.append(df_res_PV_UC, ignore_index=True, sort=False)
@@ -286,7 +289,7 @@ def write_generators(time_step, year):
 
     df_hydro_LOPF = df_hydro.drop(
         columns=['x', 'y'])
-    df_hydro_LOPF['bus'] = dc.map_to_bus(df_hydro)
+    df_hydro_LOPF['bus'] = map_to(df_hydro)
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = df_UC.append(df_hydro_UC, ignore_index=True, sort=False)
@@ -305,7 +308,7 @@ def write_generators(time_step, year):
 
     df_NDC_LOPF = df_NDC.drop(
         columns=['x', 'y'])
-    df_NDC_LOPF['bus'] = dc.map_to_bus(df_NDC)
+    df_NDC_LOPF['bus'] = map_to(df_NDC)
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = df_UC.append(df_NDC_UC, ignore_index=True, sort=False)
@@ -323,7 +326,7 @@ def write_generators(time_step, year):
 
     df_bio_LOPF = df_bio.drop(
         columns=['x', 'y'])
-    df_bio_LOPF['bus'] = dc.map_to_bus(df_bio)
+    df_bio_LOPF['bus'] = map_to(df_bio)
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = df_UC.append(df_bio_UC, ignore_index=True, sort=False)
@@ -761,7 +764,11 @@ def future_gas_p_nom(year, scenario, tech, FES):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_nuclear_p_nom(year, scenario, FES):
+def future_nuclear_p_nom(year, scenario, FES, networkmodel=True):
+    if networkmodel:
+        from distance_calculator import map_to_bus as map_to
+    else:
+        from allocate_to_zone import map_to_zone as map_to
     # read in phase out of nuclear dates
     file = '../data/power stations/nuclear_phase_out_dates.csv'
     df = pd.read_csv(file, index_col=1)
@@ -806,7 +813,7 @@ def future_nuclear_p_nom(year, scenario, FES):
         new_nuclear['x'] = filtered_df.loc[filtered_df['name'] == pp_to_add[i]]['x'].values[0]
         new_nuclear['y'] = filtered_df.loc[filtered_df['name'] == pp_to_add[i]]['y'].values[0]
         # need to map to bus
-        new_nuclear['bus'] = dc.map_to_bus(new_nuclear)
+        new_nuclear['bus'] = map_to(new_nuclear)
         df_new_nuclear = df_new_nuclear.append(new_nuclear)
 
     # only append to generators dataframe if there are rows in df_new_nuclear
@@ -1474,6 +1481,8 @@ def future_capacity(year, tech, scenario, FES):
         except:
             tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.
 
+    if np.isnan(tech_cap_FES):
+        tech_cap_FES = 0.0
     capacity_dict = {'tech_cap_year': tech_cap_year,
                      'tech_cap_FES': tech_cap_FES}
 
@@ -1701,7 +1710,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
     # df.to_csv('UC_data/generators-p_min_pu.csv', header=True)
 
 
-def future_p_nom(year, time_step, scenario, FES):
+def future_p_nom(year, time_step, scenario, FES, networkmodel=True):
     # need to do CCS first as they are scaling based on
     # 2020 data... make sure to do this before scaling gas p_nom
     future_gas_CCS(year, scenario, FES)
@@ -1711,7 +1720,7 @@ def future_p_nom(year, time_step, scenario, FES):
     future_coal_p_nom(year)
     future_gas_p_nom(year, scenario, 'CCGT', FES)
     future_gas_p_nom(year, scenario, 'OCGT', FES)
-    future_nuclear_p_nom(year, scenario, FES)
+    future_nuclear_p_nom(year, scenario, FES, networkmodel=networkmodel)
     future_oil_p_nom(year, scenario, FES)
     future_waste_p_nom(year, scenario, FES)
     renewables.future_RES_scale_p_nom(year, 'Wind Onshore', scenario, FES)
@@ -1911,7 +1920,12 @@ def merge_generation_buses(year):
 
 
 if __name__ == "__main__":
-    year = 2050
+    year = 2025
+    tech = 'CCS Gas'
+    scenario='Leading The Way'
+    FES = 2022
+    future_capacities_dict = future_capacity(year, tech, scenario, FES)
+
     # future_coal_p_nom(year)
     # tech = 'Gas'
     # future_capacity(year, tech, FES)
@@ -1924,7 +1938,7 @@ if __name__ == "__main__":
     # future_gas_CCS(year, FES)
     # future_biomass_CCS(year, FES)
     # future_hydrogen(year, FES)
-    merge_generation_buses()
+    # merge_generation_buses()
 
     
   

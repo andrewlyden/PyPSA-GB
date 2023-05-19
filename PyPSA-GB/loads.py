@@ -112,9 +112,11 @@ def write_loads(year):
     df_buses = df_buses.set_index('name')
     if year > 2020:
         # delete the interconnectors if future years
-        df_buses = df_buses.drop(['Belgium', 'France1', 'France2',
-                                  'Netherlands', 'Ireland', 'N. Ireland'])
-
+        try:
+            df_buses = df_buses.drop(['Belgium', 'France1', 'France2',
+                                    'Netherlands', 'Ireland', 'N. Ireland'])
+        except:
+            pass
     # delete the IC loads
     df_buses.to_csv('LOPF_data/loads.csv', index=True, header=True)
 
