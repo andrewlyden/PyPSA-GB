@@ -21,16 +21,18 @@ import loads
 import interconnectors
 import distribution
 import marine_scenarios
+import add_P2G
 import pandas as pd
 
 # turn off chained assignment errors
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def data_writer(start, end, time_step, year, demand_dataset='historical', 
+def data_writer(start, end, time_step, year, demand_dataset=None, 
                 year_baseline=None, scenario=None, FES=2021, 
                 merge_generators=False, scale_to_peak=False,
-                marine_modify=False, marine_scenario='Mid'):
+                marine_modify=False, marine_scenario='Mid',
+                P2G=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -86,23 +88,39 @@ def data_writer(start, end, time_step, year, demand_dataset='historical',
     # merge the non-dispatchable generators at each bus to lower memory requirements
     if merge_generators is True:
         generators.merge_generation_buses(year)
+    
+    if P2G is True:
+        add_P2G.add_P2G(year, scenario)
 
 
 if __name__ == "__main__":
 
-    start = '2050-06-02 00:00:00'
-    end = '2050-06-02 23:30:00'
+    start = '2040-02-28 00:00:00'
+    end = '2040-03-01 23:30:00'
     # year of simulation
     year = int(start[0:4])
-    # time step as fraction of hour
-    # data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, year_baseline=year_baseline,
-    #                            scenario=scenario, FES=2022,  merge_generators=True, marine_scenarios=True)
-    time_step = 1.
-    scenario = 'Leading The Way'
-    year_baseline = 2012
-    FES = 2022
 
+    scenario = 'Leading The Way'
+    # scenario = 'Consumer Transformation'
+    # scenario = 'System Transformation'
+    # scenario = 'Steady Progression'
     data_writer(start, end, time_step, year, demand_dataset='eload', 
                 year_baseline=year_baseline, scenario=scenario, FES=FES, 
-                merge_generators=False, scale_to_peak=True,
-                marine_modify=True, marine_scenario='Mid')
+                merge_generators=True, scale_to_peak=True, P2G=False)
+
+    # for scenario in ['System Transformation', 'Falling Short', 'Leading The Way', 'Consumer Transformation']:
+    #     FES = 2022
+    #     time_step = 1.
+    #     year_baseline = 2012
+    #     print(scenario)
+    #     data_writer(start, end, time_step, year, demand_dataset='eload', 
+    #                         year_baseline=year_baseline, scenario=scenario, FES=FES, 
+    #                         merge_generators=True, scale_to_peak=True, P2G=True)
+
+    # # time step as fraction of hour
+    # for time_step in [0.5, 1.0]:
+    #     for year_baseline in [2012, 2013]:
+    #         print('inputs:', time_step, year_baseline)
+    #         data_writer(start, end, time_step, year, demand_dataset='eload', 
+    #                     year_baseline=year_baseline, scenario=scenario, FES=FES, 
+    #                     merge_generators=True, scale_to_peak=True)

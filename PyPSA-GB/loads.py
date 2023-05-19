@@ -140,6 +140,24 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
     elif dataset == 'eload':
         df_hd = read_future_profile_data()
         df_hd.rename(columns={'eLOAD': 'load'}, inplace=True)
+        # if modelled year is a leap year need to add in 29th feb (copy 28th Feb)
+        if year % 4 == 0:
+            df_hd.index = pd.to_datetime({
+                'year': 2040,
+                'month': df_hd.index.month,
+                'day': df_hd.index.day,
+                'hour': df_hd.index.hour,
+                'minute': df_hd.index.minute,
+                'second': df_hd.index.second})
+            df_leap_day = df_hd[pd.to_datetime('2040-02-28 00:00:00'):pd.to_datetime('2040-02-28 23:30:00')]
+            df_leap_day.index = pd.to_datetime({'year': df_leap_day.index.year,
+                                                'month': df_leap_day.index.month,
+                                                'day': 29,
+                                                'hour': df_leap_day.index.hour,
+                                                'minute': df_leap_day.index.minute,
+                                                'second': df_leap_day.index.second})
+            df_hd_appended = df_hd.append(df_leap_day)
+            df_hd = df_hd_appended.sort_index()
 
     # need an index for the period to be simulated
     if time_step == 0.5:
@@ -238,7 +256,10 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
             end_yr = end[:2] + yr + end[4:]
             df_sim = df_year[start_yr:end_yr]
         elif dataset == 'eload':
-            yr = '50'
+            if year % 4 == 0:
+                yr = '40'
+            else:
+                yr = '50'
             start_yr = start[:2] + yr + start[4:]
             end_yr = end[:2] + yr + end[4:]
             df_sim = df_year[start_yr:end_yr]
@@ -250,13 +271,6 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
             if year % 4 != 0:
                 # remove 29th Feb
                 scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
-        # check if using eload
-        if dataset == 'eload':
-            # and the year modelled is a leap year
-            if year % 4 == 0:
-                # remove 29th Feb from index
-                # scaled_load = scaled_load[~((scaled_load.index.month == 2) & (scaled_load.index.day == 29))]
-                dti = dti[~((dti.month == 2) & (dti.day == 29))]
 
         if time_step == 0.5:
             scaled_load.index = dti
