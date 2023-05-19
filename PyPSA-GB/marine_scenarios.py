@@ -85,31 +85,33 @@ def rewrite_generators_for_marine(year, scenario):
 
     df_generators = pd.read_csv('LOPF_data/generators.csv', index_col=0)
 
-    # get names of buses
-    df_buses = pd.read_csv('LOPF_data/buses.csv')[:29]
-    bus_location = []
-    for i in range(len(df_buses)):
-        bus_location.append({'lon': df_buses['x'][i], 'lat': df_buses['y'][i]})
-    bus_names = df_buses['name'].values
-
     # remove the Wave power and Tidal stream in the df_generators
     df_generators = df_generators[~df_generators.carrier.str.contains('Wave power')]
     df_generators = df_generators[~df_generators.carrier.str.contains('Tidal stream')]
-    for bus in bus_names:
-        # sum the p_nom at each bus for wave and tidal
-        p_nom_wave_bus = dic_wave_power['locations'].loc[dic_wave_power['locations']['bus'] == bus].p_nom.sum()
-        p_nom_tidal_stream_bus = dic_tidal_stream['locations'].loc[dic_tidal_stream['locations']['bus'] == bus].p_nom.sum()
-        # then add the new generation at each bus
-        # note 1000 multiplier as data is in GW
-        if p_nom_wave_bus > 0.:
-            df_generators.loc['Wave power ' + bus] = {'carrier': 'Wave power', 'type': 'Wave power', 'p_nom': p_nom_wave_bus * 1000.,
-                                                      'bus': bus, 'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.}
-        if p_nom_tidal_stream_bus > 0.:
-            df_generators.loc['Tidal stream ' + bus] = {'carrier': 'Tidal stream', 'type': 'Tidal stream', 'p_nom': p_nom_tidal_stream_bus * 1000.,
-                                                      'bus': bus, 'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.}
+    for wave_generator in dic_wave_power['locations'].index:
+        # add wave generator to df_generators
+        df_generators.loc[wave_generator] = {'carrier': 'Wave power', 'type': 'Wave power',
+                                             'p_nom': dic_wave_power['locations'].loc[wave_generator, 'p_nom'] * 1000.,
+                                             'bus': dic_wave_power['locations'].loc[wave_generator, 'bus'],
+                                              'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.}
+    for tidal_stream_generator in dic_tidal_stream['locations'].index:
+        # add tidal stream generator to df_generators
+        df_generators.loc[tidal_stream_generator] = {'carrier': 'Tidal stream', 'type': 'Tidal stream',
+                                                     'p_nom': dic_tidal_stream['locations'].loc[tidal_stream_generator, 'p_nom'] * 1000.,
+                                                     'bus': dic_tidal_stream['locations'].loc[tidal_stream_generator, 'bus'],
+                                                      'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.}
+        
+    # check_consistency_with_p_max_pu()
+
     # save the new dataframe
     # note NOT included for Unit Committment data
     df_generators.to_csv('LOPF_data/generators.csv', header=True)
+
+def check_consistency_with_p_max_pu():
+
+    df_generators = pd.read_csv('LOPF_data/generators.csv', index_col=0)
+    df_p_max_pu = pd.read_csv('LOPF_data/generators-p_max_pu.csv', index_col=0)
+    print(all(item in df_p_max_pu.columns for item in df_generators.loc[df_generators['carrier'] == 'Wave power'].index))
 
 
 if __name__ == '__main__':

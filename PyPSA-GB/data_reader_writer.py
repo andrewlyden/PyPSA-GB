@@ -20,13 +20,17 @@ import marginal_costs
 import loads
 import interconnectors
 import distribution
+import marine_scenarios
 import pandas as pd
 
 # turn off chained assignment errors
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None, scenario=None, FES=2021, merge_generators=False, scale_to_peak=False):
+def data_writer(start, end, time_step, year, demand_dataset='historical', 
+                year_baseline=None, scenario=None, FES=2021, 
+                merge_generators=False, scale_to_peak=False,
+                marine_modify=False, marine_scenario='Mid'):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -76,6 +80,9 @@ def data_writer(start, end, time_step, year, demand_dataset, year_baseline=None,
 
     marginal_costs.write_marginal_costs_series(start, end, freq, year)
 
+    if marine_modify is True:
+        marine_scenarios.rewrite_generators_for_marine(year, marine_scenario)
+
     # merge the non-dispatchable generators at each bus to lower memory requirements
     if merge_generators is True:
         generators.merge_generation_buses(year)
@@ -88,8 +95,14 @@ if __name__ == "__main__":
     # year of simulation
     year = int(start[0:4])
     # time step as fraction of hour
-    time_step = 0.5
-    if year > 2020:
-        data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=2020, scenario='Leading The Way', merge_generators=True)
-    if year <= 2020:
-        data_writer(start, end, time_step, year)
+    # data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, year_baseline=year_baseline,
+    #                            scenario=scenario, FES=2022,  merge_generators=True, marine_scenarios=True)
+    time_step = 1.
+    scenario = 'Leading The Way'
+    year_baseline = 2012
+    FES = 2022
+
+    data_writer(start, end, time_step, year, demand_dataset='eload', 
+                year_baseline=year_baseline, scenario=scenario, FES=FES, 
+                merge_generators=False, scale_to_peak=True,
+                marine_modify=True, marine_scenario='Mid')
