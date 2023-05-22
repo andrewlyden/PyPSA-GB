@@ -321,6 +321,37 @@ def rate_table(nuclear=True):
     de_conversion_type_csv.to_csv('../data/LOLE/de_conversion_type.csv',index=False)
     de_csv.to_csv('../data/LOLE/de_rate.csv',index=False)
 
+def B6_scaling(year, file_path):
+    pd_lines = pd.read_csv(file_path, index_col=0)
+    B6_capacity_data = {'2021': 6100,
+                        '2025': 7000,
+                        '2030': 11500,
+                        '2035': 16900,
+                        '2040': 16900,
+                        '2045': 16900}
+    B6_capacity = B6_capacity_data[str(year)]
+
+    # scale the B6 lines to system transformation economy RT
+    B6 = pd_lines.at[17, 's_nom'] + pd_lines.at[18, 's_nom'] + pd_lines.at[23, 's_nom'] + pd_lines.at[24, 's_nom'] + pd_lines.at[16, 's_nom']
+    # network.lines
+    scaling_factor = B6_capacity / B6
+    pd_lines.s_nom *= scaling_factor
+    # B6_scaled = pd_lines.at[17, 's_nom'] + pd_lines.at[18, 's_nom'] + pd_lines.at[23, 's_nom'] + pd_lines.at[24, 's_nom'] + pd_lines.at[16, 's_nom']
+    # print(str(year) + ' : ' + str(B6_scaled))
+    pd_lines.to_csv(file_path)
+
+def loads_leap_year():
+    pd_load = pd.read_csv('LOPF_data/loads-p_set.csv',index_col=0)
+
+    pd_load.index = pd.to_datetime(pd_load.index)
+
+    pd_load_1 = pd_load[pd_load.index.month <= 2]
+    pd_load_2 = pd_load[((pd_load.index.month == 2) & (pd_load.index.day == 28))]
+    pd_load_2.index = [_.replace(day=29) for _ in pd_load_2.index.to_list()]
+    pd_load_3 = pd_load[pd_load.index.month > 2]
+    pd_load_new = pd.concat([pd_load_1, pd_load_2, pd_load_3])
+
+    pd_load_new.to_csv('LOPF_data/loads-p_set.csv')
 
 def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_reserve_requirment = 1200, step=100, nuclear=True):
     start = str(year) + '-01-01 00:00:00'
@@ -339,14 +370,42 @@ def main(year, scenario, demand_dataset='eload', year_baseline = 2020, system_re
         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, year_baseline=year_baseline,
             scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True)
         
+    B6_scaling(year, 'LOPF_data/lines.csv')
+
+    if year % 4 == 0:
+        print('add 29/02/'+str(year))
+        loads_leap_year()
+
     scotland_network.scotland()
     scotland_network.interconnector()
 
     network = pypsa.Network()
     network.import_from_csv_folder('LOPF_data_Scotland')
-    contingency_factor = 4
-    network.lines.s_max_pu *= contingency_factor
 
+    buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
+    for bus in buses_scotland:
+        # derate gas to 0% of capacity across Scotland
+        if year >= 2030:
+            network.generators.loc[(network.generators['bus'] == bus) & (network.generators['carrier'] == 'CCS Gas'), "p_nom"] *= 0.
+            network.generators.loc[(network.generators['bus'] == bus) & (network.generators['carrier'] == 'Natural Gas'), "p_nom"] *= 0.
+        # derate hydrogen to 0% of capacity across Scotland
+        network.generators.loc[(network.generators['bus'] == bus) & (network.generators['carrier'] == 'Hydrogen'), "p_nom"] *= 0.
+        # limit biomass to 230MW capacity across Scotland 2040 onwards
+        if year >= 2040:
+            network.generators.loc[(network.generators['bus'] == bus) & (network.generators['carrier'] == 'Biomass (dedicated)'), "p_nom"] = 0.
+            network.generators.loc[(network.generators['bus'] == bus) & (network.generators['carrier'] == 'CCS Biomass'), "p_nom"] = 0.
+
+    peak_demand_data = {'2021': 4600,
+                        '2025': 4800,
+                        '2030': 5900,
+                        '2035': 8000,
+                        '2040': 10200,
+                        '2045': 11300}
+    unscaled_peak = network.loads_t.p_set[buses_scotland].sum(axis=1).max()
+    load_scale = peak_demand_data[str(year)] / unscaled_peak
+
+    network.loads_t.p_set.loc[:, buses_scotland] *= load_scale
+    
     output_margin = pd.DataFrame(index=network.snapshots)
     output_lolp = pd.DataFrame(columns=['peak_lolp', 'lole', 'lole_week'])
     output_lolp_self = pd.DataFrame(columns=['peak_lolp', 'lole', 'lole_week'])
@@ -839,9 +898,11 @@ def main_plot(scenario, year_list):
         for col in sub_pd.columns.tolist():
             plt.figure(figsize=(10,4))
             if col == 'lole':
-                plt.plot([min(year_list)-5,max(year_list)+5], [0.2,0.2], 'k:')
-                plt.plot([min(year_list)-5,max(year_list)+5], [0.3,0.3], 'k:')
-                plt.text(year_list[0]-4, 0.25 , 'The LOLE reported in National Grid’s Winter Outlook in 2021\nand 2022 were 0.3 and 0.2 hrs/year.' , fontsize = 14 , color = 'k' , ha = 'left' )
+                plt.plot([min(year_list)-5,max(year_list)+5], [3, 3], 'r--')
+
+                # plt.plot([min(year_list)-5,max(year_list)+5], [0.2,0.2], 'k:')
+                # plt.plot([min(year_list)-5,max(year_list)+5], [0.3,0.3], 'k:')
+                # plt.text(year_list[0]-4, 0.25 , 'The LOLE reported in National Grid’s Winter Outlook in 2021\nand 2022 were 0.3 and 0.2 hrs/year.' , fontsize = 14 , color = 'k' , ha = 'left' )
             plt.plot(sub_pd.index, sub_pd[col], color='dodgerblue')
             plt.scatter(sub_pd.index, sub_pd[col], color='darkorange', marker='o')
             # plt.title(case+' - '+col)
@@ -862,11 +923,13 @@ def main_plot(scenario, year_list):
             if case == 'Largest offshore failure':
                 case = 'Offshore wind farm failures'  
             plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
+
         # if col == 'lole_week':
         #     plt.title('all_scenario - '+'lole')
         # else:
         #     plt.title('all_scenario - '+col)
         # plt.title('all_scenario - '+col)
+
         plt.ylabel('Hours')
         plt.xticks(year_list)
         plt.xlim(min(year_list)-5,max(year_list)+5)
@@ -884,12 +947,15 @@ def main_plot(scenario, year_list):
             if case == 'Largest offshore failure':
                 case = 'Offshore wind farm failures'  
             plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
-        plt.plot([min(year_list)-5,max(year_list)+5], [3,3], 'r--')
-        plt.text(year_list[0]-4, 2 , 'The current reliability standard for LOLE in GB\nis set to no more than three hours a year.' , fontsize = 14 , color = 'k' , ha = 'left' )
+        plt.plot([min(year_list)-5,max(year_list)+5], [3,3], 'r--', linewidth=1)
+        plt.plot([min(year_list)-5,max(year_list)+5], [0.108, 0.108], 'b--', linewidth=1)
+        # plt.text(year_list[0]-4, 2 , 'The current reliability standard for LOLE in GB\nis set to no more than three hours a year.' , fontsize = 14 , color = 'k' , ha = 'left' )
+        
         # if col == 'lole_week':
         #     plt.title('all_scenario - '+'lole')
         # else:
         #     plt.title('all_scenario - '+col)
+        
         plt.ylabel('Hours')
         plt.xticks(year_list)
         plt.xlim(min(year_list)-5,max(year_list)+5)
@@ -904,7 +970,9 @@ def main_plot(scenario, year_list):
         for case in pd_plot_self.index.get_level_values(0).drop_duplicates().tolist():
             sub_pd = pd_plot_self.loc[case]
             plt.plot(sub_pd.index, sub_pd[col], marker='o', label=case)
-        plt.title('all_scenario - '+col + ' (self-sufficient)')
+        # plt.title('all_scenario - '+col + ' (self-sufficient)')
+        # plt.plot([min(year_list)-5,max(year_list)+5], [3, 3], 'r:')
+        # plt.plot([min(year_list)-5,max(year_list)+5], [0.108, 0.108], 'b:')
         plt.xticks(year_list)
         plt.xlim(min(year_list)-5,max(year_list)+5)
         plt.legend()
@@ -940,6 +1008,64 @@ def main_plot(scenario, year_list):
     plt.show()
     pd_de_rate.to_csv('../data/LOLE/combi_de-rated_cap_types.csv')
 
+def self_sufficient_plot(scenario, year_list, system_reserve_requirment=1200):
+    all_lole_loop = pd.DataFrame()
+    pd_plot = pd.DataFrame(index=year_list)
+    for year in year_list:
+        lole_loop = pd.read_csv('../data/LOLE/lole_loop_'+str(year)+'_'+re.sub("[^A-Z]","", scenario)+'.csv', index_col=0)
+        lole_loop = lole_loop[['Self-sufficient', 'Self_Low RES power']].copy()
+        lole_loop.columns = [[year,year],lole_loop.columns.tolist()]
+        all_lole_loop = pd.concat([all_lole_loop, lole_loop], axis=1)
+
+    pd_plot['LOLE for Self-sufficient base case'] = all_lole_loop.loc[:,(slice(None), 'Self-sufficient')].loc[0,:].values
+    
+    # all_lole_loop.loc[:,(slice(None), 'Self-sufficient')]
+    index_1 = all_lole_loop.loc[:,(slice(None), 'Self-sufficient')].T.max()[all_lole_loop.loc[:,(slice(None), 'Self-sufficient')].T.max()<3].index[0]
+    pd_plot['Base case with additional '+str(index_1)+'MW firm capacity'] = all_lole_loop.loc[index_1,(slice(None), 'Self-sufficient')].values
+    index_2 = all_lole_loop.loc[:,(slice(None), 'Self-sufficient')].T.max()[all_lole_loop.loc[:,(slice(None), 'Self-sufficient')].T.max()<0.3].index[0]
+    pd_plot['Base case with additional '+str(index_2)+'MW firm capacity'] = all_lole_loop.loc[index_2,(slice(None), 'Self-sufficient')].values
+
+
+    for _ in range(len(year_list)):
+        if np.isnan(pd_plot['Base case with additional '+str(index_1)+'MW firm capacity'].values[_]):
+            year = year_list[_]
+            pd_cdf = pd.read_csv('../data/LOLE/cdf_'+str(year)+'_'+re.sub("[^A-Z]","",scenario)+'.csv', index_col=0)
+            xx = pd_cdf['xx']
+            yy = pd_cdf['yy']
+            net_demand = pd.read_csv('../data/LOLE/margin_demand_'+str(year)+'_'+re.sub("[^A-Z]","", scenario)+'.csv')['net_demand']
+            lolp = list()
+            for i in range(len(net_demand)):
+                lolp.append(yy[xx<net_demand[i]+system_reserve_requirment-index_1].sum())
+            lole = sum(lolp)
+            pd_plot.loc[year, 'Base case with additional '+str(index_1)+'MW firm capacity'] = lole
+            pd_plot.loc[year, 'Base case with additional '+str(index_2)+'MW firm capacity'] = lole
+        if np.isnan(pd_plot['Base case with additional '+str(index_2)+'MW firm capacity'].values[_]):
+            year = year_list[_]
+            pd_cdf = pd.read_csv('../data/LOLE/cdf_'+str(year)+'_'+re.sub("[^A-Z]","",scenario)+'.csv', index_col=0)
+            xx = pd_cdf['xx']
+            yy = pd_cdf['yy']
+            net_demand = pd.read_csv('../data/LOLE/margin_demand_'+str(year)+'_'+re.sub("[^A-Z]","", scenario)+'.csv')['net_demand']
+            lolp = list()
+            for i in range(len(net_demand)):
+                lolp.append(yy[xx<net_demand[i]+system_reserve_requirment-index_2].sum())
+            lole = sum(lolp)
+            pd_plot.loc[year, 'Base case with additional '+str(index_2)+'MW firm capacity'] = lole
+    
+    plt.figure(figsize=(10,4))
+    for col in pd_plot.columns.tolist():
+        plt.plot(pd_plot.index, pd_plot[col], marker='o', label=col)
+    plt.xticks(year_list)
+    plt.xlim(min(year_list)-5,max(year_list)+5)
+    plt.grid()
+    plt.legend()
+    plt.savefig('../data/LOLE/LOLE self-suffient.png', dpi=600)
+    plt.show()
+
+            
+
+
+        
+
 if __name__ == "__main__":
     rate_table()
 
@@ -948,20 +1074,21 @@ if __name__ == "__main__":
     scenario = 'System Transformation'
     # scenario = 'Steady Progression'
 
-    year_list = [2025, 2030, 2035, 2040, 2045]
+    year_list = [2021, 2025, 2030, 2035, 2040, 2045]
 
     import time
     st = time.time()
 
-    # main(2020, scenario, demand_dataset='historical')
+    # # # main(2020, scenario, demand_dataset='historical')
     # main(2021, scenario)
-    main(2025, scenario)
-    # main(2025, scenario, nuclear=False)
+    # main(2025, scenario)
+    # # # # main(2025, scenario, nuclear=False)
     # main(2030, scenario)
     # main(2035, scenario)
-    # main(2040, scenario, demand_dataset='historical')
+    # main(2040, scenario)
     # main(2045, scenario)
 
-    # main_plot(scenario, year_list)
+    main_plot(scenario, year_list)
+    self_sufficient_plot(scenario, year_list)
 
     print(time.time() - st)
