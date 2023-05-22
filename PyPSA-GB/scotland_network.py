@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import os
 import shutil
@@ -103,6 +104,8 @@ def scotland(path = 'LOPF_data', replace = False):
                 inscot.append(i)
         inscot = list(set(inscot))
         csv = csv.iloc[inscot]
+        if 'NorthConnect' in csv.index:
+            csv.drop('NorthConnect',inplace=True)
         if len(inscot) == 0:
             print('None in scotland in links.csv.')
         else:
@@ -132,8 +135,7 @@ def scotland(path = 'LOPF_data', replace = False):
         if len(index) == 0:
             print('No additional links from lines.')
         else:
-            pd_lines = pd.read_csv(path+'lines.csv', index_col=0).\
-                iloc[index].drop_duplicates(subset=['bus0','bus1'])
+            pd_lines = pd.read_csv(path+'lines.csv', index_col=0).iloc[index]
             pd_links = pd.DataFrame(columns=
                 ['name', 'bus0', 'bus1', 'carrier', 'p_nom', 'marginal_cost', 'p_min_pu'])
             def scot_links(row):
@@ -184,7 +186,12 @@ def interconnector(path='LOPF_data_Scotland/'):
             carrier = 'Englandconnector'
         else:
             carrier = 'Interconnector'
-        pd_generators.loc[name] = {'carrier':carrier, 'p_nom':p_nom}
+        pd_generators.loc[name, 'carrier'] = carrier
+        if np.isnan(pd_generators.loc[name, 'p_nom']):
+            pd_generators.loc[name, 'p_nom'] = p_nom
+        else:
+            pd_generators.loc[name, 'p_nom'] += p_nom
+            
 
     pd_links.apply(lambda r: connector_to_generator(r, pd_generators), axis=1)
     pd_generators.to_csv(path+'generators.csv')
