@@ -92,7 +92,7 @@ def read_future_profile_data():
     return df_eload
 
 
-def write_loads(year):
+def write_loads(year, networkmodel='Reduced'):
     """writes the loads csv file
 
     Parameters
@@ -121,7 +121,7 @@ def write_loads(year):
     df_buses.to_csv('LOPF_data/loads.csv', index=True, header=True)
 
 
-def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, scenario=None, FES=None, scale_to_peak=False):
+def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, scenario=None, FES=None, scale_to_peak=False, networkmodel='Reduced'):
     """writes the loads power timeseries csv file
 
     Parameters
@@ -178,6 +178,15 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
         '../data/demand/Demand_Distribution.csv', index_col=0)
     df_distribution = df_distribution.loc[:, ~df_distribution.columns.str.contains('^Unnamed')]
     df_distribution.dropna(inplace=True)
+
+    if networkmodel == 'Reduced':
+        df_distribution = pd.read_csv(
+            '../data/demand/Demand_Distribution.csv', index_col=0)
+        df_distribution = df_distribution.loc[:, ~df_distribution.columns.str.contains('^Unnamed')]
+        df_distribution.dropna(inplace=True)
+    elif networkmodel == 'Zonal':
+        df_distribution = pd.read_csv(
+            '../data/demand/Demand_Distribution_Zonal.csv', index_col=0)
 
     # for historical years using the 2020 FES distribution data
     if year < 2020:
@@ -300,7 +309,7 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
         df_year_LOPF = pd.DataFrame()
         for j in norm.columns:
             df_year_LOPF[j] = df_year * scale_factor * norm[j].values
-        peak_bus_regional = read_regional_breakdown_load(scenario, year)
+        peak_bus_regional = read_regional_breakdown_load(scenario, year, networkmodel)
         for bus in df_year_LOPF.columns:
             scaling_factor = peak_bus_regional[bus] / (df_year_LOPF[bus].max())
             df_loads_p_set_LOPF[bus] *= scaling_factor
@@ -325,7 +334,7 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
 
     return df_loads_p_set_LOPF
 
-def read_regional_breakdown_load(scenario, year):
+def read_regional_breakdown_load(scenario, year, networkmodel):
 
     if scenario == 'Leading the Way':
         df_regional = pd.read_excel('../data/FES2022/FES22_regional_peak_load_leading_the_way.xlsx', sheet_name=str(year), header=5)
@@ -346,8 +355,13 @@ def read_regional_breakdown_load(scenario, year):
     df_gsp_data = pd.read_csv('../data/FES2022/GSP_data.csv', encoding='cp1252', index_col=3)
     df_gsp_data = df_gsp_data[['Latitude', 'Longitude']]
     df_gsp_data.rename(columns={'Latitude': 'y', 'Longitude': 'x'}, inplace=True)
-    df_gsp_data['Bus'] = dc.map_to_bus(df_gsp_data)
 
+    if networkmodel == 'Reduced':
+        from distance_calculator import map_to_bus as map_to
+    elif networkmodel == 'Zonal':
+        from allocate_to_zone import map_to_zone as map_to
+
+    df_gsp_data['Bus'] = map_to(df_gsp_data)
     # now
     GSP_to_bus = []
     for GSP in df_regional.index:
@@ -358,9 +372,20 @@ def read_regional_breakdown_load(scenario, year):
     peak_bus = {}
     for bus in df_regional['Bus'].unique():
         peak_bus[bus] = df_regional.loc[df_regional['Bus'] == bus]['P(Gross)'].sum()
-
+    
     return peak_bus
+
+def distribution_zonal_loads():
+    scenario = 'Leading the Way'
+    data = {}
+    for year in range(2021, 2051, 1):
+        dic = read_regional_breakdown_load(scenario, year, networkmodel='Zonal')
+        data[year] = pd.Series(data=dic.values(), index=dic.keys(), name=year)
+    df = pd.DataFrame(data)
+    df.to_csv('../data/demand/Demand_Distribution_Zonal.csv', header=True)
 
 if __name__ == '__main__':
     read_future_profile_data()
-    read_historical_demand_data()
+    # read_historical_demand_data()
+    # read_regional_breakdown_load()
+    # distribution_zonal_loads()

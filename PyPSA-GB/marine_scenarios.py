@@ -2,7 +2,7 @@ import pandas as pd
 import distance_calculator as dc
 
 
-def read_tidal_stream(year, scenario):
+def read_tidal_stream(year, scenario, networkmodel):
 
     # scenarios are Low, Mid, High
     # only data for 2025, 2030, 2035, 2040, 2045, 2050
@@ -31,16 +31,21 @@ def read_tidal_stream(year, scenario):
         df_tidal_stream_locations.drop(df_tidal_stream_locations.tail(1).index, inplace=True)
         df_tidal_stream_locations.rename(columns={'Lat': 'lat', 'Lon': 'lon', 2050: 'p_nom'}, inplace=True)
 
+        if networkmodel == 'Reduced':
+            from distance_calculator import map_to_bus as map_to
+        elif networkmodel == 'Zonal':
+            from allocate_to_zone import map_to_zone as map_to
+
         # need to use lat and lon to figure out the nearest bus - then add column called bus
         df = df_tidal_stream_locations.rename(columns={'lat': 'y', 'lon': 'x'})
-        buses = dc.map_to_bus(df)
+        buses = map_to(df)
         df_tidal_stream_locations['bus'] = buses
 
         dic = {'capacities': df_tidal_stream_capacities.loc[year, :], 'locations': df_tidal_stream_locations}
 
         return dic
 
-def read_wave_power(year, scenario):
+def read_wave_power(year, scenario, networkmodel):
 
     # scenarios are Low, Mid, High
     # only data for 2025, 2030, 2035, 2040, 2045, 2050
@@ -69,19 +74,24 @@ def read_wave_power(year, scenario):
         df_wave_power_locations.drop(df_wave_power_locations.tail(1).index, inplace=True)
         df_wave_power_locations.rename(columns={'Lat': 'lat', 'Lon': 'lon', 2050: 'p_nom'}, inplace=True)
 
+        if networkmodel == 'Reduced':
+            from distance_calculator import map_to_bus as map_to
+        elif networkmodel == 'Zonal':
+            from allocate_to_zone import map_to_zone as map_to
+
         # need to use lat and lon to figure out the nearest bus - then add column called bus
         df = df_wave_power_locations.rename(columns={'lat': 'y', 'lon': 'x'})
-        buses = dc.map_to_bus(df)
+        buses = map_to(df)
         df_wave_power_locations['bus'] = buses
 
         dic = {'capacities': df_wave_power_capacities.loc[year, :], 'locations': df_wave_power_locations}
 
         return dic
 
-def rewrite_generators_for_marine(year, scenario):
+def rewrite_generators_for_marine(year, scenario, networkmodel='Reduced'):
 
-    dic_tidal_stream = read_tidal_stream(year, scenario)
-    dic_wave_power = read_wave_power(year, scenario)
+    dic_tidal_stream = read_tidal_stream(year, scenario, networkmodel)
+    dic_wave_power = read_wave_power(year, scenario, networkmodel)
 
     df_generators = pd.read_csv('LOPF_data/generators.csv', index_col=0)
 

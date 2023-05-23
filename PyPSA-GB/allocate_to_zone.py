@@ -27,22 +27,23 @@ def load_zone(json_file):
     return zones_list
 
 
-def map_to_zone(df, subzone=None, warm = True):
-    file_path = '../data/zone/zones_json.geojson'
+def map_to_zone(df, subzone=None, warm=False):
+    file_path = '../data/network/ZonesBasedGBsystem/zone/zones_json.geojson'
     json_file = json.loads(open(file_path).read())['features']
-    zones_list = load_zone(json_file)
+    zones_list = load_zone(json_file)[:20]
 
     if subzone is not None:
         if type(subzone) is not list:
             subzone = [subzone]
         json_file = [json_file[i] for i in range(len(json_file)) if [(json_file[j]['properties']['Name_1'] in subzone) for j in range(len(json_file))][i]]
         zones_list = [zones_list[i] for i in range(len(json_file)) if [(json_file[j]['properties']['Name_1'] in subzone) for j in range(len(json_file))][i]]
-
+    
     object_to_zone = []
     for i in range(len(df)):
         data_point = Point(df['x'][i],df['y'][i])
         n = 0
-        for j in range(len(json_file)):
+        # for j in range(len(json_file)[:20]):
+        for j in range(20):
             zone = zones_list[j]
             if zone.contains(data_point):
                 n += 1

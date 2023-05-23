@@ -764,10 +764,10 @@ def future_gas_p_nom(year, scenario, tech, FES):
     generators.to_csv('LOPF_data/generators.csv', header=True)
 
 
-def future_nuclear_p_nom(year, scenario, FES, networkmodel=True):
-    if networkmodel:
+def future_nuclear_p_nom(year, scenario, FES, networkmodel='Reduced'):
+    if networkmodel == 'Reduced':
         from distance_calculator import map_to_bus as map_to
-    else:
+    elif networkmodel == 'Zonal':
         from allocate_to_zone import map_to_zone as map_to
     # read in phase out of nuclear dates
     file = '../data/power stations/nuclear_phase_out_dates.csv'
@@ -1710,7 +1710,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
     # df.to_csv('UC_data/generators-p_min_pu.csv', header=True)
 
 
-def future_p_nom(year, time_step, scenario, FES, networkmodel=True):
+def future_p_nom(year, time_step, scenario, FES, networkmodel='Reduced'):
     # need to do CCS first as they are scaling based on
     # 2020 data... make sure to do this before scaling gas p_nom
     future_gas_CCS(year, scenario, FES)

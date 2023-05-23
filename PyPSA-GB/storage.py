@@ -83,7 +83,7 @@ def future_storage(FES):
     return df_storage
 
 
-def write_storage_units(year, scenario=None, FES=None, networkmodel=True):
+def write_storage_units(year, scenario=None, FES=None, networkmodel='Reduced'):
     """writes the buses csv file
 
     Parameters
@@ -94,9 +94,9 @@ def write_storage_units(year, scenario=None, FES=None, networkmodel=True):
     -------
     """
 
-    if networkmodel:
+    if networkmodel == 'Reduced':
         from distance_calculator import map_to_bus as map_to
-    else:
+    elif networkmodel == 'Zonal':
         from allocate_to_zone import map_to_zone as map_to
 
     df = read_storage_data(year)

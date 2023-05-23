@@ -38,11 +38,16 @@ def fuel_prices_df(df):
     return fuel_prices
 
 
-def future_fuel_prices_df():
+def future_fuel_prices_df(FES):
 
-    df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-                           sheet_name='CP1', usecols="L:BA", header=8, dtype=str,
-                           index_col=0)
+    if FES == 2021:
+        df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                               sheet_name='CP1', usecols="L:BA", header=8, dtype=str,
+                               index_col=0)
+    elif FES == 2022:
+        df_FES = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx',
+                               sheet_name='CP1', usecols="L:BA", header=8, dtype=str,
+                               index_col=0)
     df_FES.dropna(axis='rows', inplace=True)
     df_FES.drop(['Year'], inplace=True)
 
@@ -104,11 +109,16 @@ def EU_ETS_df(df):
     return ets
 
 
-def future_carbon_prices_df():
+def future_carbon_prices_df(FES):
 
-    df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
-                           sheet_name='CP2', usecols="N:BC", header=7, dtype=str,
-                           index_col=0)
+    if FES == 2021:
+        df_FES = pd.read_excel('../data/FES2021/FES 2021 Data Workbook V04.xlsx',
+                            sheet_name='CP2', usecols="N:BC", header=7, dtype=str,
+                            index_col=0)
+    elif FES == 2022:
+        df_FES = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx',
+                            sheet_name='CP2', usecols="N:BC", header=7, dtype=str,
+                            index_col=0)
     df_FES.drop(columns=range(2010, 2021), inplace=True)
     df_FES.dropna(axis='rows', inplace=True)
     df_FES.drop(['Year'], inplace=True)
@@ -144,7 +154,7 @@ def exchange_year_average():
     return data
 
 
-def marginal_price_dataframe():
+def marginal_price_dataframe(FES):
 
     df = pd.read_excel('../data/marginal_cost_data.xlsx', sheet_name=None)
 
@@ -221,9 +231,9 @@ def marginal_price_dataframe():
 
     # add the future prices
 
-    future_fuel_price = future_fuel_prices_df()
+    future_fuel_price = future_fuel_prices_df(FES)
     future_fuel_price = future_fuel_price.apply(pd.to_numeric, errors='coerce')
-    future_carbon_price = future_carbon_prices_df()
+    future_carbon_price = future_carbon_prices_df(FES)
     future_carbon_price = future_carbon_price.apply(pd.to_numeric, errors='coerce')
 
     future_result = pd.concat([future_fuel_price, future_carbon_price], axis=1)
@@ -262,14 +272,14 @@ def marginal_price_dataframe():
     return marginal_prices
 
 
-def write_marginal_costs_series(start, end, freq, year):
+def write_marginal_costs_series(start, end, freq, year, FES):
 
     # this will be the same for unit commitment and LOPF
     # read in the list of generators
     df_gens = pd.read_csv('LOPF_data/generators.csv')
     start_ = pd.to_datetime(start)
     end_ = pd.to_datetime(end)
-    marginal_cost_df = marginal_price_dataframe().loc[start_:end_]
+    marginal_cost_df = marginal_price_dataframe(FES).loc[start_:end_]
 
     # now add the coal marginal prices
     coal_gens = df_gens.loc[df_gens['carrier'] == 'Coal']

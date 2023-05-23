@@ -23,16 +23,31 @@ import distribution
 import marine_scenarios
 import add_P2G
 import pandas as pd
+import os
+import shutil
 
 # turn off chained assignment errors
 pd.options.mode.chained_assignment = None  # default='warn'
+
+class copy_file():
+    def __init__(self, dir1, dir2):
+        dlist = os.listdir(dir1)
+        if not os.path.exists(dir2):
+            os.mkdir(dir2)
+        for f in dlist:
+            file1 = os.path.join(dir1, f)
+            file2 = os.path.join(dir2, f)
+            if os.path.isfile(file1):
+                shutil.copyfile(file1, file2)
+            if os.path.isdir(file1):
+                self.__init__(file1,file2)
 
 
 def data_writer(start, end, time_step, year, demand_dataset=None, 
                 year_baseline=None, scenario=None, FES=2021, 
                 merge_generators=False, scale_to_peak=False,
-                marine_modify=False, marine_scenario='Mid',
-                P2G=False):
+                networkmodel='Reduced', marine_modify=False,
+                marine_scenario='Mid', P2G=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -49,6 +64,11 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     -------
     """
 
+    if networkmodel == 'Reduced':
+        copy_file('../data/network/BusesBasedGBsystem', '../data')
+    elif networkmodel == 'Zonal':
+        copy_file('../data/network/ZonesBasedGBsystem', '../data')
+
     # make sure that end time is in accordance with timestep
     if time_step == 1. or time_step == 'H' or time_step == '1H':
         end = pd.Timestamp(end)
@@ -57,57 +77,62 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
 
     freq = snapshots.write_snapshots(start, end, time_step)
 
-    buses.write_buses(year)
-    lines.write_lines()
+    buses.write_buses(year, networkmodel=networkmodel)
+    lines.write_lines(networkmodel)
     loads.write_loads(year)
-    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline, scenario=scenario, FES=FES, scale_to_peak=scale_to_peak)
+    loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline,
+                            scenario=scenario, FES=FES, scale_to_peak=scale_to_peak, networkmodel=networkmodel)
 
     generators.write_generators(time_step, year)
 
     if year > 2020:
         interconnectors.future_interconnectors(year, scenario, FES)
-        storage.write_storage_units(year, scenario=scenario, FES=FES)
-        generators.future_p_nom(year, time_step, scenario, FES)
+        storage.write_storage_units(year, scenario=scenario, FES=FES, networkmodel=networkmodel)
+        generators.future_p_nom(year, time_step, scenario, FES, networkmodel=networkmodel)
+        if marine_modify is True:
+            marine_scenarios.rewrite_generators_for_marine(year, marine_scenario, networkmodel=networkmodel)
         generators.write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=year_baseline, scenario=scenario)
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
         interconnectors.future_interconnectors(year, scenario, FES)
+        if networkmodel == 'Zonal':
+            lines.zone_postprocess_generators()
         if FES == 2022:
-            distribution.Distribution(year, scenario).building_block_update()
+            distribution.Distribution(year, scenario, networkmodel=networkmodel).building_block_update()
 
     elif year <= 2020:
-        storage.write_storage_units(year)
+        storage.write_storage_units(year, networkmodel=networkmodel)
         generators.write_generators_p_max_pu(start, end, freq, year)
         interconnectors.write_interconnectors(start, end, freq)
 
-    marginal_costs.write_marginal_costs_series(start, end, freq, year)
+    marginal_costs.write_marginal_costs_series(start, end, freq, year, FES)
 
-    if marine_modify is True:
-        marine_scenarios.rewrite_generators_for_marine(year, marine_scenario)
+    if P2G is True:
+        add_P2G.add_P2G(year, scenario)
+    if networkmodel == 'Zonal':
+        lines.zone_postprocess_lines_links()
 
     # merge the non-dispatchable generators at each bus to lower memory requirements
     if merge_generators is True:
         generators.merge_generation_buses(year)
-    
-    if P2G is True:
-        add_P2G.add_P2G(year, scenario)
-
 
 if __name__ == "__main__":
 
     start = '2040-02-28 00:00:00'
     end = '2040-03-01 23:30:00'
-    # year of simulation
     year = int(start[0:4])
+    time_step = 1.
+    year_baseline = 2012
 
-    scenario = 'Leading The Way'
-    # scenario = 'Consumer Transformation'
+    # scenario = 'Leading The Way'
+    scenario = 'Consumer Transformation'
     # scenario = 'System Transformation'
     # scenario = 'Steady Progression'
-    data_writer(start, end, time_step, year, demand_dataset='eload', 
-                year_baseline=year_baseline, scenario=scenario, FES=FES, 
-                merge_generators=True, scale_to_peak=True, P2G=False)
+    
+    data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=year_baseline,
+                scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True,
+                networkmodel='Reduced', marine_modify=True, marine_scenario='Mid', P2G=False)
 
     # for scenario in ['System Transformation', 'Falling Short', 'Leading The Way', 'Consumer Transformation']:
     #     FES = 2022

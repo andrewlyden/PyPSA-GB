@@ -7,7 +7,7 @@ import distance_calculator as dc
 
 class Distribution(object):
 
-    def __init__(self, year, scenario, networkmodel=True):
+    def __init__(self, year, scenario, networkmodel='Reduced'):
         path = 'LOPF_data/generators.csv'
         self.df_generators = pd.read_csv(path, index_col=0)
 
@@ -23,14 +23,14 @@ class Distribution(object):
         self.year = year
         self.scenario = scenario
 
-        if networkmodel:
+        if networkmodel == 'Reduced':
             self.buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
 
             self.buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
                      'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
                      'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
                      'Lovedean', 'S.W.Penisula']
-        else:
+        elif networkmodel == 'Zonal':
             self.buses_scotland = ['Z1_1', 'Z1_2','Z1_3', 'Z1_4', 'Z2', 'Z3', 'Z4', 'Z5', 'Z6']
 
             self.buses_rgb = ['Z7', 'Z8', 'Z9', 'Z10','Z11', 'Z12', 'Z13', 'Z14', 'Z15', 'Z16', 'Z17']
@@ -338,21 +338,21 @@ class Distribution(object):
         # bus = 'Beauly'
         # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])
         # bus = 'Harker'
-        # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])        
-        if self.year >= 2028:
-            # Scale and move CCS gas to Peterhead bus
-            CCS_gas_unmodified_scotland = generators_p_nom_scotland['CCS Gas']
-            CCS_gas_bb_scotland = generators_p_nom_bb_scotland['Natural Gas']
-            scaling_factor_CCS_gas_scotland = CCS_gas_unmodified_scotland / CCS_gas_bb_scotland
+        # # print(self.df_generators.loc[(self.df_generators.carrier == 'Nuclear') & (self.df_generators.bus == bus), "p_nom"])        
+        # if self.year >= 2028:
+        #     # Scale and move CCS gas to Peterhead bus
+        #     CCS_gas_unmodified_scotland = generators_p_nom_scotland['CCS Gas']
+        #     CCS_gas_bb_scotland = generators_p_nom_bb_scotland['Natural Gas']
+        #     scaling_factor_CCS_gas_scotland = CCS_gas_unmodified_scotland / CCS_gas_bb_scotland
 
-            CCS_gas_unmodified_rgb = generators_p_nom_rgb['CCS Gas']
-            CCS_gas_bb_rgb = generators_p_nom_bb_rgb['Natural Gas']
-            scaling_factor_CCS_gas_rgb = CCS_gas_unmodified_rgb / CCS_gas_bb_rgb
+        #     CCS_gas_unmodified_rgb = generators_p_nom_rgb['CCS Gas']
+        #     CCS_gas_bb_rgb = generators_p_nom_bb_rgb['Natural Gas']
+        #     scaling_factor_CCS_gas_rgb = CCS_gas_unmodified_rgb / CCS_gas_bb_rgb
 
-            for bus in buses_scotland:
-                self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_scotland
-            for bus in buses_rgb:
-                self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_rgb
+        #     for bus in buses_scotland:
+        #         self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_scotland
+        #     for bus in buses_rgb:
+        #         self.df_generators.loc[(self.df_generators.carrier == 'CCS Gas') & (self.df_generators.bus == bus), "p_nom"] /= scaling_factor_CCS_gas_rgb
 
         if self.year >= 2030:
             # Scale hydrogen

@@ -59,6 +59,7 @@ def add_P2G(year, scenario=None, path='LOPF_data', replace=True):
     df_FES_bb = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx', sheet_name='BB1')
     df_P2G = df_FES_bb[(df_FES_bb['FES Scenario']==scenario) & (df_FES_bb['Building Block ID Number']== 'Dem_BB009')].copy()
     df_P2G.insert(6, 'bus', np.nan)
+    print(df_P2G)
     df_P2G['bus'] = df_P2G.apply(lambda r: gsp_to_bus(r, df_gsp_data), axis = 1)
     df_P2G_year = df_P2G.groupby(df_P2G.bus).sum()[year]
 
