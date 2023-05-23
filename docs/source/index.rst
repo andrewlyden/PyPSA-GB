@@ -26,6 +26,8 @@ Contributors:
 - Lukas Franken
 - Wei Sun
 
+This work was also complete as part of the INTEGRATE project led by Prof Daniel Friedrich.
+
 **Licence**
 
 PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets are used under a CC-BY-4.0 licence.
