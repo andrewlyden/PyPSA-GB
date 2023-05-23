@@ -16,15 +16,18 @@ def gsp_to_bus(row, df_gsp_data):
         output['bus'] = gsp
     elif gsp_[:-1] in df_gsp_data.index:
         bus = df_gsp_data.loc[gsp_[:-1]].Bus
-        if type(bus) == pd.Series:
-            bus = bus[0]
         output['bus'] = bus
     else:
-        print(gsp)
-        output['bus'] = np.nan
+        try:
+            output['bus'] = df_gsp_data[df_gsp_data.index.str.contains(gsp)].Bus
+        except:
+            print(gsp)
+            output['bus'] = np.nan
+    if type(output['bus']) == pd.Series:
+        output['bus'] = output['bus'].tolist()[0]
     return pd.Series(output)
 
-def add_P2G(year, scenario=None, path='LOPF_data', replace=True):
+def add_P2G(year, scenario = None, path = 'LOPF_data', replace = False):
 
     if path[-1] == '/':
         path = path[:-1]
@@ -36,6 +39,9 @@ def add_P2G(year, scenario=None, path='LOPF_data', replace=True):
             shutil.rmtree(save_path)
         shutil.copytree(path, save_path)
     path = path + '/'
+
+    if scenario =='Leading The Way':
+        scenario =='Leading the Way'
 
     buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
 
@@ -59,7 +65,6 @@ def add_P2G(year, scenario=None, path='LOPF_data', replace=True):
     df_FES_bb = pd.read_excel('../data/FES2022/FES2022 Workbook V4.xlsx', sheet_name='BB1')
     df_P2G = df_FES_bb[(df_FES_bb['FES Scenario']==scenario) & (df_FES_bb['Building Block ID Number']== 'Dem_BB009')].copy()
     df_P2G.insert(6, 'bus', np.nan)
-    print(df_P2G)
     df_P2G['bus'] = df_P2G.apply(lambda r: gsp_to_bus(r, df_gsp_data), axis = 1)
     df_P2G_year = df_P2G.groupby(df_P2G.bus).sum()[year]
 
@@ -85,14 +90,13 @@ def add_P2G(year, scenario=None, path='LOPF_data', replace=True):
                                     'carrier': 'P2G',
                                     'marginal_cost': 500,
                                     'max_hours': 999999999,
-                                    'efficiency_store': 0.75,
-                                    'efficiency_dispatch': 0.75,
+                                    'efficiency_store': 0.95,
+                                    'efficiency_dispatch': 0.95,
                                     'state_of_charge_initial': 0,
                                     'bus': P2G_nom.index})
 
     pd_storage_units = pd.read_csv(path+'storage_units.csv', index_col=0)
     pd.concat([pd_storage_units, pd_G2G_storages.set_index('name')]).to_csv(save_path+'storage_units.csv')
-
 
 if __name__ == "__main__":
     year = 2045
