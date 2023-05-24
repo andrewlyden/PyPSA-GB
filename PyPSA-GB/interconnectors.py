@@ -19,10 +19,11 @@ def read_interconnectors():
     # using espeni data set
     file = '../data/demand/espeni.csv'
     df = pd.read_csv(file)
-
+    
     dti = pd.date_range(
         start='2008-11-05 22:00:00', end='2021-06-06 23:30:00', freq='0.5H')
     df = df.set_index(dti)
+    
     df = df[['POWER_NGEM_BRITNED_FLOW_MW', 'POWER_NGEM_EAST_WEST_FLOW_MW',
              'POWER_NGEM_MOYLE_FLOW_MW', 'POWER_NGEM_NEMO_FLOW_MW',
              'POWER_NGEM_IFA_FLOW_MW', 'POWER_NGEM_IFA2_FLOW_MW']]
@@ -123,7 +124,8 @@ def write_interconnectors(start, end, freq):
                        'POWER_NGEM_NEMO_FLOW_MW': 'Nemo',
                        'POWER_NGEM_IFA_FLOW_MW': 'IFA',
                        'POWER_NGEM_IFA2_FLOW_MW': 'IFA2'}, inplace=True)
-
+    print(df)
+    print(df_gen_series)
     df, df_gen_series = unify_index([df, df_gen_series], freq)
     df.index = df_gen_series.index
 

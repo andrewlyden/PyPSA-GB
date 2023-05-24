@@ -64,6 +64,11 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     -------
     """
 
+    if year > 2020:
+        if year % 4 == 0 and year_baseline % 4 != 0:
+            print('Exiting because inputting a simulation leap year and a baseline non-leap year are not compatible...')
+            exit()
+
     if networkmodel == 'Reduced':
         copy_file('../data/network/BusesBasedGBsystem', '../data')
     elif networkmodel == 'Zonal':
@@ -82,11 +87,10 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     loads.write_loads(year)
     loads.write_loads_p_set(start, end, year, time_step, demand_dataset, year_baseline=year_baseline,
                             scenario=scenario, FES=FES, scale_to_peak=scale_to_peak, networkmodel=networkmodel)
-
     generators.write_generators(time_step, year)
+    
 
     if year > 2020:
-        interconnectors.future_interconnectors(year, scenario, FES)
         storage.write_storage_units(year, scenario=scenario, FES=FES, networkmodel=networkmodel)
         generators.future_p_nom(year, time_step, scenario, FES, networkmodel=networkmodel)
         if marine_modify is True:
@@ -95,7 +99,8 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()
         # distribution.Distribution(year, scenario).update()
-        interconnectors.future_interconnectors(year, scenario, FES)
+        if networkmodel == 'Reduced':
+            interconnectors.future_interconnectors(year, scenario, FES)
         if networkmodel == 'Zonal':
             lines.zone_postprocess_generators()
         if FES == 2022:
@@ -109,7 +114,7 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     marginal_costs.write_marginal_costs_series(start, end, freq, year, FES)
 
     if P2G is True:
-        add_P2G.add_P2G(year, scenario)
+        add_P2G.add_P2G(year, scenario=scenario)
     if networkmodel == 'Zonal':
         lines.zone_postprocess_lines_links()
 
@@ -119,34 +124,46 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
 
 if __name__ == "__main__":
 
-    start = '2040-02-28 00:00:00'
-    end = '2040-03-01 23:30:00'
+    start = '2050-02-28 00:00:00'
+    end = '2050-03-01 23:30:00'
     year = int(start[0:4])
-    time_step = 1.
-    year_baseline = 2012
+    # time_step = 1.
+    # year_baseline = 2012
 
     # scenario = 'Leading The Way'
-    scenario = 'Consumer Transformation'
+    # scenario = 'Consumer Transformation'
     # scenario = 'System Transformation'
     # scenario = 'Steady Progression'
     
-    data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=year_baseline,
-                scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True,
-                networkmodel='Reduced', marine_modify=True, marine_scenario='Mid', P2G=False)
+    # data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=year_baseline,
+    #             scenario=scenario, FES=2022, merge_generators=True, scale_to_peak=True,
+    #             networkmodel='Reduced', marine_modify=True, marine_scenario='Mid', P2G=False)
 
-    # for scenario in ['System Transformation', 'Falling Short', 'Leading The Way', 'Consumer Transformation']:
+    # for scenario in ['Consumer Transformation', 'System Transformation', 'Falling Short']:
     #     FES = 2022
     #     time_step = 1.
     #     year_baseline = 2012
     #     print(scenario)
-    #     data_writer(start, end, time_step, year, demand_dataset='eload', 
-    #                         year_baseline=year_baseline, scenario=scenario, FES=FES, 
-    #                         merge_generators=True, scale_to_peak=True, P2G=True)
+    #     data_writer(start, end, time_step, year, demand_dataset='eload', year_baseline=year_baseline,
+    #                 scenario=scenario, FES=FES, merge_generators=True, scale_to_peak=True, 
+    #                 networkmodel='Reduced', P2G=True)
 
-    # # time step as fraction of hour
-    # for time_step in [0.5, 1.0]:
-    #     for year_baseline in [2012, 2013]:
-    #         print('inputs:', time_step, year_baseline)
-    #         data_writer(start, end, time_step, year, demand_dataset='eload', 
-    #                     year_baseline=year_baseline, scenario=scenario, FES=FES, 
-    #                     merge_generators=True, scale_to_peak=True)
+    # time step as fraction of hour
+    for scenario in ['Leading The Way', 'Consumer Transformation', 'System Transformation', 'Falling Short']:
+        for demand_dataset in ['eload', 'historical']:
+            for time_step in [1.0, 0.5]:
+                for year_baseline in [2012, 2013]:
+                    print('inputs:', scenario, demand_dataset, time_step, year_baseline)
+                    data_writer(start, end, time_step, year, demand_dataset=demand_dataset, 
+                                year_baseline=year_baseline, scenario=scenario, FES=2022, 
+                                merge_generators=True, scale_to_peak=True, 
+                                networkmodel='Reduced', P2G=True,
+                                marine_modify=True, marine_scenario='Mid')
+
+    # start = '2040-02-28 00:00:00'
+    # end = '2040-03-01 23:30:00'
+    # year = int(start[0:4])
+    # data_writer(start, end, 0.5, year, demand_dataset='eload', 
+    #             year_baseline=2013, scenario='Leading The Way', FES=2022, 
+    #             merge_generators=False, scale_to_peak=True, 
+    #             networkmodel='Reduced', P2G=True)

@@ -1628,8 +1628,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
                 df_PV = df_PV[~((df_PV.index.month == 2) & (df_PV.index.day == 29))]
 
     df_PV.index = df_offshore.index
-           
-                
+
     # HYDRO
     # hydro data is between 2015-02-22 and 2020-12-31
     # if dates are before then ATM use 2016 data
@@ -1669,11 +1668,14 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
         # df_hydro = df_hydro.append(df_new_hydro, sort=False)
 
     if year > 2020:
-        if year_baseline % 4 == 0:
-            # and the year modelled is also not a leap year
-            if year % 4 != 0:
-                # remove 29th Feb
-                df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+        # year modelled is not a leap year 
+        if year % 4 != 0:
+            # remove 29th Feb
+            df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
+        # however if modelled year is a leap year and the baseline is not then also need to remove
+        if year % 4 == 0 and year_baseline % 4 != 0:
+            # remove 29th Feb
+            df_hydro = df_hydro[~((df_hydro.index.month == 2) & (df_hydro.index.day == 29))]
 
     df_hydro.index = df_offshore.index
     

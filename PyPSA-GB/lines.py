@@ -10,7 +10,7 @@ def write_lines(networkmodel):
     elif networkmodel == 'Zonal':
         file = '../data/network/ZonesBasedGBsystem/network/links.csv'
         df = pd.read_csv(file)
-        df.to_csv('LOPF_data/lines.csv', index=False, header=True)
+        df.to_csv('LOPF_data/links.csv', index=False, header=True)
 
 def zone_postprocess_generators():
     path = 'LOPF_data/generators.csv'
@@ -22,8 +22,9 @@ def zone_postprocess_generators():
     df_generators.to_csv('LOPF_data/generators.csv', index=True, header=True)
 
 def zone_postprocess_lines_links():
-    pd_lines = pd.read_csv('LOPF_data/lines.csv')
-    pd_links = pd.read_csv('LOPF_data/links.csv')
+    # pd_lines = pd.read_csv('LOPF_data/lines.csv')
+    # pd_links = pd.read_csv('LOPF_data/links.csv')
 
-    pd.concat([pd_links, pd_lines[pd_links.columns.tolist()]]).to_csv('LOPF_data/links.csv', index=False, header=True)
-    os.remove('LOPF_data/lines.csv')
+    # pd.concat([pd_links, pd_lines[pd_links.columns.tolist()]])[15:111].to_csv('LOPF_data/links.csv', index=False, header=True)
+    if os.path.exists('LOPF_data/lines.csv'):
+        os.remove('LOPF_data/lines.csv')

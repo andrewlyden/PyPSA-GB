@@ -16,15 +16,16 @@ Assumptions made in the model are transparent and can be modified directly throu
 
 **Developers**
 
-PyPSA-GB is developed at the Institute for Energy Systems, University of Edinburgh. 
+PyPSA-GB development is led by Dr Andrew Lyden at the Institute for Energy Systems, University of Edinburgh. 
 
 Contributors:
 
 - Andrew Lyden
+- Wei Sun 
 - Iain Struthers
 - Seb Hudson
 - Lukas Franken
-- Wei Sun
+
 
 **Licence**
 
@@ -49,8 +50,9 @@ PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets
    notebooks/2 - Demand.ipynb
    notebooks/3 - Generator and Marginal Prices.ipynb
    notebooks/4 - Renewable Power and Storage.ipynb
-   notebooks/5a - LOPF Historical.ipynb
-   notebooks/5b - LOPF Future.ipynb
+   notebooks/5a - Historical Years.ipynb
+   notebooks/5b - Future Years.ipynb
+   notebooks/5d - Zonal Network.ipynb
    notebooks/6 - Unit Commitment.ipynb
    .. notebooks/8 - Two Step Dispatch.ipynb
    notebooks/9 - Comparison To Historical Data.ipynb
@@ -60,7 +62,8 @@ PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets
    :caption: Examples
 
    notebooks/7 - Network Expansion.ipynb
-   notebooks/5c - LOPF Future - Floating Wind, Marine and Emissions Modelling.ipynb
+   notebooks/5c - Floating Wind, Marine and Emissions Modelling.ipynb
+   notebooks/Scotland_Curtailment_2035.ipynb
 
    .. seasonal_thermal_energy_storage
    .. high_temperature_thermal_energy_storage
