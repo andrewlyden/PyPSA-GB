@@ -31,15 +31,16 @@ def add_P2G(year, scenario=None):
 
     path = 'LOPF_data/'
 
-    if scenario == 'Leading The Way':
-        scenario = 'Leading the Way'
+    if scenario =='Leading The Way':
+        scenario ='Leading the Way'
 
-    buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles']
-
+    buses_scotland = ['Beauly', 'Peterhead', 'Errochty', 'Denny/Bonnybridge', 'Neilston', 'Strathaven', 'Torness', 'Eccles'] \
+                     + ['Z1_' + str(_) for _ in range(1, 5)] + ['Z' + str(_) for _ in range(2, 7)]
+    
     buses_rgb = ['Harker', 'Stella West', 'Penwortham', 'Deeside', 'Daines', 'Th. Marsh/Stocksbridge', 
                  'Thornton/Drax/Eggborough', 'Keadby', 'Ratcliffe', 'Feckenham', 'Walpole', 'Bramford',
                  'Pelham', 'Sundon/East Claydon', 'Melksham', 'Bramley', 'London', 'Kemsley', 'Sellindge',
-                 'Lovedean', 'S.W.Penisula']
+                 'Lovedean', 'S.W.Penisula'] + ['Z' + str(_) for _ in range(7, 18)]
     
     pd_generators = pd.read_csv(path+'generators.csv', index_col=0)
     pd_generators_p_max_pu = pd.read_csv(path+'generators-p_max_pu.csv', index_col=0)
