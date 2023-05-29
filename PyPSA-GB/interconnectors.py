@@ -124,8 +124,7 @@ def write_interconnectors(start, end, freq):
                        'POWER_NGEM_NEMO_FLOW_MW': 'Nemo',
                        'POWER_NGEM_IFA_FLOW_MW': 'IFA',
                        'POWER_NGEM_IFA2_FLOW_MW': 'IFA2'}, inplace=True)
-    print(df)
-    print(df_gen_series)
+
     df, df_gen_series = unify_index([df, df_gen_series], freq)
     df.index = df_gen_series.index
 
