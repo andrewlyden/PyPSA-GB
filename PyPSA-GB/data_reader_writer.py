@@ -46,8 +46,9 @@ class copy_file():
 def data_writer(start, end, time_step, year, demand_dataset=None, 
                 year_baseline=None, scenario=None, FES=2021, 
                 merge_generators=False, scale_to_peak=False,
-                networkmodel='Reduced', marine_modify=False,
-                marine_scenario='Mid', P2G=False):
+                networkmodel='Reduced', 
+                floating_wind_scenario='None', wave_scenario='None', tidal_stream_scenario='None', 
+                P2G=False):
     """writes all the required csv files for UC and LOPF
 
     Parameters
@@ -93,8 +94,14 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     if year > 2020:
         storage.write_storage_units(year, scenario=scenario, FES=FES, networkmodel=networkmodel)
         generators.future_p_nom(year, time_step, scenario, FES, networkmodel=networkmodel)
-        if marine_modify is True:
-            marine_scenarios.rewrite_generators_for_marine(year, marine_scenario, networkmodel=networkmodel)
+    
+        if floating_wind_scenario != 'None':
+            marine_scenarios.rewrite_generators_for_marine(year, 'Floating wind', floating_wind_scenario, networkmodel=networkmodel)
+        if wave_scenario != 'None':
+            marine_scenarios.rewrite_generators_for_marine(year, 'Wave power', wave_scenario, networkmodel=networkmodel)
+        if tidal_stream_scenario != 'None':
+            marine_scenarios.rewrite_generators_for_marine(year, 'Tidal stream', tidal_stream_scenario, networkmodel=networkmodel)
+
         generators.write_generators_p_max_pu(start, end, freq, year, FES, year_baseline=year_baseline, scenario=scenario)
         renewables.add_marine_timeseries(year, year_baseline, scenario, time_step)
         generators.unmet_load()

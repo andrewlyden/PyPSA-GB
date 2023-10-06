@@ -69,10 +69,10 @@ for scenario in ['System Transformation', 'Falling Short']:
 
                         start_t = time.time()
                         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, 
-                                                    year_baseline=year_baseline, scenario=scenario, FES=2022, 
-                                                    merge_generators=True, scale_to_peak=True, 
-                                                    networkmodel=networkmodel, P2G=P2G,
-                                                    marine_modify=True, marine_scenario='Mid')
+                                                       year_baseline=year_baseline, scenario=scenario, FES=2022, 
+                                                       merge_generators=True, scale_to_peak=True, 
+                                                       networkmodel=networkmodel, P2G=P2G,
+                                                       floating_wind_scenario='Mid', wave_scenario='Mid', tidal_stream_scenario='Mid')
 
                         network = pypsa.Network()
                         network.import_from_csv_folder('LOPF_data')
@@ -88,6 +88,8 @@ for scenario in ['System Transformation', 'Falling Short']:
                         elif networkmodel == 'Zonal':
                             contingency_factor = 4
                             network.links[15:111].p_nom *= contingency_factor
+                        
+                        network.consistency_check()
 
                         network.lopf(network.snapshots, solver_name="gurobi", pyomo=False)
 

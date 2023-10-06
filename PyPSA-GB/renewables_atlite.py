@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 
 def prepare_cutouts_years():
 
-    years = list(range(2010, 2020 + 1))
+    years = list(range(2010, 2022 + 1))
     for y in years:
         shpfilename = shpreader.natural_earth(resolution='10m',
                                               category='cultural',
@@ -37,18 +37,20 @@ def prepare_cutouts_years():
                            crs={'init': 'epsg:4326'}).reindex(['United Kingdom'])
 
         # Define the cutout; this will not yet trigger any major operations
-        path = 'uk-' + str(y)
+        path = '../../atlite/cutouts/' + 'uk-' + str(y)
         time = str(y)
         cutout = atlite.Cutout(path=path,
                                module="era5",
                                bounds=UK.unary_union.bounds,
                                time=time)
+        
+        # print(cutout.available_features)
 
         # This is where all the work happens
         # (this can take some time, for 2018 it took circa 3 hours).
+        # features = ['height', 'wind', 'temperature', 'runoff']
         cutout.prepare()
-
-
+                 
 def offshore_wind_farm_timeseries(sites, year, name):
 
     shpfilename = shpreader.natural_earth(resolution='10m',
@@ -62,7 +64,7 @@ def offshore_wind_farm_timeseries(sites, year, name):
     # Define the cutout; this will not yet trigger any major operations
     file = 'uk-' + str(year)
     time = str(year)
-    path = '../data/renewables/atlite/cutouts/' + file
+    path = '../../atlite/cutouts/' + file
     cutout = atlite.Cutout(path=path,
                            module="era5",
                            bounds=UK.unary_union.bounds,
@@ -89,7 +91,11 @@ def offshore_wind_farm_timeseries(sites, year, name):
     # figure out a turbine type
     offshore_turbine_types = {3: 'Vestas_V112_3MW_offshore',
                               5: 'NREL_ReferenceTurbine_5MW_offshore',
-                              7: 'Vestas_V164_7MW_offshore'}
+                              7: 'Vestas_V164_7MW_offshore',
+                              8: 'NREL_ReferenceTurbine_2016CACost_8MW_offshore',
+                             10: 'NREL_ReferenceTurbine_2016CACost_10MW_offshore',
+                             12: 'NREL_ReferenceTurbine_2020ATB_12MW_offshore',
+                             15: 'NREL_ReferenceTurbine_2020ATB_15MW_offshore'}
     possible_cap = [3, 5, 7]
     find_closest = lambda num, collection: min(possible_cap, key=lambda x: abs(x - num))
     cap = sites['capacity'].values[0]
@@ -326,6 +332,22 @@ def offshore_wind_future_timeseries(sites, year):
     df.to_csv(
         path + 'wind_offshore_future' + '_' + str(year) + '.csv',
         header=True)
+    
+
+def offshore_wind_floating_timeseries(sites, year):
+
+    list_outputs = []
+    for i in sites.index:
+        list_outputs.append(offshore_wind_farm_timeseries(sites, year, name=i))
+    df = pd.concat(list_outputs, axis=1, ignore_index=False)
+
+    path = '../data/renewables/atlite/outputs/Wind_Offshore/wind_offshore_floating/'
+
+    df.index.name = 'name'
+    print(df)
+    df.to_csv(
+        path + 'wind_offshore_floating' + '_' + str(year) + '.csv',
+        header=True)
 
 
 def offshore_pipeline_sites():
@@ -338,6 +360,27 @@ def offshore_pipeline_sites():
     df.drop(columns=['Turbine Capacity (MW)', 'No. of Turbines'], inplace=True)
     df.rename(columns={'Site Name': 'name'}, inplace=True)
     sites = gpd.GeoDataFrame(df).set_index('name')
+    return sites
+
+
+def offshore_floating_sites():
+
+    # want to use PyPSA-GB data on renewable generators in different years
+    # lets start with 2019
+    file = '../data/renewables/future_offshore_sites/Sectoral Marine Plan 2020 - Floating.csv'
+    df_plan = pd.read_csv(file, encoding='unicode_escape', index_col=0)
+    df_plan.rename(columns={'max capacity (GW)': 'Installed Capacity (MWelec)',
+                            'Turbine Capacity (MW)': 'capacity',
+                            'lon': 'x',
+                            'lat': 'y'}, inplace=True)
+    df_plan.drop(columns=['area (km2)'], inplace=True)
+    df_plan.loc[:, 'Installed Capacity (MWelec)'] *= 1000
+    df_plan['capacity'] = 12.
+    df_plan['No. of Turbines'] = df_plan['Installed Capacity (MWelec)'] / df_plan['capacity']
+    df_plan['No. of Turbines'] = df_plan['No. of Turbines'].astype(int)
+    df_plan.index.name = 'name'
+    sites = gpd.GeoDataFrame(df_plan)
+
     return sites
 
 
@@ -587,16 +630,26 @@ if __name__ == '__main__':
     # year = 2019
     # sites = offshore_pipeline_sites()
     # print(sites)
-    # sites = offshore_future_sites()
+    # # sites = offshore_future_sites()
+    # # print(sites)
+    # offshore_wind_pipeline_timeseries(sites, year)
+
+    year = 2019
+    sites = offshore_floating_sites()
     # print(sites)
-    # # offshore_wind_pipeline_timeseries(sites, year)
+    # # sites = offshore_future_sites()
+    # # print(sites)
+    for year in range(2010, 2022 + 1):
+        print(year)
+        offshore_wind_floating_timeseries(sites, year)
+
     # # name = 'Hornsea 3'
     # # df = offshore_wind_farm_timeseries(sites, year, name)
     # # print(df)
     # sites_year = 2020
     # sites = offshore_historical_sites(sites_year)
     # # multiple_offshore_wind(sites, year)
-    # multiple_years_offshore_wind(sites)
+    # 
 
     # year = 2020
     # sites = onshore_historical_sites(year)
@@ -610,6 +663,6 @@ if __name__ == '__main__':
     # sites_year = 2020
     # multiple_years_onshore_wind(sites_year)
 
-    sites_year = 2020
-    sites = PV_historical_sites(sites_year)
-    multiple_years_PV(sites)
+    # sites_year = 2020
+    # sites = PV_historical_sites(sites_year)
+    # multiple_years_PV(sites)
