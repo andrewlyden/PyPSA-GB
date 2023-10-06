@@ -110,7 +110,9 @@ def read_floating_wind(year, scenario):
         df_floating_wind_capacities = df_floating_wind_capacities.iloc[:, :-1]
 
         # replace NaN with zero
+        # divide by 1000 to convert to same units as other marine
         df_floating_wind_capacities = df_floating_wind_capacities.fillna(0)
+        df_floating_wind_capacities = df_floating_wind_capacities / 1000.
 
         df_floating_wind_locations = df_floating_wind[sheet_name].iloc[:, -3:]
         df_floating_wind_locations.index = df_floating_wind[sheet_name]['Site ID']
@@ -141,7 +143,7 @@ def rewrite_generators_for_marine(year, tech, scenario, networkmodel='Reduced'):
 
     # remove the Wave power and Tidal stream in the df_generators
     if tech == 'Floating wind':
-        df_generators = df_generators[~df_generators.carrier.str.contains('Floating wind')]
+        df_generators = df_generators[~df_generators.type.str.contains('Floating wind')]
     elif tech == 'Tidal stream':
         df_generators = df_generators[~df_generators.carrier.str.contains('Tidal stream')]
     elif tech == 'Wave power':    
@@ -149,11 +151,18 @@ def rewrite_generators_for_marine(year, tech, scenario, networkmodel='Reduced'):
     
     for generator in dic['locations'].index:
         # add wave generator to df_generators
-        df_generators.loc[generator] = {'carrier': tech, 'type': tech,
-                                        'p_nom': dic['locations'].loc[generator, 'p_nom'] * 1000.,
-                                        'bus': dic['locations'].loc[generator, 'bus'],
-                                         'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.,
-                                         'p_max_pu': 1}
+        if tech == 'Tidal stream' or tech == 'Wave power':
+            df_generators.loc[generator] = {'carrier': tech, 'type': tech,
+                                            'p_nom': dic['locations'].loc[generator, 'p_nom'] * 1000.,
+                                            'bus': dic['locations'].loc[generator, 'bus'],
+                                            'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.,
+                                            'p_max_pu': 1}
+        elif tech == 'Floating wind':
+            df_generators.loc[generator] = {'carrier': 'Wind Offshore', 'type': tech,
+                                            'p_nom': dic['locations'].loc[generator, 'p_nom'] * 1000.,
+                                            'bus': dic['locations'].loc[generator, 'bus'],
+                                            'marginal_cost': 0., 'ramp_limit_up': 1., 'ramp_limit_down': 1.,
+                                            'p_max_pu': 1, 'p_min_pu': 0}
         
     # check_consistency_with_p_max_pu()
 
