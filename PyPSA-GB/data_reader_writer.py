@@ -7,6 +7,7 @@ network constrained linear optimal power flow problem
 
 at the moment this script is a collection of functions,
 but classes could be used to improve readability
+
 """
 
 
