@@ -78,7 +78,7 @@ def future_storage(FES):
     df_pumped_hydro.iloc[4:, 0] = 'energy capacity'
     df_pumped_hydro.loc[:, 'type'] = 'Pumped Hydro'
 
-    df_storage = df_battery.append([df_compressed_air, df_liquid_air, df_pumped_hydro])
+    df_storage = pd.concat([df_battery, df_compressed_air, df_liquid_air, df_pumped_hydro])
 
     return df_storage
 
@@ -242,7 +242,7 @@ def write_storage_units(year, scenario=None, FES=None, networkmodel='Reduced'):
         df_liquid_air.set_index('name', inplace=True)
 
         # append dataframes
-        df_storage = df.append([df_battery, df_compressed_air, df_liquid_air])
+        df_storage = pd.concat([df, df_battery, df_compressed_air, df_liquid_air])
 
         # WRITE FILES
         df_storage.loc[:, 'state_of_charge_initial'] = df_storage.loc[:, 'p_nom'] * df_storage.loc[:, 'max_hours']
@@ -254,7 +254,7 @@ def write_storage_units(year, scenario=None, FES=None, networkmodel='Reduced'):
         df_LOPF['bus'] = map_to(df_storage)
         df_LOPF.to_csv('LOPF_data/storage_units.csv', index=True, header=True)
 
-        return df_LOPF
+    return df_LOPF
 
 
 def plot_future_capacities(year):

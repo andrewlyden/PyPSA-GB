@@ -45,7 +45,8 @@ def write_interconnectors(start, end, freq):
     df_IC2 = df_IC2.reset_index(drop=True)
 
     # append interconnectors as lines
-    df_lines = df_lines.append(df_IC2, ignore_index=True, sort=False)
+    df_lines = pd.concat([df_lines, df_IC2], ignore_index=True, sort=False)
+
     df_lines.to_csv('LOPF_data/lines.csv', header=True)
 
     # check if links.csv file exists, if it does then delete it
@@ -64,7 +65,8 @@ def write_interconnectors(start, end, freq):
                          'Nemo', 'IFA', 'IFA2'],
                 'bus': 'bus'}
     IC_load = pd.DataFrame(name_dic)
-    df_load = df_load.append(IC_load, ignore_index=True)
+    df_load = pd.concat([df_load, IC_load], ignore_index=True)
+
     df_load.to_csv('UC_data/loads.csv', index=False, header=True)
 
     # then add the interconnectors as named generators with basic attributes
@@ -87,7 +89,8 @@ def write_interconnectors(start, end, freq):
         IC_gen['up_time_before'] = 0
         IC_gen['start_up_cost'] = 0
 
-        result = result.append(IC_gen)
+        result = pd.concat([result, IC_gen])
+
     # write the appended csv file
     result.index.name = 'name'
     result.to_csv('UC_data/generators.csv', header=True)
@@ -107,7 +110,7 @@ def write_interconnectors(start, end, freq):
         IC_gen2['bus'] = IC_names_buses[i]
         IC_gen2['marginal_cost'] = 20
 
-        result2 = result2.append(IC_gen2)
+        result2 = pd.concat([result2, IC_gen2])
 
     # write the appended csv file
     result2.index.name = 'name'
@@ -240,7 +243,8 @@ def future_interconnectors(year, scenario, FES):
     df_buses_new = df_buses_new.dropna(axis='columns')
     df_buses_to_add = df_buses_new.loc[difference]
     # add buses to original buses file
-    df_buses = df_buses.append(df_buses_to_add)
+    df_buses = pd.concat([df_buses, df_buses_to_add])
+
     df_buses.to_csv('LOPF_data/buses.csv', index=True, header=True)
 
     # want to ensure that buses.csv has new buses from new interconnectors
@@ -253,7 +257,8 @@ def future_interconnectors(year, scenario, FES):
     df_buses_new = df_buses_new.dropna(axis='columns')
     df_buses_to_add = df_buses_new.loc[difference]
     # add buses to original buses file
-    df_buses = df_buses.append(df_buses_to_add)
+    df_buses = pd.concat([df_buses, df_buses_to_add])
+
     df_buses.to_csv('UC_data/buses.csv', index=True, header=True)
 
     # check if generators-p_min_pu exists and delete if so

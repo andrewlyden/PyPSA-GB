@@ -87,7 +87,7 @@ def read_future_profile_data():
         columns=df_eload.columns,
         index = pd.date_range(start='2050-12-31 23:30:00', end='2050-12-31 23:30:00', freq='0.5H'))
     # add to existing dataframe
-    df_eload = df_eload.append(df_new_eload, sort=False)
+    df_eload = pd.concat([df_eload, df_new_eload], sort=False)
 
     return df_eload
 
@@ -158,7 +158,7 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
                                                 'hour': df_leap_day.index.hour,
                                                 'minute': df_leap_day.index.minute,
                                                 'second': df_leap_day.index.second})
-            df_hd_appended = df_hd.append(df_leap_day)
+            df_hd_appended = pd.concat([df_hd, df_leap_day])
             df_hd = df_hd_appended.sort_index()
 
     # need an index for the period to be simulated

@@ -106,7 +106,7 @@ def REPD_date_corrected(year):
 
     df = read_REPD()
     df2 = df['Operational']
-    df2 = pd.to_datetime(df2).dt.to_period('D')
+    df2 = pd.to_datetime(df2, format='%d/%m/%Y').dt.to_period('D')
     # cut off is the end of the year being simulated
     date = '31/12/' + str(year)
     df = df[~(df2 > date)]
@@ -146,7 +146,7 @@ def fix_timeseries_res_for_year(path, year, tech, future):
             path = '../data/renewables/atlite/outputs/PV/PV_' + str(year) + '_' + str(c) + '.csv'
             df = pd.read_csv(path, index_col=0, header=None)
             df.columns = df1.columns
-            df1 = df1.append(df)
+            df1 = pd.concat([df1, df])
 
     else:
         # just read csv file using given path
@@ -194,7 +194,7 @@ def fix_timeseries_res_for_year(path, year, tech, future):
 
         # also want to return zeroes for before date
         # change to datetime to compare
-        df2 = pd.to_datetime(df_tech['Operational']).dt.to_period('d')
+        df2 = pd.to_datetime(df_tech['Operational'], dayfirst=True).dt.to_period('d')
         # df_tech['date'] = df2
         # df_tech.loc['date'] = df2
         mask = df2 > '01/01/' + str(year)
@@ -233,7 +233,7 @@ def read_hydro(year):
     df1 = df.loc[df['Technology Type'] == 'Large Hydro']
     df2 = df.loc[df['Technology Type'] == 'Small Hydro']
     df3 = df.loc[df['Technology Type'] == 'Pumped Storage Hydroelectricity']
-    df_REDP = df1.append([df2, df3], ignore_index=True, sort=False)
+    df_REDP = pd.concat([df1, df2, df3], ignore_index=True, sort=False)
     df_REDP = df_REDP.rename(columns={'Site Name': 'name', 'Technology Type': 'type',
                                       'Installed Capacity (MWelec)': 'p_nom'})
     df_REDP = df_REDP[['name', 'type', 'p_nom', 'lat', 'lon']]
@@ -257,7 +257,7 @@ def read_hydro(year):
                                         'Installed Capacity (MW)': 'p_nom'})
     df_dukes = df_dukes[['name', 'type', 'p_nom', 'lat', 'lon']]
 
-    df_hydro = df_dukes.append(df_REDP, ignore_index=True, sort=False)
+    df_hydro = pd.concat([df_dukes, df_REDP], ignore_index=True, sort=False)
 
     df_hydro2 = df_hydro.drop_duplicates(subset=['name'])
 
@@ -311,9 +311,9 @@ def read_hydro_time_series(year):
     for i in range(len(df2)):
 
         name = df2.index[i]
-        df_hydro.loc[:, name] = df2.loc[name, 'normalised'] * total_time_series
+        df_hydro.loc[:, name] = (df2.loc[name, 'normalised'] * total_time_series).copy()
         df_hydro_norm.loc[:, name] = (
-            df2.loc[name, 'normalised'] * total_time_series / df2.loc[name, 'p_nom'])
+            df2.loc[name, 'normalised'] * total_time_series / df2.loc[name, 'p_nom']).copy()
 
     # drop the total column
     df_hydro = df_hydro.drop(columns=['npshyd'])
@@ -342,7 +342,8 @@ def read_non_dispatchable_continuous(year):
     df4 = df.loc[df['Technology Type'] == 'Sewage Sludge Digestion']
     df5 = df.loc[df['Technology Type'] == 'Shoreline Wave']
     df6 = df.loc[df['Technology Type'] == 'Tidal Barrage and Tidal Stream']
-    df_NDC = df1.append([df2, df3, df4, df5, df6], ignore_index=True, sort=False)
+    df_NDC = pd.concat([df1, df2, df3, df4, df5, df6], ignore_index=True, sort=False)
+
     df_NDC = df_NDC.rename(columns={'Site Name': 'name', 'Technology Type': 'type',
                                     'Installed Capacity (MWelec)': 'p_nom'})
     df_NDC = df_NDC[['name', 'type', 'p_nom', 'lat', 'lon']]
@@ -367,7 +368,8 @@ def read_biomass(year):
     df = REPD_date_corrected(year)
     df1 = df.loc[df['Technology Type'] == 'Biomass (co-firing)']
     df2 = df.loc[df['Technology Type'] == 'Biomass (dedicated)']
-    df_biomass = df1.append(df2, ignore_index=True, sort=False)
+    df_biomass = pd.concat([df1, df2], ignore_index=True, sort=False)
+
     df_biomass = df_biomass.rename(columns={'Site Name': 'name', 'Technology Type': 'type',
                                             'Installed Capacity (MWelec)': 'p_nom'})
     df_biomass = df_biomass[['name', 'type', 'p_nom', 'lat', 'lon']]
@@ -390,13 +392,13 @@ def scale_biomass_p_nom(year, scenario, FES):
     generators = pd.read_csv(path, index_col=0)
     gen_tech1 = generators.loc[generators['carrier'] == t1]
     gen_tech2 = generators.loc[generators['carrier'] == t2]
-    gen_tech = gen_tech1.append(gen_tech2)
+    gen_tech = pd.concat([gen_tech1, gen_tech2])
 
     path_UC = 'UC_data/generators.csv'
     generators_UC = pd.read_csv(path_UC, index_col=0)
     gen_tech_UC1 = generators_UC.loc[generators_UC['carrier'] == t1]
     gen_tech_UC2 = generators_UC.loc[generators_UC['carrier'] == t2]
-    gen_tech_UC = gen_tech_UC1.append(gen_tech_UC2)
+    gen_tech_UC = pd.concat([gen_tech_UC1, gen_tech_UC2])
 
     # then consider what scaling factor is required
     scaling_factor = round(tech_cap_FES / tech_cap_year, 2)
@@ -417,8 +419,9 @@ def scale_biomass_p_nom(year, scenario, FES):
     generators_UC = generators_UC[~generators_UC.carrier.str.contains(tech)]
 
     # then add the new p_nom tech as well as CCS Biomass
-    generators = generators.append([gen_tech, biomass_CCS])
-    generators_UC = generators_UC.append([gen_tech_UC, biomass_CCS_UC])
+    generators = pd.concat([generators, gen_tech, biomass_CCS])
+
+    generators_UC = pd.concat([generators_UC, gen_tech_UC, biomass_CCS_UC])
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -644,7 +647,8 @@ def write_marine_generators(year, scenario, fes):
     df_wave_power['ramp_limit_down'] = 1.0
 
     # in shape to add to LOPF generators
-    df_LOPF = df_LOPF.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
+    df_LOPF = pd.concat([df_LOPF, df_tidal_lagoon, df_tidal_stream, df_wave_power])
+
     df_LOPF.to_csv('LOPF_data/generators.csv', header=True)
 
     # additional params for UC problem
@@ -670,7 +674,8 @@ def write_marine_generators(year, scenario, fes):
     df_wave_power['start_up_cost'] = 0
 
     # in shape to add to UC generators
-    df_UC = df_UC.append([df_tidal_lagoon, df_tidal_stream, df_wave_power])
+    df_UC = pd.concat([df_UC, df_tidal_lagoon, df_tidal_stream, df_wave_power])
+
     df_UC.bus = 'bus'
     df_UC.to_csv('UC_data/generators.csv', header=True)
 
@@ -728,7 +733,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
             columns=df_tidal_lagoon.columns,
             index=[end])
         # add to existing dataframe
-        df_tidal_lagoon = df_tidal_lagoon.append(df_new_tidal_lagoon, sort=False)
+        df_tidal_lagoon = pd.concat([df_tidal_lagoon, df_new_tidal_lagoon], sort=False)
+
 
     df_tidal_lagoon[df_tidal_lagoon < 0] = 0
     df_tidal_lagoon[df_tidal_lagoon > 1] = 1
@@ -763,7 +769,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
             columns=df_tidal_stream.columns,
             index=[end])
         # add to existing dataframe
-        df_tidal_stream = df_tidal_stream.append(df_new_tidal_stream, sort=False)
+        df_tidal_stream = pd.concat([df_tidal_stream, df_new_tidal_stream], sort=False)
+
 
     df_tidal_stream[df_tidal_stream < 0] = 0
     df_tidal_stream[df_tidal_stream > 1] = 1
@@ -779,7 +786,7 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     # WAVE POWER
 
     df_wave_power = pd.read_csv('../data/renewables/Marine/capacity_factors_wave_full - Open Source.csv', index_col=0)
-    df_wave_power.index = pd.to_datetime(df_wave_power.index, infer_datetime_format=True)
+    df_wave_power.index = pd.to_datetime(df_wave_power.index, format='%d/%m/%Y %H:%M')
     # df_wave_power.index = df_wave_power.index.round('H')
     # interpolate to correct timestep
     df_wave_power = df_wave_power.resample(freq).interpolate('linear').round(5)
@@ -793,7 +800,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
             columns=df_wave_power.columns,
             index=[end])
         # add to existing dataframe
-        df_wave_power = df_wave_power.append(df_new_wave_power, sort=False)
+        df_wave_power = pd.concat([df_wave_power, df_new_wave_power], sort=False)
+
 
     df_wave_power[df_wave_power < 0] = 0
     df_wave_power[df_wave_power > 1] = 1
@@ -877,7 +885,8 @@ def aggregate_renewable_generation(start, end, year, time_step):
         columns=df_PV_aggregated_norm.columns,
         index=[end])
     # add to existing dataframe
-    df_PV_aggregated_norm = df_PV_aggregated_norm.append(df_new_PV, sort=False)
+    df_PV_aggregated_norm = pd.concat([df_PV_aggregated_norm, df_new_PV], sort=False)
+
     df_PV_aggregated_norm.index.name = 'name'
 
     # ONSHORE WIND
@@ -917,7 +926,8 @@ def aggregate_renewable_generation(start, end, year, time_step):
         columns=df_onshore_aggregated_norm.columns,
         index=[end])
     # add to existing dataframe
-    df_onshore_aggregated_norm = df_onshore_aggregated_norm.append(df_new_offshore, sort=False)
+    df_onshore_aggregated_norm = pd.concat([df_onshore_aggregated_norm, df_new_offshore], ignore_index=True)
+
     df_onshore_aggregated_norm.index.name = 'name'
 
     # OFFSHORE WIND
@@ -956,7 +966,8 @@ def aggregate_renewable_generation(start, end, year, time_step):
         columns=df_offshore_aggregated_norm.columns,
         index=[end])
     # add to existing dataframe
-    df_offshore_aggregated_norm = df_offshore_aggregated_norm.append(df_new_offshore, sort=False)
+    df_offshore_aggregated_norm = pd.concat([df_offshore_aggregated_norm, df_new_offshore], sort=False)
+
     df_offshore_aggregated_norm.index.name = 'name'
 
 #     # FLOATING WIND
@@ -1195,7 +1206,7 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
         hydrogen = generators.loc[generators['carrier'] == 'Hydrogen']
         gen_tech1 = generators.loc[generators['carrier'] == t1]
         gen_tech2 = generators.loc[generators['carrier'] == t2]
-        gen_tech = gen_tech1.append(gen_tech2)
+        gen_tech = pd.concat([gen_tech1, gen_tech2])
 
         path_UC = 'UC_data/generators.csv'
         generators_UC = pd.read_csv(path_UC, index_col=0)
@@ -1203,7 +1214,7 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
         hydrogen_UC = generators_UC.loc[generators_UC['carrier'] == 'Hydrogen']
         gen_tech_UC1 = generators_UC.loc[generators_UC['carrier'] == t1]
         gen_tech_UC2 = generators_UC.loc[generators_UC['carrier'] == t2]
-        gen_tech_UC = gen_tech_UC1.append(gen_tech_UC2)
+        gen_tech_UC = pd.concat([gen_tech_UC1, gen_tech_UC2])
 
     elif tech == 'Wind Onshore' or tech == 'Solar Photovoltaics' or 'Wind Offshore':
 
@@ -1231,11 +1242,12 @@ def future_RES_scale_p_nom(year, tech, scenario, FES):
     generators = generators[~generators.type.str.contains(tech)]
     generators_UC = generators_UC[~generators_UC.type.str.contains(tech)]
     # then add the new p_nom tech
-    generators = generators.append(gen_tech)
-    generators_UC = generators_UC.append(gen_tech_UC)
+    generators = pd.concat([generators, gen_tech])
+    generators_UC = pd.concat([generators_UC, gen_tech_UC])
+
     if tech == 'Hydro':
-        generators = generators.append(hydrogen)
-        generators_UC = generators_UC.append(hydrogen_UC)       
+        generators = pd.concat([generators, hydrogen])
+        generators_UC = pd.concat([generators_UC, hydrogen_UC])
 
     generators_UC.to_csv('UC_data/generators.csv', header=True)
     generators.to_csv('LOPF_data/generators.csv', header=True)
@@ -1511,30 +1523,22 @@ def future_offshore_capacity(year, year_baseline, scenario, FES):
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
         df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-        df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-        df_FES_LTW.drop([0, 1], inplace=True)
-        df_FES_LTW.dropna(axis='columns', inplace=True)
+        df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
         df_FES_LTW.index = ['Leading The Way']
 
         df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-        df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-        df_FES_CT.drop([0, 1], inplace=True)
-        df_FES_CT.dropna(axis='columns', inplace=True)
+        df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
         df_FES_CT.index = ['Consumer Transformation']
 
         df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-        df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-        df_FES_ST.drop([0, 1], inplace=True)
-        df_FES_ST.dropna(axis='columns', inplace=True)
+        df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
         df_FES_ST.index = ['System Transformation']
 
         df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
-        df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-        df_FES_SP.drop([0, 1], inplace=True)
-        df_FES_SP.dropna(axis='columns', inplace=True)
+        df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
         df_FES_SP.index = ['Falling Short']
 
-        df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+        df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
         df_FES = df_FES / 1000.
 
         offshore_cap_FES = df_FES.loc[scenario, year]
@@ -1588,30 +1592,22 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2], inplace=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2], inplace=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2], inplace=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2], inplace=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Falling Short']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
             df_FES = df_FES / 1000
 
     elif tech == 'Solar Photovoltaics':
@@ -1632,30 +1628,22 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2], inplace=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2], inplace=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2], inplace=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2], inplace=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Falling Short']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
             df_FES = df_FES / 1000
 
     elif tech == 'Hydro':
@@ -1671,30 +1659,23 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
-            df_FES_LTW.drop([0, 1], inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
-            df_FES_CT.drop([0, 1], inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
-            df_FES_ST.drop([0, 1], inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
-            df_FES_SP.drop([0, 1], inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Steady Progression']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
+
         elif FES == 2022:
             df_FES = pd.read_excel(
                 '../data/FES2022/FES2022 Workbook V4.xlsx',
@@ -1708,30 +1689,22 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2], inplace=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2], inplace=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2], inplace=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2], inplace=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Falling Short']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
 
     elif tech == 'Biomass':
         if FES == 2021:
@@ -1744,30 +1717,22 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2], inplace=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2], inplace=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2], inplace=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Steady Progression', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2], inplace=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Steady Progression']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
 
         elif FES == 2022:
             df_FES = pd.read_excel(
@@ -1781,30 +1746,22 @@ def future_RES_capacity(year, tech, scenario, FES):
             df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
 
             df_FES_LTW = df_FES[df_FES.index.str.contains('Leading The Way', case=False)]
-            df_FES_LTW = df_FES_LTW.append(df_FES_LTW.sum(numeric_only=True), ignore_index=True)
-            df_FES_LTW.drop([0, 1, 2, 3, 4], inplace=True)
-            df_FES_LTW.dropna(axis='columns', inplace=True)
+            df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ['Leading the Way']
 
             df_FES_CT = df_FES[df_FES.index.str.contains('Consumer Transformation', case=False)]
-            df_FES_CT = df_FES_CT.append(df_FES_CT.sum(numeric_only=True), ignore_index=True)
-            df_FES_CT.drop([0, 1, 2, 3, 4], inplace=True)
-            df_FES_CT.dropna(axis='columns', inplace=True)
+            df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ['Consumer Transformation']
 
             df_FES_ST = df_FES[df_FES.index.str.contains('System Transformation', case=False)]
-            df_FES_ST = df_FES_ST.append(df_FES_ST.sum(numeric_only=True), ignore_index=True)
-            df_FES_ST.drop([0, 1, 2, 3, 4], inplace=True)
-            df_FES_ST.dropna(axis='columns', inplace=True)
+            df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ['System Transformation']
 
             df_FES_SP = df_FES[df_FES.index.str.contains('Falling Short', case=False)]
-            df_FES_SP = df_FES_SP.append(df_FES_SP.sum(numeric_only=True), ignore_index=True)
-            df_FES_SP.drop([0, 1, 2, 3, 4], inplace=True)
-            df_FES_SP.dropna(axis='columns', inplace=True)
+            df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ['Falling Short']
 
-            df_FES = df_FES_SP.append([df_FES_LTW, df_FES_CT, df_FES_ST])
+            df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
 
     date = str(year) + '-01-01'
     if scenario == 'Leading The Way':

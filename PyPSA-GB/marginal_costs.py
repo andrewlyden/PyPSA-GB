@@ -27,7 +27,8 @@ def fuel_prices_df(df):
     df_end['Oil (p/kWh)'] = 2.815
     df_end['Gas (p/kWh)'] = 1.167
 
-    fuel_prices = fuel_prices.append(df_end)
+    fuel_prices = pd.concat([fuel_prices, df_end])
+
     # print(fuel_prices.loc['2020-09-30 22:00':'2020-10-02 00:00'])
 
     # want to multiply by efficiency to get prices in kWh of electricity generation
@@ -54,13 +55,14 @@ def future_fuel_prices_df(FES):
     df_FES = df_FES.T
     df_FES.drop(range(2010, 2021), inplace=True)
     df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
-    df_FES = df_FES.resample('0.5H').pad()
+    df_FES = df_FES.resample('0.5H').ffill()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
         freq='0.5H')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
-    df_FES = df_FES.append(df_2050)
+    df_FES = pd.concat([df_FES, df_2050])
+
 
     return df_FES
 
@@ -104,7 +106,7 @@ def EU_ETS_df(df):
     # data = [0.752, 2.815, 1.167] * len(dti_end)
     df_end = pd.DataFrame(columns=cols, index=dti_end)
     df_end.loc[:, 'EU ETS (Euros/tonne)'] = 37.72
-    ets = ets.append(df_end)
+    ets = pd.concat([ets, df_end])
 
     return ets
 
@@ -125,13 +127,13 @@ def future_carbon_prices_df(FES):
     # remove last three rows
     df_FES = df_FES[:-3].T
     df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
-    df_FES = df_FES.resample('0.5H').pad()
+    df_FES = df_FES.resample('0.5H').ffill()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
         freq='0.5H')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
-    df_FES = df_FES.append(df_2050)
+    df_FES = pd.concat([df_FES, df_2050])
 
     return df_FES
 
@@ -267,7 +269,7 @@ def marginal_price_dataframe(FES):
 
     marginal_prices2 = future_result[['Coal', 'Gas', 'Oil']].copy()
 
-    marginal_prices = marginal_prices.append(marginal_prices2)
+    marginal_prices = pd.concat([marginal_prices, marginal_prices2])
 
     return marginal_prices
 

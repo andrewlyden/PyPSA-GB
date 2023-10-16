@@ -613,7 +613,8 @@ class Distribution(object):
             df_storage.loc[df_storage.bus == bus, "state_of_charge_initial"] *= scaling_factor[bus]
 
         # add in pumped hydro again
-        self.df_storage = df_storage.append(df_pumped_hydro)
+        self.df_storage = pd.concat([df_storage, df_pumped_hydro])
+
 
     def update(self):
 
