@@ -9,14 +9,14 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.feature
 
-import imageio
+# import imageio
 
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from shapely.geometry import Polygon, Point
 
 from statistics import mean
 
-import renewables
+# import renewables
 
 def generator_map_plotter(tech, color, marker_scaler, year):
 
@@ -106,14 +106,14 @@ def network_plotter():
 
     # ax.scatter(lon, lat, s=sizes * marker_scaler, c='black', edgecolors='black')
     ax.scatter(lon, lat, c='black', edgecolors='black')
-    for i, txt in enumerate(df_buses[:29].index):
-        ax.annotate(txt, (lon[i], lat[i]),
-                    xytext=(0, 5),
-                    textcoords="offset points",
-                    ha='center',
-                    fontweight='extra bold',
-                    color='black',
-                    fontsize='small')
+    # for i, txt in enumerate(df_buses[:29].index):
+    #     ax.annotate(txt, (lon[i], lat[i]),
+    #                 xytext=(0, 5),
+    #                 textcoords="offset points",
+    #                 ha='center',
+    #                 fontweight='extra bold',
+    #                 color='black',
+    #                 fontsize='small')
 
     ax.set_title('Reduced Network GB', fontsize=16)
 
