@@ -14,6 +14,11 @@ National Grid's Future Energy Scenarios (Steady Progression, System Transformati
 
 Assumptions made in the model are transparent and can be modified directly through the appropriate data files. It is the intention of the developers that this model and dataset can provide a foundation for active development and improvement. The 'Issues' section on the GitHub page contains suggestions for improvements. Contributions are welcomed and encouraged.
 
+**Publication**
+
+'PyPSA-GB: An open-source model of Great Britain’s power system for simulating future energy scenarios', Energy Strategy Reviews (2024),
+https://doi.org/10.1016/j.esr.2024.101375.
+
 **Developers**
 
 PyPSA-GB development is led by Dr Andrew Lyden at the Institute for Energy Systems, University of Edinburgh. 
