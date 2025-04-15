@@ -36,6 +36,8 @@ def write_snapshots(start, end, time_step):
     df['weightings'] = time_step
 
     df.index.name = 'name'
+    # reset index and put index as column
+    # df = df.reset_index()
     df.to_csv('UC_data/snapshots.csv', header=True)
     df.to_csv('LOPF_data/snapshots.csv', header=True)
 

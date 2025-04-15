@@ -9,14 +9,14 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.feature
 
-# import imageio
+import imageio
 
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from shapely.geometry import Polygon, Point
 
 from statistics import mean
 
-# import renewables
+import renewables
 
 def generator_map_plotter(tech, color, marker_scaler, year):
 

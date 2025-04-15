@@ -283,33 +283,37 @@ def write_marginal_costs_series(start, end, freq, year, FES):
     end_ = pd.to_datetime(end)
     marginal_cost_df = marginal_price_dataframe(FES).loc[start_:end_]
 
-    # now add the coal marginal prices
+    # Add the coal marginal prices
     coal_gens = df_gens.loc[df_gens['carrier'] == 'Coal']
-    # create a new dataframe with columns which are the generator names
-    df1 = pd.DataFrame(columns=coal_gens.name.values)
-    for gen in range(len(coal_gens.name.values)):
-        df1.loc[:, coal_gens.name.values[gen]] = marginal_cost_df['Coal']
+    # Create a new dataframe with columns as generator names and rows filled with marginal cost values
+    df1 = pd.DataFrame(
+        data={gen_name: marginal_cost_df['Coal'].values for gen_name in coal_gens.name.values},
+        index=marginal_cost_df.index
+    )
 
-    # now add the CCGT marginal prices
+    # Add the CCGT marginal prices
     CCGT_gens = df_gens.loc[df_gens['type'] == 'CCGT']
-    # create a new dataframe with columns which are the generator names
-    df2 = pd.DataFrame(columns=CCGT_gens.name.values)
-    for gen in range(len(CCGT_gens.name.values)):
-        df2.loc[:, CCGT_gens.name.values[gen]] = marginal_cost_df['Gas']
+    # Create a new dataframe with columns as generator names and rows filled with marginal cost values
+    df2 = pd.DataFrame(
+        data={gen_name: marginal_cost_df['Gas'].values for gen_name in CCGT_gens.name.values},
+        index=marginal_cost_df.index
+    )
 
-    # now add the OCGT marginal prices
+    # Add the OCGT marginal prices
     OCGT_gens = df_gens.loc[df_gens['type'] == 'OCGT']
-    # create a new dataframe with columns which are the generator names
-    df3 = pd.DataFrame(columns=OCGT_gens.name.values)
-    for gen in range(len(OCGT_gens.name.values)):
-        df3.loc[:, OCGT_gens.name.values[gen]] = marginal_cost_df['Gas']
+    # Create a new dataframe with columns as generator names and rows filled with marginal cost values
+    df3 = pd.DataFrame(
+        data={gen_name: marginal_cost_df['Gas'].values for gen_name in OCGT_gens.name.values},
+        index=marginal_cost_df.index
+    )
 
-    # now add the oil marginal prices
+    # Add the oil marginal prices
     oil_gens = df_gens.loc[df_gens['carrier'] == 'Oil']
-    # create a new dataframe with columns which are the generator names
-    df4 = pd.DataFrame(columns=oil_gens.name.values)
-    for gen in range(len(oil_gens.name.values)):
-        df4.loc[:, oil_gens.name.values[gen]] = marginal_cost_df['Oil']
+    # Create a new dataframe with columns as generator names and rows filled with marginal cost values
+    df4 = pd.DataFrame(
+        data={gen_name: marginal_cost_df['Oil'].values for gen_name in oil_gens.name.values},
+        index=marginal_cost_df.index
+    )
 
     df = pd.concat([df1, df2, df3, df4], axis=1)
     df.index.name = 'name'
@@ -317,6 +321,8 @@ def write_marginal_costs_series(start, end, freq, year, FES):
     if freq == 'H':
 
         df = df.astype(float)
+        # df.index = pd.to_datetime(df.index)
+        # print(df)
         df = df.resample(freq).mean()
         # appendix = df.iloc[-1:]
         # appendix.index = appendix.index + pd.Timedelta(minutes=30)
