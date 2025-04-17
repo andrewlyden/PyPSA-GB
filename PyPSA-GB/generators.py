@@ -792,7 +792,8 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel='Reduced'):
     # read in new nuclear power plant data
     file = '../data/power stations/nuclear_new_dates.csv'
     df = pd.read_csv(file, index_col=1)
-    df.index = pd.to_datetime(df.index, infer_datetime_format=True)
+    df.index = pd.to_datetime(df.index
+                              )
     to_date = str(year) + '-01-01'
     filtered_df = df.loc[:to_date]
     pp_to_add = filtered_df.name.values
@@ -1449,7 +1450,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
     end : str
         end of simulation
     freq : str
-        frequency of timestep, only 'H' or '0.5H' allowed currently
+        frequency of timestep, only 'h' or '0.5h' allowed currently
     Returns
     -------
     """
@@ -1503,7 +1504,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
 
     df_onshore = df_onshore.loc[start:end]
 
-    if freq == '0.5H':
+    if freq == '0.5h':
         # resample to half hourly timesteps
         df_onshore = df_onshore.resample(freq).interpolate('polynomial', order=2)
         # need to add a row at end
@@ -1552,7 +1553,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
     df_PV = df_PV.loc[start:end]
 
     # resample to half hourly timesteps
-    if freq == '0.5H':
+    if freq == '0.5h':
         df_PV = df_PV.resample(freq).interpolate('polynomial', order=1)
         # need to add a row at end
         # the data being passed is the values of the last row
@@ -1603,7 +1604,7 @@ def write_generators_p_max_pu(start, end, freq, year, FES=None, year_baseline=No
         df_hydro = df_hydro1.loc[start:end]
 
     df_hydro = df_hydro.resample(freq).mean()
-    if freq == 'H':
+    if freq == 'h':
         df_hydro = df_hydro.resample(freq).interpolate('polynomial', order=1)
         # df_hydro = df_hydro.iloc[:-1, :]
         # # need to add a row at end

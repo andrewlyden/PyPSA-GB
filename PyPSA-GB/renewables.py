@@ -290,7 +290,7 @@ def read_hydro_time_series(year):
     """
 
     df = pd.read_csv('../data/renewables/generation_2015-02-22_2020-12-30_ELEXON.csv')
-    dti = pd.date_range(start='2015-02-22 00:00:00', end='2020-12-31 23:30:00', freq='0.5H')
+    dti = pd.date_range(start='2015-02-22 00:00:00', end='2020-12-31 23:30:00', freq='0.5h')
     df = df.set_index(dti)
     df_hydro = df[['npshyd']]
 
@@ -452,7 +452,7 @@ def read_tidal_lagoon(year, scenario, fes):
         # need to get values for years 2020 - 2050
         index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
         df_tidal_lagoon_capacities.index = index_
-        df_tidal_lagoon_capacities.index = pd.to_datetime(df_tidal_lagoon_capacities.index, infer_datetime_format=True, utc=True)
+        df_tidal_lagoon_capacities.index = pd.to_datetime(df_tidal_lagoon_capacities.index, utc=True)
         df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.resample('12MS').asfreq()
         df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.astype(float)
         df_tidal_lagoon_capacities = df_tidal_lagoon_capacities.interpolate(method='linear', limit_direction='forward')  
@@ -505,7 +505,7 @@ def read_tidal_stream(year, scenario, fes):
         # need to get values for years 2020 - 2050
         index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
         df_tidal_stream_capacities.index = index_
-        df_tidal_stream_capacities.index = pd.to_datetime(df_tidal_stream_capacities.index, infer_datetime_format=True, utc=True)
+        df_tidal_stream_capacities.index = pd.to_datetime(df_tidal_stream_capacities.index, utc=True)
         df_tidal_stream_capacities = df_tidal_stream_capacities.resample('12MS').asfreq()
         df_tidal_stream_capacities = df_tidal_stream_capacities.astype(float)
         df_tidal_stream_capacities = df_tidal_stream_capacities.interpolate(method='linear', limit_direction='forward')
@@ -559,7 +559,7 @@ def read_wave_power(year, scenario, fes):
         # need to get values for years 2020 - 2050
         index_ = ['2025-01-01', '2030-01-01', '2035-01-01', '2040-01-01', '2045-01-01', '2050-01-01']
         df_wave_power_capacities.index = index_
-        df_wave_power_capacities.index = pd.to_datetime(df_wave_power_capacities.index, infer_datetime_format=True, utc=True)
+        df_wave_power_capacities.index = pd.to_datetime(df_wave_power_capacities.index, utc=True)
         df_wave_power_capacities = df_wave_power_capacities.resample('12MS').asfreq()
         df_wave_power_capacities = df_wave_power_capacities.astype(float)
         df_wave_power_capacities = df_wave_power_capacities.interpolate(method='linear', limit_direction='forward')
@@ -703,16 +703,16 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
 
     # for interpolating
     if time_step == 0.5:
-        freq = '0.5H'
+        freq = '0.5h'
     elif time_step == 1:
-        freq = 'H'
+        freq = 'h'
 
     # TIDAL LAGOON
 
     df_tidal_lagoon = pd.read_excel('../data/renewables/Marine/tidal_lagoon_full.xlsx', sheet_name=str(year))
     df_tidal_lagoon.index = df_tidal_lagoon['Date/time']
     df_tidal_lagoon.drop(['Date/time'], axis=1, inplace=True)
-    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True)
+    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index)
     df_tidal_lagoon.index = df_tidal_lagoon.index.round('H')
     df_tidal_lagoon.drop(df_tidal_lagoon.tail(1).index, inplace=True)
     df_tidal_lagoon.dropna(axis='columns', inplace=True)
@@ -739,10 +739,10 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_lagoon[df_tidal_lagoon < 0] = 0
     df_tidal_lagoon[df_tidal_lagoon > 1] = 1
 
-    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index, infer_datetime_format=True)
+    df_tidal_lagoon.index = pd.to_datetime(df_tidal_lagoon.index)
     # change the year to the df_LOPF year
     df_tidal_lagoon.index = df_tidal_lagoon.index.map(lambda x : x.replace(year=year_orig))
-    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index)
 
     # pick out required timeseries
     df_tidal_lagoon = df_tidal_lagoon.loc[df_LOPF.index.values]
@@ -754,7 +754,7 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_stream = pd.read_excel(path)
     df_tidal_stream.index = df_tidal_stream['Date/time']
     df_tidal_stream.drop(['Date/time'], axis=1, inplace=True)
-    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True)
+    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index)
     df_tidal_stream.index = df_tidal_stream.index.round('H')
     df_tidal_stream.drop(df_tidal_stream.tail(1).index, inplace=True)
     # interpolate to correct timestep
@@ -775,8 +775,8 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_tidal_stream[df_tidal_stream < 0] = 0
     df_tidal_stream[df_tidal_stream > 1] = 1
 
-    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index, infer_datetime_format=True)
-    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+    df_tidal_stream.index = pd.to_datetime(df_tidal_stream.index)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index)
 
     # pick out required timeseries
     df_tidal_stream.index = df_tidal_stream.index.map(lambda x : x.replace(year=year_orig))
@@ -806,12 +806,12 @@ def add_marine_timeseries(year, year_baseline, scenario, time_step):
     df_wave_power[df_wave_power < 0] = 0
     df_wave_power[df_wave_power > 1] = 1
 
-    df_wave_power.index = pd.to_datetime(df_wave_power.index, infer_datetime_format=True)
-    df_LOPF.index = pd.to_datetime(df_LOPF.index, infer_datetime_format=True)
+    df_wave_power.index = pd.to_datetime(df_wave_power.index)
+    df_LOPF.index = pd.to_datetime(df_LOPF.index)
 
     # pick out required timeseries
     period = df_LOPF.index
-    period = pd.to_datetime(period, infer_datetime_format=True)
+    period = pd.to_datetime(period)
     # change year to baseline year
     period = period.map(lambda t: t.replace(year=year_baseline))
     df_wave_power = df_wave_power.loc[period.values]

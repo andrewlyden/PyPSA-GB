@@ -21,7 +21,7 @@ def read_interconnectors():
     df = pd.read_csv(file)
     
     dti = pd.date_range(
-        start='2008-11-05 22:00:00', end='2021-06-06 23:30:00', freq='0.5H')
+        start='2008-11-05 22:00:00', end='2021-06-06 23:30:00', freq='0.5h')
     df = df.set_index(dti)
     
     df = df[['POWER_NGEM_BRITNED_FLOW_MW', 'POWER_NGEM_EAST_WEST_FLOW_MW',
@@ -70,7 +70,7 @@ def write_interconnectors(start, end, freq):
     df_load.to_csv('UC_data/loads.csv', index=False, header=True)
 
     # then add the interconnectors as named generators with basic attributes
-    df_gen = pd.read_csv('UC_data/generators.csv', index_col=0, parse_dates=True)
+    df_gen = pd.read_csv('UC_data/generators.csv', index_col=0)
     # use hydro row as a template
     IC_gen = df_gen.iloc[[0]]
     result = df_gen
@@ -100,7 +100,7 @@ def write_interconnectors(start, end, freq):
     df_gen2 = pd.read_csv('LOPF_data/generators.csv', index_col=0)
     # use row zero as a template
     IC_gen2 = df_gen2.iloc[[0]]
-    df_gen2 = pd.read_csv('LOPF_data/generators.csv', index_col=0, parse_dates=True)
+    df_gen2 = pd.read_csv('LOPF_data/generators.csv', index_col=0)
     result2 = df_gen2
     for i in name_dic['name']:
         IC_gen2.index = [i]
@@ -187,7 +187,7 @@ def future_interconnectors(year, scenario, FES):
     df_IC_future['p_min_pu'] = -1
     # filter by date
     df = df_IC_future.reset_index().set_index(['installed date'])
-    df.index = pd.to_datetime(df.index, infer_datetime_format=True)
+    df.index = pd.to_datetime(df.index)
     to_date = str(year) + '-01-01'
     filtered_df = df.loc[:to_date]
     df_IC = filtered_df.set_index(['name'])
@@ -207,7 +207,7 @@ def future_interconnectors(year, scenario, FES):
                 sheet_name='ES1', header=9, index_col=1)
         df_FES.dropna(axis='rows', inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains('Interconnectors', case=False)]
-        df_FES = df_FES[~df_FES.Variable.str.contains('(TWh)')]
+        df_FES = df_FES[~df_FES.Variable.str.contains(r'\(TWh\)')]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
         date = str(year) + '-01-01'

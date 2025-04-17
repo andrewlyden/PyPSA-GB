@@ -35,7 +35,7 @@ def read_historical_demand_data():
     df = pd.read_csv(file)
 
     dti = pd.date_range(
-        start='2008-11-05 22:00:00', end='2021-06-06 23:30:00', freq='0.5H')
+        start='2008-11-05 22:00:00', end='2021-06-06 23:30:00', freq='0.5h')
     df = df.set_index(dti)
     df = df[['POWER_ESPENI_MW']]
     # df = df.drop(columns=['SETTLEMENT_DATE', 'SETTLEMENT_PERIOD'])
@@ -70,22 +70,22 @@ def read_future_profile_data():
     # df = df1.append(frames, ignore_index=True, sort=False)
 
     # using espeni data set
-    file = '..\data\demand\egy_7649_mmc1.xlsx'
+    file = '../data/demand/egy_7649_mmc1.xlsx'
     df = pd.read_excel(file, sheet_name=None)
     df_eload = df['ELOAD'].drop([0, 1, 2, 3, 4, 5])[['eLOAD Model (2050).2']].reset_index(drop=True) * 1000
     df_eload.rename(columns={'eLOAD Model (2050).2': 'eLOAD'}, inplace=True)
     dti = pd.date_range(
-        start='2050-01-01 00:00:00', end='2050-12-31 23:00:00', freq='H')
+        start='2050-01-01 00:00:00', end='2050-12-31 23:00:00', freq='h')
     df_eload = df_eload.set_index(dti)
     # resample to half hour frequency
     df_eload['eLOAD'] = pd.to_numeric(df_eload['eLOAD'])
-    df_eload = df_eload.resample('0.5H').interpolate('polynomial', order=2)
+    df_eload = df_eload.resample('0.5h').interpolate('polynomial', order=2)
 
     # add end value
     df_new_eload = pd.DataFrame(
         data=df_eload.tail(1).values,
         columns=df_eload.columns,
-        index = pd.date_range(start='2050-12-31 23:30:00', end='2050-12-31 23:30:00', freq='0.5H'))
+        index = pd.date_range(start='2050-12-31 23:30:00', end='2050-12-31 23:30:00', freq='0.5h'))
     # add to existing dataframe
     df_eload = pd.concat([df_eload, df_new_eload], sort=False)
 
@@ -163,9 +163,9 @@ def write_loads_p_set(start, end, year, time_step, dataset, year_baseline=None, 
 
     # need an index for the period to be simulated
     if time_step == 0.5:
-        freq = '0.5H'
+        freq = '0.5h'
     elif time_step == 1.0:
-        freq = 'H'
+        freq = 'h'
     else:
         raise Exception("Time step not recognised")
 

@@ -59,7 +59,7 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
     end : str
         end of simulation period
     time_step : float
-        currently 'H', or '0.5H'
+        currently 'h', or '0.5h'
     year : str/int
         year of simulation
     Returns
@@ -77,7 +77,7 @@ def data_writer(start, end, time_step, year, demand_dataset=None,
         copy_file('../data/network/ZonesBasedGBsystem', '../data')
 
     # make sure that end time is in accordance with timestep
-    if time_step == 1. or time_step == 'H' or time_step == '1H':
+    if time_step == 1. or time_step == 'h' or time_step == '1h':
         end = pd.Timestamp(end)
         end = end.replace(minute=0)
         end = str(end)

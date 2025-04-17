@@ -22,9 +22,9 @@ def write_snapshots(start, end, time_step):
     # SNAPSHOTS CSV FILE
 
     if time_step == 0.5:
-        freq = '0.5H'
+        freq = '0.5h'
     elif time_step == 1.0:
-        freq = 'H'
+        freq = 'h'
     else:
         raise Exception("Time step not recognised")
 

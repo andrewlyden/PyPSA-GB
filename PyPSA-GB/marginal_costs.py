@@ -15,11 +15,11 @@ def fuel_prices_df(df):
     fuel_prices.set_index(dti_quarterly, inplace=True)
     fuel_prices.drop(columns=['Unnamed: 0', 'Unnamed: 1'], inplace=True)
 
-    fuel_prices = fuel_prices.resample('0.5H').ffill()
+    fuel_prices = fuel_prices.resample('0.5h').ffill()
 
     dti_end = pd.date_range(
         start='2020-10-01 00:30:00', end='2020-12-31 23:30:00',
-        freq='0.5H')
+        freq='0.5h')
     cols = ['Coal (p/kWh)', 'Oil (p/kWh)', 'Gas (p/kWh)']
     # data = [0.752, 2.815, 1.167] * len(dti_end)
     df_end = pd.DataFrame(columns=cols, index=dti_end)
@@ -55,10 +55,10 @@ def future_fuel_prices_df(FES):
     df_FES = df_FES.T
     df_FES.drop(range(2010, 2021), inplace=True)
     df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
-    df_FES = df_FES.resample('0.5H').ffill()
+    df_FES = df_FES.resample('0.5h').ffill()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
-        freq='0.5H')
+        freq='0.5h')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
     df_FES = pd.concat([df_FES, df_2050])
@@ -73,7 +73,7 @@ def carbon_support_price_df(df):
     # datetimeindex from 2010 to 2020 to match the fuel prices dataframe
     dti = pd.date_range(
         start='2010-01-01 00:00:00', end='2020-12-31 23:30:00',
-        freq='0.5H')
+        freq='0.5h')
     csp_df = pd.DataFrame(columns=['Carbon support price (Pounds/tonne)'], index=dti)
     csp_df.loc['2010-01-01':'2013-03-31 23:30'] = 0.0
     csp_df.loc['2013-04-01':'2014-04-01'] = csp.loc[0, 'Carbon Support Price (£/tonne)']
@@ -94,14 +94,14 @@ def EU_ETS_df(df):
     # narrow to 2010 to 2020
     ets = ets.loc['2010-01-01':'2020-12-31']
     # downsample to half hourly
-    ets = ets.resample('0.5H').ffill()
+    ets = ets.resample('0.5h').ffill()
     # rename the column name
     ets.rename(
         columns={'Price (Euros/tonne)': 'EU ETS (Euros/tonne)'}, inplace=True)
     # need to add last day of values
     dti_end = pd.date_range(
         start='2020-12-31 00:30:00', end='2020-12-31 23:30:00',
-        freq='0.5H')
+        freq='0.5h')
     cols = ['EU ETS (Euros/tonne)']
     # data = [0.752, 2.815, 1.167] * len(dti_end)
     df_end = pd.DataFrame(columns=cols, index=dti_end)
@@ -127,10 +127,10 @@ def future_carbon_prices_df(FES):
     # remove last three rows
     df_FES = df_FES[:-3].T
     df_FES.index = pd.to_datetime(df_FES.index, format='%Y')
-    df_FES = df_FES.resample('0.5H').ffill()
+    df_FES = df_FES.resample('0.5h').ffill()
     dti = pd.date_range(
         start='2050-01-01 00:30:00', end='2050-12-31 23:30:00',
-        freq='0.5H')
+        freq='0.5h')
     values = df_FES.loc['2050-01-01 00:00:00']
     df_2050 = pd.DataFrame([values], columns=df_FES.columns, index=dti)
     df_FES = pd.concat([df_FES, df_2050])
@@ -318,7 +318,7 @@ def write_marginal_costs_series(start, end, freq, year, FES):
     df = pd.concat([df1, df2, df3, df4], axis=1)
     df.index.name = 'name'
 
-    if freq == 'H':
+    if freq == 'h':
 
         df = df.astype(float)
         # df.index = pd.to_datetime(df.index)
@@ -329,7 +329,7 @@ def write_marginal_costs_series(start, end, freq, year, FES):
         # df = df.append(appendix)
 
     elif year > 2020:
-        if freq == 'H':
+        if freq == 'h':
             # appendix = df.iloc[-1:]
             # appendix.index = appendix.index + pd.Timedelta(minutes=30)
             # appendix.index = appendix.index  + pd.Timedelta(minutes=30)
