@@ -1,12 +1,11 @@
-"""Script for running a network constrained linear optimal power flow of PyPSA-GB
-"""
+"""Script for running a network constrained linear optimal power flow of PyPSA-GB"""
 
 import pypsa
 import matplotlib.pyplot as plt
 import pandas as pd
 import cartopy.crs as ccrs
 
-import data_reader_writer
+from . import data_reader_writer
 
 import time
 
@@ -23,9 +22,9 @@ import time
 #                         print('inputs:', year, scenario, demand_dataset, time_step, year_baseline, networkmodel, P2G)
 
 #                         start_t = time.time()
-#                         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, 
-#                                                     year_baseline=year_baseline, scenario=scenario, FES=2022, 
-#                                                     merge_generators=True, scale_to_peak=True, 
+#                         data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset,
+#                                                     year_baseline=year_baseline, scenario=scenario, FES=2022,
+#                                                     merge_generators=True, scale_to_peak=True,
 #                                                     networkmodel=networkmodel, P2G=P2G,
 #                                                     marine_modify=True, marine_scenario='Mid')
 
@@ -53,48 +52,77 @@ import time
 #                         # print(network.generators_t.status)
 #                         print(network.generators_t.p)
 
-start = '2050-02-28 00:00:00'
-end = '2050-03-01 23:30:00'
+start = "2050-02-28 00:00:00"
+end = "2050-03-01 23:30:00"
 year = int(start[0:4])
 
-for scenario in ['System Transformation', 'Falling Short']:
-    for demand_dataset in ['eload']:
+for scenario in ["System Transformation", "Falling Short"]:
+    for demand_dataset in ["eload"]:
         for time_step in [1.0]:
             for year_baseline in [2012, 2013]:
-                for networkmodel in ['Zonal']:
+                for networkmodel in ["Zonal"]:
                     for P2G in [True]:
                         if year % 4 == 0 and year_baseline % 4 != 0:
                             break
-                        print('inputs:', year, scenario, demand_dataset, time_step, year_baseline, networkmodel, P2G)
+                        print(
+                            "inputs:",
+                            year,
+                            scenario,
+                            demand_dataset,
+                            time_step,
+                            year_baseline,
+                            networkmodel,
+                            P2G,
+                        )
 
                         start_t = time.time()
-                        data_reader_writer.data_writer(start, end, time_step, year, demand_dataset=demand_dataset, 
-                                                       year_baseline=year_baseline, scenario=scenario, FES=2022, 
-                                                       merge_generators=True, scale_to_peak=True, 
-                                                       networkmodel=networkmodel, P2G=P2G,
-                                                       floating_wind_scenario='Mid', wave_scenario='Mid', tidal_stream_scenario='Mid')
+                        data_reader_writer.data_writer(
+                            start,
+                            end,
+                            time_step,
+                            year,
+                            demand_dataset=demand_dataset,
+                            year_baseline=year_baseline,
+                            scenario=scenario,
+                            FES=2022,
+                            merge_generators=True,
+                            scale_to_peak=True,
+                            networkmodel=networkmodel,
+                            P2G=P2G,
+                            floating_wind_scenario="Mid",
+                            wave_scenario="Mid",
+                            tidal_stream_scenario="Mid",
+                        )
 
                         network = pypsa.Network()
-                        network.import_from_csv_folder('LOPF_data')
+                        network.import_from_csv_folder("LOPF_data")
 
                         setup_t = time.time()
-                        print((setup_t - start_t) / 60, 'minutes taken to write/read csv files and create network object.')
+                        print(
+                            (setup_t - start_t) / 60,
+                            "minutes taken to write/read csv files and create network object.",
+                        )
 
                         # print(network.links)
 
-                        if networkmodel == 'Reduced':
+                        if networkmodel == "Reduced":
                             contingency_factor = 4
                             network.lines.s_max_pu *= contingency_factor
-                        elif networkmodel == 'Zonal':
+                        elif networkmodel == "Zonal":
                             contingency_factor = 4
                             network.links[15:111].p_nom *= contingency_factor
-                        
+
                         network.consistency_check()
 
-                        network.lopf(network.snapshots, solver_name="gurobi", pyomo=False)
+                        network.lopf(
+                            network.snapshots, solver_name="gurobi", pyomo=False
+                        )
 
                         opt_t = time.time()
-                        print((opt_t - setup_t) / 60, 'minutes taken to perform optimisation.')
+                        print(
+                            (opt_t - setup_t) / 60,
+                            "minutes taken to perform optimisation.",
+                        )
 
                         # print(network.buses_t.marginal_price)
                         # print(network.generators_t.status)

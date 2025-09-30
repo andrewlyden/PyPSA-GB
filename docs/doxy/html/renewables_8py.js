@@ -1,0 +1,28 @@
+var renewables_8py =
+[
+    [ "PyPSA-GB.renewables.add_marine_timeseries", "namespace_py_p_s_a-_g_b_1_1renewables.html#aa4e6fc42368edb63c814d87c1738644e", null ],
+    [ "PyPSA-GB.renewables.aggregate_renewable_generation", "namespace_py_p_s_a-_g_b_1_1renewables.html#a4d28c8afed9578a6160a9560735f3394", null ],
+    [ "PyPSA-GB.renewables.fix_timeseries_res_for_year", "namespace_py_p_s_a-_g_b_1_1renewables.html#ab477631ae6df1c1e2f5cf89bd1cec969", null ],
+    [ "PyPSA-GB.renewables.future_offshore_capacity", "namespace_py_p_s_a-_g_b_1_1renewables.html#aea44fe3cbfa597a01a30cf5137660d22", null ],
+    [ "PyPSA-GB.renewables.future_offshore_sites", "namespace_py_p_s_a-_g_b_1_1renewables.html#a828bff8c3a0df0c60df8b16c750c1856", null ],
+    [ "PyPSA-GB.renewables.future_offshore_timeseries", "namespace_py_p_s_a-_g_b_1_1renewables.html#af10ee77cc852d37f7d245ab65d8fe4ec", null ],
+    [ "PyPSA-GB.renewables.future_RES_capacity", "namespace_py_p_s_a-_g_b_1_1renewables.html#a2c63c9849737caba3540f2db1450b5bf", null ],
+    [ "PyPSA-GB.renewables.future_RES_scale_p_nom", "namespace_py_p_s_a-_g_b_1_1renewables.html#ab167f84d9c45d0e247017c16eff68a5b", null ],
+    [ "PyPSA-GB.renewables.gif_future_capacities", "namespace_py_p_s_a-_g_b_1_1renewables.html#a234d06b1f18107c45732825f256b80e2", null ],
+    [ "PyPSA-GB.renewables.historical_RES_timeseries", "namespace_py_p_s_a-_g_b_1_1renewables.html#a4b19fbcea0ad3bf7665422779b827419", null ],
+    [ "PyPSA-GB.renewables.plot_future_capacities", "namespace_py_p_s_a-_g_b_1_1renewables.html#a220dec2bf8e5dae51ec5e72130c1c7cd", null ],
+    [ "PyPSA-GB.renewables.read_biomass", "namespace_py_p_s_a-_g_b_1_1renewables.html#a668d4fb16ae5163575a36abcab6074db", null ],
+    [ "PyPSA-GB.renewables.read_hydro", "namespace_py_p_s_a-_g_b_1_1renewables.html#accc64b4fdfc806fe6448933fb8596eb3", null ],
+    [ "PyPSA-GB.renewables.read_hydro_time_series", "namespace_py_p_s_a-_g_b_1_1renewables.html#afb88970b5835775e31229448af06c407", null ],
+    [ "PyPSA-GB.renewables.read_non_dispatchable_continuous", "namespace_py_p_s_a-_g_b_1_1renewables.html#a0d6595250883370f9611cbb1f8f0b381", null ],
+    [ "PyPSA-GB.renewables.read_REPD", "namespace_py_p_s_a-_g_b_1_1renewables.html#ab85ba8dcaf38f80f959156e0c7295a14", null ],
+    [ "PyPSA-GB.renewables.read_tidal_lagoon", "namespace_py_p_s_a-_g_b_1_1renewables.html#a9cd51d25118df84ead8e6371b031666e", null ],
+    [ "PyPSA-GB.renewables.read_tidal_stream", "namespace_py_p_s_a-_g_b_1_1renewables.html#ae190eb9239135bde96bc147becb83277", null ],
+    [ "PyPSA-GB.renewables.read_wave_power", "namespace_py_p_s_a-_g_b_1_1renewables.html#a57f4ae0cdd231d499fe3bc8fb5cef030", null ],
+    [ "PyPSA-GB.renewables.REPD_date_corrected", "namespace_py_p_s_a-_g_b_1_1renewables.html#a721b09963fd339351825ed23035b35c2", null ],
+    [ "PyPSA-GB.renewables.RES_correction_factors", "namespace_py_p_s_a-_g_b_1_1renewables.html#a33cae951aca83aaa421e08e09cca8258", null ],
+    [ "PyPSA-GB.renewables.scale_biomass_p_nom", "namespace_py_p_s_a-_g_b_1_1renewables.html#acbb0430f9573a9f14482bfe79b3cb699", null ],
+    [ "PyPSA-GB.renewables.write_marine_generators", "namespace_py_p_s_a-_g_b_1_1renewables.html#a25583fea904af1bacfd8e6b27f44a94b", null ],
+    [ "PyPSA-GB.renewables.D", "namespace_py_p_s_a-_g_b_1_1renewables.html#a8aa9fe2c3889c8505e90de0e25ff4b65", null ],
+    [ "PyPSA-GB.renewables.scenario", "namespace_py_p_s_a-_g_b_1_1renewables.html#a8c7651f6ec25b6688e2f77bb82f1c9bf", null ]
+];
