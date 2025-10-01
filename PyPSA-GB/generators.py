@@ -1,8 +1,8 @@
-import pandas as pd
-import numpy as np
 import os
 
+import numpy as np
 import osgb
+import pandas as pd
 
 from . import renewables
 
@@ -137,9 +137,7 @@ def write_generators(time_step, year, networkmodel=True):
 
     # scale the wind offshore to real data, see correction factors in Atlite
     if year <= 2020:
-        df_res_offshore.loc[:, "p_nom"] *= df_correction.loc[
-            "Wind_Offshore", str(year)
-        ]
+        df_res_offshore.loc[:, "p_nom"] *= df_correction.loc["Wind_Offshore", str(year)]
 
     # add in future sites for future scenarios
     if year > 2020:
@@ -192,9 +190,7 @@ def write_generators(time_step, year, networkmodel=True):
             },
             inplace=True,
         )
-        df_pipeline.drop(
-            columns=["X-coordinate", "Y-coordinate"], inplace=True
-        )
+        df_pipeline.drop(columns=["X-coordinate", "Y-coordinate"], inplace=True)
 
         file2 = "Sectoral Marine Plan 2020 - Fixed.csv"
         df_future_FBOW = pd.read_csv(path + file2, encoding="unicode_escape")
@@ -224,9 +220,9 @@ def write_generators(time_step, year, networkmodel=True):
             inplace=True,
         )
 
-    #         df_future = df_future.append(
-    #             [df_future_FBOW, df_future_FOW], ignore_index=True
-    #         )
+        #         df_future = df_future.append(
+        #             [df_future_FBOW, df_future_FOW], ignore_index=True
+        #         )
 
         # convert from GW to MW
         df_future_FBOW.loc[:, "p_nom"] *= 1000
@@ -244,9 +240,7 @@ def write_generators(time_step, year, networkmodel=True):
     df_res_offshore_LOPF["bus"] = map_to(df_res_offshore)
 
     # join to previous df of thermal power plants
-    df_UC = pd.concat(
-        [df_pp_UC, df_res_offshore_UC], ignore_index=True, sort=False
-    )
+    df_UC = pd.concat([df_pp_UC, df_res_offshore_UC], ignore_index=True, sort=False)
     df_LOPF = pd.concat(
         [df_pp_LOPF, df_res_offshore_LOPF], ignore_index=True, sort=False
     )
@@ -299,9 +293,7 @@ def write_generators(time_step, year, networkmodel=True):
 
     # scale the wind onshore to real data, see correction factors in Atlite
     if year <= 2020:
-        df_res_onshore.loc[:, "p_nom"] *= df_correction.loc[
-            "Wind_Onshore", str(year)
-        ]
+        df_res_onshore.loc[:, "p_nom"] *= df_correction.loc["Wind_Onshore", str(year)]
 
     df_res_onshore_UC = df_res_onshore.drop(columns=["x", "y"])
     df_res_onshore_UC["bus"] = "bus"
@@ -310,12 +302,8 @@ def write_generators(time_step, year, networkmodel=True):
     df_res_onshore_LOPF["bus"] = map_to(df_res_onshore)
 
     # join to previous df of thermal power plants
-    df_UC = pd.concat(
-        [df_UC, df_res_onshore_UC], ignore_index=True, sort=False
-    )
-    df_LOPF = pd.concat(
-        [df_LOPF, df_res_onshore_LOPF], ignore_index=True, sort=False
-    )
+    df_UC = pd.concat([df_UC, df_res_onshore_UC], ignore_index=True, sort=False)
+    df_LOPF = pd.concat([df_LOPF, df_res_onshore_LOPF], ignore_index=True, sort=False)
 
     # then the PV farms
     df_res_PV = df_res.loc[
@@ -357,16 +345,12 @@ def write_generators(time_step, year, networkmodel=True):
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = pd.concat([df_UC, df_res_PV_UC], ignore_index=True, sort=False)
-    df_LOPF = pd.concat(
-        [df_LOPF, df_res_PV_LOPF], ignore_index=True, sort=False
-    )
+    df_LOPF = pd.concat([df_LOPF, df_res_PV_LOPF], ignore_index=True, sort=False)
 
     # add hydro data
     df_hydro = renewables.read_hydro(year)
     # drop pumped storage as this is going to be a storage unit
-    df_hydro = df_hydro[
-        ~df_hydro.type.str.contains("Pumped Storage Hydroelectricity")
-    ]
+    df_hydro = df_hydro[~df_hydro.type.str.contains("Pumped Storage Hydroelectricity")]
     df_hydro = df_hydro.rename(columns={"lon": "x", "lat": "y"})
     df_hydro["x"] = df_hydro["x"].astype(float)
     df_hydro["y"] = df_hydro["y"].astype(float)
@@ -380,9 +364,7 @@ def write_generators(time_step, year, networkmodel=True):
 
     # join to previous df of thermal power plants and offshore wind
     df_UC = pd.concat([df_UC, df_hydro_UC], ignore_index=True, sort=False)
-    df_LOPF = pd.concat(
-        [df_LOPF, df_hydro_LOPF], ignore_index=True, sort=False
-    )
+    df_LOPF = pd.concat([df_LOPF, df_hydro_LOPF], ignore_index=True, sort=False)
 
     # add non dispatchable generators "RES"
     df_NDC = renewables.read_non_dispatchable_continuous(year)
@@ -785,9 +767,7 @@ def generator_additional_data(df, time_step):
     df.loc[:, "marginal_cost"] = np.select(conditions, marg_cos)
     df.loc[:, "committable"] = np.select(conditions, committable_)
     df.loc[:, "committable"] = df["committable"].astype("bool")
-    df.loc[:, "min_up_time"] = (
-        np.select(conditions, min_up_time_) / (time_step * 60)
-    )
+    df.loc[:, "min_up_time"] = np.select(conditions, min_up_time_) / (time_step * 60)
     df.loc[:, "min_up_time"] = df["min_up_time"].astype("int")
     # df.loc[:, 'min_up_time'] = 0
     df.loc[:, "min_down_time"] = np.select(conditions, min_down_time_) / (
@@ -804,9 +784,7 @@ def generator_additional_data(df, time_step):
     df.loc[:, "ramp_limit_down"] = (
         np.select(conditions, ramp_limit_down_) * (time_step * 60) / 100
     )
-    df.loc[:, "ramp_limit_down"].values[
-        df["ramp_limit_down"].values > 1.0
-    ] = 1.0
+    df.loc[:, "ramp_limit_down"].values[df["ramp_limit_down"].values > 1.0] = 1.0
     df.loc[:, "p_min_pu"] = np.select(conditions, p_min_pu_) / 100
     df.loc[:, "p_max_pu"] = np.select(conditions, p_max_pu_) / 100
     # df.loc[:, 'p_min_pu'] = 0
@@ -819,13 +797,11 @@ def generator_additional_data(df, time_step):
 
 
 def future_coal_p_nom(year):
-    """Removes coal plants based on their phase-out dates."""
     # read in phase out of coal dates
     file = "../data/power stations/coal_phase_out_dates.csv"
     df = pd.read_csv(file, index_col=1)
     df.index = pd.to_datetime(df.index, format="%d/%m/%Y")
     end_date = str(year) + "-01-01"
-    # Using .loc to filter up to a certain date on a sorted index is efficient
     filtered_df = df.loc[:end_date]
     pp_to_remove = filtered_df.name.values
     # need to remove this because it deletes CCS biomass,
@@ -840,13 +816,10 @@ def future_coal_p_nom(year):
 
     # error occurs because deleting PV farm with Ratcliffe in name
     # just add in later
-    PV_ratcliffe = None
-    PV_ratcliffe_UC = None
     try:
         PV_ratcliffe = generators.loc[["Ld NW Of Ratcliffe House Farm"]]
         PV_ratcliffe_UC = generators_UC.loc[["Ld NW Of Ratcliffe House Farm"]]
     except Exception:
-    except KeyError:
         pass
 
     for i in range(len(pp_to_remove)):
@@ -854,9 +827,7 @@ def future_coal_p_nom(year):
         # just look at the coal generators
         # keep PV row with Ratcliffe in name
 
-        generators = generators[
-            ~generators.index.str.contains(pp_to_remove[i])
-        ]
+        generators = generators[~generators.index.str.contains(pp_to_remove[i])]
         generators_UC = generators_UC[
             ~generators_UC.index.str.contains(pp_to_remove[i])
         ]
@@ -865,17 +836,12 @@ def future_coal_p_nom(year):
     # only in years Ratcliffe is removed
     try:
         if year > 2024:
-    if year > 2024:
-        try:
             generators = pd.concat([generators, PV_ratcliffe])
             generators_UC = pd.concat([generators_UC, PV_ratcliffe_UC])
     except Exception:
         pass
-        except ValueError:  # Handles case where PV_ratcliffe is None
-            pass
 
     if year > 2022:
-    if year > 2022 and "West Burton" in generators.index:
         generators["p_nom"]["West Burton"] = 0
 
     generators_UC.to_csv("UC_data/generators.csv", header=True)
@@ -883,7 +849,6 @@ def future_coal_p_nom(year):
 
 
 def future_gas_p_nom(year, scenario, tech, FES):
-    """Scales OCGT and CCGT capacity based on FES scenarios."""
     # going to scale the OCGT and CCGT based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict["tech_cap_year"]
@@ -924,7 +889,6 @@ def future_gas_p_nom(year, scenario, tech, FES):
 
 
 def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
-    """Updates nuclear capacity based on phase-out and new build dates."""
     if networkmodel == "Reduced":
         from distance_calculator import map_to_bus as map_to
     elif networkmodel == "Zonal":
@@ -945,9 +909,7 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
     # print(generators.loc[generators['carrier'] == 'Nuclear'])
     for i in range(len(pp_to_remove)):
         # remove those who are not in date
-        generators = generators[
-            ~generators.index.str.contains(pp_to_remove[i])
-        ]
+        generators = generators[~generators.index.str.contains(pp_to_remove[i])]
         generators_UC = generators_UC[
             ~generators_UC.index.str.contains(pp_to_remove[i])
         ]
@@ -963,29 +925,23 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
     # print(pp_to_add)
     # print(generators.loc[generators['carrier'] == 'Nuclear'])
     generators2 = pd.read_csv(path, index_col=0)
-    new_nuclear = generators2.loc[
-        generators2["carrier"] == "Nuclear"
-    ].iloc[[0]]
+    new_nuclear = generators2.loc[generators2["carrier"] == "Nuclear"].iloc[[0]]
     # print(new_nuclear)
     df_new_nuclear = pd.DataFrame()
     for i in range(len(pp_to_add)):
         # add new generators
         # template
-        new_nuclear = generators2.loc[
-            generators2["carrier"] == "Nuclear"
-        ].iloc[[0]]
-        p_nom = filtered_df.loc[
-            filtered_df["name"] == pp_to_add[i]
-        ]["p_nom"].values[0]
+        new_nuclear = generators2.loc[generators2["carrier"] == "Nuclear"].iloc[[0]]
+        p_nom = filtered_df.loc[filtered_df["name"] == pp_to_add[i]]["p_nom"].values[0]
         new_nuclear.loc[:, "p_nom"] = p_nom
         new_nuclear.loc[:, "type"] = "PWR"
         new_nuclear.index = [pp_to_add[i]]
-        new_nuclear["x"] = filtered_df.loc[
-            filtered_df["name"] == pp_to_add[i]
-        ]["x"].values[0]
-        new_nuclear["y"] = filtered_df.loc[
-            filtered_df["name"] == pp_to_add[i]
-        ]["y"].values[0]
+        new_nuclear["x"] = filtered_df.loc[filtered_df["name"] == pp_to_add[i]][
+            "x"
+        ].values[0]
+        new_nuclear["y"] = filtered_df.loc[filtered_df["name"] == pp_to_add[i]][
+            "y"
+        ].values[0]
         # need to map to bus
         new_nuclear["bus"] = map_to(new_nuclear)
         df_new_nuclear = pd.concat([df_new_nuclear, new_nuclear])
@@ -1027,9 +983,7 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
         # save the dataframes to csv
         # need to remove the original tech
         generators3 = generators3[~generators3.carrier.str.contains(tech)]
-        generators_UC3 = generators_UC3[
-            ~generators_UC3.carrier.str.contains(tech)
-        ]
+        generators_UC3 = generators_UC3[~generators_UC3.carrier.str.contains(tech)]
         # then add the new p_nom tech
         generators3 = pd.concat([generators3, gen_tech])
         generators_UC3 = pd.concat([generators_UC3, gen_tech_UC])
@@ -1043,7 +997,6 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
 
 
 def future_oil_p_nom(year, scenario, FES):
-    """Scales oil capacity based on FES scenarios."""
     tech = "Oil"
     # going to scale the oil based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
@@ -1084,7 +1037,6 @@ def future_oil_p_nom(year, scenario, FES):
 
 
 def future_waste_p_nom(year, scenario, FES):
-    """Scales EfW Incineration capacity based on FES scenarios and renames carrier to Waste."""
     tech = "Waste"
     # going to scale the oil based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
@@ -1121,25 +1073,18 @@ def future_waste_p_nom(year, scenario, FES):
     generators_UC = pd.concat([generators_UC, gen_tech_UC])
 
     # print(generators.loc[generators['carrier'] == tech])
-    generators["carrier"] = generators["carrier"].replace(
-        {"EfW Incineration": "Waste"}
-    )
+    generators["carrier"] = generators["carrier"].replace({"EfW Incineration": "Waste"})
     generators_UC["carrier"] = generators_UC["carrier"].replace(
         {"EfW Incineration": "Waste"}
     )
-    generators["type"] = generators["type"].replace(
-        {"EfW Incineration": "Waste"}
-    )
-    generators_UC["type"] = generators_UC["type"].replace(
-        {"EfW Incineration": "Waste"}
-    )
+    generators["type"] = generators["type"].replace({"EfW Incineration": "Waste"})
+    generators_UC["type"] = generators_UC["type"].replace({"EfW Incineration": "Waste"})
 
     generators_UC.to_csv("UC_data/generators.csv", header=True)
     generators.to_csv("LOPF_data/generators.csv", header=True)
 
 
 def future_gas_CCS(year, scenario, FES):
-    """Adds CCS Gas capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "CCS Gas"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1197,7 +1142,6 @@ def future_gas_CCS(year, scenario, FES):
 
 
 def future_biomass_CCS(year, scenario, FES):
-    """Adds CCS Biomass capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "CCS Biomass"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1252,7 +1196,6 @@ def future_biomass_CCS(year, scenario, FES):
 
 
 def future_hydrogen(year, scenario, FES):
-    """Adds Hydrogen capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "Hydrogen"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1309,7 +1252,6 @@ def future_hydrogen(year, scenario, FES):
 
 
 def future_capacity(year, tech, scenario, FES):
-    """Retrieves future capacity for a given technology, year, and scenario from FES data."""
 
     df_pp = read_power_stations_data(year)
 
@@ -1326,8 +1268,6 @@ def future_capacity(year, tech, scenario, FES):
     elif tech == "CCS Gas" or tech == "CCS Biomass" or tech == "Hydrogen":
         df_pp = df_pp[df_pp.Technology.str.contains("CCGT")]
         tech_cap_year = df_pp["Installed Capacity (MW)"].sum() / 1000
-    else:
-        tech_cap_year = 0.0
 
     if tech == "CCGT":
         if FES == 2021:
@@ -1346,37 +1286,31 @@ def future_capacity(year, tech, scenario, FES):
             )
         else:
             raise Exception("Please choose a FES year.")
-        df_FES = df_FES[df_FES.SubType.str.contains(
-            "CCGT", case=False, na=False
-        )]
+        df_FES = df_FES[df_FES.SubType.str.contains("CCGT", case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains("Generation")]
         cols = [2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_FES_LTW = df_FES[df_FES.index.str.contains(
-            "Leading The Way", case=False
-        )]
+        df_FES_LTW = df_FES[df_FES.index.str.contains("Leading The Way", case=False)]
         df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
         df_FES_LTW.index = ["Leading the Way"]
-        df_FES_CT = df_FES[df_FES.index.str.contains(
-            "Consumer Transformation", case=False
-        )]
+        df_FES_CT = df_FES[
+            df_FES.index.str.contains("Consumer Transformation", case=False)
+        ]
         df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
         df_FES_CT.index = ["Consumer Transformation"]
-        df_FES_ST = df_FES[df_FES.index.str.contains(
-            "System Transformation", case=False
-        )]
+        df_FES_ST = df_FES[
+            df_FES.index.str.contains("System Transformation", case=False)
+        ]
         df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
         df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Steady Progression", case=False
-            )]
+            df_FES_SP = df_FES[
+                df_FES.index.str.contains("Steady Progression", case=False)
+            ]
             df_FES_SP = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_SP.index = ["Steady Progression"]
         if FES == 2022:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Falling Short", case=False
-            )]
+            df_FES_SP = df_FES[df_FES.index.str.contains("Falling Short", case=False)]
             df_FES_SP = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_SP.index = ["Falling Short"]
         df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
@@ -1397,37 +1331,31 @@ def future_capacity(year, tech, scenario, FES):
             )
         else:
             raise Exception("Please choose a FES year.")
-        df_FES = df_FES[df_FES.SubType.str.contains(
-            "OCGT", case=False, na=False
-        )]
+        df_FES = df_FES[df_FES.SubType.str.contains("OCGT", case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains("Generation")]
         cols = [2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_FES_LTW = df_FES[df_FES.index.str.contains(
-            "Leading The Way", case=False
-        )]
+        df_FES_LTW = df_FES[df_FES.index.str.contains("Leading The Way", case=False)]
         df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
         df_FES_LTW.index = ["Leading the Way"]
-        df_FES_CT = df_FES[df_FES.index.str.contains(
-            "Consumer Transformation", case=False
-        )]
+        df_FES_CT = df_FES[
+            df_FES.index.str.contains("Consumer Transformation", case=False)
+        ]
         df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
         df_FES_CT.index = ["Consumer Transformation"]
-        df_FES_ST = df_FES[df_FES.index.str.contains(
-            "System Transformation", case=False
-        )]
+        df_FES_ST = df_FES[
+            df_FES.index.str.contains("System Transformation", case=False)
+        ]
         df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
         df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Steady Progression", case=False
-            )]
+            df_FES_SP = df_FES[
+                df_FES.index.str.contains("Steady Progression", case=False)
+            ]
             df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ["Steady Progression"]
         if FES == 2022:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Falling Short", case=False
-            )]
+            df_FES_SP = df_FES[df_FES.index.str.contains("Falling Short", case=False)]
             df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ["Falling Short"]
         df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
@@ -1470,37 +1398,31 @@ def future_capacity(year, tech, scenario, FES):
             )
         else:
             raise Exception("Please choose a FES year.")
-        df_FES = df_FES[df_FES.Type.str.contains(
-            "Other Thermal", case=False, na=False
-        )]
+        df_FES = df_FES[df_FES.Type.str.contains("Other Thermal", case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains("Generation")]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_FES_LTW = df_FES[df_FES.index.str.contains(
-            "Leading The Way", case=False
-        )]
+        df_FES_LTW = df_FES[df_FES.index.str.contains("Leading The Way", case=False)]
         df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
         df_FES_LTW.index = ["Leading the Way"]
-        df_FES_CT = df_FES[df_FES.index.str.contains(
-            "Consumer Transformation", case=False
-        )]
+        df_FES_CT = df_FES[
+            df_FES.index.str.contains("Consumer Transformation", case=False)
+        ]
         df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
         df_FES_CT.index = ["Consumer Transformation"]
-        df_FES_ST = df_FES[df_FES.index.str.contains(
-            "System Transformation", case=False
-        )]
+        df_FES_ST = df_FES[
+            df_FES.index.str.contains("System Transformation", case=False)
+        ]
         df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
         df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Steady Progression", case=False
-            )]
+            df_FES_SP = df_FES[
+                df_FES.index.str.contains("Steady Progression", case=False)
+            ]
             df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ["Steady Progression"]
         if FES == 2022:
-            df_FES_SP = df_FES[df_FES.index.str.contains(
-                "Falling Short", case=False
-            )]
+            df_FES_SP = df_FES[df_FES.index.str.contains("Falling Short", case=False)]
             df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ["Falling Short"]
         df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
@@ -1521,25 +1443,27 @@ def future_capacity(year, tech, scenario, FES):
             )
         else:
             raise Exception("Please choose a FES year.")
-        df_FES = df_FES[df_FES.Type.str.contains(
-            "Waste", case=False, na=False
-        )]
+        df_FES = df_FES[df_FES.Type.str.contains("Waste", case=False, na=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains("Generation")]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
-        df_FES_LTW = df_FES[df_FES.index.str.contains(
-            "Leading The Way", case=False
-        )]
+        df_FES_LTW = df_FES[df_FES.index.str.contains("Leading The Way", case=False)]
         df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
         df_FES_LTW.index = ["Leading the Way"]
-        df_FES_CT = df_FES[df_FES.index.str.contains("Consumer Transformation", case=False)]
+        df_FES_CT = df_FES[
+            df_FES.index.str.contains("Consumer Transformation", case=False)
+        ]
         df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
         df_FES_CT.index = ["Consumer Transformation"]
-        df_FES_ST = df_FES[df_FES.index.str.contains("System Transformation", case=False)]
+        df_FES_ST = df_FES[
+            df_FES.index.str.contains("System Transformation", case=False)
+        ]
         df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
         df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_SP = df_FES[df_FES.index.str.contains("Steady Progression", case=False)]
+            df_FES_SP = df_FES[
+                df_FES.index.str.contains("Steady Progression", case=False)
+            ]
             df_FES_SP = pd.DataFrame(df_FES_SP.sum(numeric_only=True)).T
             df_FES_SP.index = ["Steady Progression"]
         if FES == 2022:
@@ -1570,7 +1494,9 @@ def future_capacity(year, tech, scenario, FES):
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
         if FES == 2021:
             df_LTW = pd.DataFrame(0, columns=df_FES.columns, index=["Leading the Way"])
-            df_CT = pd.DataFrame(0, columns=df_FES.columns, index=["Consumer Transformation"])
+            df_CT = pd.DataFrame(
+                0, columns=df_FES.columns, index=["Consumer Transformation"]
+            )
             df_FES = pd.concat([df_FES, df_LTW, df_CT], sort=True)
     elif tech == "CCS Biomass":
         if FES == 2021:
@@ -1589,12 +1515,16 @@ def future_capacity(year, tech, scenario, FES):
             )
         else:
             raise Exception("Please choose a FES year.")
-        df_FES = df_FES[df_FES.SubType.str.contains("CCS Biomass", case=False, na=False)]
+        df_FES = df_FES[
+            df_FES.SubType.str.contains("CCS Biomass", case=False, na=False)
+        ]
         df_FES = df_FES[~df_FES.Variable.str.contains("Generation")]
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
         if FES == 2021:
-            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=["Steady Progression"])
+            df_FES_SP = pd.DataFrame(
+                0, columns=df_FES.columns, index=["Steady Progression"]
+            )
             df_FES = pd.concat([df_FES, df_FES_SP], sort=True)
     elif tech == "Hydrogen":
         if FES == 2021:
@@ -1618,26 +1548,38 @@ def future_capacity(year, tech, scenario, FES):
         cols = [0, 1, 2, 3, 4]
         df_FES.drop(df_FES.columns[cols], axis=1, inplace=True)
         df_FES = df_FES.fillna(0)
-        df_FES_LTW = df_FES[df_FES.index.str.contains("Leading The Way", case=False)].reset_index()
+        df_FES_LTW = df_FES[
+            df_FES.index.str.contains("Leading The Way", case=False)
+        ].reset_index()
         if FES == 2022:
             df_FES_LTW = pd.DataFrame(df_FES_LTW.sum(numeric_only=True)).T
             df_FES_LTW.index = ["Leading the Way"]
         if FES == 2022:
-            df_FES_CT = df_FES[df_FES.index.str.contains("Consumer Transformation", case=False)]
+            df_FES_CT = df_FES[
+                df_FES.index.str.contains("Consumer Transformation", case=False)
+            ]
             df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ["Consumer Transformation"]
-            df_FES_ST = df_FES[df_FES.index.str.contains("System Transformation", case=False)]
+            df_FES_ST = df_FES[
+                df_FES.index.str.contains("System Transformation", case=False)
+            ]
             df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_CT = df_FES[df_FES.index.str.contains("Consumer Transformation", case=False)]
+            df_FES_CT = df_FES[
+                df_FES.index.str.contains("Consumer Transformation", case=False)
+            ]
             df_FES_CT = pd.DataFrame(df_FES_CT.sum(numeric_only=True)).T
             df_FES_CT.index = ["Consumer Transformation"]
-            df_FES_ST = df_FES[df_FES.index.str.contains("System Transformation", case=False)]
+            df_FES_ST = df_FES[
+                df_FES.index.str.contains("System Transformation", case=False)
+            ]
             df_FES_ST = pd.DataFrame(df_FES_ST.sum(numeric_only=True)).T
             df_FES_ST.index = ["System Transformation"]
         if FES == 2021:
-            df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=["Steady Progression"])
+            df_FES_SP = pd.DataFrame(
+                0, columns=df_FES.columns, index=["Steady Progression"]
+            )
         if FES == 2022:
             df_FES_SP = pd.DataFrame(0, columns=df_FES.columns, index=["Falling Short"])
         df_FES = pd.concat([df_FES_SP, df_FES_LTW, df_FES_CT, df_FES_ST])
@@ -1646,8 +1588,6 @@ def future_capacity(year, tech, scenario, FES):
 
     date = str(year) + "-01-01"
 
-
-    tech_cap_FES = 0.0
     if scenario == "Leading The Way":
         # Try both possible spellings for the scenario key
         for scen_key in ["Leading the Way", "Leading The Way"]:
@@ -1655,12 +1595,10 @@ def future_capacity(year, tech, scenario, FES):
                 tech_cap_FES = float(df_FES.loc[scen_key, date]) / 1000.0
                 break
             except Exception:
-            except (KeyError, ValueError):
                 try:
                     tech_cap_FES = float(df_FES.loc[scen_key, year]) / 1000.0
                     break
                 except Exception:
-                except (KeyError, ValueError):
                     continue
         else:
             tech_cap_FES = 0.0
@@ -1669,11 +1607,6 @@ def future_capacity(year, tech, scenario, FES):
             tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.0
         except Exception:
             tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.0
-        except (KeyError, ValueError):
-            try:
-                tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.0
-            except (KeyError, ValueError):
-                tech_cap_FES = 0.0
 
     if np.isnan(tech_cap_FES):
         tech_cap_FES = 0.0

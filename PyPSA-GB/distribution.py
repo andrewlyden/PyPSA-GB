@@ -19,6 +19,11 @@ class Distribution(object):
 
         # path = 'LOPF_data/links.csv'
         # self.df_interconnector = pd.read_csv(path, index_col=0)
+        try:
+            path = "LOPF_data/links.csv"
+            self.df_interconnector = pd.read_csv(path, index_col=0)
+        except FileNotFoundError:
+            self.df_interconnector = pd.DataFrame()  # Or handle as appropriate
 
         self.year = year
         self.scenario = scenario
@@ -869,6 +874,8 @@ if __name__ == "__main__":
     # myDistribution.modify_storage()
     # myDistribution.read_regional_breakdown_load()
     myDistribution.scale_load()
+    # myDistribution.read_regional_breakdown_load() # This method does not exist
+    # myDistribution.scale_load() # This method does not exist
 
     # print(myDistribution.df_generators.loc[myDistribution.df_generators.carrier == 'Solar Photovoltaics'])
     # myDistribution.PV_scale()
