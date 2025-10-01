@@ -111,6 +111,7 @@ for scenario in ["System Transformation", "Falling Short"]:
                         elif networkmodel == "Zonal":
                             contingency_factor = 4
                             network.links[15:111].p_nom *= contingency_factor
+                            network.links.loc[network.links.index[15:111], "p_nom"] *= contingency_factor
 
                         network.consistency_check()
 
