@@ -819,11 +819,13 @@ def generator_additional_data(df, time_step):
 
 
 def future_coal_p_nom(year):
+    """Removes coal plants based on their phase-out dates."""
     # read in phase out of coal dates
     file = "../data/power stations/coal_phase_out_dates.csv"
     df = pd.read_csv(file, index_col=1)
     df.index = pd.to_datetime(df.index, format="%d/%m/%Y")
     end_date = str(year) + "-01-01"
+    # Using .loc to filter up to a certain date on a sorted index is efficient
     filtered_df = df.loc[:end_date]
     pp_to_remove = filtered_df.name.values
     # need to remove this because it deletes CCS biomass,
@@ -838,10 +840,13 @@ def future_coal_p_nom(year):
 
     # error occurs because deleting PV farm with Ratcliffe in name
     # just add in later
+    PV_ratcliffe = None
+    PV_ratcliffe_UC = None
     try:
         PV_ratcliffe = generators.loc[["Ld NW Of Ratcliffe House Farm"]]
         PV_ratcliffe_UC = generators_UC.loc[["Ld NW Of Ratcliffe House Farm"]]
     except Exception:
+    except KeyError:
         pass
 
     for i in range(len(pp_to_remove)):
@@ -860,12 +865,17 @@ def future_coal_p_nom(year):
     # only in years Ratcliffe is removed
     try:
         if year > 2024:
+    if year > 2024:
+        try:
             generators = pd.concat([generators, PV_ratcliffe])
             generators_UC = pd.concat([generators_UC, PV_ratcliffe_UC])
     except Exception:
         pass
+        except ValueError:  # Handles case where PV_ratcliffe is None
+            pass
 
     if year > 2022:
+    if year > 2022 and "West Burton" in generators.index:
         generators["p_nom"]["West Burton"] = 0
 
     generators_UC.to_csv("UC_data/generators.csv", header=True)
@@ -873,6 +883,7 @@ def future_coal_p_nom(year):
 
 
 def future_gas_p_nom(year, scenario, tech, FES):
+    """Scales OCGT and CCGT capacity based on FES scenarios."""
     # going to scale the OCGT and CCGT based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
     tech_cap_year = future_capacities_dict["tech_cap_year"]
@@ -913,6 +924,7 @@ def future_gas_p_nom(year, scenario, tech, FES):
 
 
 def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
+    """Updates nuclear capacity based on phase-out and new build dates."""
     if networkmodel == "Reduced":
         from distance_calculator import map_to_bus as map_to
     elif networkmodel == "Zonal":
@@ -1031,6 +1043,7 @@ def future_nuclear_p_nom(year, scenario, FES, networkmodel="Reduced"):
 
 
 def future_oil_p_nom(year, scenario, FES):
+    """Scales oil capacity based on FES scenarios."""
     tech = "Oil"
     # going to scale the oil based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
@@ -1071,6 +1084,7 @@ def future_oil_p_nom(year, scenario, FES):
 
 
 def future_waste_p_nom(year, scenario, FES):
+    """Scales EfW Incineration capacity based on FES scenarios and renames carrier to Waste."""
     tech = "Waste"
     # going to scale the oil based on FES
     future_capacities_dict = future_capacity(year, tech, scenario, FES)
@@ -1125,6 +1139,7 @@ def future_waste_p_nom(year, scenario, FES):
 
 
 def future_gas_CCS(year, scenario, FES):
+    """Adds CCS Gas capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "CCS Gas"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1182,6 +1197,7 @@ def future_gas_CCS(year, scenario, FES):
 
 
 def future_biomass_CCS(year, scenario, FES):
+    """Adds CCS Biomass capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "CCS Biomass"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1236,6 +1252,7 @@ def future_biomass_CCS(year, scenario, FES):
 
 
 def future_hydrogen(year, scenario, FES):
+    """Adds Hydrogen capacity by scaling existing CCGT sites based on FES scenarios."""
     tech = "Hydrogen"
     # going to scale the existing gas sites based on FES
     # but add as new tech
@@ -1292,6 +1309,7 @@ def future_hydrogen(year, scenario, FES):
 
 
 def future_capacity(year, tech, scenario, FES):
+    """Retrieves future capacity for a given technology, year, and scenario from FES data."""
 
     df_pp = read_power_stations_data(year)
 
@@ -1308,6 +1326,8 @@ def future_capacity(year, tech, scenario, FES):
     elif tech == "CCS Gas" or tech == "CCS Biomass" or tech == "Hydrogen":
         df_pp = df_pp[df_pp.Technology.str.contains("CCGT")]
         tech_cap_year = df_pp["Installed Capacity (MW)"].sum() / 1000
+    else:
+        tech_cap_year = 0.0
 
     if tech == "CCGT":
         if FES == 2021:
@@ -1627,6 +1647,7 @@ def future_capacity(year, tech, scenario, FES):
     date = str(year) + "-01-01"
 
 
+    tech_cap_FES = 0.0
     if scenario == "Leading The Way":
         # Try both possible spellings for the scenario key
         for scen_key in ["Leading the Way", "Leading The Way"]:
@@ -1634,10 +1655,12 @@ def future_capacity(year, tech, scenario, FES):
                 tech_cap_FES = float(df_FES.loc[scen_key, date]) / 1000.0
                 break
             except Exception:
+            except (KeyError, ValueError):
                 try:
                     tech_cap_FES = float(df_FES.loc[scen_key, year]) / 1000.0
                     break
                 except Exception:
+                except (KeyError, ValueError):
                     continue
         else:
             tech_cap_FES = 0.0
@@ -1646,6 +1669,11 @@ def future_capacity(year, tech, scenario, FES):
             tech_cap_FES = float(df_FES.loc[scenario, date]) / 1000.0
         except Exception:
             tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.0
+        except (KeyError, ValueError):
+            try:
+                tech_cap_FES = float(df_FES.loc[scenario, year]) / 1000.0
+            except (KeyError, ValueError):
+                tech_cap_FES = 0.0
 
     if np.isnan(tech_cap_FES):
         tech_cap_FES = 0.0
