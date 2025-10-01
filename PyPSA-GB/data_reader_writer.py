@@ -212,6 +212,7 @@ if __name__ == "__main__":
                         demand_dataset=demand_dataset,
                         year_baseline=year_baseline,
                         scenario=scenario,
+                        scenario=scenario,  # type: ignore
                         FES=2022,
                         merge_generators=True,
                         scale_to_peak=True,
@@ -219,6 +220,9 @@ if __name__ == "__main__":
                         P2G=True,
                         marine_modify=True,
                         marine_scenario="Mid",
+                        floating_wind_scenario="Mid",
+                        wave_scenario="Mid",
+                        tidal_stream_scenario="Mid",
                     )
 
     # start = '2040-02-28 00:00:00'
