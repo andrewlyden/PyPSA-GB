@@ -238,7 +238,12 @@ def future_interconnectors(year, scenario, FES):
                 sheet_name="ES1",
                 header=9,
                 index_col=1,
+                sheet_name="ES1",  # type: ignore
+                header=9,  # type: ignore
+                index_col=1,  # type: ignore
             )
+        else:
+            raise ValueError("FES year not supported")
         df_FES.dropna(axis="rows", inplace=True)
         df_FES = df_FES[df_FES.Type.str.contains("Interconnectors", case=False)]
         df_FES = df_FES[~df_FES.Variable.str.contains(r"\(TWh\)")]
