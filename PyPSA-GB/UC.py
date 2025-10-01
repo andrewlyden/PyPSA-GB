@@ -15,6 +15,8 @@ year = int(start[0:4])
 time_step = 0.5
 # want marginal prices?
 marginal_price = True
+gitscenario = None
+year_baseline = None
 
 if year > 2020:
 
@@ -88,6 +90,7 @@ if year <= 2020:
     # i.e. export is a positive load, but negative generator
     exports["Interconnectors Export"] = exports.iloc[:, -6:].sum(axis=1) * -1
     interconnector_export = exports[["Interconnectors Export"]]
+    interconnector_import = None
 
 elif year > 2020:
     print(network.links_t.p0)

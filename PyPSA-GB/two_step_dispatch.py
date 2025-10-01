@@ -17,8 +17,6 @@ year = int(start[0:4])
 time_step = 0.5
 # want unit commitment marginal prices? True or False
 UC_marginal_prices = False
-scenario = None
-year_baseline = None
 
 if year > 2020:
     # choose FES scenario
@@ -189,7 +187,6 @@ if year <= 2020:
     # i.e. export is a positive load, but negative generator
     exports["Interconnectors Export"] = exports.iloc[:, -6:].sum(axis=1) * -1
     interconnector_export = exports[["Interconnectors Export"]].iloc[0:batches]
-    interconnector_import = None
 
 elif year > 2020:
     print(network2.links_t.p0)
