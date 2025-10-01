@@ -15,6 +15,7 @@ year = int(start[0:4])
 # time step as fraction of hour
 time_step = 0.5
 
+interconnector_export = None
 if year > 2020:
 
     # choose FES scenario
@@ -80,6 +81,7 @@ if year <= 2020:
     # i.e. export is a positive load, but negative generator
     exports["Interconnectors Export"] = exports.iloc[:, -6:].sum(axis=1) * -1
     interconnector_export = exports[["Interconnectors Export"]]
+    interconnector_export = exports[["Interconnectors Export"]]  # type: ignore
 
 elif year > 2020:
     print(network.links_t.p0)
@@ -95,6 +97,7 @@ elif year > 2020:
     exp[exp > 0] = 0
     exp["Interconnectors Export"] = exp.sum(axis=1)
     interconnector_export = exp[["Interconnectors Export"]]
+    interconnector_export = exp[["Interconnectors Export"]]  # type: ignore
     print(interconnector_export)
 
 # group biomass stuff
@@ -218,6 +221,16 @@ ax.set_ylim(
         (p_by_carrier / 1e3).sum(axis=1).max(),
     ]
 )
+if interconnector_export is not None:
+    # stacked area plot of negative values, prepend column names with '_' such that they don't appear in the legend
+    (interconnector_export / 1e3).plot.area(ax=ax, stacked=True, linewidth=0.0)
+    # rescale the y axis
+    ax.set_ylim(
+        [
+            (interconnector_export / 1e3).sum(axis=1).min(),
+            (p_by_carrier / 1e3).sum(axis=1).max(),
+        ]
+    )
 
 # Shrink current axis's height by 10% on the bottom
 box = ax.get_position()

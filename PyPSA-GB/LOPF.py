@@ -1,13 +1,13 @@
 """Script for running a network constrained linear optimal power flow of PyPSA-GB"""
 
-import pypsa
+import time
+
+import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import pandas as pd
-import cartopy.crs as ccrs
+import pypsa
 
 from . import data_reader_writer
-
-import time
 
 # start = '2050-01-01 00:00:00'
 # end = '2050-12-31 23:30:00'
@@ -111,7 +111,6 @@ for scenario in ["System Transformation", "Falling Short"]:
                         elif networkmodel == "Zonal":
                             contingency_factor = 4
                             network.links[15:111].p_nom *= contingency_factor
-                            network.links.loc[network.links.index[15:111], "p_nom"] *= contingency_factor
 
                         network.consistency_check()
 
