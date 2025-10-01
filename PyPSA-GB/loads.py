@@ -283,6 +283,7 @@ def write_loads_p_set(
                 dtype=str,
             )
         elif FES == None:
+        elif FES is None:
             raise Exception("Please choose a FES year.")
 
         df_FES_demand = df_FES.loc[df_FES["Data item"] == "GBFES System Demand: Total"]
@@ -413,6 +414,7 @@ def read_regional_breakdown_load(scenario, year, networkmodel):
     elif scenario == "Falling Short":
         df_regional = pd.read_excel(
             "../data/FES2022/FES22_regional_peak_load_falling_short.xlsx",
+            "../data/FES2022/FES22_regional_peak_load_falling_short.xlsx",  # type: ignore
             sheet_name=str(year),
             header=5,
         )
