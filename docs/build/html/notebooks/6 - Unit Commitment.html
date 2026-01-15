@@ -1,365 +1,761 @@
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unit Commitment &mdash; PyPSA-GB  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "tex2jax_ignore|mathjax_ignore|document", "processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
-    <script src="../_static/js/theme.js"></script>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Unit Commitment &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/6 - Unit Commitment';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Comparison To Historical Data" href="9%20-%20Comparison%20To%20Historical%20Data.html" />
-    <link rel="prev" title="Future Network Constrained Linear Optimal Power Flow" href="5b%20-%20LOPF%20Future.html" /> 
-</head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> PyPSA-GB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Data and Functionality</span></p>
-<ul class="current">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html#Zonal-model">Zonal model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
 <li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Unit Commitment</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Setting-up-simulation">Setting up simulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Running-MILP-and/or-LP">Running MILP and/or LP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Outputs">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5a%20-%20Historical%20Years.html">Historical Years</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
 </ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PyPSA-GB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Unit Commitment</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/6 - Unit Commitment.nblink.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
   
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
 
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
 
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
 
-/* Some additional styling taken form the Jupyter notebook CSS */
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-div.rendered_html th {
-  font-weight: bold;
-}
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<div class="section" id="Unit-Commitment">
-<h1>Unit Commitment<a class="headerlink" href="#Unit-Commitment" title="Permalink to this headline">¶</a></h1>
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Unit Commitment</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Unit-Commitment">
+<h1>Unit Commitment<a class="headerlink" href="#Unit-Commitment" title="Link to this heading">#</a></h1>
 <p>PyPSA-GB can model the GB power system by optimising the dispatch of generators by solving a Unit Commitment (UC) problem and fixing the commitment schedule. This notebook shows the solving of the Unit Commitment (UC) problem for a 3 day period.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -387,8 +783,8 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<div class="section" id="Setting-up-simulation">
-<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Permalink to this headline">¶</a></h2>
+<section id="Setting-up-simulation">
+<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Link to this heading">#</a></h2>
 <p>Set the required inputs for the unit commitment: the start, end and year of simulation, the timestep, and true/false on outputting marginal prices</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -400,7 +796,7 @@ div.rendered_html tbody tr:hover {
 <span class="c1"># year of simulation</span>
 <span class="n">year</span> <span class="o">=</span> <span class="mi">2050</span>
 <span class="c1"># time step as fraction of hour</span>
-<span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mf">1.0</span>
 <span class="c1"># want marginal prices?</span>
 <span class="n">marginal_price</span> <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
@@ -421,10 +817,10 @@ div.rendered_html tbody tr:hover {
 
     <span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2012</span>
 
-    <span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">)</span>
+    <span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">demand_dataset</span><span class="o">=</span><span class="s1">&#39;historical&#39;</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">)</span>
 
 <span class="k">elif</span> <span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2020</span><span class="p">:</span>
-    <span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+    <span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">demand_dataset</span><span class="o">=</span><span class="s1">&#39;historical&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -437,7 +833,7 @@ c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\dat
   warnings.warn(
 c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
   self.obj[key] = value
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:201: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:208: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
   df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
 </pre></div></div>
 </div>
@@ -460,15 +856,20 @@ WARNING:pypsa.io:
 Importing PyPSA from older version of PyPSA than current version.
 Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
 carefully to prepare your network for import.
-Currently used PyPSA version [0, 19, 2], imported network file PyPSA version None.
+Currently used PyPSA version [0, 20, 1], imported network file PyPSA version None.
 
 INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
+WARNING:pypsa.io:Components Index([&#39;Bar-Bri-Cha&#39;, &#39;Big Rus&#39;, &#39;Bri-Cha-Min&#39;, &#39;Eas-Cas&#39;, &#39;Eas-Rai-Sou&#39;,
+       &#39;Fai-Hea&#39;, &#39;Mor&#39;, &#39;NE-Jer&#39;, &#39;Nor-Ron-Fir&#39;, &#39;Pen-Fir-Dee&#39;, &#39;Pen-Fir-Sha&#39;,
+       &#39;Rai-Isl&#39;, &#39;Ram-Isl&#39;, &#39;Sou-Jer&#39;, &#39;Sou-Min-Jer&#39;, &#39;Str-Lou&#39;, &#39;Tor-Hea&#39;,
+       &#39;Wes-Cas&#39;, &#39;Wes-Fir&#39;],
+      dtype=&#39;object&#39;, name=&#39;Generator&#39;) for attribute p_max_pu of Generator are not in main components dataframe generators
 INFO:pypsa.io:Imported network UC_data has buses, generators, links, loads, storage_units
 </pre></div></div>
 </div>
-</div>
-<div class="section" id="Running-MILP-and/or-LP">
-<h2>Running MILP and/or LP<a class="headerlink" href="#Running-MILP-and/or-LP" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Running-MILP-and/or-LP">
+<h2>Running MILP and/or LP<a class="headerlink" href="#Running-MILP-and/or-LP" title="Link to this heading">#</a></h2>
 <p>The below cell runs the unit commitment. If marginal prices are not required then one MILP optimisation step is needed. If marginal prices are required then the MILP step is followed by fixing the generator status to convert to a LP which when solved gives marginal prices.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -519,16 +920,16 @@ INFO:pypsa.opf:Building pyomo model using `angles` formulation
 #   Problem Information
 # ----------------------------------------------------------
 Problem:
-- Name: x510193
-  Lower bound: 0.0
-  Upper bound: 0.0
+- Name: x226297
+  Lower bound: 30914790.45505966
+  Upper bound: 30917747.46757312
   Number of objectives: 1
-  Number of constraints: 1011317
-  Number of variables: 510193
-  Number of binary variables: 35712
-  Number of integer variables: 35712
-  Number of continuous variables: 474481
-  Number of nonzeros: 3119228
+  Number of constraints: 446419
+  Number of variables: 226297
+  Number of binary variables: 18288
+  Number of integer variables: 18288
+  Number of continuous variables: 208009
+  Number of nonzeros: 1228054
   Sense: minimize
 # ----------------------------------------------------------
 #   Solver Information
@@ -539,9 +940,9 @@ Solver:
   Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
   Termination condition: optimal
   Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 6.549442291259766
+  Wall time: 8.473834991455078
   Error rc: 0
-  Time: 15.881700277328491
+  Time: 11.226973533630371
 # ----------------------------------------------------------
 #   Solution Information
 # ----------------------------------------------------------
@@ -555,16 +956,16 @@ Solution:
 #   Problem Information
 # ----------------------------------------------------------
 Problem:
-- Name: x510193_copy
-  Lower bound: 0.0
-  Upper bound: 0.0
+- Name: x226297_copy
+  Lower bound: 30917747.467573464
+  Upper bound: 30917747.467573464
   Number of objectives: 1
-  Number of constraints: 1011317
-  Number of variables: 474481
+  Number of constraints: 446419
+  Number of variables: 208009
   Number of binary variables: 0
   Number of integer variables: 0
-  Number of continuous variables: 474481
-  Number of nonzeros: 2232762
+  Number of continuous variables: 208009
+  Number of nonzeros: 966118
   Sense: minimize
 # ----------------------------------------------------------
 #   Solver Information
@@ -575,9 +976,9 @@ Solver:
   Message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
   Termination condition: optimal
   Termination message: Model was solved to optimality (subject to tolerances), and an optimal solution is available.
-  Wall time: 3.150636672973633
+  Wall time: 0.6509914398193359
   Error rc: 0
-  Time: 13.868595361709595
+  Time: 3.783301830291748
 # ----------------------------------------------------------
 #   Solution Information
 # ----------------------------------------------------------
@@ -586,9 +987,9 @@ Solution:
   number of solutions displayed: 0
 </pre></div></div>
 </div>
-</div>
-<div class="section" id="Outputs">
-<h2>Outputs<a class="headerlink" href="#Outputs" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Outputs">
+<h2>Outputs<a class="headerlink" href="#Outputs" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -622,16 +1023,16 @@ Solution:
     <tr style="text-align: right;">
       <th>Bus</th>
       <th>bus</th>
+      <th>Netherlands</th>
       <th>Norway</th>
       <th>N. Ireland</th>
       <th>France2</th>
-      <th>Denmark</th>
-      <th>Germany</th>
       <th>Belgium</th>
-      <th>Netherlands</th>
       <th>Ireland</th>
+      <th>Germany</th>
       <th>Ireland2</th>
       <th>France1</th>
+      <th>Denmark</th>
     </tr>
     <tr>
       <th>snapshot</th>
@@ -651,73 +1052,73 @@ Solution:
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 00:30:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 01:30:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 03:00:00</th>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 04:00:00</th>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
     <tr>
       <th>...</th>
@@ -734,78 +1135,78 @@ Solution:
       <td>...</td>
     </tr>
     <tr>
-      <th>2050-06-04 21:30:00</th>
+      <th>2050-06-04 19:00:00</th>
       <td>0.0</td>
+      <td>-20.0</td>
       <td>-1.0</td>
       <td>-7.0</td>
       <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
       <td>-20.0</td>
       <td>-7.0</td>
+      <td>-20.0</td>
       <td>-7.0</td>
       <td>-15.0</td>
+      <td>-7.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 20:00:00</th>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 21:00:00</th>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 22:30:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 23:30:00</th>
-      <td>0.0</td>
-      <td>-1.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
-      <td>-7.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-20.0</td>
-      <td>-7.0</td>
-      <td>-7.0</td>
-      <td>-15.0</td>
+      <td>80.0</td>
+      <td>60.0</td>
+      <td>79.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>60.0</td>
+      <td>73.0</td>
+      <td>65.0</td>
+      <td>73.0</td>
     </tr>
   </tbody>
 </table>
-<p>144 rows × 11 columns</p>
+<p>72 rows × 11 columns</p>
 </div></div>
 </div>
 <div class="nbinput docutils container">
@@ -839,6 +1240,7 @@ Solution:
   <thead>
     <tr style="text-align: right;">
       <th>Generator</th>
+      <th>West Burton</th>
       <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
       <th>Beatrice Demonstrator</th>
       <th>Burbo Bank</th>
@@ -848,7 +1250,6 @@ Solution:
       <th>Inner Dowsing</th>
       <th>Kentish Flats</th>
       <th>Lynn</th>
-      <th>North Hoyle</th>
       <th>...</th>
       <th>Pem-Dem</th>
       <th>Pen</th>
@@ -889,31 +1290,7 @@ Solution:
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>...</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 00:30:00</th>
-      <td>1.0</td>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -937,31 +1314,7 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>...</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 01:30:00</th>
-      <td>1.0</td>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -985,7 +1338,55 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
+      <td>0.0</td>
       <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 03:00:00</th>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 04:00:00</th>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -1032,8 +1433,56 @@ Solution:
       <td>...</td>
     </tr>
     <tr>
-      <th>2050-06-04 21:30:00</th>
+      <th>2050-06-04 19:00:00</th>
+      <td>0.0</td>
       <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 20:00:00</th>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 21:00:00</th>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -1057,31 +1506,7 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>...</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 22:30:00</th>
-      <td>1.0</td>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -1105,31 +1530,7 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>...</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>1.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 23:30:00</th>
-      <td>1.0</td>
+      <td>0.0</td>
       <td>1.0</td>
       <td>1.0</td>
       <td>1.0</td>
@@ -1153,7 +1554,7 @@ Solution:
     </tr>
   </tbody>
 </table>
-<p>144 rows × 2847 columns</p>
+<p>72 rows × 2438 columns</p>
 </div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1187,6 +1588,7 @@ Solution:
   <thead>
     <tr style="text-align: right;">
       <th>Generator</th>
+      <th>West Burton</th>
       <th>Hywind Scotland Pilot Park (Hywind 2) Demonstrator</th>
       <th>Beatrice Demonstrator</th>
       <th>Burbo Bank</th>
@@ -1196,7 +1598,6 @@ Solution:
       <th>Inner Dowsing</th>
       <th>Kentish Flats</th>
       <th>Lynn</th>
-      <th>North Hoyle</th>
       <th>...</th>
       <th>Pem-Dem</th>
       <th>Pen</th>
@@ -1237,40 +1638,16 @@ Solution:
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>0.0000</td>
+      <td>0.0</td>
+      <td>32.489724</td>
+      <td>8.220102</td>
       <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>29.267216</td>
-      <td>0.0</td>
-      <td>26.207389</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 00:30:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.315504</td>
-      <td>0.0</td>
+      <td>2.311253</td>
+      <td>15.092391</td>
+      <td>25.153986</td>
+      <td>0.363795</td>
+      <td>22.524189</td>
+      <td>0.363795</td>
       <td>...</td>
       <td>0.0</td>
       <td>29.69967</td>
@@ -1285,43 +1662,19 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
       <td>0.0</td>
+      <td>29.000530</td>
+      <td>7.613872</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
+      <td>2.155259</td>
+      <td>14.056046</td>
+      <td>23.426743</td>
+      <td>0.226243</td>
+      <td>21.011899</td>
+      <td>0.226243</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 01:30:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
+      <td>29.69967</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1333,19 +1686,67 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
       <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
+      <td>24.166550</td>
+      <td>6.658646</td>
+      <td>0.059315</td>
+      <td>2.060716</td>
+      <td>13.423823</td>
+      <td>22.373038</td>
+      <td>0.230147</td>
+      <td>19.608024</td>
+      <td>0.230147</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
+      <td>16.85600</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 03:00:00</th>
+      <td>0.0</td>
+      <td>19.649024</td>
+      <td>5.466987</td>
+      <td>0.340611</td>
+      <td>1.951811</td>
+      <td>12.695556</td>
+      <td>21.159260</td>
+      <td>0.483038</td>
+      <td>18.247211</td>
+      <td>0.483038</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>16.85600</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 04:00:00</th>
+      <td>0.0</td>
+      <td>19.148486</td>
+      <td>5.200978</td>
+      <td>3.401900</td>
+      <td>1.979623</td>
+      <td>12.881544</td>
+      <td>21.469240</td>
+      <td>3.018009</td>
+      <td>19.284514</td>
+      <td>3.018009</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>16.85600</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1380,17 +1781,65 @@ Solution:
       <td>...</td>
     </tr>
     <tr>
-      <th>2050-06-04 21:30:00</th>
-      <td>0.0000</td>
-      <td>3.679971</td>
+      <th>2050-06-04 19:00:00</th>
       <td>0.0</td>
-      <td>0.507826</td>
-      <td>3.109866</td>
-      <td>5.183110</td>
+      <td>26.909923</td>
+      <td>5.896873</td>
+      <td>0.175997</td>
+      <td>2.503677</td>
+      <td>16.385975</td>
+      <td>27.309958</td>
+      <td>22.175462</td>
+      <td>12.943438</td>
+      <td>22.175462</td>
+      <td>...</td>
       <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 20:00:00</th>
+      <td>0.0</td>
+      <td>23.656100</td>
+      <td>4.976056</td>
+      <td>0.011233</td>
+      <td>2.043156</td>
+      <td>13.306395</td>
+      <td>22.177326</td>
+      <td>3.116960</td>
+      <td>9.719792</td>
+      <td>3.116960</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 21:00:00</th>
+      <td>0.0</td>
+      <td>20.524212</td>
+      <td>4.096106</td>
       <td>0.000000</td>
+      <td>1.012580</td>
+      <td>6.187433</td>
+      <td>10.312389</td>
       <td>0.000000</td>
-      <td>0.0</td>
+      <td>3.309329</td>
+      <td>0.000000</td>
       <td>...</td>
       <td>0.0</td>
       <td>8.42800</td>
@@ -1405,16 +1854,16 @@ Solution:
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>10.3331</td>
-      <td>2.624134</td>
       <td>0.0</td>
+      <td>8.880881</td>
+      <td>2.255336</td>
       <td>0.000000</td>
-      <td>0.158964</td>
-      <td>0.264940</td>
-      <td>0.0</td>
-      <td>0.035283</td>
       <td>0.000000</td>
-      <td>0.0</td>
+      <td>0.136623</td>
+      <td>0.227705</td>
+      <td>0.000000</td>
+      <td>0.030324</td>
+      <td>0.000000</td>
       <td>...</td>
       <td>0.0</td>
       <td>8.42800</td>
@@ -1428,68 +1877,20 @@ Solution:
       <td>0.0</td>
     </tr>
     <tr>
-      <th>2050-06-04 22:30:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-    </tr>
-    <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
       <td>0.0</td>
+      <td>5.312459</td>
+      <td>1.834987</td>
       <td>0.000000</td>
       <td>0.000000</td>
+      <td>0.010380</td>
+      <td>0.017299</td>
+      <td>4.750807</td>
       <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
+      <td>4.750807</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 23:30:00</th>
-      <td>0.0000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
+      <td>8.42800</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
@@ -1501,12 +1902,12 @@ Solution:
     </tr>
   </tbody>
 </table>
-<p>144 rows × 2847 columns</p>
+<p>72 rows × 2438 columns</p>
 </div></div>
 </div>
 <p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
@@ -1546,9 +1947,7 @@ Solution:
 
 <span class="c1"># group biomass stuff</span>
 <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">]</span> <span class="o">+</span>
-    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Landfill Gas&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Anaerobic Digestion&#39;</span><span class="p">]</span> <span class="o">+</span>
-    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Sewage Sludge Digestion&#39;</span><span class="p">])</span>
+    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">])</span>
 
 <span class="c1"># rename the hydro and interconnector import</span>
 <span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
@@ -1567,124 +1966,124 @@ Solution:
 <div class="highlight"><pre>
 Link                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
 snapshot
-2050-06-02 00:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
-2050-06-02 00:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
-2050-06-02 01:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
-2050-06-02 01:30:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
-2050-06-02 02:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0  2450.0
+2050-06-02 00:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
+2050-06-02 01:00:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
+2050-06-02 02:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
+2050-06-02 03:00:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
+2050-06-02 04:00:00      0.0       0.0    0.0   0.0  3500.0  1750.0 -2450.0
 ...                      ...       ...    ...   ...     ...     ...     ...
-2050-06-04 21:30:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
-2050-06-04 22:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
-2050-06-04 22:30:00      0.0       0.0    0.0   0.0  3500.0  1750.0 -2450.0
-2050-06-04 23:00:00      0.0       0.0    0.0   0.0  -700.0  1750.0  2450.0
-2050-06-04 23:30:00      0.0       0.0    0.0   0.0  3500.0  1750.0  2450.0
+2050-06-04 19:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
+2050-06-04 20:00:00      0.0       0.0    0.0   0.0 -3500.0  1750.0 -2450.0
+2050-06-04 21:00:00      0.0       0.0    0.0   0.0  3500.0  1750.0  2450.0
+2050-06-04 22:00:00      0.0       0.0    0.0   0.0   700.0  1750.0 -2450.0
+2050-06-04 23:00:00      0.0       0.0    0.0   0.0  3500.0  1750.0 -2450.0
 
 Link                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
 snapshot
-2050-06-02 00:00:00    1750.0          0.0        0.0   -2450.0         0.0
-2050-06-02 00:30:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-02 01:00:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-02 01:30:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-02 02:00:00    1050.0          0.0        0.0    2450.0         0.0
+2050-06-02 00:00:00    1750.0          0.0        0.0    1750.0         0.0
+2050-06-02 01:00:00   -1750.0          0.0        0.0    2450.0         0.0
+2050-06-02 02:00:00    1750.0          0.0        0.0   -2450.0         0.0
+2050-06-02 03:00:00   -1750.0          0.0        0.0    2450.0         0.0
+2050-06-02 04:00:00   -1750.0          0.0        0.0   -1750.0         0.0
 ...                       ...          ...        ...       ...         ...
-2050-06-04 21:30:00   -1750.0          0.0        0.0    2450.0         0.0
-2050-06-04 22:00:00    1750.0          0.0        0.0    1750.0         0.0
-2050-06-04 22:30:00   -1750.0          0.0        0.0   -1750.0         0.0
-2050-06-04 23:00:00   -1750.0          0.0        0.0    2450.0         0.0
-2050-06-04 23:30:00   -1750.0          0.0        0.0   -1750.0         0.0
+2050-06-04 19:00:00    1750.0          0.0        0.0   -2450.0         0.0
+2050-06-04 20:00:00    1750.0          0.0        0.0    1750.0         0.0
+2050-06-04 21:00:00   -1750.0          0.0        0.0   -1750.0         0.0
+2050-06-04 22:00:00    1750.0          0.0        0.0   -2450.0         0.0
+2050-06-04 23:00:00   -1750.0          0.0        0.0   -1750.0         0.0
 
 Link                 NorthConnect  FAB Link
 snapshot
 2050-06-02 00:00:00        2450.0   -1750.0
-2050-06-02 00:30:00       -2450.0   -1750.0
 2050-06-02 01:00:00       -2450.0   -1750.0
-2050-06-02 01:30:00        2450.0   -1750.0
-2050-06-02 02:00:00       -2450.0   -1750.0
+2050-06-02 02:00:00        2450.0   -1750.0
+2050-06-02 03:00:00       -2450.0   -1750.0
+2050-06-02 04:00:00        2450.0   -1750.0
 ...                           ...       ...
-2050-06-04 21:30:00       -2450.0   -1750.0
+2050-06-04 19:00:00        2450.0   -1750.0
+2050-06-04 20:00:00        2450.0   -1750.0
+2050-06-04 21:00:00       -2450.0   -1750.0
 2050-06-04 22:00:00        2450.0   -1750.0
-2050-06-04 22:30:00        2450.0   -1750.0
-2050-06-04 23:00:00       -2450.0   -1750.0
-2050-06-04 23:30:00       -2450.0   -1750.0
+2050-06-04 23:00:00        2450.0   -1750.0
 
-[144 rows x 14 columns]
+[72 rows x 14 columns]
 Link                 BritNed  EastWest  Moyle  Nemo     IFA    IFA2     NSL  \
 snapshot
-2050-06-02 00:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
-2050-06-02 00:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
-2050-06-02 01:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
-2050-06-02 01:30:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
-2050-06-02 02:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0 -2450.0
+2050-06-02 00:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
+2050-06-02 01:00:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
+2050-06-02 02:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
+2050-06-02 03:00:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
+2050-06-02 04:00:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0  2450.0
 ...                      ...       ...    ...   ...     ...     ...     ...
-2050-06-04 21:30:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
-2050-06-04 22:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
-2050-06-04 22:30:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0  2450.0
-2050-06-04 23:00:00     -0.0      -0.0   -0.0  -0.0   700.0 -1750.0 -2450.0
-2050-06-04 23:30:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0 -2450.0
+2050-06-04 19:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
+2050-06-04 20:00:00     -0.0      -0.0   -0.0  -0.0  3500.0 -1750.0  2450.0
+2050-06-04 21:00:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0 -2450.0
+2050-06-04 22:00:00     -0.0      -0.0   -0.0  -0.0  -700.0 -1750.0  2450.0
+2050-06-04 23:00:00     -0.0      -0.0   -0.0  -0.0 -3500.0 -1750.0  2450.0
 
 Link                 ElecLink  Viking Link  Greenlink  GridLink  NeuConnect  \
 snapshot
-2050-06-02 00:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
-2050-06-02 00:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-02 01:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-02 01:30:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-02 02:00:00   -1050.0         -0.0       -0.0   -2450.0        -0.0
+2050-06-02 00:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
+2050-06-02 01:00:00    1750.0         -0.0       -0.0   -2450.0        -0.0
+2050-06-02 02:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
+2050-06-02 03:00:00    1750.0         -0.0       -0.0   -2450.0        -0.0
+2050-06-02 04:00:00    1750.0         -0.0       -0.0    1750.0        -0.0
 ...                       ...          ...        ...       ...         ...
-2050-06-04 21:30:00    1750.0         -0.0       -0.0   -2450.0        -0.0
-2050-06-04 22:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
-2050-06-04 22:30:00    1750.0         -0.0       -0.0    1750.0        -0.0
-2050-06-04 23:00:00    1750.0         -0.0       -0.0   -2450.0        -0.0
-2050-06-04 23:30:00    1750.0         -0.0       -0.0    1750.0        -0.0
+2050-06-04 19:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
+2050-06-04 20:00:00   -1750.0         -0.0       -0.0   -1750.0        -0.0
+2050-06-04 21:00:00    1750.0         -0.0       -0.0    1750.0        -0.0
+2050-06-04 22:00:00   -1750.0         -0.0       -0.0    2450.0        -0.0
+2050-06-04 23:00:00    1750.0         -0.0       -0.0    1750.0        -0.0
 
 Link                 NorthConnect  FAB Link
 snapshot
 2050-06-02 00:00:00       -2450.0    1750.0
-2050-06-02 00:30:00        2450.0    1750.0
 2050-06-02 01:00:00        2450.0    1750.0
-2050-06-02 01:30:00       -2450.0    1750.0
-2050-06-02 02:00:00        2450.0    1750.0
+2050-06-02 02:00:00       -2450.0    1750.0
+2050-06-02 03:00:00        2450.0    1750.0
+2050-06-02 04:00:00       -2450.0    1750.0
 ...                           ...       ...
-2050-06-04 21:30:00        2450.0    1750.0
+2050-06-04 19:00:00       -2450.0    1750.0
+2050-06-04 20:00:00       -2450.0    1750.0
+2050-06-04 21:00:00        2450.0    1750.0
 2050-06-04 22:00:00       -2450.0    1750.0
-2050-06-04 22:30:00       -2450.0    1750.0
-2050-06-04 23:00:00        2450.0    1750.0
-2050-06-04 23:30:00        2450.0    1750.0
+2050-06-04 23:00:00       -2450.0    1750.0
 
-[144 rows x 14 columns]
+[72 rows x 14 columns]
 Link                 Interconnectors Import
 snapshot
-2050-06-02 00:00:00                  6650.0
-2050-06-02 00:30:00                  7700.0
-2050-06-02 01:00:00                  7700.0
-2050-06-02 01:30:00                  7700.0
-2050-06-02 02:00:00                  7700.0
+2050-06-02 00:00:00                  7700.0
+2050-06-02 01:00:00                  6650.0
+2050-06-02 02:00:00                  6650.0
+2050-06-02 03:00:00                  6650.0
+2050-06-02 04:00:00                  7700.0
 ...                                     ...
-2050-06-04 21:30:00                  6650.0
-2050-06-04 22:00:00                  7700.0
-2050-06-04 22:30:00                  7700.0
-2050-06-04 23:00:00                  6650.0
-2050-06-04 23:30:00                  7700.0
+2050-06-04 19:00:00                  6650.0
+2050-06-04 20:00:00                  7700.0
+2050-06-04 21:00:00                  7700.0
+2050-06-04 22:00:00                  6650.0
+2050-06-04 23:00:00                  7700.0
 
-[144 rows x 1 columns]
+[72 rows x 1 columns]
 Link                 Interconnectors Export
 snapshot
-2050-06-02 00:00:00                 -6650.0
-2050-06-02 00:30:00                 -7700.0
-2050-06-02 01:00:00                 -7700.0
-2050-06-02 01:30:00                 -7700.0
-2050-06-02 02:00:00                 -7700.0
+2050-06-02 00:00:00                 -7700.0
+2050-06-02 01:00:00                 -6650.0
+2050-06-02 02:00:00                 -6650.0
+2050-06-02 03:00:00                 -6650.0
+2050-06-02 04:00:00                 -7700.0
 ...                                     ...
-2050-06-04 21:30:00                 -6650.0
-2050-06-04 22:00:00                 -7700.0
-2050-06-04 22:30:00                 -7700.0
-2050-06-04 23:00:00                 -6650.0
-2050-06-04 23:30:00                 -7700.0
+2050-06-04 19:00:00                 -6650.0
+2050-06-04 20:00:00                 -7700.0
+2050-06-04 21:00:00                 -7700.0
+2050-06-04 22:00:00                 -6650.0
+2050-06-04 23:00:00                 -7700.0
 
-[144 rows x 1 columns]
+[72 rows x 1 columns]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1706,18 +2105,18 @@ snapshot
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>Anaerobic Digestion</th>
       <th>Biomass (co-firing)</th>
       <th>Biomass (dedicated)</th>
       <th>CCS Biomass</th>
       <th>CCS Gas</th>
-      <th>EfW Incineration</th>
+      <th>Coal</th>
       <th>Hydrogen</th>
-      <th>Landfill Gas</th>
       <th>Hydro</th>
       <th>Natural Gas</th>
+      <th>Nuclear</th>
+      <th>Oil</th>
       <th>...</th>
-      <th>Unmet Load</th>
+      <th>Waste</th>
       <th>Wave power</th>
       <th>Wind Offshore</th>
       <th>Wind Onshore</th>
@@ -1756,123 +2155,123 @@ snapshot
   <tbody>
     <tr>
       <th>2050-06-02 00:00:00</th>
-      <td>35.500000</td>
+      <td>79.424</td>
+      <td>401.87376</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>13533.310000</td>
+      <td>63.957969</td>
       <td>0.0</td>
-      <td>86.24556</td>
-      <td>0.0</td>
-      <td>121.6</td>
-      <td>6.456553</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>3781.290640</td>
-      <td>211.615586</td>
-      <td>0.000000</td>
-      <td>1182.690320</td>
-      <td>6.180672</td>
-      <td>1357.821782</td>
-      <td>6650.0</td>
-      <td>170.100000</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 00:30:00</th>
-      <td>75.899999</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>337.96440</td>
-      <td>0.0</td>
-      <td>297.4</td>
-      <td>15.621690</td>
+      <td>3973.4119</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
-      <td>29.69967</td>
-      <td>10154.120655</td>
-      <td>625.421781</td>
+      <td>39.55567</td>
+      <td>27738.299957</td>
+      <td>1883.604239</td>
       <td>0.000000</td>
+      <td>4372.349997</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>4188.880198</td>
       <td>7700.0</td>
-      <td>383.099999</td>
+      <td>481.29776</td>
     </tr>
     <tr>
       <th>2050-06-02 01:00:00</th>
-      <td>0.000000</td>
+      <td>79.424</td>
+      <td>401.87376</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>13533.310000</td>
+      <td>63.957969</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.000000</td>
-      <td>24.145913</td>
-      <td>2537.432294</td>
-      <td>519.099196</td>
-      <td>179.254689</td>
-      <td>509.183168</td>
-      <td>7700.0</td>
-      <td>0.000000</td>
-    </tr>
-    <tr>
-      <th>2050-06-02 01:30:00</th>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
+      <td>3973.4119</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
+      <td>39.55567</td>
+      <td>27718.638328</td>
+      <td>2092.930363</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>838.725619</td>
-      <td>1092.247782</td>
-      <td>0.000000</td>
-      <td>1255.985149</td>
-      <td>7700.0</td>
-      <td>0.000000</td>
+      <td>132.949592</td>
+      <td>2116.224736</td>
+      <td>4799.900000</td>
+      <td>6650.0</td>
+      <td>481.29776</td>
     </tr>
     <tr>
       <th>2050-06-02 02:00:00</th>
-      <td>0.000000</td>
+      <td>79.424</td>
+      <td>401.87376</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>13533.310000</td>
+      <td>63.957969</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
+      <td>3973.4119</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>3998.849889</td>
-      <td>78.720000</td>
-      <td>3331.879018</td>
+      <td>27.98152</td>
+      <td>27860.896398</td>
+      <td>2408.721181</td>
+      <td>564.836110</td>
       <td>0.000000</td>
       <td>0.000000</td>
+      <td>4188.880198</td>
+      <td>6650.0</td>
+      <td>481.29776</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 03:00:00</th>
+      <td>79.424</td>
+      <td>401.87376</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>13533.310000</td>
+      <td>63.957969</td>
+      <td>0.0</td>
+      <td>3973.4119</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>27.98152</td>
+      <td>26819.963040</td>
+      <td>2884.920531</td>
+      <td>37.857281</td>
       <td>0.000000</td>
+      <td>0.000000</td>
+      <td>4799.900000</td>
+      <td>6650.0</td>
+      <td>481.29776</td>
+    </tr>
+    <tr>
+      <th>2050-06-02 04:00:00</th>
+      <td>79.424</td>
+      <td>401.87376</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>13533.310000</td>
+      <td>64.457641</td>
+      <td>0.0</td>
+      <td>3973.4119</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>24.54648</td>
+      <td>26633.462630</td>
+      <td>3509.451204</td>
+      <td>2149.171063</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>1255.985149</td>
       <td>7700.0</td>
-      <td>0.000000</td>
+      <td>481.29776</td>
     </tr>
     <tr>
       <th>...</th>
@@ -1899,139 +2298,138 @@ snapshot
       <td>...</td>
     </tr>
     <tr>
-      <th>2050-06-04 21:30:00</th>
-      <td>216.000000</td>
+      <th>2050-06-04 19:00:00</th>
+      <td>0.000</td>
+      <td>0.00000</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>0.000000</td>
+      <td>488.179185</td>
       <td>0.0</td>
-      <td>500.60592</td>
-      <td>0.0</td>
-      <td>521.6</td>
-      <td>56.018134</td>
+      <td>3810.1210</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
-      <td>12.53448</td>
-      <td>18700.927991</td>
-      <td>8051.476913</td>
+      <td>2.38952</td>
+      <td>37020.631192</td>
+      <td>1807.459332</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.000000</td>
+      <td>9.656073</td>
       <td>6650.0</td>
-      <td>772.800000</td>
+      <td>0.00000</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 20:00:00</th>
+      <td>79.424</td>
+      <td>401.87376</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>9822.540000</td>
+      <td>279.816114</td>
+      <td>0.0</td>
+      <td>3973.4119</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>2.38952</td>
+      <td>30863.181413</td>
+      <td>1544.824039</td>
+      <td>0.000000</td>
+      <td>2756.511919</td>
+      <td>0.000000</td>
+      <td>4799.900000</td>
+      <td>7700.0</td>
+      <td>481.29776</td>
+    </tr>
+    <tr>
+      <th>2050-06-04 21:00:00</th>
+      <td>79.424</td>
+      <td>401.87376</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>13533.310000</td>
+      <td>98.435312</td>
+      <td>0.0</td>
+      <td>3973.4119</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>10.81752</td>
+      <td>25616.171792</td>
+      <td>1913.129886</td>
+      <td>4550.914437</td>
+      <td>6003.294000</td>
+      <td>3905.000000</td>
+      <td>4799.900000</td>
+      <td>7700.0</td>
+      <td>481.29776</td>
     </tr>
     <tr>
       <th>2050-06-04 22:00:00</th>
-      <td>317.600000</td>
+      <td>79.424</td>
+      <td>401.87376</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>13500.822599</td>
+      <td>92.938924</td>
       <td>0.0</td>
-      <td>831.12156</td>
-      <td>0.0</td>
-      <td>743.5</td>
-      <td>98.250648</td>
+      <td>3973.4119</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
       <td>14.25200</td>
-      <td>14592.991632</td>
-      <td>8793.902621</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>291.388394</td>
-      <td>7700.0</td>
-      <td>1111.300000</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 22:30:00</th>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.000000</td>
-      <td>6880.841128</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>2998.646032</td>
-      <td>7700.0</td>
-      <td>0.000000</td>
+      <td>12542.084700</td>
+      <td>2290.852248</td>
+      <td>17137.426098</td>
+      <td>5948.264381</td>
+      <td>3905.000000</td>
+      <td>4799.900000</td>
+      <td>6650.0</td>
+      <td>481.29776</td>
     </tr>
     <tr>
       <th>2050-06-04 23:00:00</th>
-      <td>0.000000</td>
+      <td>79.424</td>
+      <td>401.87376</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>0.0</td>
+      <td>13533.310000</td>
+      <td>64.957312</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>...</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.000000</td>
-      <td>7071.081128</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>1065.890099</td>
-      <td>6650.0</td>
-      <td>0.000000</td>
-    </tr>
-    <tr>
-      <th>2050-06-04 23:30:00</th>
-      <td>0.000000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.000000</td>
+      <td>3973.4119</td>
       <td>0.0</td>
       <td>...</td>
       <td>0.0</td>
-      <td>0.00000</td>
-      <td>0.000000</td>
-      <td>7038.281128</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>776.454669</td>
+      <td>14.25200</td>
+      <td>10246.527453</td>
+      <td>2129.759344</td>
+      <td>18098.521590</td>
+      <td>6003.294000</td>
+      <td>2967.800000</td>
+      <td>4799.900000</td>
       <td>7700.0</td>
-      <td>0.000000</td>
+      <td>481.29776</td>
     </tr>
   </tbody>
 </table>
-<p>144 rows × 27 columns</p>
+<p>72 rows × 25 columns</p>
 </div></div>
 </div>
 <p>Graph the power output of the different generation types…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">year</span> <span class="o">&gt;</span> <span class="mi">2020</span><span class="p">:</span>
 
-    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;EfW Incineration&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Nuclear&quot;</span><span class="p">,</span> <span class="s1">&#39;Biomass&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
             <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">,</span>
             <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Battery&#39;</span><span class="p">,</span> <span class="s1">&#39;Compressed Air&#39;</span><span class="p">,</span> <span class="s1">&#39;Liquid Air&#39;</span><span class="p">,</span>
@@ -2123,7 +2521,7 @@ c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matpl
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2140,7 +2538,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 <p>Graph the pumped hydro dispatch and state of charge…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -2159,7 +2557,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2176,7 +2574,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 <p>Graph the curtailment of onshore wind…</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">carrier</span> <span class="o">=</span> <span class="s2">&quot;Wind Onshore&quot;</span>
@@ -2202,12 +2600,12 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x2a99989e970&gt;
+&lt;matplotlib.legend.Legend at 0x1d593c16e50&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2225,38 +2623,111 @@ Text(0.5, 0, &#39;&#39;)
 </pre></div>
 </div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
-           </div>
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setting-up-simulation">Setting up simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Running-MILP-and/or-LP">Running MILP and/or LP</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Outputs">Outputs</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="5b%20-%20LOPF%20Future.html" class="btn btn-neutral float-left" title="Future Network Constrained Linear Optimal Power Flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="9%20-%20Comparison%20To%20Historical%20Data.html" class="btn btn-neutral float-right" title="Comparison To Historical Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
     </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2021, Andrew Lyden.</p>
   </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
 
-</footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
 
-</body>
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

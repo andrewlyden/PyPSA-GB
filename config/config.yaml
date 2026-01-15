@@ -1,0 +1,59 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB Main Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Configuration is split into focused files:
+#   config.yaml    - THIS FILE: What to run + global overrides
+#   defaults.yaml  - Default values inherited by all scenarios
+#   scenarios.yaml - Scenario definitions (only specify differences from defaults)
+#   clustering.yaml - Clustering method presets and aggregation strategies
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SCENARIOS TO RUN
+# ──────────────────────────────────────────────────────────────────────────────
+# List scenario IDs from scenarios.yaml to execute
+# Multiple scenarios run in parallel based on Snakemake -j flag
+
+run_scenarios:
+
+  # ─── Test: 2020 with different network configurations ───
+  # - Historical_2020_zonal       # Start with Zonal (17 zones, fastest)
+  # - Historical_2020_reduced     # Then Reduced (32 buses)
+  # - Historical_2020_ETYS         # Full ETYS with demand redistribution (no scaling)
+  # - Historical_2020_clustered     # ETYS clustered to GSP zones (test feasibility)
+
+  # ─── Test: 2019 with different network configurations ───
+  # - Historical_2019_zonal       # Start with Zonal (17 zones, fastest)
+  # - Historical_2019_reduced     # Then Reduced (32 buses)
+  # - Historical_2019_ETYS         # Full ETYS with demand redistribution (no scaling)
+  # - Historical_2019_clustered     # ETYS clustered to GSP zones (test feasibility)
+
+  # ─── Other Historical (2010-2020 - cutouts available) ───
+  # - Historical_2010_reduced
+  # - Historical_2011_reduced
+  # - Historical_2012_reduced
+  # - Historical_2013_reduced
+  # - Historical_2014_reduced
+  # - Historical_2015_reduced
+  # - Historical_2016_reduced
+  # - Historical_2017_reduced
+  # - Historical_2018_reduced
+  # - Historical_2019_reduced
+  # - Historical_2020_reduced
+
+  # ─── Future (FES 2024 - Holistic Transition 2035) ───
+  # - HT35
+  # - HT35_reduced_eload
+  # - HT35_reduced
+  # - HT35_zonal
+  # - HT35_clustered_gsp
+  # - HT35_clustered_kmeans
+  # - HT35_with_disaggregation
+
+  # ─── Tutorial scenarios used in documentation ───
+  - Historical_2015_reduced
+  - Historical_2023_etys
+  - HT35_clustered
+  - EE50_clustered

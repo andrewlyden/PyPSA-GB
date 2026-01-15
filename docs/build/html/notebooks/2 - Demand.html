@@ -1,367 +1,781 @@
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Demand &mdash; PyPSA-GB  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "tex2jax_ignore|mathjax_ignore|document", "processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
-    <script src="../_static/js/theme.js"></script>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Demand &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/2 - Demand';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Generator and Marginal Prices" href="3%20-%20Generator%20and%20Marginal%20Prices.html" />
-    <link rel="prev" title="Network" href="1%20-%20Network.html" /> 
-</head>
+    <link rel="prev" title="Network" href="1%20-%20Network.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> PyPSA-GB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Data and Functionality</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html#Zonal-model">Zonal model</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Demand</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Historical-data---ESPENI">Historical data - ESPENI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Future-data---FES2021">Future data - FES2021</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Peak-loads">Peak loads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eLoad-for-a-future-load-profile">eLoad for a future load profile</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5a%20-%20LOPF%20Historical.html">Historical Network Constrained Linear Optimal Power Flow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5b%20-%20LOPF%20Future.html">Future Network Constrained Linear Optimal Power Flow</a></li>
-<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5a%20-%20Historical%20Years.html">Historical Years</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5c%20-%20LOPF%20Future%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
 </ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PyPSA-GB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Demand</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/2 - Demand.nblink.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="1%20-%20Network.html"
+                          title="previous chapter">Network</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="3%20-%20Generator%20and%20Marginal%20Prices.html"
+                          title="next chapter">Generator and Marginal Prices</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
   
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
 
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
 
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
 
-/* Some additional styling taken form the Jupyter notebook CSS */
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-div.rendered_html th {
-  font-weight: bold;
-}
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<div class="section" id="Demand">
-<h1>Demand<a class="headerlink" href="#Demand" title="Permalink to this headline">¶</a></h1>
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Demand</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Demand">
+<h1>Demand<a class="headerlink" href="#Demand" title="Link to this heading">#</a></h1>
 <p>PyPSA-GB uses the ESPENI (Elexon Sum Plus Embedded Net Imports) dataset from <a class="reference external" href="https://zenodo.org/record/3884859">https://zenodo.org/record/3884859</a>. This is a cleaned dataset using both National Grid and Elexon data to develop historical half hourly electricity profiles which represent the total system demand of the GB. Essentially, system view data (from Elexon) is added to embedded generation, i.e., distribution-connected solar and wind, and interconnector imports (both from National Grid). Therefore, generation at distribution
 level and interconnectors should be added separately. This is available from 2008-11-06 up to 2021-06-06 (as of 2021-06-17). See <a class="reference external" href="https://doi.org/10.1016/j.esr.2021.100743">https://doi.org/10.1016/j.esr.2021.100743</a> for the paper Calculating Great Britain’s half-hourly electrical demand from publicly available data which describes the methodology for deriving this dataset.</p>
+<p>eLoad is a a load profile for 2050 which can be used to be more representative of the time-series variation of future electrical demand with heat pumps and EVs. See <a class="reference external" href="https://doi.org/10.1016/j.energy.2015.06.082">https://doi.org/10.1016/j.energy.2015.06.082</a> for formulation.</p>
 <p>Load distribution across buses from the Future Energy Scenario Regional Breakdown worksheet. Historical years use 2020 distribution for all timeperiods.</p>
 <p>Future demand profiles are generated by scaling historical demand profiles according to FES data specific to different scenarios.</p>
 <div class="nbinput nblast docutils container">
@@ -400,93 +814,12 @@ level and interconnectors should be added separately. This is available from 200
 </pre></div>
 </div>
 </div>
-<div class="section" id="Historical-data---ESPENI">
-<h2>Historical data - ESPENI<a class="headerlink" href="#Historical-data---ESPENI" title="Permalink to this headline">¶</a></h2>
+<section id="Historical-data---ESPENI">
+<h2>Historical data - ESPENI<a class="headerlink" href="#Historical-data---ESPENI" title="Link to this heading">#</a></h2>
 <p>Historical load data is included in the form of the ESPENI dataset. This provides the load profile for the whole GB power system. National Grid’s FES2021 data includes a regional breakdown of projected demand by grid supply point which can be mapped to the nearest bus. The 2020 data for these regional breakdown is used to distribute the load across the buses for the historical years 2010-2020. The load distribution is plotted below for a three day period in December.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/buses.csv&#39;</span><span class="p">)[:</span><span class="mi">29</span><span class="p">]</span>
-<span class="n">lon</span> <span class="o">=</span> <span class="n">df_network</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">lat</span> <span class="o">=</span> <span class="n">df_network</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-
-<span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lon</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lon</span><span class="p">)):</span>
-    <span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-    <span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-<span class="n">df_load</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;LOPF_data/loads-p_set.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">29</span><span class="p">]</span>
-<span class="n">sizes</span> <span class="o">=</span> <span class="n">df_load</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-<span class="n">marker_scaler</span> <span class="o">=</span> <span class="mf">0.0001</span>
-
-<span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">df_buses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/buses.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-<span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
-
-    <span class="n">bus0</span> <span class="o">=</span> <span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-    <span class="n">bus1</span> <span class="o">=</span> <span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-    <span class="n">bus0_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus0</span><span class="p">]]</span>
-    <span class="n">bus1_coord</span> <span class="o">=</span> <span class="p">[</span><span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">],</span> <span class="n">df_buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="n">bus1</span><span class="p">]]</span>
-    <span class="n">line_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">bus0_coord</span><span class="p">,</span> <span class="n">bus1_coord</span><span class="p">])</span>
-
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
-                     <span class="n">projection</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">())</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">OCEAN</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cartopy</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">LAND</span><span class="p">)</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df_lines</span><span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
-            <span class="p">[</span><span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">line_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
-            <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sizes</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">sizes</span> <span class="o">*</span> <span class="n">marker_scaler</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">txt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df_buses</span><span class="p">[:</span><span class="mi">29</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
-                <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-                <span class="n">textcoords</span><span class="o">=</span><span class="s2">&quot;offset points&quot;</span><span class="p">,</span>
-                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
-                <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;extra bold&#39;</span><span class="p">,</span>
-                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
-                <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reduced Network GB with Load Distribution for 1-3 December&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-29
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Text(0.5, 1.0, &#39;Reduced Network GB with Load Distribution for 1-3 December&#39;)
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_6_2.png" src="../_images/notebooks_2_-_Demand_6_2.png" />
-</div>
-</div>
 <p>The ESPENI dataset is plotted for the entire dataset, over 2020, and over 01/01/2020.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span> <span class="o">=</span> <span class="n">loads</span><span class="o">.</span><span class="n">read_historical_demand_data</span><span class="p">()</span>
@@ -498,12 +831,40 @@ Text(0.5, 1.0, &#39;Reduced Network GB with Load Distribution for 1-3 December&#
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot demand data</span>
 <span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;load&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ESPENI demand over entire dataset&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Load [MW]&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_2_-_Demand_8_1.png" src="../_images/notebooks_2_-_Demand_8_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot demand data</span>
+<span class="n">df_loads</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ESPENI demand over 2020&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 </pre></div>
@@ -530,8 +891,8 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot demand data</span>
-<span class="n">df_loads</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ESPENI demand over 2020&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">df_loads</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">][</span><span class="s1">&#39;2020-01-01 00:00:00&#39;</span><span class="p">:</span> <span class="s1">&#39;2020-01-01 23:30:00&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ESPENI demand over 01/01/2020&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 </pre></div>
@@ -557,34 +918,6 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot demand data</span>
-<span class="n">df_loads</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;2020&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">][</span><span class="s1">&#39;2020-01-01 00:00:00&#39;</span><span class="p">:</span> <span class="s1">&#39;2020-01-01 23:30:00&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ESPENI demand over 01/01/2020&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Text(0, 0.5, &#39;Load [MW]&#39;)
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_11_1.png" src="../_images/notebooks_2_-_Demand_11_1.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Box plots over whole dataset for month values</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
@@ -596,7 +929,7 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -608,16 +941,16 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_12_1.png" src="../_images/notebooks_2_-_Demand_12_1.png" />
+<img alt="../_images/notebooks_2_-_Demand_11_1.png" src="../_images/notebooks_2_-_Demand_11_1.png" />
 </div>
 </div>
-</div>
-<div class="section" id="Future-data---FES2021">
-<h2>Future data - FES2021<a class="headerlink" href="#Future-data---FES2021" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Future-data---FES2021">
+<h2>Future data - FES2021<a class="headerlink" href="#Future-data---FES2021" title="Link to this heading">#</a></h2>
 <p>Future demand profiles are generated by scaling historical demand profiles to match the projected annual load from the FES2021 dataset. Different demand profiles from historical years can be chosen, and this along with the use of weather data forms the baseline year used to simulate future years.</p>
 <p>Distributions across buses are also obtained from FES2021 where data is available for distributions for the years 2020-2050 and all four scenarios.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">start</span> <span class="o">=</span> <span class="s1">&#39;2050-01-01 00:00:00&#39;</span>
@@ -625,360 +958,19 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 <span class="c1"># year of simulation</span>
 <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 <span class="c1"># time step as fraction of hour</span>
-<span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mi">1</span>
 
 <span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2019</span>
 
 <span class="n">loads</span><span class="o">.</span><span class="n">write_loads</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
-<span class="n">loads</span><span class="o">.</span><span class="n">write_loads_p_set</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">)</span>
+<span class="n">loads</span><span class="o">.</span><span class="n">write_loads_p_set</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="s1">&#39;historical&#39;</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span> <span class="n">scenario</span><span class="o">=</span><span class="s1">&#39;Leading the Way&#39;</span><span class="p">,</span> <span class="n">FES</span><span class="o">=</span><span class="mi">2021</span><span class="p">)</span>
 
 <span class="n">df_loads</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;LOPF_data/loads-p_set.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">df_loads</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="output_area rendered_html docutils container">
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Beauly</th>
-      <th>Peterhead</th>
-      <th>Errochty</th>
-      <th>Denny/Bonnybridge</th>
-      <th>Neilston</th>
-      <th>Strathaven</th>
-      <th>Torness</th>
-      <th>Eccles</th>
-      <th>Harker</th>
-      <th>Stella West</th>
-      <th>...</th>
-      <th>Bramford</th>
-      <th>Pelham</th>
-      <th>Sundon/East Claydon</th>
-      <th>Melksham</th>
-      <th>Bramley</th>
-      <th>London</th>
-      <th>Kemsley</th>
-      <th>Sellindge</th>
-      <th>Lovedean</th>
-      <th>S.W.Penisula</th>
-    </tr>
-    <tr>
-      <th>name</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>2050-01-01 00:00:00</th>
-      <td>344.355716</td>
-      <td>558.886240</td>
-      <td>193.947235</td>
-      <td>1686.965699</td>
-      <td>1996.760548</td>
-      <td>604.448906</td>
-      <td>526.317230</td>
-      <td>148.145454</td>
-      <td>518.410526</td>
-      <td>3079.460303</td>
-      <td>...</td>
-      <td>1688.300283</td>
-      <td>1069.606749</td>
-      <td>3497.217334</td>
-      <td>4568.503846</td>
-      <td>1573.208859</td>
-      <td>10496.610559</td>
-      <td>1762.364772</td>
-      <td>1054.263148</td>
-      <td>2623.240880</td>
-      <td>3460.358091</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 00:30:00</th>
-      <td>338.171563</td>
-      <td>548.849415</td>
-      <td>190.464211</td>
-      <td>1656.670125</td>
-      <td>1960.901487</td>
-      <td>593.593838</td>
-      <td>516.865300</td>
-      <td>145.484966</td>
-      <td>509.100589</td>
-      <td>3024.157449</td>
-      <td>...</td>
-      <td>1657.980742</td>
-      <td>1050.398089</td>
-      <td>3434.412141</td>
-      <td>4486.459828</td>
-      <td>1544.956201</td>
-      <td>10308.105933</td>
-      <td>1730.715135</td>
-      <td>1035.330038</td>
-      <td>2576.131097</td>
-      <td>3398.214840</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 01:00:00</th>
-      <td>340.002975</td>
-      <td>551.821781</td>
-      <td>191.495695</td>
-      <td>1665.642039</td>
-      <td>1971.521006</td>
-      <td>596.808524</td>
-      <td>519.664452</td>
-      <td>146.272859</td>
-      <td>511.857690</td>
-      <td>3040.535171</td>
-      <td>...</td>
-      <td>1666.959754</td>
-      <td>1056.086657</td>
-      <td>3453.011651</td>
-      <td>4510.756839</td>
-      <td>1553.323114</td>
-      <td>10363.930832</td>
-      <td>1740.088049</td>
-      <td>1040.937003</td>
-      <td>2590.082473</td>
-      <td>3416.618318</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 01:30:00</th>
-      <td>344.619138</td>
-      <td>559.313772</td>
-      <td>194.095599</td>
-      <td>1688.256179</td>
-      <td>1998.288013</td>
-      <td>604.911292</td>
-      <td>526.719848</td>
-      <td>148.258781</td>
-      <td>518.807096</td>
-      <td>3081.816002</td>
-      <td>...</td>
-      <td>1689.591785</td>
-      <td>1070.424967</td>
-      <td>3499.892606</td>
-      <td>4571.998622</td>
-      <td>1574.412319</td>
-      <td>10504.640168</td>
-      <td>1763.712931</td>
-      <td>1055.069629</td>
-      <td>2625.247585</td>
-      <td>3463.005167</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 02:00:00</th>
-      <td>340.329117</td>
-      <td>552.351106</td>
-      <td>191.679384</td>
-      <td>1667.239777</td>
-      <td>1973.412153</td>
-      <td>597.381002</td>
-      <td>520.162931</td>
-      <td>146.413169</td>
-      <td>512.348681</td>
-      <td>3043.451751</td>
-      <td>...</td>
-      <td>1668.558756</td>
-      <td>1057.099690</td>
-      <td>3456.323892</td>
-      <td>4515.083704</td>
-      <td>1554.813112</td>
-      <td>10373.872253</td>
-      <td>1741.757199</td>
-      <td>1041.935504</td>
-      <td>2592.566964</td>
-      <td>3419.895650</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 21:30:00</th>
-      <td>426.330239</td>
-      <td>691.930155</td>
-      <td>240.116738</td>
-      <td>2088.551042</td>
-      <td>2472.093135</td>
-      <td>748.339100</td>
-      <td>651.608032</td>
-      <td>183.411756</td>
-      <td>641.819123</td>
-      <td>3812.531593</td>
-      <td>...</td>
-      <td>2090.203326</td>
-      <td>1324.228638</td>
-      <td>4329.736468</td>
-      <td>5656.044741</td>
-      <td>1947.714173</td>
-      <td>12995.348356</td>
-      <td>2181.899005</td>
-      <td>1305.232464</td>
-      <td>3247.708283</td>
-      <td>4284.102814</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 22:00:00</th>
-      <td>412.130520</td>
-      <td>668.884140</td>
-      <td>232.119205</td>
-      <td>2018.987980</td>
-      <td>2389.755494</td>
-      <td>723.414280</td>
-      <td>629.905020</td>
-      <td>177.302888</td>
-      <td>620.442148</td>
-      <td>3685.548166</td>
-      <td>...</td>
-      <td>2020.585232</td>
-      <td>1280.122750</td>
-      <td>4185.526574</td>
-      <td>5467.659692</td>
-      <td>1882.841944</td>
-      <td>12562.514204</td>
-      <td>2109.226817</td>
-      <td>1261.759279</td>
-      <td>3139.537342</td>
-      <td>4141.412833</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 22:30:00</th>
-      <td>393.879115</td>
-      <td>639.262273</td>
-      <td>221.839691</td>
-      <td>1929.576094</td>
-      <td>2283.923984</td>
-      <td>691.377519</td>
-      <td>602.009363</td>
-      <td>169.450941</td>
-      <td>592.965559</td>
-      <td>3522.331834</td>
-      <td>...</td>
-      <td>1931.102611</td>
-      <td>1223.431878</td>
-      <td>4000.168450</td>
-      <td>5225.521666</td>
-      <td>1799.459353</td>
-      <td>12006.177020</td>
-      <td>2015.818659</td>
-      <td>1205.881642</td>
-      <td>3000.501371</td>
-      <td>3958.008308</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 23:00:00</th>
-      <td>380.983965</td>
-      <td>618.333559</td>
-      <td>214.576914</td>
-      <td>1866.403985</td>
-      <td>2209.150932</td>
-      <td>668.742611</td>
-      <td>582.300267</td>
-      <td>163.903312</td>
-      <td>573.552547</td>
-      <td>3407.014728</td>
-      <td>...</td>
-      <td>1867.880526</td>
-      <td>1183.378121</td>
-      <td>3869.207521</td>
-      <td>5054.444078</td>
-      <td>1740.547117</td>
-      <td>11613.108550</td>
-      <td>1949.823067</td>
-      <td>1166.402460</td>
-      <td>2902.268396</td>
-      <td>3828.427654</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 23:30:00</th>
-      <td>370.735581</td>
-      <td>601.700525</td>
-      <td>208.804843</td>
-      <td>1816.198136</td>
-      <td>2149.725266</td>
-      <td>650.753585</td>
-      <td>566.636520</td>
-      <td>159.494350</td>
-      <td>558.124111</td>
-      <td>3315.366795</td>
-      <td>...</td>
-      <td>1817.634958</td>
-      <td>1151.545514</td>
-      <td>3765.126705</td>
-      <td>4918.480664</td>
-      <td>1693.726789</td>
-      <td>11300.718530</td>
-      <td>1897.373263</td>
-      <td>1135.026495</td>
-      <td>2824.198026</td>
-      <td>3725.443807</td>
-    </tr>
-  </tbody>
-</table>
-<p>17520 rows × 29 columns</p>
-</div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
@@ -989,7 +981,7 @@ Text(0, 0.5, &#39;Supply [kWh]&#39;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1001,41 +993,19 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_16_1.png" src="../_images/notebooks_2_-_Demand_16_1.png" />
+<img alt="../_images/notebooks_2_-_Demand_15_1.png" src="../_images/notebooks_2_-_Demand_15_1.png" />
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_loads</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-name
-2050-01-01 00:00:00    64741.136363
-2050-01-01 00:30:00    63578.474982
-2050-01-01 01:00:00    63922.792551
-2050-01-01 01:30:00    64790.661493
-2050-01-01 02:00:00    63984.109379
-                           ...
-2050-12-31 21:30:00    80152.885093
-2050-12-31 22:00:00    77483.244762
-2050-12-31 22:30:00    74051.860768
-2050-12-31 23:00:00    71627.487747
-2050-12-31 23:30:00    69700.724363
-Name: Total, Length: 17520, dtype: float64
-</pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
@@ -1046,7 +1016,7 @@ Name: Total, Length: 17520, dtype: float64
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1058,11 +1028,11 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_18_1.png" src="../_images/notebooks_2_-_Demand_18_1.png" />
+<img alt="../_images/notebooks_2_-_Demand_17_1.png" src="../_images/notebooks_2_-_Demand_17_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_FES</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
@@ -1088,7 +1058,7 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; GWh/year&#39;</span> <span class="o">+</span> <span class="s1">&#39; future total system demand in &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; from checking dataframe by summing&#39;</span><span class="p">)</span>
@@ -1100,364 +1070,16 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-686266.0 GWh/year future total system demand in 2050 from checking dataframe by summing
+343133.0 GWh/year future total system demand in 2050 from checking dataframe by summing
 </pre></div></div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="output_area rendered_html docutils container">
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Beauly</th>
-      <th>Peterhead</th>
-      <th>Errochty</th>
-      <th>Denny/Bonnybridge</th>
-      <th>Neilston</th>
-      <th>Strathaven</th>
-      <th>Torness</th>
-      <th>Eccles</th>
-      <th>Harker</th>
-      <th>Stella West</th>
-      <th>...</th>
-      <th>Pelham</th>
-      <th>Sundon/East Claydon</th>
-      <th>Melksham</th>
-      <th>Bramley</th>
-      <th>London</th>
-      <th>Kemsley</th>
-      <th>Sellindge</th>
-      <th>Lovedean</th>
-      <th>S.W.Penisula</th>
-      <th>Total</th>
-    </tr>
-    <tr>
-      <th>name</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>2050-01-01 00:00:00</th>
-      <td>344.355716</td>
-      <td>558.886240</td>
-      <td>193.947235</td>
-      <td>1686.965699</td>
-      <td>1996.760548</td>
-      <td>604.448906</td>
-      <td>526.317230</td>
-      <td>148.145454</td>
-      <td>518.410526</td>
-      <td>3079.460303</td>
-      <td>...</td>
-      <td>1069.606749</td>
-      <td>3497.217334</td>
-      <td>4568.503846</td>
-      <td>1573.208859</td>
-      <td>10496.610559</td>
-      <td>1762.364772</td>
-      <td>1054.263148</td>
-      <td>2623.240880</td>
-      <td>3460.358091</td>
-      <td>64741.136363</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 00:30:00</th>
-      <td>338.171563</td>
-      <td>548.849415</td>
-      <td>190.464211</td>
-      <td>1656.670125</td>
-      <td>1960.901487</td>
-      <td>593.593838</td>
-      <td>516.865300</td>
-      <td>145.484966</td>
-      <td>509.100589</td>
-      <td>3024.157449</td>
-      <td>...</td>
-      <td>1050.398089</td>
-      <td>3434.412141</td>
-      <td>4486.459828</td>
-      <td>1544.956201</td>
-      <td>10308.105933</td>
-      <td>1730.715135</td>
-      <td>1035.330038</td>
-      <td>2576.131097</td>
-      <td>3398.214840</td>
-      <td>63578.474982</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 01:00:00</th>
-      <td>340.002975</td>
-      <td>551.821781</td>
-      <td>191.495695</td>
-      <td>1665.642039</td>
-      <td>1971.521006</td>
-      <td>596.808524</td>
-      <td>519.664452</td>
-      <td>146.272859</td>
-      <td>511.857690</td>
-      <td>3040.535171</td>
-      <td>...</td>
-      <td>1056.086657</td>
-      <td>3453.011651</td>
-      <td>4510.756839</td>
-      <td>1553.323114</td>
-      <td>10363.930832</td>
-      <td>1740.088049</td>
-      <td>1040.937003</td>
-      <td>2590.082473</td>
-      <td>3416.618318</td>
-      <td>63922.792551</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 01:30:00</th>
-      <td>344.619138</td>
-      <td>559.313772</td>
-      <td>194.095599</td>
-      <td>1688.256179</td>
-      <td>1998.288013</td>
-      <td>604.911292</td>
-      <td>526.719848</td>
-      <td>148.258781</td>
-      <td>518.807096</td>
-      <td>3081.816002</td>
-      <td>...</td>
-      <td>1070.424967</td>
-      <td>3499.892606</td>
-      <td>4571.998622</td>
-      <td>1574.412319</td>
-      <td>10504.640168</td>
-      <td>1763.712931</td>
-      <td>1055.069629</td>
-      <td>2625.247585</td>
-      <td>3463.005167</td>
-      <td>64790.661493</td>
-    </tr>
-    <tr>
-      <th>2050-01-01 02:00:00</th>
-      <td>340.329117</td>
-      <td>552.351106</td>
-      <td>191.679384</td>
-      <td>1667.239777</td>
-      <td>1973.412153</td>
-      <td>597.381002</td>
-      <td>520.162931</td>
-      <td>146.413169</td>
-      <td>512.348681</td>
-      <td>3043.451751</td>
-      <td>...</td>
-      <td>1057.099690</td>
-      <td>3456.323892</td>
-      <td>4515.083704</td>
-      <td>1554.813112</td>
-      <td>10373.872253</td>
-      <td>1741.757199</td>
-      <td>1041.935504</td>
-      <td>2592.566964</td>
-      <td>3419.895650</td>
-      <td>63984.109379</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 21:30:00</th>
-      <td>426.330239</td>
-      <td>691.930155</td>
-      <td>240.116738</td>
-      <td>2088.551042</td>
-      <td>2472.093135</td>
-      <td>748.339100</td>
-      <td>651.608032</td>
-      <td>183.411756</td>
-      <td>641.819123</td>
-      <td>3812.531593</td>
-      <td>...</td>
-      <td>1324.228638</td>
-      <td>4329.736468</td>
-      <td>5656.044741</td>
-      <td>1947.714173</td>
-      <td>12995.348356</td>
-      <td>2181.899005</td>
-      <td>1305.232464</td>
-      <td>3247.708283</td>
-      <td>4284.102814</td>
-      <td>80152.885093</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 22:00:00</th>
-      <td>412.130520</td>
-      <td>668.884140</td>
-      <td>232.119205</td>
-      <td>2018.987980</td>
-      <td>2389.755494</td>
-      <td>723.414280</td>
-      <td>629.905020</td>
-      <td>177.302888</td>
-      <td>620.442148</td>
-      <td>3685.548166</td>
-      <td>...</td>
-      <td>1280.122750</td>
-      <td>4185.526574</td>
-      <td>5467.659692</td>
-      <td>1882.841944</td>
-      <td>12562.514204</td>
-      <td>2109.226817</td>
-      <td>1261.759279</td>
-      <td>3139.537342</td>
-      <td>4141.412833</td>
-      <td>77483.244762</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 22:30:00</th>
-      <td>393.879115</td>
-      <td>639.262273</td>
-      <td>221.839691</td>
-      <td>1929.576094</td>
-      <td>2283.923984</td>
-      <td>691.377519</td>
-      <td>602.009363</td>
-      <td>169.450941</td>
-      <td>592.965559</td>
-      <td>3522.331834</td>
-      <td>...</td>
-      <td>1223.431878</td>
-      <td>4000.168450</td>
-      <td>5225.521666</td>
-      <td>1799.459353</td>
-      <td>12006.177020</td>
-      <td>2015.818659</td>
-      <td>1205.881642</td>
-      <td>3000.501371</td>
-      <td>3958.008308</td>
-      <td>74051.860768</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 23:00:00</th>
-      <td>380.983965</td>
-      <td>618.333559</td>
-      <td>214.576914</td>
-      <td>1866.403985</td>
-      <td>2209.150932</td>
-      <td>668.742611</td>
-      <td>582.300267</td>
-      <td>163.903312</td>
-      <td>573.552547</td>
-      <td>3407.014728</td>
-      <td>...</td>
-      <td>1183.378121</td>
-      <td>3869.207521</td>
-      <td>5054.444078</td>
-      <td>1740.547117</td>
-      <td>11613.108550</td>
-      <td>1949.823067</td>
-      <td>1166.402460</td>
-      <td>2902.268396</td>
-      <td>3828.427654</td>
-      <td>71627.487747</td>
-    </tr>
-    <tr>
-      <th>2050-12-31 23:30:00</th>
-      <td>370.735581</td>
-      <td>601.700525</td>
-      <td>208.804843</td>
-      <td>1816.198136</td>
-      <td>2149.725266</td>
-      <td>650.753585</td>
-      <td>566.636520</td>
-      <td>159.494350</td>
-      <td>558.124111</td>
-      <td>3315.366795</td>
-      <td>...</td>
-      <td>1151.545514</td>
-      <td>3765.126705</td>
-      <td>4918.480664</td>
-      <td>1693.726789</td>
-      <td>11300.718530</td>
-      <td>1897.373263</td>
-      <td>1135.026495</td>
-      <td>2824.198026</td>
-      <td>3725.443807</td>
-      <td>69700.724363</td>
-    </tr>
-  </tbody>
-</table>
-<p>17520 rows × 30 columns</p>
-</div></div>
-</div>
-</div>
-<div class="section" id="Peak-loads">
-<h2>Peak loads<a class="headerlink" href="#Peak-loads" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Peak-loads">
+<h2>Peak loads<a class="headerlink" href="#Peak-loads" title="Link to this heading">#</a></h2>
 <p>Scaling the load profile according to the annual energy demand to generate future load profiles results in overestimation of peak demands.</p>
 <p>The analysis below shows the FES2021 data peak to be 94.7 GW, but the generated future load profile have a peak of 115.8 GW. Applying a moving average can reduce the peak demand to 99.2 GW. A smoothing algorithm is not currently applied.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Leading the way, 2050 Electricity System ACS (Average Cold Spell) Peak Demand GW</span>
@@ -1466,7 +1088,7 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
@@ -1474,46 +1096,46 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Beauly                         615.806163
-Peterhead                      999.447883
-Errochty                       346.832933
-Denny/Bonnybridge             3016.775465
-Neilston                      3570.776950
-Strathaven                    1080.926916
-Torness                        941.205211
-Eccles                         264.926294
-Harker                         927.065772
-Stella West                   5506.952687
-Penwortham                    3082.161410
-Deeside                       6189.332211
-Daines                        6235.934595
-Th. Marsh/Stocksbridge        5289.028020
-Thornton/Drax/Eggborough      4514.522126
-Keadby                        1650.378196
-Ratcliffe                     4251.839548
-Feckenham                     8409.920397
-Walpole                       2025.619240
-Bramford                      3019.162082
-Pelham                        1912.761711
-Sundon/East Claydon           6254.021323
-Melksham                      8169.786931
-Bramley                       2813.345814
-London                       18770.931283
-Kemsley                       3151.610497
-Sellindge                     1885.322980
-Lovedean                      4691.102334
-S.W.Penisula                  6188.106492
-Total                       115775.603466
+Beauly                         615.216599
+Peterhead                      998.491025
+Errochty                       346.500880
+Denny/Bonnybridge             3013.887246
+Neilston                      3567.358338
+Strathaven                    1079.892051
+Torness                        940.304115
+Eccles                         264.672657
+Harker                         926.178212
+Stella West                   5501.680407
+Penwortham                    3079.210592
+Deeside                       6183.406630
+Daines                        6229.964398
+Th. Marsh/Stocksbridge        5283.964378
+Thornton/Drax/Eggborough      4510.199986
+Keadby                        1648.798147
+Ratcliffe                     4247.768895
+Feckenham                     8401.868856
+Walpole                       2023.679940
+Bramford                      3016.271579
+Pelham                        1910.930460
+Sundon/East Claydon           6248.033810
+Melksham                      8161.965290
+Bramley                       2810.652356
+London                       18752.960253
+Kemsley                       3148.593189
+Sellindge                     1883.517998
+Lovedean                      4686.611138
+S.W.Penisula                  6182.182085
+Total                       115664.761508
 dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads_smoothed</span> <span class="o">=</span> <span class="n">df_loads</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -1522,51 +1144,123 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Beauly                        528.027202
-Peterhead                     856.983416
-Errochty                      297.394268
-Denny/Bonnybridge            2586.754736
-Neilston                     3061.787094
-Strathaven                    926.848170
-Torness                       807.042840
-Eccles                        227.162861
-Harker                        794.918880
-Stella West                  4721.974209
-Penwortham                   2642.820361
-Deeside                      5307.085195
-Daines                       5347.044727
-Th. Marsh/Stocksbridge       4535.113215
-Thornton/Drax/Eggborough     3871.007844
-Keadby                       1415.128061
-Ratcliffe                    3645.768872
-Feckenham                    7211.143707
-Walpole                      1736.881058
-Bramford                     2588.801157
-Pelham                       1640.110599
-Sundon/East Claydon          5362.553315
-Melksham                     7005.239626
-Bramley                      2412.322591
-London                      16095.263285
-Kemsley                      2702.369955
-Sellindge                    1616.583071
-Lovedean                     4022.417749
-S.W.Penisula                 5306.034193
-Total                       99272.582257
+Beauly                        526.487175
+Peterhead                     854.483965
+Errochty                      296.526897
+Denny/Bonnybridge            2579.210288
+Neilston                     3052.857182
+Strathaven                    924.144953
+Torness                       804.689044
+Eccles                        226.500325
+Harker                        792.600445
+Stella West                  4708.202247
+Penwortham                   2635.112394
+Deeside                      5291.606716
+Daines                       5331.449704
+Th. Marsh/Stocksbridge       4521.886245
+Thornton/Drax/Eggborough     3859.717784
+Keadby                       1411.000743
+Ratcliffe                    3635.135736
+Feckenham                    7190.111911
+Walpole                      1731.815325
+Bramford                     2581.250740
+Pelham                       1635.327104
+Sundon/East Claydon          5346.913060
+Melksham                     6984.808363
+Bramley                      2405.286887
+London                      16048.320344
+Kemsley                      2694.488307
+Sellindge                    1611.868195
+Lovedean                     4010.686092
+S.W.Penisula                 5290.558780
+Total                       98983.046950
 dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
 <span class="n">df_loads_smoothed</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Demand and Smoothed Demand&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Load [MW]&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_2_-_Demand_25_1.png" src="../_images/notebooks_2_-_Demand_25_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+<span class="n">date_from</span> <span class="o">=</span> <span class="s1">&#39;2050-02-01 00:00:00&#39;</span>
+<span class="n">date_to</span> <span class="o">=</span> <span class="s1">&#39;2050-02-08 00:00:00&#39;</span>
+
+<span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date_from</span><span class="p">:</span><span class="n">date_to</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">df_loads_smoothed</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date_from</span><span class="p">:</span><span class="n">date_to</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Demand and Smoothed Demand&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Load [MW]&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_2_-_Demand_26_1.png" src="../_images/notebooks_2_-_Demand_26_1.png" />
+</div>
+</div>
+</section>
+<section id="eLoad-for-a-future-load-profile">
+<h2>eLoad for a future load profile<a class="headerlink" href="#eLoad-for-a-future-load-profile" title="Link to this heading">#</a></h2>
+<p>eLoad is a a load profile for 2050 which can be used to be more representative of the time-series variation of future electrical demand with heat pumps and EVs. See <a class="reference external" href="https://doi.org/10.1016/j.energy.2015.06.082">https://doi.org/10.1016/j.energy.2015.06.082</a> for formulation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">future_staffell_paper</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;../data/demand/egy_7649_mmc1.xlsb&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">df_eLOAD</span> <span class="o">=</span> <span class="n">future_staffell_paper</span><span class="p">[</span><span class="s1">&#39;ELOAD&#39;</span><span class="p">][</span><span class="s1">&#39;eLOAD Model (2050)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>  <span class="c1"># DESSTINEE is other demand model</span>
+<span class="n">df_eLOAD</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df_loads</span><span class="o">.</span><span class="n">index</span>
+<span class="n">date_from</span> <span class="o">=</span> <span class="s1">&#39;2050-01-01 00:00:00&#39;</span>
+<span class="n">date_to</span> <span class="o">=</span> <span class="s1">&#39;2050-12-31 23:30:00&#39;</span>
+
+<span class="n">df_loads_downscaled</span> <span class="o">=</span> <span class="n">df_loads</span> <span class="o">/</span> <span class="mi">1000</span>
+
+<span class="n">df_loads</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date_from</span><span class="p">:</span><span class="n">date_to</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">df_eLOAD</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date_from</span><span class="p">:</span><span class="n">date_to</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;df_eLOAD&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Load [MW]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 </pre></div>
@@ -1585,41 +1279,133 @@ Text(0, 0.5, &#39;Load [MW]&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_2_-_Demand_27_1.png" src="../_images/notebooks_2_-_Demand_27_1.png" />
+<img alt="../_images/notebooks_2_-_Demand_29_1.png" src="../_images/notebooks_2_-_Demand_29_1.png" />
 </div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="1%20-%20Network.html" class="btn btn-neutral float-left" title="Network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="3%20-%20Generator%20and%20Marginal%20Prices.html" class="btn btn-neutral float-right" title="Generator and Marginal Prices" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2021, Andrew Lyden.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="1%20-%20Network.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Network</p>
       </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+    </a>
+    <a class="right-next"
+       href="3%20-%20Generator%20and%20Marginal%20Prices.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Generator and Marginal Prices</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
-</body>
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Historical-data---ESPENI">Historical data - ESPENI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Future-data---FES2021">Future data - FES2021</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Peak-loads">Peak loads</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#eLoad-for-a-future-load-profile">eLoad for a future load profile</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

@@ -1,0 +1,93 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB Default Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# This file defines DEFAULT values inherited by all scenarios.
+# Scenarios in scenarios.yaml only need to specify values that DIFFER from these.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TIME & RESOLUTION
+# ──────────────────────────────────────────────────────────────────────────────
+timestep_minutes: 60              # 60 = hourly, 30 = half-hourly
+voll: 6000.0                      # Value of Lost Load (£/MWh)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DATA SOURCES
+# ──────────────────────────────────────────────────────────────────────────────
+# Temporal profile source for demand (annual totals always from FES for future scenarios)
+# Options:
+#   "ESPENI"    - Historical half-hourly GB demand (recommended, uses demand_year)
+#   "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
+#   "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
+# 
+# For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
+demand_timeseries: "ESPENI"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SOLVER CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+solver:
+  name: "gurobi"                  # Options: gurobi, highs, glpk, cplex
+  threads: 4
+  method: 2                       # 0=primal, 1=dual, 2=barrier
+  crossover: 0                    # 0=disabled (faster), -1=auto (enables crossover)
+  BarHomogeneous: 1               # 1=enable homogeneous barrier (handles numerical issues)
+  BarConvTol: 1.e-5
+  FeasibilityTol: 1.e-5           # Relaxed from 1.e-6 for numerical stability
+  OptimalityTol: 1.e-5            # Relaxed from 1.e-6 for numerical stability
+  NumericFocus: 2                 # 0-3, higher = more careful numerics (2=moderate)
+  ScaleFlag: 2                    # 0-3, automatic scaling (2=aggressive)
+  DualReductions: 0               # 0=disable (clearer error messages)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# OPTIMIZATION MODE
+# ──────────────────────────────────────────────────────────────────────────────
+# LP (Linear Programming):    Fast (~minutes), no unit commitment
+# MILP (Mixed-Integer LP):    Slow (~hours), full unit commitment constraints
+solve_mode: "LP"                # Options: "LP" or "MILP"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CLUSTERING (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+clustering:
+  enabled: false
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SOLVE PERIOD (full year by default)
+# ──────────────────────────────────────────────────────────────────────────────
+solve_period:
+  enabled: false                  # Set true to solve subset of year
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TRANSMISSION CONSTRAINTS
+# ──────────────────────────────────────────────────────────────────────────────
+# For detailed networks (ETYS), actual line ratings may be too restrictive.
+# These settings allow relaxing transmission constraints for feasibility.
+transmission:
+  # Minimum line capacity in MVA (lines below this are set to this value)
+  min_line_s_nom: 0               # 0 = use actual ratings
+  # Minimum transformer capacity in MVA  
+  min_transformer_s_nom: 0        # 0 = use actual ratings
+  # Scaling factor for all line/transformer capacities (1.0 = no change)
+  capacity_scale: 1.0             # 1.0 = no scaling (use clustering instead)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ETYS NETWORK UPGRADES (ETYS network model only)
+# ──────────────────────────────────────────────────────────────────────────────
+# Applies planned network infrastructure upgrades from ETYS Appendix B 2023.
+# Includes circuit additions/removals, transformer changes, and new HVDC links.
+# Only applies when network_model: "ETYS"
+etys_upgrades:
+  enabled: true                  # Set false to not apply network upgrades
+  # Year through which to apply upgrades (null = use modelled_year)
+  # Example: If modelled_year is 2035, apply all upgrades through 2035
+  upgrade_year: null              # null, or specific year like 2030
+
+# ──────────────────────────────────────────────────────────────────────────────
+# LOGGING
+# ──────────────────────────────────────────────────────────────────────────────
+
+logging:
+  level: "INFO"                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_to_file: true
+  log_directory: "logs"

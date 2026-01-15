@@ -1,0 +1,628 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB Scenario Definitions
+# ══════════════════════════════════════════════════════════════════════════════
+# Each scenario inherits from defaults.yaml - only specify what's DIFFERENT.
+#
+# USAGE:
+#   1. Copy a template from the bottom of this file
+#   2. Modify only the values you need to change
+#   3. Add scenario ID to run_scenarios in config.yaml
+#   4. Validate: python scripts/validate_scenarios.py
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║ HISTORICAL SCENARIOS (modelled_year ≤ 2024)                                ║
+# ║ Uses: DUKES (thermal) + REPD (renewables) + ESPENI (demand)                ║
+# ║                                                                            ║
+# ║ ✅ SUPPORTED YEARS: 2010-2024 (all DUKES years now supported)              ║
+# ║    Weather cutouts available: 2010, 2013, 2015, 2017, 2019, 2020           ║
+# ║    Years without cutouts need cutout generation via Snakefile_cutouts     ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Historical_2020_reduced:
+  description: "2020 Historical - Reduced Network (32 buses)"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-07 23:00"
+
+Historical_2020_zonal:
+  description: "2020 Historical - Zonal Network (17 zones)"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Zonal"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-07 23:00"
+
+Historical_2020_ETYS:
+  description: "2020 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2020-12-07 00:00"
+    end: "2020-12-13 23:00"
+
+Historical_2019_reduced:
+  description: "2019 Historical - Reduced Network (32 buses)"
+  modelled_year: 2019
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2019-01-01 00:00"
+    end: "2019-01-07 23:00"
+
+Historical_2019_zonal:
+  description: "2019 Historical - Zonal Network (17 zones)"
+  modelled_year: 2019
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Zonal"
+  solve_period:
+    enabled: true
+    start: "2019-01-01 00:00"
+    end: "2019-01-07 23:00"
+
+Historical_2019_ETYS:
+  description: "2019 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)"
+  modelled_year: 2019
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2019-12-07 00:00"
+    end: "2019-12-13 23:00"
+
+Historical_2023_etys:
+  description: "2023 Historical - Full ETYS Network (high renewables week)"
+  modelled_year: 2023
+  renewables_year: 2023
+  demand_year: 2023
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2023-05-15 00:00"
+    end: "2023-05-21 23:00"
+
+Historical_2020_ETYS_6h:
+  description: "2020 Historical - Full ETYS Network - 6 hour test"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-01 05:00"
+
+Historical_2020_reduced_6h:
+  description: "2020 Historical - Reduced Network - 6 hour test"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-01 05:00"
+
+Historical_2019_reduced:
+  description: "2019 Historical - Reduced Network"
+  modelled_year: 2019
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2019-01-01 00:00"
+    end: "2019-01-07 23:00"
+
+Historical_2017_reduced:
+  description: "2017 Historical - Reduced Network"
+  modelled_year: 2017
+  renewables_year: 2017
+  demand_year: 2017
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2017-01-01 00:00"
+    end: "2017-01-07 23:00"
+
+Historical_2015_reduced:
+  description: "2015 Historical - Reduced Network"
+  modelled_year: 2015
+  renewables_year: 2015
+  demand_year: 2015
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2015-01-01 00:00"
+    end: "2015-01-07 23:00"
+
+Historical_2010_reduced:
+  description: "2010 Historical - Reduced Network"
+  modelled_year: 2010
+  renewables_year: 2010
+  demand_year: 2010
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2010-01-01 00:00"
+    end: "2010-01-07 23:00"
+
+Historical_2011_reduced:
+  description: "2011 Historical - Reduced Network"
+  modelled_year: 2011
+  renewables_year: 2011
+  demand_year: 2011
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2011-01-01 00:00"
+    end: "2011-01-07 23:00"
+
+Historical_2012_reduced:
+  description: "2012 Historical - Reduced Network"
+  modelled_year: 2012
+  renewables_year: 2012
+  demand_year: 2012
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2012-01-01 00:00"
+    end: "2012-01-07 23:00"
+
+Historical_2013_reduced:
+  description: "2013 Historical - Reduced Network"
+  modelled_year: 2013
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2013-01-01 00:00"
+    end: "2013-01-07 23:00"
+
+Historical_2014_reduced:
+  description: "2014 Historical - Reduced Network"
+  modelled_year: 2014
+  renewables_year: 2014
+  demand_year: 2014
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2014-01-01 00:00"
+    end: "2014-01-07 23:00"
+
+Historical_2016_reduced:
+  description: "2016 Historical - Reduced Network"
+  modelled_year: 2016
+  renewables_year: 2016
+  demand_year: 2016
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2016-01-01 00:00"
+    end: "2016-01-07 23:00"
+
+Historical_2018_reduced:
+  description: "2018 Historical - Reduced Network"
+  modelled_year: 2018
+  renewables_year: 2018
+  demand_year: 2018
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2018-01-01 00:00"
+    end: "2018-01-07 23:00"
+
+Historical_2020_clustered:
+  description: "2020 Historical - ETYS Clustered to GSP Zones"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  clustering:
+    enabled: true
+    method: spatial
+    config:
+      boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
+      cluster_column: "GSPs"
+      bus_crs: "EPSG:27700"     # ETYS buses use OSGB36 (British National Grid), not WGS84
+      boundary_crs: "EPSG:27700"
+      fallback: "nearest_centroid"
+      convert_transformers_to_lines: true
+
+Historical_2019_clustered:
+  description: "2019 Historical - ETYS Clustered to GSP Zones"
+  modelled_year: 2019
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "ETYS"
+  clustering:
+    enabled: true
+    method: spatial
+    config:
+      boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
+      cluster_column: "GSPs"
+      bus_crs: "EPSG:27700"     # ETYS buses use OSGB36 (British National Grid), not WGS84
+      boundary_crs: "EPSG:27700"
+      fallback: "nearest_centroid"
+      convert_transformers_to_lines: true
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║ FUTURE SCENARIOS (modelled_year > 2024)                                    ║
+# ║ Uses: FES (Future Energy Scenarios) projections                            ║
+# ║ FES_year + FES_scenario are REQUIRED for future scenarios                  ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+HT35:
+  description: "FES 2024 Holistic Transition 2035 - Full ETYS"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020           # Weather proxy year
+  demand_year: 2020               # Demand baseline (scaled to 2035)
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+HT35_without_network_upgrades:
+  description: "FES 2024 Holistic Transition 2035 - Full ETYS with Network Upgrades"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020           # Weather proxy year
+  demand_year: 2020               # Demand baseline (scaled to 2035)
+  network_model: "ETYS"
+  etys_upgrades:
+    enabled: false                 # Apply ETYS network upgrades
+    upgrade_year: null            # null = use modelled_year (2035)
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+HT35_reduced:
+  description: "FES 2024 Holistic Transition 2035 - Reduced Network"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2010
+  network_model: "Reduced"
+
+HT35_reduced_eload:
+  description: "FES 2024 HT 2035 - Reduced Network with eLOAD profile"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  demand_timeseries: "eload"      # Uses eLOAD model hourly profile
+  # profile_year: 2010            # Optional: 2010 or 2050 (auto-selects 2010 for 2035)
+
+HT35_reduced_desstinee:
+  description: "FES 2024 HT 2035 - Reduced Network with DESSTINEE profile"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  demand_timeseries: "desstinee"  # Uses DESSTINEE model hourly profile
+  # profile_year: 2010            # Optional: 2010 or 2050 (auto-selects 2010 for 2035)
+
+HT50_reduced_eload_2050:
+  description: "FES 2024 HT 2050 - Reduced with eLOAD 2050 profile"
+  modelled_year: 2050
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  demand_timeseries: "eload"
+  profile_year: 2050              # Explicit: use 2050 profile (higher EV/HP load)
+
+HT35_zonal:
+  description: "FES 2024 Holistic Transition 2035 - Zonal Network"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2015
+  network_model: "Zonal"
+
+HT35_clustered_gsp:
+  description: "FES 2024 Holistic Transition 2035 - ETYS → GSP Clusters"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  clustering: gsp_spatial
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+HT35_clustered:
+  description: "FES 2024 Holistic Transition 2035 - ETYS clustered to GSP regions"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2019
+  demand_year: 2020
+  network_model: "ETYS"
+  clustering: gsp_spatial
+  etys_upgrades:
+    enabled: true
+  solve_period:
+    enabled: true
+    start: "2035-01-15 00:00"
+    end: "2035-01-21 23:00"
+
+HT50_clustered_gsp:
+  description: "FES 2024 Holistic Transition 2050 - ETYS to GSP Clusters (1 month)"
+  modelled_year: 2050
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2022
+  demand_year: 2022
+  network_model: "ETYS"
+  clustering: gsp_spatial
+  solve_period:
+    enabled: true
+    start: "2050-01-01 00:00"
+    end: "2050-01-31 23:00"
+
+EE50_clustered:
+  description: "FES 2025 Electric Engagement 2050 - ETYS clustered (kmeans, n=100) - stress test week"
+  modelled_year: 2050
+  FES_year: 2025
+  FES_scenario: "Electric Engagement"
+  renewables_year: 2018
+  demand_year: 2018
+  network_model: "ETYS"
+  clustering:
+    method: kmeans
+    n_clusters: 100
+  etys_upgrades:
+    enabled: true
+  solve_period:
+    enabled: true
+    start: "2050-02-01 00:00"
+    end: "2050-02-07 23:00"
+
+HT35_clustered_kmeans:
+  description: "FES 2024 Holistic Transition 2035 - K-means 10 Clusters"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  clustering: kmeans_10
+
+HT35_with_disaggregation:
+  description: "FES 2024 Holistic Transition 2035 - With Demand Disaggregation"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020              # Year for ESPENI temporal profile shape
+  network_model: "ETYS"
+  demand_timeseries: "ESPENI"    # "ESPENI" (recommended) or "eload" (synthetic)
+  demand_disaggregation:
+    enabled: true
+    components: ["heat_pumps"]
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║ TEST SCENARIOS (for CI/CD and quick validation)                            ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Test_Historical_2015:
+  description: "Minimal historical test (2015)"
+  modelled_year: 2015
+  renewables_year: 2015
+  demand_year: 2015
+  network_model: "Reduced"
+
+Test_Future_2030:
+  description: "Minimal future test (2030)"
+  modelled_year: 2030
+  FES_year: 2024
+  FES_scenario: "Leading the Way"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+
+Test_Clustered_GSP:
+  description: "Test GSP clustering"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  clustering: gsp_spatial
+
+# ============================================
+# ESSENTIAL TEST SCENARIOS (run_tests.py)
+# ============================================
+
+# Fast smoke tests (6-hour) - test all network models
+Test_Historical_2020_Reduced:
+  description: "Historical 2020 - Reduced network smoke test"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-01 05:00"
+
+Test_Future_HT_2035_Reduced:
+  description: "HT 2035 - Reduced network smoke test"
+  modelled_year: 2035
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 05:00"
+
+Test_Future_HT_2035_Zonal:
+  description: "HT 2035 - Zonal network smoke test"
+  modelled_year: 2035
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Zonal"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 05:00"
+
+Test_Future_HT_2035_ETYS:
+  description: "HT 2035 - ETYS network smoke test"
+  modelled_year: 2035
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "ETYS"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 05:00"
+
+Test_Future_HE_2035_Reduced:
+  description: "Hydrogen Evolution 2035 - Reduced network smoke test"
+  modelled_year: 2035
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Hydrogen Evolution"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 05:00"
+
+# Realistic baseline (1-week)
+Test_HT_2035_1Week:
+  description: "HT 2035 baseline (1-week realistic test)"
+  modelled_year: 2035
+  renewables_year: 2019
+  demand_year: 2019
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+# Weather year validation (HIGH PRIORITY)
+Test_Weather_2010:
+  description: "2035 with 2010 weather (low wind year)"
+  modelled_year: 2035
+  renewables_year: 2010
+  demand_year: 2010
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+Test_Weather_2015:
+  description: "2035 with 2015 weather (average year)"
+  modelled_year: 2035
+  renewables_year: 2015
+  demand_year: 2015
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+Test_Weather_2020:
+  description: "2035 with 2020 weather (high wind year)"
+  modelled_year: 2035
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-07 23:00"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEMPLATES (copy and modify for new scenarios)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# HISTORICAL TEMPLATE:
+# --------------------
+# My_Historical_YYYY:
+#   description: "Historical Year YYYY"
+#   modelled_year: YYYY            # Must be ≤ 2024
+#   renewables_year: YYYY          # Match modelled_year for actual weather
+#   demand_year: YYYY              # Match modelled_year for actual demand
+#   network_model: "ETYS"          # Or "Reduced", "Zonal"
+#   # clustering: gsp_spatial      # Optional: add clustering
+#
+# FUTURE TEMPLATE:
+# ----------------
+# My_Future_YYYY:
+#   description: "FES XXXX Scenario Name YYYY"
+#   modelled_year: YYYY            # Must be > 2024
+#   FES_year: XXXX                 # 2021, 2022, 2023, 2024, or 2025 (REQUIRED)
+#   FES_scenario: "Scenario Name"  # See FES options below (REQUIRED)
+#   renewables_year: 2020          # Historical weather for renewable profiles
+#   demand_year: 2020              # Year for ESPENI profile shape (if using ESPENI)
+#   network_model: "ETYS"          # Or "Reduced", "Zonal"
+#   # demand_timeseries: "ESPENI"  # Optional: "ESPENI" (default), "eload", "desstinee"
+#   # profile_year: 2050           # Optional: for eload/desstinee, 2010 or 2050 (auto-selected if omitted)
+#
+# DEMAND DATA SOURCES FOR FUTURE SCENARIOS:
+# -----------------------------------------
+# - Annual demand: From FES projections (FES_year + FES_scenario)
+# - Spatial distribution: From FES GSP-level breakdown
+# - Temporal profile (demand_timeseries option):
+#     "ESPENI"    - Historical half-hourly GB demand (uses demand_year)
+#     "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
+#     "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
+#   
+#   For eload/desstinee: profile_year auto-selects based on modelled_year:
+#     - modelled_year >= 2040: uses 2050 profile (includes EV/HP electrification)
+#     - modelled_year < 2040:  uses 2010 profile (baseline demand shape)
+#     - Can explicitly set profile_year: 2010 or 2050 to override auto-selection
+#   
+#   All profiles are scaled to match FES annual demand projections.

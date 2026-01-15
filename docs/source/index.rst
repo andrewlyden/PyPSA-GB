@@ -1,73 +1,202 @@
-.. PyPSA-GB documentation master file, created by
-   sphinx-quickstart on Wed Sep  8 11:14:38 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. PyPSA-GB documentation master file
 
-PyPSA-GB: An open source model of the GB power system for simulating future energy scenarios
-============================================================================================
+==============================================
+PyPSA-GB: Great Britain Power System Model
+==============================================
 
-PyPSA-GB is an open dataset and power dispatch model of the GB transmission network using country-specific data over historical years and National Grid's Future Energy Scenarios for future years. 
+.. raw:: html
 
-Two aspects of the GB electricity market can be readily modelled: (i) the wholesale electricity market, by solving a single bus unit commitment optimisation problem to dispatch generators and storage, and (ii) the balancing mechanism, by solving a network constrained linear optimal power flow.
+   <p style="font-size: 1.2em; color: #555; margin-bottom: 1.5em;">
+   Open-source energy system modelling for Great Britain's electricity network
+   </p>
 
-National Grid's Future Energy Scenarios (Steady Progression, System Transformation, Consumer Transformation, and Leading The Way) can be simulated for the years 2021 to 2050. This requires the choice of a baseline year for weather data and demand, and this can be chosen for 2010-2020. The historical years 2010-2020 can also be simulated. Simulations can be carried out in half-hourly or hourly timesteps.
+   <div style="display: flex; gap: 10px; margin-bottom: 2em; flex-wrap: wrap;">
+   <a href="https://github.com/andrewlyden/PyPSA-GB" style="text-decoration: none;">
+   <img src="https://img.shields.io/badge/GitHub-PyPSA--GB-blue?style=for-the-badge&logo=github" alt="GitHub">
+   </a>
+   <img src="https://img.shields.io/badge/Python-3.10+-green?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+">
+   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License: MIT">
+   <a href="https://pypsa-gb.readthedocs.io/en/latest/?badge=latest" style="text-decoration: none;">
+   <img src="https://img.shields.io/badge/docs-latest-brightgreen?style=for-the-badge" alt="Documentation Status">
+   </a>
+   </div>
 
-Assumptions made in the model are transparent and can be modified directly through the appropriate data files. It is the intention of the developers that this model and dataset can provide a foundation for active development and improvement. The 'Issues' section on the GitHub page contains suggestions for improvements. Contributions are welcomed and encouraged.
+PyPSA-GB is a comprehensive model of the Great Britain electricity system built on `PyPSA <https://pypsa.org>`_ (Python for Power System Analysis). It combines **detailed network topology**, **real-world data sources**, and **future energy scenario projections** to enable research into Britain's energy transition.
 
-**Developers**
+----
 
-PyPSA-GB development is led by Dr Andrew Lyden at the Institute for Energy Systems, University of Edinburgh. 
+.. grid:: 2
+   :gutter: 4
 
-Contributors:
+   .. grid-item-card:: 🚀 Getting Started
+      :link: getting_started/index
+      :link-type: doc
+      :class-card: sd-shadow-md
 
-- Andrew Lyden
-- Wei Sun 
-- Iain Struthers
-- Seb Hudson
-- Lukas Franken
+      **New to PyPSA-GB?** Install the model and run your first scenario with our step-by-step guide.
+
+   .. grid-item-card:: 📖 User Guide
+      :link: user_guide/index
+      :link-type: doc
+      :class-card: sd-shadow-md
+
+      **Deep dive into configuration.** Learn how to customise scenarios, configure solvers, and analyse optimisation results.
+
+   .. grid-item-card:: 📊 Data Reference
+      :link: data_reference/index
+      :link-type: doc
+      :class-card: sd-shadow-md
+
+      **Understand the data.** Comprehensive documentation of FES, DUKES, REPD, ETYS, and all input data sources.
+
+   .. grid-item-card:: 🔬 Tutorials
+      :link: tutorials/index
+      :link-type: doc
+      :class-card: sd-shadow-md
+
+      **Learn by example.** Jupyter notebooks exploring historical and future scenario analysis.
+
+----
+
+Key Features
+============
+
+- **Multiple Network Models**: Full ETYS (2000+ buses), Reduced (32 buses), or Zonal (17 zones)
+- **Historical & Future Scenarios**: Model years 2010-2024 (historical) or 2025-2050 (FES projections)
+- **NESO Future Energy Scenarios**: Holistic Transition, Electric Engagement, and other pathways
+- **High Resolution**: Half-hourly or hourly timesteps with full network constraints
+- **Open Source**: MIT license, transparent assumptions, community contributions welcome
 
 
-This work was also complete as part of the INTEGRATE project led by Prof Daniel Friedrich.
+Quick Example
+=============
 
-**Licence**
+Run a 2035 Holistic Transition scenario:
 
-PyPSA-GB is released under the open source MIT License. ESPENI and ERA5 datasets are used under a CC-BY-4.0 licence.
+.. code-block:: bash
 
-.. Documentation
-.. =============
+   # Activate environment
+   conda activate pypsa-gb
+
+   # Run the workflow
+   snakemake resources/network/HT35_solved.nc -j 4
+
+
+.. What Can You Model?
+.. ===================
+
+.. 1. **Wholesale Electricity Market**: Single-bus unit commitment dispatch
+.. 2. **Balancing Mechanism**: Network-constrained optimal power flow
+.. 3. **Capacity Planning**: Network and generator expansion studies
+.. 4. **Renewable Integration**: Wind, solar, and storage with realistic profiles
+.. 5. **Security of Supply**: LOLE/LOLP analysis for system adequacy
+
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Getting Started
+   :hidden:
 
-   .. introduction
-   installation
-   .. quick_run
+   getting_started/index
+   getting_started/installation
+   getting_started/quickstart
+   getting_started/first_scenario
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+   :hidden:
+
+   user_guide/index
+   user_guide/workflow
+   user_guide/configuration
+   user_guide/scenarios
+   user_guide/network_models
+   user_guide/clustering
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Data Reference
+   :hidden:
+
+   data_reference/index
+   data_reference/data_sources
+   data_reference/network_data
+   data_reference/maintenance
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Tutorials
+   :hidden:
+
+   tutorials/index
+   tutorials/1-historical-baseload-2015
+   tutorials/2-historical-renewables-2023
+   tutorials/3-future-holistic-transition-2035
+   tutorials/4-future-electric-engagement-2050
+   tutorials/5-networks
+   tutorials/6-demand
+   tutorials/7-generators
+   tutorials/8-marginal-costs
+   tutorials/9-renewables
+   tutorials/10-storage
+   tutorials/11-interconnectors
+   tutorials/12-hydrogen
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+   :hidden:
+
+   api/index
+   api/core_modules
+   api/integration_modules
 
 .. toctree::
    :maxdepth: 1
-   :caption: Data and Functionality
+   :caption: Development
+   :hidden:
 
-   notebooks/1 - Network.ipynb
-   notebooks/2 - Demand.ipynb
-   notebooks/3 - Generator and Marginal Prices.ipynb
-   notebooks/4 - Renewable Power and Storage.ipynb
-   notebooks/5a - Historical Years.ipynb
-   notebooks/5b - Future Years.ipynb
-   notebooks/5d - Zonal Network.ipynb
-   notebooks/6 - Unit Commitment.ipynb
-   .. notebooks/8 - Two Step Dispatch.ipynb
-   notebooks/9 - Comparison To Historical Data.ipynb
+   development/contributing
+   development/architecture
+   development/release_notes
+   development/troubleshooting
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
 
-   notebooks/7 - Network Expansion.ipynb
-   notebooks/5c - Floating Wind, Marine and Emissions Modelling.ipynb
-   notebooks/Scotland_Curtailment_2035.ipynb
+Contributors
+============
 
-   .. notebooks/10 - Security of Supply.ipynb
-   .. seasonal_thermal_energy_storage
-   .. high_temperature_thermal_energy_storage
-   .. marine_energy
+PyPSA-GB is developed at the Institute for Energy Systems, University of Edinburgh.
+
+- **Lead Developer**: Dr Andrew Lyden
+- **Contributors**: Dr Wei Sun, Dr Iain Struthers, Dr Seb Hudson, Dr Lukas Franken
+
+This work was completed as part of the INTEGRATE project led by Prof Daniel Friedrich.
+
+Citation
+========
+
+If you use PyPSA-GB in your research, please cite:
+
+   **Lyden, A., Sun, W., Struthers, I., Franken, L., Hudson, S., Wang, Y. and Friedrich, D., 2024.**
+   PyPSA-GB: An open-source model of Great Britain's power system for simulating future energy scenarios.
+   *Energy Strategy Reviews*, 53, p.101375.
+
+
+Papers Using PyPSA-GB
+=====================
+
+- **Dergunova, T. and Lyden, A., 2024.** Great Britain's hydrogen infrastructure development—Investment priorities and locational flexibility. *Applied Energy*, 375, p.124017.
+
+- **Desguers, T., Lyden, A. and Friedrich, D., 2024.** Integration of curtailed wind into flexible electrified heating networks with demand-side response and thermal storage: Practicalities and need for market mechanisms. *Energy Conversion and Management*, 304, p.118203.
+
+- **Lyden, A., Alene, S., Connor, P., Renaldi, R. and Watson, S., 2024.** Impact of locational pricing on the roll out of heat pumps in the UK. *Energy Policy*, 187, p.114043.
+
+- **Lyden, A., Sun, W., Friedrich, D. and Harrison, G., 2023.** Electricity system security of supply in Scotland. Study for the Scottish Government via ClimateXChange.
+
+License
+=======
+
+PyPSA-GB is released under the **MIT License**. See data reference for details on data licenses.
+

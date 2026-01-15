@@ -1,0 +1,105 @@
+# this is a modified version of the pypsa-eur environment
+name: pypsa-gb
+channels:
+- conda-forge
+- bioconda
+dependencies:
+- python>=3.11
+- pip
+
+# Core PyPSA ecosystem (updated to latest versions)
+- pypsa>=1.0.7
+- atlite>=0.3
+- linopy>=0.5.5
+- powerplantmatching>=0.5.15
+
+# Data processing & analysis
+- numpy
+- pandas>=2.1
+- scipy
+- xarray>=2024.03.0,<=2025.09.0
+- networkx
+- dask
+
+# Geospatial & coordinate systems (CRITICAL - used extensively)
+- geopandas>=1
+- pyproj>=3.0
+- shapely>=2.0,<2.1
+- fiona
+- rasterio
+- rioxarray
+- cartopy
+- descartes
+
+# Machine learning & clustering
+- scikit-learn
+
+# Snakemake workflow
+- snakemake-minimal>=9
+- snakemake-storage-plugin-http>=0.3
+- snakemake-executor-plugin-slurm=1.8.0
+- snakemake-executor-plugin-cluster-generic
+- memory_profiler
+
+# Data I/O
+- xlrd
+- openpyxl
+- pyxlsb
+- pytables
+- lxml
+- yaml
+- netcdf4
+- libgdal-netcdf
+- geojson
+
+# String matching & fuzzy matching
+- levenshtein>=0.27.1
+- fuzzywuzzy
+
+# Web & API interactions
+- requests
+- country_converter
+- geopy
+
+# Visualization
+- matplotlib
+- seaborn
+- plotly
+- pydeck
+- graphviz
+
+# Utilities
+- tqdm
+- pytz
+- jpype1
+- proj
+
+# Solvers
+- glpk
+- pyscipopt
+
+# Documentation generation (Sphinx)
+- sphinx>=7.0
+- sphinx_rtd_theme>=2.0
+- myst-parser>=2.0
+- sphinx-copybutton
+- sphinx-design
+- sphinxcontrib-mermaid
+- nbsphinx
+- nbsphinx-link
+- pandoc
+- docutils
+
+# Development & Jupyter
+- jupyter
+- ipython
+- ipykernel
+- pre-commit
+- ruff
+- pylint
+
+- pip:
+  - gurobipy==12.0.3
+  - highspy
+  - tsam>=2.3.1
+  - entsoe-py

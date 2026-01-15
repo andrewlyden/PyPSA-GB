@@ -1,0 +1,20 @@
+fuel,marginal_costs,efficiency,committable,p_min_pu,ramp_limit_up,ramp_limit_down,emissions_factor,min_up_time,min_down_time,start_up_cost
+# Dispatchable Renewable Thermal Technologies from REPD
+# Sources: BEIS biomass costs, industry data, emission factors
+biomass,45.0,0.30,TRUE,40,0.10,0.10,0.0,4,4,500
+waste_to_energy,35.0,0.25,TRUE,50,0.08,0.08,0.15,6,6,800
+biogas,40.0,0.35,TRUE,30,0.12,0.12,0.0,2,2,200
+landfill_gas,30.0,0.32,TRUE,30,0.10,0.10,0.0,2,2,200
+sewage_gas,35.0,0.33,TRUE,30,0.10,0.10,0.0,2,2,200
+advanced_biofuel,50.0,0.35,TRUE,40,0.10,0.10,0.0,4,4,600
+geothermal,5.0,0.90,FALSE,85,0.05,0.05,0.0,0,0,0
+# Notes:
+# - marginal_costs in £/MWh (fuel + O&M)
+# - efficiency as fraction (0-1)
+# - committable TRUE = can be scheduled on/off; FALSE = always on (baseload)
+# - p_min_pu as percentage (e.g. 40 = 40% minimum stable generation)
+# - ramp_limit_up/down as fraction per hour (0.1 = 10% per hour)
+# - emissions_factor in tCO2/MWh (biomass/biogas = 0 biogenic, EfW = 0.15 fossil fraction, geothermal = 0)
+# - min_up_time/min_down_time in hours (geothermal = 0, operates continuously)
+# - start_up_cost in £ (geothermal = 0, no start-up)
+# Geothermal: Low O&M costs, high efficiency, baseload operation, ~85% availability

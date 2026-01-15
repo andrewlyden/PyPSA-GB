@@ -1,0 +1,2743 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Curtailment in Scotland - 2035 &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Scotland_Curtailment_2035';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html#Zonal-model">Zonal model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">Generator and Marginal Prices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5a%20-%20Historical%20Years.html">Historical Years</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Curtailment...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dotenv</span> <span class="kn">import</span> <span class="n">find_dotenv</span><span class="p">,</span> <span class="n">load_dotenv</span>
+
+<span class="n">load_dotenv</span><span class="p">(</span><span class="n">find_dotenv</span><span class="p">())</span>
+<span class="n">src_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PROJECT_SRC&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">src_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">data_reader_writer</span>
+
+<span class="kn">import</span> <span class="nn">pypsa</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<section id="Curtailment-in-Scotland---2035">
+<h1>Curtailment in Scotland - 2035<a class="headerlink" href="#Curtailment-in-Scotland---2035" title="Link to this heading">#</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scenario</span> <span class="o">=</span> <span class="s1">&#39;Leading The Way&#39;</span>
+<span class="c1"># scenario = &#39;Consumer Transformation&#39;</span>
+<span class="c1"># scenario = &#39;System Transformation&#39;</span>
+<span class="c1"># scenario = &#39;Steady Progression&#39;</span>
+<span class="n">year</span> <span class="o">=</span> <span class="mi">2035</span>
+<span class="n">year_baseline</span> <span class="o">=</span> <span class="mi">2012</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-01-01 00:00:00&#39;</span>
+<span class="n">end</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-12-31 23:00:00&#39;</span>
+<span class="c1"># time step as fraction of hour</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">demand_dataset</span><span class="o">=</span><span class="s1">&#39;eload&#39;</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span>
+                               <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">,</span> <span class="n">FES</span><span class="o">=</span><span class="mi">2022</span><span class="p">,</span> <span class="n">merge_generators</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale_to_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">networkmodel</span><span class="o">=</span><span class="s1">&#39;Reduced&#39;</span><span class="p">,</span> <span class="n">P2G</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+  warnings.warn(
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+  self.obj[key] = value
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:208: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+  df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
+<span class="n">network</span><span class="o">.</span><span class="n">import_from_csv_folder</span><span class="p">(</span><span class="s1">&#39;LOPF_data&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:pypsa.io:
+Importing PyPSA from older version of PyPSA than current version.
+Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
+carefully to prepare your network for import.
+Currently used PyPSA version [0, 20, 1], imported network file PyPSA version None.
+
+INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
+WARNING:pypsa.io:Components Index([&#39;Tidal lagoon Harker&#39;, &#39;Tidal lagoon Penwortham&#39;], dtype=&#39;object&#39;, name=&#39;Generator&#39;) for attribute p_max_pu of Generator are not in main components dataframe generators
+INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, loads, storage_units
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># scale the B6 lines to system transformation economy RT</span>
+<span class="n">B6</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;17&#39;</span><span class="p">,</span> <span class="s1">&#39;s_nom&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;18&#39;</span><span class="p">,</span> <span class="s1">&#39;s_nom&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;s_nom&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;24&#39;</span><span class="p">,</span> <span class="s1">&#39;s_nom&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;16&#39;</span><span class="p">,</span> <span class="s1">&#39;s_nom&#39;</span><span class="p">]</span>
+<span class="c1"># network.lines</span>
+<span class="n">scaling_factor</span> <span class="o">=</span> <span class="mi">29682</span> <span class="o">/</span> <span class="n">B6</span>
+<span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span> <span class="o">*=</span> <span class="n">scaling_factor</span>
+<span class="n">network</span><span class="o">.</span><span class="n">lines</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>bus0</th>
+      <th>bus1</th>
+      <th>r</th>
+      <th>x</th>
+      <th>b</th>
+      <th>s_nom</th>
+      <th>type</th>
+      <th>g</th>
+      <th>s_nom_extendable</th>
+      <th>s_nom_min</th>
+      <th>...</th>
+      <th>v_ang_min</th>
+      <th>v_ang_max</th>
+      <th>sub_network</th>
+      <th>x_pu</th>
+      <th>r_pu</th>
+      <th>g_pu</th>
+      <th>b_pu</th>
+      <th>x_pu_eff</th>
+      <th>r_pu_eff</th>
+      <th>s_nom_opt</th>
+    </tr>
+    <tr>
+      <th>Line</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Beauly</td>
+      <td>Peterhead</td>
+      <td>0.01220</td>
+      <td>0.02000</td>
+      <td>0.0856</td>
+      <td>1242.667464</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Beauly</td>
+      <td>Errochty</td>
+      <td>0.00700</td>
+      <td>0.15000</td>
+      <td>0.0520</td>
+      <td>312.442105</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Beauly</td>
+      <td>Peterhead</td>
+      <td>0.01220</td>
+      <td>0.02000</td>
+      <td>0.2844</td>
+      <td>1242.667464</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Beauly</td>
+      <td>Errochty</td>
+      <td>0.00700</td>
+      <td>0.15000</td>
+      <td>0.0520</td>
+      <td>312.442105</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Peterhead</td>
+      <td>Denny/Bonnybridge</td>
+      <td>0.00040</td>
+      <td>0.06500</td>
+      <td>0.4454</td>
+      <td>1798.909091</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>94</th>
+      <td>Sellindge</td>
+      <td>Kemsley</td>
+      <td>0.00020</td>
+      <td>0.00503</td>
+      <td>0.1797</td>
+      <td>7337.655502</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>95</th>
+      <td>Lovedean</td>
+      <td>Sellindge</td>
+      <td>0.00038</td>
+      <td>0.00711</td>
+      <td>0.2998</td>
+      <td>7266.645933</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>96</th>
+      <td>Lovedean</td>
+      <td>Sellindge</td>
+      <td>0.00038</td>
+      <td>0.00711</td>
+      <td>0.2998</td>
+      <td>7266.645933</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>97</th>
+      <td>S.W.Penisula</td>
+      <td>Lovedean</td>
+      <td>0.00051</td>
+      <td>0.00796</td>
+      <td>0.3400</td>
+      <td>6580.220096</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>98</th>
+      <td>S.W.Penisula</td>
+      <td>Lovedean</td>
+      <td>0.00051</td>
+      <td>0.00796</td>
+      <td>0.3400</td>
+      <td>6580.220096</td>
+      <td></td>
+      <td>0.0</td>
+      <td>False</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>-inf</td>
+      <td>inf</td>
+      <td></td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>99 rows × 29 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.linopf:Prepare linear problem
+INFO:pypsa.linopf:Total preparation time: 81.16s
+INFO:pypsa.linopf:Solve linear problem using Gurobi solver
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Set parameter Username
+Academic license - for non-commercial use only - expires 2023-10-19
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-wah62n_b.lp
+Reading time = 58.80 seconds
+obj: 25438176 rows, 7927801 columns, 44682912 nonzeros
+Gurobi Optimizer version 9.5.2 build v9.5.2rc0 (win64)
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+Optimize a model with 25438176 rows, 7927801 columns and 44682912 nonzeros
+Model fingerprint: 0x6a9a6b18
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+00]
+  Objective range  [1e+00, 1e+09]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e-06, 2e+12]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 23379588 rows and 61321 columns (presolve time = 6s) ...
+Presolve removed 23379588 rows and 804623 columns (presolve time = 10s) ...
+Presolve removed 23380143 rows and 2350000 columns (presolve time = 16s) ...
+Presolve removed 23870148 rows and 2840005 columns (presolve time = 26s) ...
+Presolve removed 23870148 rows and 2840005 columns (presolve time = 30s) ...
+Presolve removed 23922702 rows and 2841298 columns
+Presolve time: 37.09s
+Presolved: 1515474 rows, 5139057 columns, 9571485 nonzeros
+
+Elapsed ordering time = 10s
+Ordering time: 13.80s
+
+Barrier statistics:
+ AA&#39; NZ     : 3.775e+06
+ Factor NZ  : 1.571e+08 (roughly 4.0 GB of memory)
+ Factor Ops : 8.591e+10 (roughly 2 seconds per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.59380142e+25 -1.34236642e+26  1.00e+11 1.25e+10  9.67e+19    61s
+   1   2.20439556e+25 -4.80948355e+26  8.69e+10 1.13e+10  9.28e+19    67s
+   2   2.11733789e+25 -1.16864104e+26  8.34e+10 8.23e+09  8.18e+19    72s
+   3   1.43375840e+25 -1.08142133e+26  5.71e+10 2.86e+09  5.93e+19    78s
+   4   1.00902999e+25 -3.65712621e+25  4.02e+10 1.07e+09  4.06e+19    83s
+   5   5.74287321e+24 -6.70496643e+24  2.27e+10 1.72e+08  2.24e+19    88s
+   6   2.28795569e+24 -1.81787402e+24  8.83e+09 2.78e+07  8.99e+18    93s
+   7   8.04131978e+23 -4.35729876e+23  2.99e+09 4.14e+06  3.12e+18    97s
+   8   2.68686093e+23 -1.22138752e+23  9.62e+08 8.74e+05  1.02e+18   102s
+   9   7.81125489e+22 -3.23573888e+22  2.63e+08 1.91e+05  2.83e+17   106s
+  10   1.47674285e+22 -1.03213382e+22  8.19e+07 5.36e+04  5.04e+16   110s
+  11   2.59380142e+25 -1.34236642e+26  1.00e+11 1.25e+10  9.67e+19   119s
+  12   3.37768102e+25 -1.04671420e+26  8.59e+10 1.06e+10  1.41e+20   125s
+  13   1.75303296e+25 -4.68137147e+25  4.06e+10 4.51e+09  9.78e+19   130s
+  14   4.34821586e+24 -7.83819959e+24  1.05e+10 7.18e+08  2.49e+19   135s
+  15   9.92005086e+23 -1.03075421e+24  2.48e+09 9.22e+07  5.31e+18   140s
+  16   2.05788841e+23 -2.43541475e+23  5.24e+08 2.14e+07  1.08e+18   144s
+  17   4.98530554e+22 -4.48872010e+22  1.23e+08 4.11e+06  2.48e+17   150s
+  18   8.32533772e+21 -4.49731083e+21  2.24e+07 4.64e+05  4.13e+16   157s
+  19   1.88114807e+21 -1.12045429e+21  4.90e+06 1.17e+05  9.28e+15   162s
+  20   4.44249928e+20 -3.84501034e+20  1.21e+06 4.04e+04  2.24e+15   168s
+  21   2.32888910e+19 -3.64500873e+19  2.17e+05 2.62e+03  1.44e+14   174s
+  22   2.33966178e+18 -1.07301258e+19  4.29e+04 5.49e+02  1.44e+13   181s
+  23   1.26151576e+17 -1.28867349e+18  4.68e+03 5.65e+01  5.92e+11   189s
+  24   1.41405880e+16 -4.00390970e+17  1.01e+03 1.75e+01  8.68e+10   195s
+  25   3.45757583e+15 -1.71749742e+17  4.42e+02 7.48e+00  2.89e+10   200s
+  26   1.32330432e+15 -7.22262245e+16  2.23e+02 3.13e+00  1.06e+10   205s
+  27   4.29098253e+14 -2.46872486e+16  8.35e+01 1.07e+00  3.08e+09   210s
+  28   5.53171404e+13 -5.46456404e+15  1.37e+01 2.37e-01  5.82e+08   215s
+  29   2.99493562e+12 -1.49948267e+14  7.70e-01 6.52e-03  1.55e+07   221s
+  30   3.12095577e+10 -2.69347794e+12  2.94e-03 1.23e-04  2.65e+05   227s
+  31   2.18192233e+10 -6.97859465e+11  1.60e-04 5.03e-05  7.00e+04   234s
+  32   1.58922928e+10 -3.60167513e+11  5.59e-05 2.90e-05  3.66e+04   240s
+  33   1.23287847e+10 -2.46268907e+11  2.69e-05 1.84e-05  2.52e+04   247s
+  34   1.05933996e+10 -1.71714554e+11  1.96e-05 1.72e-05  1.77e+04   252s
+  35   9.77464472e+09 -1.38814202e+11  1.64e-05 1.32e-05  1.45e+04   257s
+  36   8.69689449e+09 -1.16869578e+11  1.27e-05 1.42e-05  1.22e+04   264s
+  37   6.93313750e+09 -8.20949943e+10  7.28e-06 1.02e-05  8.66e+03   269s
+  38   5.84481406e+09 -4.87839836e+10  5.11e-06 9.03e-06  5.32e+03   275s
+  39   4.69531537e+09 -3.39917182e+10  3.21e-06 9.78e-06  3.76e+03   283s
+  40   4.02950186e+09 -2.06670553e+10  2.27e-06 7.85e-06  2.40e+03   291s
+  41   3.55504721e+09 -1.35496754e+10  1.74e-06 5.88e-06  1.66e+03   299s
+  42   2.95223174e+09 -1.00301977e+10  1.10e-06 6.82e-06  1.26e+03   306s
+  43   2.62102096e+09 -7.97570828e+09  8.61e-07 5.94e-06  1.03e+03   313s
+  44   2.30377995e+09 -5.89018400e+09  1.01e-06 7.21e-06  7.97e+02   321s
+  45   2.10491246e+09 -4.36136871e+09  1.21e-06 6.05e-06  6.29e+02   329s
+  46   2.00548226e+09 -2.79164557e+09  9.61e-07 6.45e-06  4.67e+02   337s
+  47   1.90258259e+09 -1.52048013e+09  8.77e-07 8.09e-06  3.33e+02   345s
+  48   1.80482376e+09 -8.95018925e+08  9.26e-07 6.62e-06  2.63e+02   352s
+  49   1.70752952e+09 -3.79734169e+08  1.18e-06 6.13e-06  2.03e+02   361s
+  50   1.67979719e+09  6.07870756e+07  1.07e-06 6.11e-06  1.58e+02   369s
+  51   1.62479407e+09  4.51035660e+08  1.11e-06 6.10e-06  1.14e+02   377s
+  52   1.58615552e+09  7.13850989e+08  1.16e-06 4.91e-06  8.49e+01   386s
+  53   1.54258228e+09  8.81395207e+08  1.26e-06 6.14e-06  6.43e+01   396s
+  54   1.51758062e+09  1.00613822e+09  1.19e-06 6.14e-06  4.98e+01   405s
+  55   1.50318032e+09  1.10938098e+09  9.82e-07 4.10e-06  3.83e+01   414s
+  56   1.48431138e+09  1.16951904e+09  1.02e-06 4.45e-06  3.06e+01   424s
+  57   1.47793466e+09  1.20803966e+09  9.14e-07 4.12e-06  2.63e+01   432s
+  58   1.46942463e+09  1.24859714e+09  8.50e-07 4.12e-06  2.15e+01   441s
+  59   1.45860633e+09  1.27700202e+09  1.32e-06 4.13e-06  1.77e+01   450s
+  60   1.45542437e+09  1.30478191e+09  1.16e-06 6.20e-06  1.47e+01   460s
+  61   1.44816403e+09  1.32695569e+09  9.82e-07 6.22e-06  1.18e+01   468s
+  62   1.44293678e+09  1.34205435e+09  9.50e-07 8.32e-06  9.82e+00   476s
+  63   1.43961760e+09  1.35696661e+09  8.34e-07 8.34e-06  8.04e+00   485s
+  64   1.43639145e+09  1.36629747e+09  8.70e-07 6.34e-06  6.82e+00   494s
+  65   1.43416127e+09  1.37627583e+09  9.62e-07 6.27e-06  5.63e+00   503s
+  66   1.43251961e+09  1.38436806e+09  9.63e-07 4.23e-06  4.68e+00   512s
+  67   1.43046126e+09  1.39311090e+09  9.36e-07 4.21e-06  3.63e+00   521s
+  68   1.42810598e+09  1.39926689e+09  1.26e-06 4.22e-06  2.81e+00   530s
+  69   1.42727225e+09  1.40385941e+09  1.16e-06 4.20e-06  2.28e+00   538s
+  70   1.42622957e+09  1.40750798e+09  8.68e-07 6.27e-06  1.82e+00   547s
+  71   1.42576201e+09  1.40973566e+09  8.48e-07 6.26e-06  1.56e+00   556s
+  72   1.42535829e+09  1.41163783e+09  7.53e-07 6.26e-06  1.33e+00   565s
+  73   1.42482964e+09  1.41349973e+09  9.29e-07 8.31e-06  1.10e+00   573s
+  74   1.42455950e+09  1.41516379e+09  8.36e-07 6.24e-06  9.14e-01   581s
+  75   1.42387232e+09  1.41612505e+09  8.34e-07 6.26e-06  7.54e-01   588s
+  76   1.42372326e+09  1.41727340e+09  7.82e-07 6.28e-06  6.28e-01   595s
+  77   1.42364771e+09  1.41776768e+09  7.33e-07 8.36e-06  5.72e-01   602s
+  78   1.42341192e+09  1.41803891e+09  6.80e-07 6.29e-06  5.23e-01   610s
+  79   1.42320368e+09  1.41885248e+09  6.42e-07 8.37e-06  4.23e-01   620s
+  80   1.42308196e+09  1.41947753e+09  5.94e-07 6.28e-06  3.51e-01   628s
+  81   1.42304906e+09  1.41959149e+09  5.69e-07 8.38e-06  3.36e-01   635s
+  82   1.42296515e+09  1.41999720e+09  5.40e-07 8.36e-06  2.89e-01   644s
+  83   1.42288770e+09  1.42056753e+09  5.33e-07 8.34e-06  2.26e-01   653s
+  84   1.42273445e+09  1.42096275e+09  4.48e-07 6.26e-06  1.72e-01   661s
+  85   1.42267728e+09  1.42118544e+09  4.27e-07 6.25e-06  1.45e-01   669s
+  86   1.42260310e+09  1.42150211e+09  6.18e-07 6.23e-06  1.07e-01   677s
+  87   1.42252713e+09  1.42166754e+09  5.76e-07 4.16e-06  8.37e-02   685s
+  88   1.42248018e+09  1.42177464e+09  4.74e-07 6.25e-06  6.87e-02   693s
+  89   1.42245436e+09  1.42190954e+09  1.21e-06 6.23e-06  5.30e-02   701s
+  90   1.42241966e+09  1.42201030e+09  8.94e-07 2.08e-06  3.99e-02   708s
+  91   1.42239789e+09  1.42209314e+09  2.61e-06 4.13e-06  2.97e-02   716s
+  92   1.42238248e+09  1.42214589e+09  4.10e-06 4.19e-06  2.30e-02   723s
+  93   1.42235812e+09  1.42218183e+09  2.52e-06 6.76e-06  1.72e-02   732s
+  94   1.42235099e+09  1.42220864e+09  4.94e-06 6.17e-06  1.39e-02   740s
+  95   1.42234344e+09  1.42224360e+09  9.63e-06 8.74e-06  9.75e-03   748s
+  96   1.42234000e+09  1.42226645e+09  1.09e-05 1.86e-05  7.19e-03   755s
+  97   1.42233605e+09  1.42227865e+09  1.73e-05 1.62e-05  5.62e-03   764s
+  98   1.42233103e+09  1.42228548e+09  1.15e-05 1.61e-05  4.46e-03   778s
+  99   1.42232864e+09  1.42229826e+09  8.79e-06 2.90e-05  2.97e-03   792s
+ 100   1.42232620e+09  1.42230448e+09  6.02e-06 4.09e-05  2.13e-03   805s
+ 101   1.42232444e+09  1.42230915e+09  4.00e-06 6.69e-05  1.50e-03   821s
+ 102   1.42232364e+09  1.42231331e+09  3.09e-06 1.42e-04  1.01e-03   836s
+ 103   1.42232293e+09  1.42231592e+09  2.29e-06 1.69e-04  6.85e-04   852s
+ 104   1.42232234e+09  1.42231717e+09  1.62e-06 1.17e-04  5.06e-04   867s
+ 105   1.42232201e+09  1.42231797e+09  1.25e-06 2.24e-04  3.95e-04   880s
+ 106   1.42232188e+09  1.42231900e+09  1.11e-06 1.73e-04  2.82e-04   895s
+ 107   1.42232156e+09  1.42231956e+09  7.50e-07 3.32e-04  1.96e-04   908s
+ 108   1.42232145e+09  1.42231988e+09  6.23e-07 3.71e-04  1.54e-04   922s
+ 109   1.42232130e+09  1.42232027e+09  4.59e-07 3.66e-04  1.01e-04   937s
+ 110   1.42232113e+09  1.42232040e+09  3.95e-07 3.23e-04  7.18e-05   952s
+ 111   1.42232103e+09  1.42232056e+09  3.82e-07 6.94e-04  4.72e-05   965s
+ 112   1.42232096e+09  1.42232078e+09  1.69e-07 6.82e-04  1.73e-05   976s
+ 113   1.42232094e+09  1.42232079e+09  6.34e-07 9.56e-04  1.48e-05   987s
+ 114   1.42232093e+09  1.42232083e+09  5.68e-07 7.15e-04  1.03e-05   996s
+ 115   1.42232092e+09  1.42232086e+09  3.15e-07 8.32e-04  5.61e-06  1004s
+ 116   1.42232091e+09  1.42232087e+09  1.31e-06 5.79e-04  4.04e-06  1012s
+ 117   1.42232090e+09  1.42232089e+09  3.69e-07 3.87e-04  1.84e-06  1020s
+ 118   1.42232090e+09  1.42232089e+09  1.32e-07 3.21e-04  7.70e-07  1029s
+ 119   1.42232090e+09  1.42232091e+09  8.81e-08 4.11e-03  5.40e-07  1037s
+
+Barrier solved model in 119 iterations and 1037.26 seconds (650.89 work units)
+Optimal objective 1.42232090e+09
+
+Crossover log...
+
+  239119 DPushes remaining with DInf 0.0000000e+00              1042s
+   42777 DPushes remaining with DInf 0.0000000e+00              1047s
+    7410 DPushes remaining with DInf 0.0000000e+00              1051s
+       0 DPushes remaining with DInf 0.0000000e+00              1056s
+
+  976857 PPushes remaining with PInf 5.7972050e-03              1057s
+  733536 PPushes remaining with PInf 2.8543629e-02              1095s
+  637075 PPushes remaining with PInf 3.2680930e-02              1109s
+  592459 PPushes remaining with PInf 2.0478210e-02              1115s
+  563376 PPushes remaining with PInf 1.8582258e-02              1119s
+  541897 PPushes remaining with PInf 1.6737193e-02              1122s
+  523510 PPushes remaining with PInf 1.6105041e-02              1126s
+  494861 PPushes remaining with PInf 1.6795883e-02              1132s
+  483464 PPushes remaining with PInf 1.9769566e-02              1135s
+  464728 PPushes remaining with PInf 1.1166863e-02              1141s
+  449222 PPushes remaining with PInf 9.3515542e-03              1147s
+  442873 PPushes remaining with PInf 9.2994570e-03              1150s
+  431219 PPushes remaining with PInf 8.5224561e-03              1156s
+  420356 PPushes remaining with PInf 8.2061789e-03              1162s
+  410778 PPushes remaining with PInf 7.8726946e-03              1167s
+  402283 PPushes remaining with PInf 7.7685377e-03              1172s
+  394185 PPushes remaining with PInf 5.8354424e-03              1178s
+  390715 PPushes remaining with PInf 5.7676175e-03              1180s
+  380670 PPushes remaining with PInf 5.4718826e-03              1187s
+  374259 PPushes remaining with PInf 5.3814551e-03              1191s
+  368277 PPushes remaining with PInf 5.2977533e-03              1196s
+  362729 PPushes remaining with PInf 5.0225899e-03              1201s
+  357439 PPushes remaining with PInf 4.8065899e-03              1206s
+  352143 PPushes remaining with PInf 3.6824094e-03              1211s
+  347029 PPushes remaining with PInf 3.5917651e-03              1216s
+  342698 PPushes remaining with PInf 3.5196241e-03              1222s
+  338312 PPushes remaining with PInf 3.4455850e-03              1227s
+  334112 PPushes remaining with PInf 3.4455850e-03              1232s
+  331919 PPushes remaining with PInf 3.4455850e-03              1235s
+  327699 PPushes remaining with PInf 3.4389032e-03              1241s
+  323043 PPushes remaining with PInf 3.4389032e-03              1245s
+  317256 PPushes remaining with PInf 3.4389032e-03              1252s
+  313611 PPushes remaining with PInf 2.0697370e-03              1256s
+  310219 PPushes remaining with PInf 2.0191223e-03              1261s
+  306977 PPushes remaining with PInf 2.0153669e-03              1266s
+  303680 PPushes remaining with PInf 1.9775983e-03              1271s
+  300177 PPushes remaining with PInf 1.9775983e-03              1275s
+  296786 PPushes remaining with PInf 1.9775983e-03              1280s
+  291842 PPushes remaining with PInf 1.9775983e-03              1287s
+  288612 PPushes remaining with PInf 1.9533296e-03              1292s
+  285565 PPushes remaining with PInf 1.9428850e-03              1297s
+  282608 PPushes remaining with PInf 1.9428850e-03              1302s
+  279875 PPushes remaining with PInf 1.9428850e-03              1306s
+  277133 PPushes remaining with PInf 1.9428850e-03              1311s
+  274423 PPushes remaining with PInf 1.9195625e-03              1315s
+  271735 PPushes remaining with PInf 1.8880873e-03              1320s
+  269072 PPushes remaining with PInf 1.8757879e-03              1325s
+  266379 PPushes remaining with PInf 1.8757879e-03              1330s
+  262376 PPushes remaining with PInf 1.7817441e-03              1337s
+  259823 PPushes remaining with PInf 1.7769088e-03              1342s
+  257425 PPushes remaining with PInf 1.7769088e-03              1348s
+  253343 PPushes remaining with PInf 1.7731071e-03              1351s
+  251811 PPushes remaining with PInf 1.7731071e-03              1357s
+  249475 PPushes remaining with PInf 1.7731071e-03              1362s
+  245796 PPushes remaining with PInf 1.7731071e-03              1367s
+  241801 PPushes remaining with PInf 1.7695100e-03              1373s
+  241079 PPushes remaining with PInf 1.7407377e-03              1376s
+  237384 PPushes remaining with PInf 1.7407377e-03              1381s
+  235490 PPushes remaining with PInf 1.7407377e-03              1386s
+  233989 PPushes remaining with PInf 1.7407377e-03              1391s
+  231068 PPushes remaining with PInf 1.7407377e-03              1397s
+  229580 PPushes remaining with PInf 1.7407377e-03              1403s
+  228560 PPushes remaining with PInf 1.7407377e-03              1405s
+  227039 PPushes remaining with PInf 1.6996689e-03              1411s
+  225602 PPushes remaining with PInf 1.6996689e-03              1416s
+  222007 PPushes remaining with PInf 1.6996689e-03              1421s
+  219146 PPushes remaining with PInf 1.6996689e-03              1426s
+  213951 PPushes remaining with PInf 1.5621094e-03              1431s
+  210521 PPushes remaining with PInf 1.5621094e-03              1436s
+  208996 PPushes remaining with PInf 1.5621094e-03              1440s
+  204130 PPushes remaining with PInf 1.5621094e-03              1448s
+  203043 PPushes remaining with PInf 1.5621094e-03              1452s
+  197742 PPushes remaining with PInf 1.5621094e-03              1457s
+  194910 PPushes remaining with PInf 8.8838076e-04              1462s
+  193536 PPushes remaining with PInf 8.8838076e-04              1467s
+  191229 PPushes remaining with PInf 8.8838076e-04              1472s
+  187598 PPushes remaining with PInf 6.5162690e-04              1477s
+  185577 PPushes remaining with PInf 6.5162691e-04              1482s
+  183069 PPushes remaining with PInf 6.3704326e-04              1487s
+  180191 PPushes remaining with PInf 6.3704326e-04              1492s
+  175840 PPushes remaining with PInf 6.3704326e-04              1495s
+  172555 PPushes remaining with PInf 6.3704326e-04              1501s
+  170936 PPushes remaining with PInf 5.2408961e-04              1507s
+  170026 PPushes remaining with PInf 5.2408961e-04              1512s
+  169096 PPushes remaining with PInf 5.2408961e-04              1517s
+  166208 PPushes remaining with PInf 5.2408961e-04              1521s
+  165425 PPushes remaining with PInf 5.2408961e-04              1526s
+  164491 PPushes remaining with PInf 5.2408961e-04              1531s
+  162544 PPushes remaining with PInf 5.2408961e-04              1537s
+  161424 PPushes remaining with PInf 5.2408961e-04              1542s
+  160668 PPushes remaining with PInf 5.2408961e-04              1546s
+  159806 PPushes remaining with PInf 5.2408961e-04              1551s
+  157568 PPushes remaining with PInf 5.2408961e-04              1556s
+  156560 PPushes remaining with PInf 5.2408961e-04              1562s
+Warning: 1 variables dropped from basis
+
+Restart crossover...
+
+ 1059862 variables added to crossover basis                     1571s
+
+  245644 DPushes remaining with DInf 0.0000000e+00              1575s
+   43622 DPushes remaining with DInf 0.0000000e+00              1581s
+    8295 DPushes remaining with DInf 0.0000000e+00              1585s
+     154 DPushes remaining with DInf 0.0000000e+00              1592s
+       0 DPushes remaining with DInf 0.0000000e+00              1593s
+
+  977484 PPushes remaining with PInf 2.9846723e-02              1594s
+  753684 PPushes remaining with PInf 7.1917816e-02              1629s
+  659773 PPushes remaining with PInf 6.6943240e-02              1644s
+  617919 PPushes remaining with PInf 5.5314376e-02              1651s
+  588676 PPushes remaining with PInf 2.3620010e-02              1656s
+  567744 PPushes remaining with PInf 2.1072114e-02              1661s
+  534766 PPushes remaining with PInf 1.4806573e-02              1670s
+  521432 PPushes remaining with PInf 1.4785912e-02              1675s
+  501307 PPushes remaining with PInf 1.3732237e-02              1684s
+  491033 PPushes remaining with PInf 1.3607958e-02              1688s
+  483240 PPushes remaining with PInf 1.1564045e-02              1692s
+  476145 PPushes remaining with PInf 2.4340361e-02              1696s
+  463577 PPushes remaining with PInf 1.1578415e-02              1703s
+  458001 PPushes remaining with PInf 1.1075544e-02              1707s
+  452918 PPushes remaining with PInf 1.0558612e-02              1710s
+  443340 PPushes remaining with PInf 9.9996252e-03              1717s
+  438204 PPushes remaining with PInf 9.9090920e-03              1721s
+  433642 PPushes remaining with PInf 9.3135641e-03              1725s
+  425314 PPushes remaining with PInf 9.1496663e-03              1733s
+  421499 PPushes remaining with PInf 9.1393256e-03              1737s
+  417437 PPushes remaining with PInf 9.0221186e-03              1740s
+  410653 PPushes remaining with PInf 8.9987974e-03              1747s
+  407329 PPushes remaining with PInf 8.5510850e-03              1751s
+  400902 PPushes remaining with PInf 8.5423802e-03              1758s
+  397940 PPushes remaining with PInf 8.5389558e-03              1761s
+  392505 PPushes remaining with PInf 8.4490336e-03              1768s
+  389717 PPushes remaining with PInf 8.4295251e-03              1771s
+  384326 PPushes remaining with PInf 8.3038898e-03              1778s
+  381852 PPushes remaining with PInf 8.2498768e-03              1781s
+  377440 PPushes remaining with PInf 8.2303830e-03              1788s
+  374960 PPushes remaining with PInf 8.2303829e-03              1791s
+  370697 PPushes remaining with PInf 8.1933887e-03              1798s
+  368518 PPushes remaining with PInf 7.5982556e-03              1802s
+  366441 PPushes remaining with PInf 7.5185146e-03              1806s
+  362305 PPushes remaining with PInf 7.5185146e-03              1812s
+  358266 PPushes remaining with PInf 7.4967671e-03              1817s
+  356271 PPushes remaining with PInf 7.4554193e-03              1820s
+  352224 PPushes remaining with PInf 7.2066063e-03              1826s
+  348358 PPushes remaining with PInf 7.1776546e-03              1832s
+  344327 PPushes remaining with PInf 6.9987033e-03              1837s
+  342529 PPushes remaining with PInf 6.9987033e-03              1841s
+  338966 PPushes remaining with PInf 6.9366270e-03              1846s
+  335388 PPushes remaining with PInf 6.4390404e-03              1852s
+  331806 PPushes remaining with PInf 6.4390404e-03              1857s
+  330068 PPushes remaining with PInf 6.3805261e-03              1860s
+  326894 PPushes remaining with PInf 6.2781352e-03              1865s
+  323614 PPushes remaining with PInf 6.1923307e-03              1871s
+  320357 PPushes remaining with PInf 6.1923307e-03              1877s
+  317396 PPushes remaining with PInf 6.1837837e-03              1883s
+  315932 PPushes remaining with PInf 6.1837836e-03              1886s
+  313049 PPushes remaining with PInf 6.1837836e-03              1891s
+  310188 PPushes remaining with PInf 6.1837836e-03              1897s
+  307419 PPushes remaining with PInf 6.1837836e-03              1902s
+  305989 PPushes remaining with PInf 6.1837837e-03              1905s
+  303134 PPushes remaining with PInf 6.1023678e-03              1910s
+  300478 PPushes remaining with PInf 6.1023679e-03              1916s
+  297809 PPushes remaining with PInf 3.8732274e-03              1922s
+  295309 PPushes remaining with PInf 3.8732274e-03              1927s
+  293903 PPushes remaining with PInf 3.8732274e-03              1933s
+  293108 PPushes remaining with PInf 3.7092906e-03              1936s
+  291415 PPushes remaining with PInf 3.1879386e-03              1941s
+  289104 PPushes remaining with PInf 3.1879386e-03              1946s
+  287483 PPushes remaining with PInf 3.1879386e-03              1952s
+  286128 PPushes remaining with PInf 3.1879386e-03              1957s
+  284260 PPushes remaining with PInf 3.1879386e-03              1962s
+  282600 PPushes remaining with PInf 3.1879386e-03              1967s
+  280968 PPushes remaining with PInf 3.1879386e-03              1972s
+  280089 PPushes remaining with PInf 3.1879386e-03              1975s
+  278450 PPushes remaining with PInf 3.1843415e-03              1981s
+  276522 PPushes remaining with PInf 3.1843415e-03              1986s
+  274445 PPushes remaining with PInf 3.1843415e-03              1991s
+  272881 PPushes remaining with PInf 3.1184550e-03              1997s
+  272175 PPushes remaining with PInf 3.1184550e-03              2001s
+  271438 PPushes remaining with PInf 3.1184550e-03              2006s
+  269695 PPushes remaining with PInf 3.1184550e-03              2011s
+  268177 PPushes remaining with PInf 3.1184550e-03              2017s
+  267233 PPushes remaining with PInf 3.1184550e-03              2021s
+  265813 PPushes remaining with PInf 3.1184550e-03              2028s
+  265018 PPushes remaining with PInf 3.1184550e-03              2031s
+  263633 PPushes remaining with PInf 3.1184550e-03              2037s
+  262912 PPushes remaining with PInf 3.1184550e-03              2041s
+  261338 PPushes remaining with PInf 3.1097536e-03              2047s
+  260202 PPushes remaining with PInf 3.1097536e-03              2051s
+  258227 PPushes remaining with PInf 3.1097536e-03              2057s
+  257532 PPushes remaining with PInf 3.1097536e-03              2061s
+  255915 PPushes remaining with PInf 3.1097536e-03              2068s
+  255210 PPushes remaining with PInf 3.1097536e-03              2071s
+  253748 PPushes remaining with PInf 3.0686848e-03              2078s
+Warning: 1 variables dropped from basis
+  252999 PPushes remaining with PInf 5.7199556e+04              2084s
+  252183 PPushes remaining with PInf 4.9343086e+04              2088s
+  251438 PPushes remaining with PInf 4.7858150e+04              2090s
+  249293 PPushes remaining with PInf 4.7858150e+04              2095s
+  247702 PPushes remaining with PInf 4.7858150e+04              2101s
+  246362 PPushes remaining with PInf 4.7858150e+04              2108s
+  245558 PPushes remaining with PInf 4.7858150e+04              2111s
+  243979 PPushes remaining with PInf 4.7858150e+04              2116s
+  242156 PPushes remaining with PInf 4.7858149e+04              2122s
+  240362 PPushes remaining with PInf 4.7858149e+04              2128s
+  239715 PPushes remaining with PInf 4.7858149e+04              2130s
+  238002 PPushes remaining with PInf 4.7858149e+04              2137s
+  237271 PPushes remaining with PInf 4.7858149e+04              2141s
+  236503 PPushes remaining with PInf 4.7858149e+04              2145s
+  234870 PPushes remaining with PInf 4.7858149e+04              2151s
+  233286 PPushes remaining with PInf 4.7858149e+04              2156s
+  231878 PPushes remaining with PInf 4.7858149e+04              2162s
+  230447 PPushes remaining with PInf 4.7858149e+04              2168s
+  229536 PPushes remaining with PInf 4.7858149e+04              2171s
+  228238 PPushes remaining with PInf 4.7858149e+04              2177s
+  227177 PPushes remaining with PInf 4.7858149e+04              2180s
+  225185 PPushes remaining with PInf 4.7858149e+04              2187s
+  224136 PPushes remaining with PInf 4.7858149e+04              2190s
+  222311 PPushes remaining with PInf 4.7858149e+04              2197s
+  221482 PPushes remaining with PInf 4.7858149e+04              2201s
+  219375 PPushes remaining with PInf 4.7858149e+04              2206s
+  217470 PPushes remaining with PInf 4.7858149e+04              2211s
+  215886 PPushes remaining with PInf 4.7858149e+04              2217s
+  213900 PPushes remaining with PInf 4.7858149e+04              2223s
+  213088 PPushes remaining with PInf 4.7858149e+04              2225s
+  211324 PPushes remaining with PInf 4.7858149e+04              2231s
+  209478 PPushes remaining with PInf 4.7858149e+04              2236s
+  208109 PPushes remaining with PInf 4.7858149e+04              2243s
+  207407 PPushes remaining with PInf 4.7858149e+04              2245s
+  205798 PPushes remaining with PInf 4.7858149e+04              2252s
+  204278 PPushes remaining with PInf 4.7858149e+04              2257s
+  202710 PPushes remaining with PInf 4.7858149e+04              2263s
+  201948 PPushes remaining with PInf 4.7858149e+04              2266s
+  200311 PPushes remaining with PInf 4.7858149e+04              2270s
+  198737 PPushes remaining with PInf 4.7858149e+04              2275s
+  197200 PPushes remaining with PInf 4.7858149e+04              2281s
+  195710 PPushes remaining with PInf 4.7858149e+04              2286s
+  194151 PPushes remaining with PInf 4.7858149e+04              2291s
+  192789 PPushes remaining with PInf 4.7858149e+04              2296s
+  191397 PPushes remaining with PInf 4.7858149e+04              2301s
+  189896 PPushes remaining with PInf 4.7858149e+04              2306s
+  188016 PPushes remaining with PInf 4.7858149e+04              2310s
+  186423 PPushes remaining with PInf 4.7858149e+04              2315s
+  184673 PPushes remaining with PInf 4.7858149e+04              2320s
+  181725 PPushes remaining with PInf 4.7858149e+04              2327s
+  180145 PPushes remaining with PInf 4.7858149e+04              2333s
+  179293 PPushes remaining with PInf 4.7858149e+04              2335s
+  177616 PPushes remaining with PInf 4.7798152e+04              2341s
+  175889 PPushes remaining with PInf 4.7798152e+04              2347s
+  174760 PPushes remaining with PInf 4.7798152e+04              2355s
+  173993 PPushes remaining with PInf 4.7798152e+04              2358s
+  173094 PPushes remaining with PInf 4.7798151e+04              2363s
+  172213 PPushes remaining with PInf 4.7798151e+04              2366s
+  170468 PPushes remaining with PInf 4.7798151e+04              2371s
+  168879 PPushes remaining with PInf 4.7798151e+04              2377s
+  167996 PPushes remaining with PInf 4.7798151e+04              2380s
+  166173 PPushes remaining with PInf 4.7798151e+04              2389s
+  165272 PPushes remaining with PInf 4.7798151e+04              2392s
+  163261 PPushes remaining with PInf 4.7798151e+04              2397s
+  162052 PPushes remaining with PInf 4.7798151e+04              2401s
+Warning: 3 variables dropped from basis
+  161165 PPushes remaining with PInf 6.5575590e+05              2407s
+  160237 PPushes remaining with PInf 4.9283461e+05              2410s
+  158035 PPushes remaining with PInf 4.9283461e+05              2418s
+  157180 PPushes remaining with PInf 4.9283461e+05              2423s
+  156209 PPushes remaining with PInf 4.9283461e+05              2426s
+  155349 PPushes remaining with PInf 4.9283461e+05              2431s
+Warning: 1 variables dropped from basis
+  153656 PPushes remaining with PInf 5.4020575e+05              2442s
+  152780 PPushes remaining with PInf 5.2048967e+05              2448s
+  151457 PPushes remaining with PInf 5.2048967e+05              2450s
+  149259 PPushes remaining with PInf 5.2048967e+05              2459s
+  148213 PPushes remaining with PInf 5.2048967e+05              2464s
+  147459 PPushes remaining with PInf 5.2048967e+05              2468s
+  146512 PPushes remaining with PInf 5.2048967e+05              2472s
+  145263 PPushes remaining with PInf 5.2048967e+05              2476s
+  144230 PPushes remaining with PInf 5.2048967e+05              2481s
+  142072 PPushes remaining with PInf 5.2048967e+05              2489s
+Warning: 1 variables dropped from basis
+  141096 PPushes remaining with PInf 5.3344343e+05              2495s
+  139079 PPushes remaining with PInf 5.2633661e+05              2503s
+  138197 PPushes remaining with PInf 5.2361071e+05              2506s
+Warning: 1 variables dropped from basis
+  137427 PPushes remaining with PInf 5.3006504e+05              2513s
+  136627 PPushes remaining with PInf 5.1573451e+05              2518s
+  135829 PPushes remaining with PInf 5.1382221e+05              2523s
+  134962 PPushes remaining with PInf 5.1355160e+05              2528s
+  133869 PPushes remaining with PInf 5.1354139e+05              2532s
+  132961 PPushes remaining with PInf 5.1354139e+05              2537s
+  132153 PPushes remaining with PInf 5.1354139e+05              2540s
+  130114 PPushes remaining with PInf 5.1354139e+05              2548s
+  129155 PPushes remaining with PInf 5.1354139e+05              2551s
+  126840 PPushes remaining with PInf 5.1354139e+05              2556s
+  124950 PPushes remaining with PInf 5.1354139e+05              2561s
+  123133 PPushes remaining with PInf 5.1354139e+05              2567s
+  122129 PPushes remaining with PInf 5.1354139e+05              2571s
+  120882 PPushes remaining with PInf 5.1354908e+05              2578s
+  119913 PPushes remaining with PInf 9.3191827e+06              2585s
+  118255 PPushes remaining with PInf 9.2375942e+06              2591s
+  115993 PPushes remaining with PInf 9.2375942e+06              2598s
+  115227 PPushes remaining with PInf 9.2375942e+06              2601s
+  113588 PPushes remaining with PInf 9.2375942e+06              2607s
+  112417 PPushes remaining with PInf 9.2375942e+06              2611s
+  111455 PPushes remaining with PInf 9.2375942e+06              2615s
+  109442 PPushes remaining with PInf 9.2375942e+06              2622s
+  107459 PPushes remaining with PInf 9.2375942e+06              2627s
+  105666 PPushes remaining with PInf 9.2375942e+06              2632s
+  104781 PPushes remaining with PInf 9.2375942e+06              2635s
+  103030 PPushes remaining with PInf 9.2375942e+06              2642s
+  102318 PPushes remaining with PInf 9.2375942e+06              2645s
+  100446 PPushes remaining with PInf 9.2375942e+06              2652s
+   99589 PPushes remaining with PInf 9.2375942e+06              2656s
+   98790 PPushes remaining with PInf 9.2375942e+06              2660s
+   97149 PPushes remaining with PInf 9.2375942e+06              2668s
+   96383 PPushes remaining with PInf 9.2375942e+06              2672s
+   95448 PPushes remaining with PInf 9.2375942e+06              2677s
+   93403 PPushes remaining with PInf 9.2375942e+06              2684s
+   92579 PPushes remaining with PInf 9.2615793e+06              2690s
+   91878 PPushes remaining with PInf 9.2562605e+06              2693s
+   91193 PPushes remaining with PInf 9.2561600e+06              2697s
+   90388 PPushes remaining with PInf 9.2560722e+06              2700s
+   88837 PPushes remaining with PInf 9.2560722e+06              2706s
+   87191 PPushes remaining with PInf 9.2560722e+06              2712s
+   86308 PPushes remaining with PInf 9.2560722e+06              2715s
+   84392 PPushes remaining with PInf 9.2560722e+06              2722s
+   83187 PPushes remaining with PInf 9.2560722e+06              2725s
+   81616 PPushes remaining with PInf 9.2560722e+06              2733s
+   80915 PPushes remaining with PInf 9.2560722e+06              2736s
+   79541 PPushes remaining with PInf 9.2560722e+06              2743s
+   78843 PPushes remaining with PInf 9.2560722e+06              2746s
+   77317 PPushes remaining with PInf 9.2560722e+06              2752s
+   76188 PPushes remaining with PInf 9.2560722e+06              2755s
+   73988 PPushes remaining with PInf 9.2560722e+06              2761s
+   72320 PPushes remaining with PInf 9.2560722e+06              2767s
+   70904 PPushes remaining with PInf 9.2560722e+06              2773s
+   70197 PPushes remaining with PInf 9.2560722e+06              2776s
+   68597 PPushes remaining with PInf 9.2553716e+06              2781s
+   67372 PPushes remaining with PInf 9.2553716e+06              2785s
+   65640 PPushes remaining with PInf 9.2553716e+06              2791s
+   64262 PPushes remaining with PInf 9.2553716e+06              2798s
+   63510 PPushes remaining with PInf 9.2553716e+06              2802s
+   62320 PPushes remaining with PInf 9.2553716e+06              2807s
+   61473 PPushes remaining with PInf 9.2553117e+06              2810s
+   60044 PPushes remaining with PInf 9.2525423e+06              2817s
+   58472 PPushes remaining with PInf 9.2465343e+06              2823s
+   57807 PPushes remaining with PInf 9.2465343e+06              2826s
+   56521 PPushes remaining with PInf 9.2436160e+06              2833s
+   55729 PPushes remaining with PInf 9.2434415e+06              2836s
+   54234 PPushes remaining with PInf 9.2434415e+06              2842s
+   53502 PPushes remaining with PInf 9.2434415e+06              2846s
+   52166 PPushes remaining with PInf 9.2426005e+06              2853s
+   51564 PPushes remaining with PInf 9.2424811e+06              2856s
+   50209 PPushes remaining with PInf 9.2395150e+06              2863s
+   49489 PPushes remaining with PInf 9.2395150e+06              2866s
+   47964 PPushes remaining with PInf 9.2395150e+06              2872s
+   46481 PPushes remaining with PInf 9.1042242e+06              2878s
+   45730 PPushes remaining with PInf 9.1042242e+06              2882s
+   44815 PPushes remaining with PInf 9.1042242e+06              2885s
+   43085 PPushes remaining with PInf 9.1042242e+06              2892s
+   41762 PPushes remaining with PInf 9.1041378e+06              2897s
+   40632 PPushes remaining with PInf 9.1041378e+06              2903s
+   40092 PPushes remaining with PInf 9.1041378e+06              2906s
+   38976 PPushes remaining with PInf 9.1041378e+06              2911s
+   37885 PPushes remaining with PInf 9.1041378e+06              2916s
+   36808 PPushes remaining with PInf 9.0983031e+06              2922s
+   35716 PPushes remaining with PInf 8.9598331e+06              2927s
+   35154 PPushes remaining with PInf 8.9598331e+06              2931s
+   34043 PPushes remaining with PInf 8.9598331e+06              2936s
+   32908 PPushes remaining with PInf 8.9577038e+06              2941s
+   31797 PPushes remaining with PInf 8.9577038e+06              2946s
+   30700 PPushes remaining with PInf 8.9577038e+06              2952s
+   30151 PPushes remaining with PInf 8.9576925e+06              2955s
+   29071 PPushes remaining with PInf 7.5754340e+06              2961s
+   27995 PPushes remaining with PInf 7.5396341e+06              2967s
+   27459 PPushes remaining with PInf 7.5396341e+06              2970s
+   26391 PPushes remaining with PInf 7.5396341e+06              2975s
+   25332 PPushes remaining with PInf 5.4208342e+06              2981s
+   24276 PPushes remaining with PInf 5.4176250e+06              2986s
+   23220 PPushes remaining with PInf 5.4176250e+06              2991s
+   22164 PPushes remaining with PInf 5.4176250e+06              2996s
+   21108 PPushes remaining with PInf 5.4126818e+06              3001s
+   20052 PPushes remaining with PInf 5.4126818e+06              3006s
+   18996 PPushes remaining with PInf 5.4126818e+06              3011s
+   17938 PPushes remaining with PInf 5.3725855e+06              3017s
+   16882 PPushes remaining with PInf 5.3725786e+06              3022s
+   16354 PPushes remaining with PInf 5.3725786e+06              3025s
+   15298 PPushes remaining with PInf 5.3725786e+06              3032s
+   14770 PPushes remaining with PInf 5.3725786e+06              3035s
+   13649 PPushes remaining with PInf 5.3725773e+06              3040s
+   12566 PPushes remaining with PInf 5.3725773e+06              3046s
+   11485 PPushes remaining with PInf 5.3722121e+06              3051s
+   10398 PPushes remaining with PInf 5.3720174e+06              3056s
+    9298 PPushes remaining with PInf 5.3681405e+06              3061s
+    8211 PPushes remaining with PInf 5.0368038e+06              3067s
+    7121 PPushes remaining with PInf 4.1119055e+06              3071s
+    6029 PPushes remaining with PInf 4.1119055e+06              3076s
+    4940 PPushes remaining with PInf 4.1119055e+06              3081s
+    3836 PPushes remaining with PInf 4.1119055e+06              3086s
+    2727 PPushes remaining with PInf 4.1119055e+06              3091s
+    1671 PPushes remaining with PInf 4.1118960e+06              3095s
+     615 PPushes remaining with PInf 4.1114559e+06              3101s
+       0 PPushes remaining with PInf 4.1014257e+06              3106s
+
+  Push phase complete: Pinf 4.1014257e+06, Dinf 7.6830059e+01   3107s
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+ 1222124    1.4223209e+09   0.000000e+00   7.683006e+01   3112s
+ 1222654    1.4223209e+09   0.000000e+00   6.908158e-02   3115s
+ 1222792    1.4223209e+09   4.966235e+06   0.000000e+00   3121s
+ 1223848    1.4223209e+09   1.183485e+05   0.000000e+00   3127s
+ 1224376    1.4223209e+09   6.560186e+04   0.000000e+00   3131s
+ 1225432    1.4223209e+09   1.583730e+03   0.000000e+00   3138s
+ 1225707    1.4223209e+09   0.000000e+00   0.000000e+00   3141s
+ 1225707    1.4223209e+09   0.000000e+00   0.000000e+00   3181s
+
+Solved with barrier
+Solved in 1225707 iterations and 3182.76 seconds (2615.67 work units)
+Optimal objective  1.422320900e+09
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.linopf:Optimization successful. Objective value: 1.42e+09
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;ok&#39;, &#39;optimal&#39;)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="n">storage_by_carrier</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="c1"># to show on graph set the negative storage values to zero</span>
+<span class="n">storage_by_carrier</span><span class="p">[</span><span class="n">storage_by_carrier</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">p_by_carrier</span><span class="p">,</span> <span class="n">storage_by_carrier</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># group biomass stuff</span>
+<span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">])</span>
+
+<span class="c1"># rename the hydro bit</span>
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Large Hydro&#39;</span><span class="p">:</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">})</span>
+
+<span class="n">p_by_carrier</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>carrier</th>
+      <th>Biomass (co-firing)</th>
+      <th>Biomass (dedicated)</th>
+      <th>CCS Biomass</th>
+      <th>CCS Gas</th>
+      <th>Coal</th>
+      <th>Hydrogen</th>
+      <th>Hydro</th>
+      <th>Natural Gas</th>
+      <th>Nuclear</th>
+      <th>Oil</th>
+      <th>...</th>
+      <th>Waste</th>
+      <th>Wave power</th>
+      <th>Wind Offshore</th>
+      <th>Wind Onshore</th>
+      <th>Battery</th>
+      <th>Compressed Air</th>
+      <th>Liquid Air</th>
+      <th>P2G</th>
+      <th>Pumped Storage Hydroelectric</th>
+      <th>Biomass</th>
+    </tr>
+    <tr>
+      <th>snapshot</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2035-01-01 00:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>313.949004</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>8.20800</td>
+      <td>45271.464223</td>
+      <td>10300.540434</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-01-01 01:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>294.685515</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>8.20800</td>
+      <td>35598.458946</td>
+      <td>14131.493943</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-01-01 02:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>294.456188</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>8.20800</td>
+      <td>39595.019308</td>
+      <td>13669.017360</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-01-01 03:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>331.677119</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>0.00000</td>
+      <td>39277.997898</td>
+      <td>12242.626722</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-01-01 04:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>434.345810</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>9.67746</td>
+      <td>39569.582209</td>
+      <td>15632.838800</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2035-12-31 19:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>557.035888</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>5.16800</td>
+      <td>58483.059856</td>
+      <td>12886.699058</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-12-31 20:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>524.700746</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>3.97746</td>
+      <td>58265.223651</td>
+      <td>14163.430996</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-12-31 21:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>471.726151</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>3.97746</td>
+      <td>54287.795006</td>
+      <td>13664.459081</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>274.259684</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-12-31 22:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>448.564100</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>3.97746</td>
+      <td>48441.530434</td>
+      <td>12932.652670</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>767.683784</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2035-12-31 23:00:00</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>449.940063</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>0.0</td>
+      <td>3.16673</td>
+      <td>44666.234233</td>
+      <td>14673.160211</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>780.626277</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>8760 rows × 25 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Battery&#39;</span><span class="p">,</span> <span class="s1">&#39;Compressed Air&#39;</span><span class="p">,</span> <span class="s1">&#39;Liquid Air&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">,</span> <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">,</span> <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Unmet Load&#39;</span>
+        <span class="p">]</span>
+
+<span class="n">p_by_carrier</span> <span class="o">=</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span>
+
+<span class="n">p_by_carrier</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">p_by_carrier</span><span class="o">.</span><span class="n">max</span><span class="p">()[</span><span class="n">p_by_carrier</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">50.0</span><span class="p">])</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Coal&quot;</span><span class="p">:</span> <span class="s2">&quot;grey&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/gas Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Oil&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Unmet Load&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Anaerobic Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Waste&#39;</span><span class="p">:</span> <span class="s1">&#39;chocolate&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Sewage Sludge Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Landfill Gas&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;darkgreen&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">:</span> <span class="s1">&#39;pink&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Sour gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Natural Gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Gas&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydrogen&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Nuclear&quot;</span><span class="p">:</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Tidal Barrage and Tidal Stream&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydro&#39;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Large Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Small Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">:</span> <span class="s2">&quot;darkturquoise&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Battery&#39;</span><span class="p">:</span> <span class="s1">&#39;lime&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Compressed Air&#39;</span><span class="p">:</span> <span class="s1">&#39;greenyellow&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Liquid Air&#39;</span><span class="p">:</span> <span class="s1">&#39;lawngreen&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">:</span> <span class="s2">&quot;lightskyblue&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">:</span> <span class="s1">&#39;deepskyblue&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">:</span> <span class="s1">&#39;yellow&#39;</span><span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="p">(</span><span class="n">p_by_carrier</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">p_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
+
+<span class="c1"># Shrink current axis&#39;s height by 10% on the bottom</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_position</span><span class="p">([</span><span class="n">box</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">y0</span> <span class="o">+</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">box</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;2045-12-07 20:00:00&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Peak GB demand&#39;</span><span class="p">)</span>
+<span class="c1"># Put a legend below current axis</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper center&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.15</span><span class="p">),</span>
+          <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shadow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;GW&quot;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 0, &#39;&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_8_1.png" src="../_images/notebooks_Scotland_Curtailment_2035_8_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">buses_scotland</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Beauly&#39;</span><span class="p">,</span> <span class="s1">&#39;Peterhead&#39;</span><span class="p">,</span> <span class="s1">&#39;Errochty&#39;</span><span class="p">,</span> <span class="s1">&#39;Denny/Bonnybridge&#39;</span><span class="p">,</span> <span class="s1">&#39;Neilston&#39;</span><span class="p">,</span> <span class="s1">&#39;Strathaven&#39;</span><span class="p">,</span> <span class="s1">&#39;Torness&#39;</span><span class="p">,</span> <span class="s1">&#39;Eccles&#39;</span><span class="p">]</span>
+<span class="n">df_generators_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">buses_scotland</span><span class="p">)]</span>
+<span class="n">df_storage_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">buses_scotland</span><span class="p">)]</span>
+
+<span class="n">p_by_carrier_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="n">df_generators_scotland</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="n">storage_by_carrier_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="n">df_storage_scotland</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="c1"># to show on graph set the negative storage values to zero</span>
+<span class="n">storage_by_carrier_scotland</span><span class="p">[</span><span class="n">storage_by_carrier_scotland</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">p_by_carrier_scotland</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">p_by_carrier_scotland</span><span class="p">,</span> <span class="n">storage_by_carrier_scotland</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lines_t</span><span class="o">.</span><span class="n">p0</span><span class="p">[[</span><span class="s1">&#39;17&#39;</span><span class="p">,</span> <span class="s1">&#39;18&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;24&#39;</span><span class="p">,</span> <span class="s1">&#39;16&#39;</span><span class="p">]]</span>
+<span class="n">B6_to_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">lines_t</span><span class="o">.</span><span class="n">p0</span><span class="p">[[</span><span class="s1">&#39;17&#39;</span><span class="p">,</span> <span class="s1">&#39;18&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;24&#39;</span><span class="p">,</span> <span class="s1">&#39;16&#39;</span><span class="p">]]</span>
+
+<span class="n">B6_import</span> <span class="o">=</span> <span class="n">B6_to_scotland</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">B6_export</span> <span class="o">=</span> <span class="n">B6_to_scotland</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">B6_import</span><span class="p">[</span><span class="n">B6_import</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">B6_import</span> <span class="o">=</span> <span class="n">B6_import</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="n">B6_export</span><span class="p">[</span><span class="n">B6_export</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">B6_export</span> <span class="o">=</span> <span class="n">B6_export</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">B6_export</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;B6 export&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># group biomass stuff</span>
+<span class="n">p_by_carrier_scotland</span><span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">p_by_carrier_scotland</span><span class="p">[</span><span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">])</span>
+
+<span class="c1"># add B6 flows</span>
+<span class="n">p_by_carrier_scotland</span><span class="p">[</span><span class="s1">&#39;B6 import&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">B6_import</span>
+
+<span class="c1"># rename the hydro bit</span>
+<span class="n">p_by_carrier_scotland</span> <span class="o">=</span> <span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Large Hydro&#39;</span><span class="p">:</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">})</span>
+<span class="n">p_by_carrier_scotland</span> <span class="o">=</span> <span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Interconnector&#39;</span><span class="p">:</span> <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">})</span>
+
+<span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Biomass&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Waste&#39;</span><span class="p">,</span> <span class="s2">&quot;Oil&quot;</span><span class="p">,</span> <span class="s2">&quot;Natural Gas&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Gas&#39;</span><span class="p">,</span> <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">,</span> <span class="s1">&#39;Hydro&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Battery&#39;</span><span class="p">,</span> <span class="s1">&#39;Compressed Air&#39;</span><span class="p">,</span> <span class="s1">&#39;Liquid Air&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">,</span> <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">,</span> <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Unmet Load&#39;</span><span class="p">,</span> <span class="s1">&#39;B6 import&#39;</span>
+        <span class="p">]</span>
+
+<span class="n">p_by_carrier_scotland</span> <span class="o">=</span> <span class="n">p_by_carrier_scotland</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span>
+
+<span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">max</span><span class="p">()[</span><span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">50.0</span><span class="p">])</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Coal&quot;</span><span class="p">:</span> <span class="s2">&quot;grey&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Diesel/gas Diesel/Gas oil&quot;</span><span class="p">:</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Oil&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Unmet Load&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Anaerobic Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Waste&#39;</span><span class="p">:</span> <span class="s1">&#39;chocolate&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Sewage Sludge Digestion&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Landfill Gas&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (dedicated)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass (co-firing)&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Biomass&#39;</span><span class="p">:</span> <span class="s1">&#39;darkgreen&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Interconnectors Import&#39;</span><span class="p">:</span> <span class="s1">&#39;pink&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;B6 import&#39;</span><span class="p">:</span> <span class="s1">&#39;pink&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Sour gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Natural Gas&quot;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;CCS Gas&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydrogen&#39;</span><span class="p">:</span> <span class="s2">&quot;lightcoral&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Nuclear&quot;</span><span class="p">:</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Shoreline Wave&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Tidal Barrage and Tidal Stream&#39;</span><span class="p">:</span> <span class="s1">&#39;aqua&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Hydro&#39;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Large Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Small Hydro&quot;</span><span class="p">:</span> <span class="s2">&quot;turquoise&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;Pumped Storage Hydroelectric&quot;</span><span class="p">:</span> <span class="s2">&quot;darkturquoise&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Battery&#39;</span><span class="p">:</span> <span class="s1">&#39;lime&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Compressed Air&#39;</span><span class="p">:</span> <span class="s1">&#39;greenyellow&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Liquid Air&#39;</span><span class="p">:</span> <span class="s1">&#39;lawngreen&#39;</span><span class="p">,</span>
+          <span class="s2">&quot;Wind Offshore&quot;</span><span class="p">:</span> <span class="s2">&quot;lightskyblue&quot;</span><span class="p">,</span>
+          <span class="s1">&#39;Wind Onshore&#39;</span><span class="p">:</span> <span class="s1">&#39;deepskyblue&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;Solar Photovoltaics&#39;</span><span class="p">:</span> <span class="s1">&#39;yellow&#39;</span><span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="p">(</span><span class="n">p_by_carrier_scotland</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">p_by_carrier_scotland</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
+
+<span class="c1"># stacked area plot of negative values, prepend column names with &#39;_&#39; such that they don&#39;t appear in the legend</span>
+<span class="p">(</span><span class="n">B6_export</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">area</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+<span class="c1"># rescale the y axis</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">B6_export</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">B6_export</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">,</span> <span class="p">(</span><span class="n">p_by_carrier_scotland</span> <span class="o">/</span> <span class="mf">1e3</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+<span class="c1"># Shrink current axis&#39;s height by 10% on the bottom</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_position</span><span class="p">([</span><span class="n">box</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">y0</span> <span class="o">+</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">box</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;2045-12-07 20:00:00&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Peak GB demand&#39;</span><span class="p">)</span>
+<span class="c1"># Put a legend below current axis</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper center&#39;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.15</span><span class="p">),</span>
+          <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shadow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="c1"># ax.legend(loc=&#39;upper center&#39;, bbox_to_anchor=(0.5, -0.05),</span>
+<span class="c1">#           fancybox=True, shadow=True, ncol=5)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;GW&quot;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+snapshot
+2035-01-01 00:00:00   -2992.790722
+2035-01-01 01:00:00   -8459.870644
+2035-01-01 02:00:00   -3579.928804
+2035-01-01 03:00:00   -8835.561273
+2035-01-01 04:00:00   -4791.714613
+                          ...
+2035-12-31 19:00:00   -7154.543807
+2035-12-31 20:00:00   -6512.446521
+2035-12-31 21:00:00   -7674.560188
+2035-12-31 22:00:00   -8584.318128
+2035-12-31 23:00:00   -7797.384563
+Name: B6 export, Length: 8760, dtype: float64
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matplotlib\core.py:1391: UserWarning: Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.
+  ax.set_ylim(None, 0)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 0, &#39;&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_11_3.png" src="../_images/notebooks_Scotland_Curtailment_2035_11_3.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">carrier</span> <span class="o">=</span> <span class="s2">&quot;Wind Onshore&quot;</span>
+
+<span class="n">capacity</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;carrier&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span> <span class="s2">&quot;p_nom&quot;</span><span class="p">]</span>
+<span class="n">p_available</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom&quot;</span><span class="p">])</span>
+<span class="n">p_available_by_carrier</span> <span class="o">=</span> <span class="n">p_available</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">p_curtailed_by_carrier</span> <span class="o">=</span> <span class="n">p_available_by_carrier</span> <span class="o">-</span> <span class="n">p_by_carrier</span>
+<span class="n">p_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">:</span> <span class="n">p_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">],</span>
+                     <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">:</span> <span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]})</span> <span class="o">/</span> <span class="mi">1000</span>
+
+<span class="c1"># p_df[carrier + &quot; capacity&quot;] = capacity</span>
+<span class="n">p_df</span><span class="p">[</span><span class="s2">&quot;Wind Onshore curtailed&quot;</span><span class="p">][</span><span class="n">p_df</span><span class="p">[</span><span class="s2">&quot;Wind Onshore curtailed&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">p_df</span><span class="p">[[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">,</span> <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># p_df[[carrier + &quot; available&quot;, carrier + &quot; capacity&quot;]].plot(ax=ax, linewidth=0)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;GW&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x292240d9880&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_12_1.png" src="../_images/notebooks_Scotland_Curtailment_2035_12_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000000</span>
+<span class="n">scaling_factor</span> <span class="o">=</span> <span class="mf">20.83</span> <span class="o">/</span> <span class="p">(</span><span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">scaling_factor</span><span class="p">)</span>
+<span class="n">curtailed_reduced</span> <span class="o">=</span> <span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">factor</span> <span class="o">=</span> <span class="mi">3150</span>
+<span class="n">curtailed_reduced</span> <span class="o">-=</span> <span class="n">factor</span>
+<span class="n">curtailed_reduced</span><span class="p">[</span><span class="n">curtailed_reduced</span> <span class="o">&lt;</span> <span class="n">factor</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">curtailed_reduced</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+<span class="n">curtailed_reduced</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.6208862229350169
+16.258179284695203
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;AxesSubplot:xlabel=&#39;snapshot&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_13_2.png" src="../_images/notebooks_Scotland_Curtailment_2035_13_2.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">carrier</span> <span class="o">=</span> <span class="s2">&quot;Wind Onshore&quot;</span>
+
+<span class="n">capacity</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">buses_scotland</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;carrier&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span> <span class="s2">&quot;p_nom&quot;</span><span class="p">]</span>
+<span class="n">generators_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">buses_scotland</span><span class="p">)]</span>
+<span class="n">generators_carrier_scotland</span> <span class="o">=</span> <span class="n">generators_scotland</span><span class="p">[</span><span class="n">generators_scotland</span><span class="o">.</span><span class="n">carrier</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="n">carrier</span><span class="p">])]</span>
+<span class="n">p_max_pu_scotland</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="p">[</span><span class="n">generators_carrier_scotland</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
+<span class="n">p_available_scotland</span> <span class="o">=</span> <span class="n">p_max_pu_scotland</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">generators_carrier_scotland</span><span class="p">[</span><span class="s2">&quot;p_nom&quot;</span><span class="p">])</span>
+<span class="n">p_available_by_carrier_scotland</span> <span class="o">=</span> <span class="n">p_available_scotland</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">buses_scotland</span><span class="p">)]</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="n">p_curtailed_by_carrier_scotland</span> <span class="o">=</span> <span class="n">p_available_by_carrier_scotland</span> <span class="o">-</span> <span class="n">p_by_carrier_scotland</span>
+
+<span class="n">p_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; available&quot;</span><span class="p">:</span> <span class="n">p_available_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">],</span>
+                     <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">:</span> <span class="n">p_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">],</span>
+                     <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">:</span> <span class="n">p_curtailed_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">]})</span>
+
+<span class="n">p_df</span><span class="p">[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; capacity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capacity</span>
+<span class="n">p_df</span><span class="p">[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">][</span><span class="n">p_df</span><span class="p">[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="c1"># p_df[[carrier + &quot; dispatched&quot;, carrier + &quot; curtailed&quot;]].iloc[0:100].plot(kind=&quot;area&quot;, ax=ax, linewidth=0)</span>
+<span class="c1"># p_df[[carrier + &quot; available&quot;, carrier + &quot; capacity&quot;]].iloc[0:100].plot(ax=ax, linewidth=0)</span>
+<span class="n">p_df</span><span class="p">[[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; dispatched&quot;</span><span class="p">,</span> <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; curtailed&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">p_df</span><span class="p">[[</span><span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; available&quot;</span><span class="p">,</span> <span class="n">carrier</span> <span class="o">+</span> <span class="s2">&quot; capacity&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Power [MW]&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x292383bd400&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_14_1.png" src="../_images/notebooks_Scotland_Curtailment_2035_14_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p_curtailed_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">((</span><span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">p_curtailed_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Curtailed scotland: &#39;</span><span class="p">,</span> <span class="mf">20.83</span> <span class="o">-</span> <span class="p">(</span><span class="n">p_curtailed_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">p_curtailed_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+<span class="n">curtailed_reduced</span> <span class="o">=</span> <span class="n">p_curtailed_by_carrier_scotland</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">factor</span> <span class="o">=</span> <span class="mi">3150</span>
+<span class="n">curtailed_reduced</span> <span class="o">-=</span> <span class="n">factor</span>
+<span class="n">curtailed_reduced</span><span class="p">[</span><span class="n">curtailed_reduced</span> <span class="o">&lt;</span> <span class="n">factor</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">curtailed_reduced</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000000</span><span class="p">)</span>
+<span class="n">curtailed_reduced</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">curtailed_reduced</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;Onshore_Wind_Curtailment_Scotland_2035.csv&#39;</span><span class="p">)</span>
+<span class="c1"># p_curtailed_by_carrier_scotland[carrier].sum() / 1000000</span>
+<span class="c1"># p_curtailed_by_carrier_scotland[carrier]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+33548819.784619544
+29409372.86134849
+4.139446923271053
+Curtailed scotland:  16.690553076728946
+12.883626028682272
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Scotland_Curtailment_2035_15_1.png" src="../_images/notebooks_Scotland_Curtailment_2035_15_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_df</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Wind Onshore available     6.602191e+07
+Wind Onshore dispatched    3.661254e+07
+Wind Onshore curtailed     2.940937e+07
+Wind Onshore capacity      2.172373e+08
+dtype: float64
+</pre></div></div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
