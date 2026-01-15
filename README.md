@@ -46,4 +46,4 @@ If you use PyPSA-GB in your research, please cite:
 
 See [full documentation](https://pypsa-gb.readthedocs.io) for detailed usage.
 
-![PyPSA-GB Reduced Network Model](pics/voronoi_reduced_model.jpg)
+![PyPSA-GB ETYS Clustered Network Model](pics/ETYS_clustered.jpg)
