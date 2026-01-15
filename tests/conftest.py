@@ -24,13 +24,6 @@ SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Also add all first-level subdirectories of scripts to sys.path so tests can
-# import modules placed under subpackages directly by module name (e.g.
-# "ETYS_upgrades" from scripts/network_build/ETYS_upgrades.py).
-for _sub in SCRIPTS_DIR.iterdir():
-    if _sub.is_dir():
-        sys.path.insert(0, str(_sub))
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PYTEST MARKERS
