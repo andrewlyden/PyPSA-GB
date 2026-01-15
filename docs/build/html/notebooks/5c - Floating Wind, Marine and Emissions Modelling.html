@@ -1,57 +1,684 @@
 
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Floating Wind &amp; Marine, and Emissions &mdash; PyPSA-GB  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Floating Wind &amp; Marine, and Emissions &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
   
-      <script src="../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9a2dae69"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="../_static/js/theme.js"></script>
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/5c - Floating Wind, Marine and Emissions Modelling';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Curtailment in Scotland - 2035" href="Scotland_Curtailment_2035.html" />
-    <link rel="prev" title="Network Expansion" href="7%20-%20Network%20Expansion.html" /> 
-</head>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
-          
-          
-          <a href="../index.html" class="icon icon-home">
-            PyPSA-GB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Data and Functionality</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html#Zonal-model">Zonal model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
@@ -59,71 +686,85 @@
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20Historical%20Years.html">Historical Years</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5d%20-%20Zonal%20Network.html">LOPF using the Zonal Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Floating Wind &amp; Marine, and Emissions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Environments-and-Modules">Environments and Modules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Defining-the-Simulation-Period">Defining the Simulation Period</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Selecting-the-Future-Energy-Scenario">Selecting the Future Energy Scenario</a></li>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
 </ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#Running-the-Optimisation">Running the Optimisation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Results">Results</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Power-by-Generation-Type">Power by Generation Type</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Emissions-by-Generation-Type-(including-Interconnectors)">Emissions by Generation Type (including Interconnectors)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Emissions-Intensity-(including-Interconnectors)">Emissions Intensity (including Interconnectors)</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#Average-Emissions-Intensity-(including-Interconnectors)">Average Emissions Intensity (including Interconnectors)</a></li>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
 </ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Scotland_Curtailment_2035.html">Curtailment in Scotland - 2035</a></li>
-</ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PyPSA-GB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Floating Wind &amp; Marine, and Emissions</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/5c - Floating Wind, Marine and Emissions Modelling.nblink.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Floating...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
   <section id="Floating-Wind-&amp;-Marine,-and-Emissions">
-<h1>Floating Wind &amp; Marine, and Emissions<a class="headerlink" href="#Floating-Wind-&-Marine,-and-Emissions" title="Link to this heading"></a></h1>
+<h1>Floating Wind &amp; Marine, and Emissions<a class="headerlink" href="#Floating-Wind-&-Marine,-and-Emissions" title="Link to this heading">#</a></h1>
 <section id="Overview">
-<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading"></a></h2>
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading">#</a></h2>
 <p>In this notebook, floating wind, wave power, tidal stream and tidal lagoon are considered specifically. After the optimisation, the greenhouse gas emissions of the period under consideration are calculated for the whole grid, and for each node.</p>
 <p>The emissions calculation relies on emissions intensity factors for each type of generation - due to the signficant differences between certain types within a carrier. This input data is provided from literature review.</p>
 </section>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">#</a></h2>
 <section id="Environments-and-Modules">
-<h3>Environments and Modules<a class="headerlink" href="#Environments-and-Modules" title="Link to this heading"></a></h3>
+<h3>Environments and Modules<a class="headerlink" href="#Environments-and-Modules" title="Link to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -155,7 +796,7 @@
 </div>
 </section>
 <section id="Defining-the-Simulation-Period">
-<h3>Defining the Simulation Period<a class="headerlink" href="#Defining-the-Simulation-Period" title="Link to this heading"></a></h3>
+<h3>Defining the Simulation Period<a class="headerlink" href="#Defining-the-Simulation-Period" title="Link to this heading">#</a></h3>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -173,7 +814,7 @@
 </div>
 </section>
 <section id="Selecting-the-Future-Energy-Scenario">
-<h3>Selecting the Future Energy Scenario<a class="headerlink" href="#Selecting-the-Future-Energy-Scenario" title="Link to this heading"></a></h3>
+<h3>Selecting the Future Energy Scenario<a class="headerlink" href="#Selecting-the-Future-Energy-Scenario" title="Link to this heading">#</a></h3>
 <p>Choose from one of the National Grid Future Energy Scenarios.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -197,7 +838,7 @@
 </div>
 <p>The parameters “marine_modify” is set to True, and the marine_scenario is chosen here as “High” (options are “Low”, “Mid”, “High”)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_reader_writer</span><span class="o">.</span><span class="n">data_writer</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">demand_dataset</span><span class="o">=</span><span class="s1">&#39;eload&#39;</span><span class="p">,</span> <span class="n">year_baseline</span><span class="o">=</span><span class="n">year_baseline</span><span class="p">,</span>
@@ -212,958 +853,20 @@
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\snapshots.py:31: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\loads.py:77: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\loads.py:82: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\loads.py:88: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\loads.py:172: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\loads.py:289: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:655: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[ True  True  True ...  True  True  True]&#39; has dtype incompatible with int32, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:674: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[50160.         76000.             0.         ...    98.79999638
- 24510.           646.        ]&#39; has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:655: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[ True  True  True ...  True  True  True]&#39; has dtype incompatible with int32, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:674: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[50160.         76000.             0.         ...    98.79999638
- 24510.           646.        ]&#39; has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\storage.py:146: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[3666.13408769  763.77793494  933.50636492  636.48161245]&#39; has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:721: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:795: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:654: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[1 0 0 ... 1 1 1]&#39; has dtype incompatible with bool, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:655: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[ True False False ...  True  True  True]&#39; has dtype incompatible with int32, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:655: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[ True False False ...  True  True  True]&#39; has dtype incompatible with int32, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:674: FutureWarning:
-
-Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[    0.             0.             0.         ... 34011.14111328
- 28069.83972168 30939.60046387]&#39; has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:459: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:513: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:567: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marine_scenarios.py:114: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marine_scenarios.py:69: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marine_scenarios.py:26: FutureWarning:
-
-Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option(&#39;future.no_silent_downcasting&#39;, True)`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:1333: PerformanceWarning:
-
-Non-vectorized DateOffset being applied to Series or DatetimeIndex.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:1334: PerformanceWarning:
-
-Non-vectorized DateOffset being applied to Series or DatetimeIndex.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:293: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
-
-invalid escape sequence &#39;\F&#39;
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:314: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:315: PerformanceWarning:
-
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:1605: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\generators.py:1607: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:715: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:716: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:725: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:742: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:745: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:757: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:758: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:761: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:778: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:779: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:792: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:809: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:810: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\renewables.py:814: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\interconnectors.py:190: UserWarning:
-
-The argument &#39;infer_datetime_format&#39; is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\interconnectors.py:210: UserWarning:
-
-This pattern is interpreted as a regular expression, and has match groups. To actually get the groups, use str.extract.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distribution.py:404: FutureWarning:
-
-A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
-The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
-
-For example, when doing &#39;df[col].method(value, inplace=True)&#39;, try using &#39;df.method({col: value}, inplace=True)&#39; or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
-
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:18: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:20: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:74: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:97: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:102: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:173: FutureWarning:
-
-ChainedAssignmentError: behaviour will change in pandas 3.0!
-You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
-A typical example is when you are setting values in a column of a DataFrame, like:
-
-df[&#34;col&#34;][row_indexer] = value
-
-Use `df.loc[row_indexer, &#34;col&#34;] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:58: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:59: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:130: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:131: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\marginal_costs.py:326: FutureWarning:
-
-&#39;H&#39; is deprecated and will be removed in a future version, please use &#39;h&#39; instead.
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\distance_calculator.py:32: FutureWarning:
-
-Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\add_P2G.py:65: FutureWarning:
-
-DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
-
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\arrays\datetimes.py:741: PerformanceWarning: Non-vectorized DateOffset being applied to Series or DatetimeIndex
+  warnings.warn(
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\indexing.py:1667: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead.  To get a de-fragmented frame, use `newframe = frame.copy()`
+  self.obj[key] = value
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:207: UserWarning: This pattern has match groups. To actually get the groups, use str.extract.
+  df_FES = df_FES[~df_FES.Variable.str.contains(&#39;(TWh)&#39;)]
 </pre></div></div>
 </div>
 </section>
 </section>
 <section id="Running-the-Optimisation">
-<h2>Running the Optimisation<a class="headerlink" href="#Running-the-Optimisation" title="Link to this heading"></a></h2>
+<h2>Running the Optimisation<a class="headerlink" href="#Running-the-Optimisation" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">()</span>
@@ -1176,8 +879,13 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-WARNING:pypsa.io:Importing network from PyPSA version v? while current version is v0.33.2. Read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html to prepare your network for import.
-INFO:pypsa.networks:Applying weightings to all columns of `snapshot_weightings`
+WARNING:pypsa.io:
+Importing PyPSA from older version of PyPSA than current version.
+Please read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html
+carefully to prepare your network for import.
+Currently used PyPSA version [0, 20, 1], imported network file PyPSA version None.
+
+INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
 WARNING:pypsa.io:Components Index([&#39;Bar-Bri-Cha&#39;, &#39;Big Rus&#39;, &#39;Bri-Cha-Min&#39;, &#39;Eas-Cas&#39;, &#39;Eas-Rai-Sou&#39;,
        &#39;Fai-Hea&#39;, &#39;Hol&#39;, &#39;NE-Jer&#39;, &#39;Nor-Ron-Fir&#39;, &#39;Pen-Fir-Dee&#39;, &#39;Pen-Fir-Sha&#39;,
        &#39;Rai-Isl&#39;, &#39;Ram-Isl&#39;, &#39;Sou-Jer&#39;, &#39;Sou-Min-Jer&#39;, &#39;Str-Lou&#39;, &#39;Tor-Hea&#39;,
@@ -1187,7 +895,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_generators</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">generators</span>
@@ -1218,7 +926,7 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, links, lo
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1227,14 +935,14 @@ carrier
 Oil                        0.000000
 Natural Gas                0.000000
 Coal                       0.000000
-Biomass (co-firing)       54.399998
-Small Hydro              255.660878
+Biomass (co-firing)       54.400000
+Small Hydro              255.660881
 Tidal lagoon             749.000000
-Waste                    891.066004
-Large Hydro             1951.059131
+Waste                    891.066000
+Large Hydro             1951.059135
 CCS Biomass             2799.999982
 Biomass (dedicated)     3136.960000
-CCS Gas                 4209.999987
+CCS Gas                 4210.000001
 Tidal stream            6210.000000
 Wave power              6390.000000
 Nuclear                 8120.000000
@@ -1246,7 +954,7 @@ Name: p_nom, dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">marine</span><span class="p">)</span>
@@ -1267,7 +975,7 @@ Name: p_nom, dtype: float64
 </div>
 <p>Lines need to be scaled up to accommodate for future generation. An arbitrary value of 4 is selected.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">contingency_factor</span> <span class="o">=</span> <span class="mi">4</span>
@@ -1276,10 +984,10 @@ Name: p_nom, dtype: float64
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;highs&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">lopf</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1288,81 +996,131 @@ Name: p_nom, dtype: float64
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-WARNING:pypsa.consistency:The following generators have carriers which are not defined:
-Index([&#39;West Burton&#39;, &#39;Hywind Scotland Pilot Park (Hywind 2) Demonstrator&#39;,
-       &#39;Beatrice Demonstrator&#39;, &#39;Burbo Bank&#39;,
-       &#39;Gunfleet Sands - (Demo) Extension&#39;, &#39;Gunfleet Sands II&#39;,
-       &#39;Gunfleet Sands Offshore Wind Scheme&#39;, &#39;Inner Dowsing&#39;, &#39;Kentish Flats&#39;,
-       &#39;Lynn&#39;,
-       ...
-       &#39;Unmet Load Bramford&#39;, &#39;Unmet Load Pelham&#39;,
-       &#39;Unmet Load Sundon/East Claydon&#39;, &#39;Unmet Load Melksham&#39;,
-       &#39;Unmet Load Bramley&#39;, &#39;Unmet Load London&#39;, &#39;Unmet Load Kemsley&#39;,
-       &#39;Unmet Load Sellindge&#39;, &#39;Unmet Load Lovedean&#39;,
-       &#39;Unmet Load S.W.Penisula&#39;],
-      dtype=&#39;object&#39;, name=&#39;Generator&#39;, length=2484)
-WARNING:pypsa.consistency:The following generators have time series defined for attribute p_max_pu in n.generators_t, but are not defined in n.generators:
-Index([&#39;Bar-Bri-Cha&#39;, &#39;Big Rus&#39;, &#39;Bri-Cha-Min&#39;, &#39;Eas-Cas&#39;, &#39;Eas-Rai-Sou&#39;,
-       &#39;Fai-Hea&#39;, &#39;Hol&#39;, &#39;NE-Jer&#39;, &#39;Nor-Ron-Fir&#39;, &#39;Pen-Fir-Dee&#39;, &#39;Pen-Fir-Sha&#39;,
-       &#39;Rai-Isl&#39;, &#39;Ram-Isl&#39;, &#39;Sou-Jer&#39;, &#39;Sou-Min-Jer&#39;, &#39;Str-Lou&#39;, &#39;Tor-Hea&#39;,
-       &#39;Wes-Ang-Dem-Mor&#39;, &#39;Wes-Cas&#39;, &#39;Wes-Fir&#39;],
-      dtype=&#39;object&#39;, name=&#39;Generator&#39;)
-WARNING:pypsa.consistency:The following storage_units have carriers which are not defined:
-Index([&#39;Dinorwig&#39;, &#39;Ffestiniog&#39;, &#39;Cruachan&#39;, &#39;Foyers&#39;, &#39;Beauly Battery&#39;,
-       &#39;Peterhead Battery&#39;, &#39;Errochty Battery&#39;, &#39;Denny/Bonnybridge Battery&#39;,
-       &#39;Neilston Battery&#39;, &#39;Strathaven Battery&#39;,
-       ...
-       &#39;Pelham P2G&#39;, &#39;Penwortham P2G&#39;, &#39;Ratcliffe P2G&#39;, &#39;S.W.Penisula P2G&#39;,
-       &#39;Sellindge P2G&#39;, &#39;Stella West P2G&#39;, &#39;Sundon/East Claydon P2G&#39;,
-       &#39;Th. Marsh/Stocksbridge P2G&#39;, &#39;Thornton/Drax/Eggborough P2G&#39;,
-       &#39;Walpole P2G&#39;],
-      dtype=&#39;object&#39;, name=&#39;StorageUnit&#39;, length=120)
-WARNING:pypsa.consistency:The following lines have carriers which are not defined:
-Index([&#39;0&#39;, &#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;7&#39;, &#39;8&#39;, &#39;9&#39;, &#39;10&#39;, &#39;11&#39;, &#39;12&#39;,
-       &#39;13&#39;, &#39;14&#39;, &#39;15&#39;, &#39;16&#39;, &#39;17&#39;, &#39;18&#39;, &#39;19&#39;, &#39;20&#39;, &#39;21&#39;, &#39;22&#39;, &#39;23&#39;, &#39;24&#39;,
-       &#39;25&#39;, &#39;26&#39;, &#39;27&#39;, &#39;28&#39;, &#39;29&#39;, &#39;30&#39;, &#39;31&#39;, &#39;32&#39;, &#39;33&#39;, &#39;34&#39;, &#39;35&#39;, &#39;36&#39;,
-       &#39;37&#39;, &#39;38&#39;, &#39;39&#39;, &#39;40&#39;, &#39;41&#39;, &#39;42&#39;, &#39;43&#39;, &#39;44&#39;, &#39;45&#39;, &#39;46&#39;, &#39;47&#39;, &#39;48&#39;,
-       &#39;49&#39;, &#39;50&#39;, &#39;51&#39;, &#39;52&#39;, &#39;53&#39;, &#39;54&#39;, &#39;55&#39;, &#39;56&#39;, &#39;57&#39;, &#39;58&#39;, &#39;59&#39;, &#39;60&#39;,
-       &#39;61&#39;, &#39;62&#39;, &#39;63&#39;, &#39;64&#39;, &#39;65&#39;, &#39;66&#39;, &#39;67&#39;, &#39;68&#39;, &#39;69&#39;, &#39;70&#39;, &#39;71&#39;, &#39;72&#39;,
-       &#39;73&#39;, &#39;74&#39;, &#39;75&#39;, &#39;76&#39;, &#39;77&#39;, &#39;78&#39;, &#39;79&#39;, &#39;80&#39;, &#39;81&#39;, &#39;82&#39;, &#39;83&#39;, &#39;84&#39;,
-       &#39;85&#39;, &#39;86&#39;, &#39;87&#39;, &#39;88&#39;, &#39;89&#39;, &#39;90&#39;, &#39;91&#39;, &#39;92&#39;, &#39;93&#39;, &#39;94&#39;, &#39;95&#39;, &#39;96&#39;,
-       &#39;97&#39;, &#39;98&#39;],
-      dtype=&#39;object&#39;, name=&#39;Line&#39;)
-WARNING:pypsa.consistency:The following lines have zero r, which could break the linear load flow:
-Index([&#39;16&#39;], dtype=&#39;object&#39;, name=&#39;Line&#39;)
-WARNING:pypsa.consistency:The following buses have carriers which are not defined:
-Index([&#39;Beauly&#39;, &#39;Peterhead&#39;, &#39;Errochty&#39;, &#39;Denny/Bonnybridge&#39;, &#39;Neilston&#39;,
-       &#39;Strathaven&#39;, &#39;Torness&#39;, &#39;Eccles&#39;, &#39;Harker&#39;, &#39;Stella West&#39;,
-       &#39;Penwortham&#39;, &#39;Deeside&#39;, &#39;Daines&#39;, &#39;Th. Marsh/Stocksbridge&#39;,
-       &#39;Thornton/Drax/Eggborough&#39;, &#39;Keadby&#39;, &#39;Ratcliffe&#39;, &#39;Feckenham&#39;,
-       &#39;Walpole&#39;, &#39;Bramford&#39;, &#39;Pelham&#39;, &#39;Sundon/East Claydon&#39;, &#39;Melksham&#39;,
-       &#39;Bramley&#39;, &#39;London&#39;, &#39;Kemsley&#39;, &#39;Sellindge&#39;, &#39;Lovedean&#39;, &#39;S.W.Penisula&#39;,
-       &#39;Netherlands&#39;, &#39;Belgium&#39;, &#39;France1&#39;, &#39;France2&#39;, &#39;Ireland&#39;, &#39;N. Ireland&#39;,
-       &#39;Norway&#39;, &#39;Denmark&#39;, &#39;Germany&#39;, &#39;Ireland2&#39;],
-      dtype=&#39;object&#39;, name=&#39;Bus&#39;)
-WARNING:pypsa.consistency:The following links have carriers which are not defined:
-Index([&#39;BritNed&#39;, &#39;EastWest&#39;, &#39;Moyle&#39;, &#39;Nemo&#39;, &#39;IFA&#39;, &#39;IFA2&#39;, &#39;NSL&#39;,
-       &#39;ElecLink&#39;, &#39;Viking Link&#39;, &#39;Greenlink&#39;, &#39;GridLink&#39;, &#39;NeuConnect&#39;,
-       &#39;NorthConnect&#39;, &#39;FAB Link&#39;],
-      dtype=&#39;object&#39;, name=&#39;Link&#39;)
-INFO:linopy.model: Solve problem using Highs solver
-INFO:linopy.io:Writing objective.
-Writing constraints.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 18/18 [00:03&lt;00:00,  5.61it/s]
-Writing continuous variables.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 6/6 [00:00&lt;00:00, 16.34it/s]
-INFO:linopy.io: Writing time: 3.82s
-INFO:linopy.constants: Optimization successful:
-Status: ok
-Termination condition: optimal
-Solution: 212904 primals, 795096 duals
-Objective: -6.65e+06
-Solver model: available
-Solver message: optimal
+INFO:pypsa.linopf:Prepare linear problem
+INFO:pypsa.linopf:Total preparation time: 3.45s
+INFO:pypsa.linopf:Solve linear problem using Gurobi solver
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Set parameter Username
 
-INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-fix-p-lower, Generator-fix-p-upper, Generator-fix-p-ramp_limit_up, Generator-fix-p-ramp_limit_down, Line-fix-s-lower, Line-fix-s-upper, Link-fix-p-lower, Link-fix-p-upper, StorageUnit-fix-p_dispatch-lower, StorageUnit-fix-p_dispatch-upper, StorageUnit-fix-p_store-lower, StorageUnit-fix-p_store-upper, StorageUnit-fix-state_of_charge-lower, StorageUnit-fix-state_of_charge-upper, Kirchhoff-Voltage-Law, StorageUnit-energy_balance were not assigned to the network.
+--------------------------------------------
+Warning: your license will expire in 13 days
+--------------------------------------------
+
+Academic license - for non-commercial use only - expires 2023-10-19
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\pypsa-problem-t1m2udw4.lp
+Reading time = 1.85 seconds
+obj: 795096 rows, 212905 columns, 1391856 nonzeros
+Gurobi Optimizer version 9.5.2 build v9.5.2rc0 (win64)
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+Optimize a model with 795096 rows, 212905 columns and 1391856 nonzeros
+Model fingerprint: 0x85173275
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+00]
+  Objective range  [1e+00, 1e+09]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [2e-06, 6e+12]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Presolve removed 782646 rows and 173358 columns
+Presolve time: 0.60s
+Presolved: 12450 rows, 39973 columns, 77425 nonzeros
+
+Ordering time: 0.13s
+
+Barrier statistics:
+ AA&#39; NZ     : 3.312e+04
+ Factor NZ  : 6.050e+05 (roughly 26 MB of memory)
+ Factor Ops : 9.168e+07 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.18880093e+23 -3.93938390e+24  8.14e+10 1.19e+10  9.65e+19     1s
+   1   2.04356113e+23 -2.19401803e+24  7.66e+10 1.15e+10  9.11e+19     1s
+   2   1.90132410e+23 -3.40811070e+24  7.17e+10 1.11e+10  8.98e+19     1s
+   3   1.70915214e+23 -7.54390530e+24  6.45e+10 5.98e+09  9.89e+19     1s
+   4   1.33016072e+23 -1.20828892e+25  5.02e+10 4.46e+09  1.22e+20     1s
+   5   1.13173399e+23 -8.99969476e+24  4.24e+10 4.00e+09  1.08e+20     1s
+   6   1.04541336e+23 -7.86853840e+24  3.90e+10 3.55e+09  1.02e+20     1s
+   7   9.12251111e+22 -4.12027508e+24  3.37e+10 2.58e+09  7.59e+19     1s
+   8   7.88727841e+22 -2.04235755e+24  2.88e+10 1.79e+09  5.69e+19     1s
+   9   6.42307058e+22 -7.43930469e+23  2.29e+10 1.01e+09  4.04e+19     1s
+  10   3.76132959e+22 -1.78503873e+23  1.26e+10 2.13e+08  2.19e+19     1s
+  11   2.18880093e+23 -3.93938390e+24  8.14e+10 1.19e+10  9.65e+19     1s
+  12   3.17778307e+23 -3.58570708e+24  7.69e+10 1.12e+10  1.71e+20     1s
+  13   3.01354374e+23 -2.60597232e+24  5.80e+10 8.26e+09  2.77e+20     1s
+  14   2.05760261e+23 -1.13130418e+24  3.69e+10 3.72e+09  3.27e+20     1s
+  15   6.38509007e+22 -5.13826165e+23  1.04e+10 1.77e+09  1.35e+20     1s
+  16   1.78739833e+22 -1.21210421e+23  2.88e+09 4.39e+08  4.79e+19     1s
+  17   4.12347978e+21 -1.64389217e+22  6.64e+08 6.13e+07  1.20e+19     1s
+  18   2.42893050e+20 -2.66326962e+20  3.73e+07 9.04e+05  6.54e+17     1s
+  19   3.52487110e+18 -3.20497992e+19  5.71e+05 1.10e+05  1.14e+16     1s
+  20   2.57565451e+17 -2.63932586e+18  4.36e+04 8.36e+03  7.25e+14     1s
+  21   4.69187515e+16 -4.34559123e+17  8.52e+03 1.37e+03  5.02e+13     1s
+  22   3.81407506e+15 -6.67863419e+16  9.52e+02 2.07e+02  2.42e+12     1s
+  23   1.97621300e+14 -9.22090297e+15  1.13e+02 2.75e+01  1.70e+11     1s
+  24   1.63503974e+12 -3.59057638e+14  3.29e+00 1.06e+00  4.81e+09     1s
+  25   2.12120657e+09 -2.45936097e+12  1.59e-02 7.25e-03  3.10e+07     1s
+  26   6.83145744e+08 -2.84747977e+11  3.81e-05 8.33e-04  3.57e+06     1s
+  27   4.50671044e+08 -1.98064579e+10  1.32e-07 6.79e-05  2.53e+05     1s
+  28   1.08024155e+08 -3.11316736e+09  5.47e-09 1.44e-05  4.03e+04     1s
+  29   4.84793446e+07 -9.35963749e+08  1.74e-09 5.96e-06  1.23e+04     1s
+  30   2.41155061e+07 -5.56226097e+08  9.83e-10 4.60e-06  7.26e+03     1s
+  31   1.80503550e+07 -1.58411428e+08  8.16e-10 6.90e-06  2.21e+03     1s
+  32   2.35065170e+06 -5.05828324e+07  4.86e-10 2.28e-06  6.62e+02     1s
+  33  -4.28640985e+06 -2.55545863e+07  1.18e-09 6.68e-06  2.66e+02     2s
+  34  -5.87721837e+06 -1.03896433e+07  5.56e-10 4.16e-06  5.64e+01     2s
+  35  -6.19793192e+06 -8.35536557e+06  4.27e-10 4.04e-06  2.70e+01     2s
+  36  -6.28503423e+06 -7.96063286e+06  6.20e-10 2.01e-06  2.10e+01     2s
+  37  -6.36914847e+06 -7.53171464e+06  6.45e-10 2.15e-06  1.45e+01     2s
+  38  -6.41360601e+06 -7.31912285e+06  8.47e-10 4.03e-06  1.13e+01     2s
+  39  -6.45196947e+06 -7.25820562e+06  8.09e-10 2.00e-06  1.01e+01     2s
+  40  -6.48171875e+06 -7.07216198e+06  8.98e-10 4.06e-06  7.39e+00     2s
+  41  -6.55211679e+06 -6.94418882e+06  1.96e-09 6.07e-06  4.90e+00     2s
+  42  -6.56176201e+06 -6.92693913e+06  2.20e-09 6.08e-06  4.57e+00     2s
+  43  -6.58734140e+06 -6.82467677e+06  2.52e-09 2.01e-06  2.97e+00     2s
+  44  -6.59794246e+06 -6.79713339e+06  2.17e-09 2.03e-06  2.49e+00     2s
+  45  -6.62032935e+06 -6.74416040e+06  4.34e-09 5.96e-06  1.55e+00     2s
+  46  -6.63548378e+06 -6.68726885e+06  4.86e-09 3.97e-06  6.48e-01     2s
+  47  -6.66457978e+06 -6.66967207e+06  2.98e-08 7.62e-06  6.37e-02     2s
+  48  -6.66479455e+06 -6.66955697e+06  2.60e-08 7.62e-06  5.96e-02     2s
+  49  -6.66494815e+06 -6.66923202e+06  2.45e-08 5.72e-06  5.36e-02     2s
+  50  -6.66509340e+06 -6.66852909e+06  1.99e-08 5.70e-06  4.30e-02     2s
+  51  -6.66599538e+06 -6.66706933e+06  6.98e-08 3.72e-06  1.34e-02     2s
+  52  -6.66650475e+06 -6.66652273e+06  4.19e-07 1.81e-06  2.25e-04     2s
+  53  -6.66650592e+06 -6.66650611e+06  4.18e-06 5.35e-06  2.40e-06     2s
+  54  -6.66650594e+06 -6.66650594e+06  1.76e-06 5.35e-06  7.03e-09     2s
+
+Barrier solved model in 54 iterations and 2.08 seconds (1.41 work units)
+Optimal objective -6.66650594e+06
+
+
+Solved with dual simplex
+Solved in 6913 iterations and 2.12 seconds (1.28 work units)
+Optimal objective -6.666505935e+06
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.linopf:Optimization successful. Objective value: -6.67e+06
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1372,13 +1130,13 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
 </div>
 </section>
 <section id="Results">
-<h2>Results<a class="headerlink" href="#Results" title="Link to this heading"></a></h2>
+<h2>Results<a class="headerlink" href="#Results" title="Link to this heading">#</a></h2>
 <section id="Power-by-Generation-Type">
-<h3>Power by Generation Type<a class="headerlink" href="#Power-by-Generation-Type" title="Link to this heading"></a></h3>
+<h3>Power by Generation Type<a class="headerlink" href="#Power-by-Generation-Type" title="Link to this heading">#</a></h3>
 <p>Real power output is interrogated by generation type. The total contribution to the grid wide generation is reported over the simulation period. Nodal contributions are analysed in the emissions modelling section.</p>
 <p>Note that there is a difference in terminology between generators and storage types; it is storage carriers that are plotted, however they are described as storage ‘types’.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define dataframe containing time series of real power generated, arranged by generation and storage types</span>
@@ -1429,23 +1187,8 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-C:\Users\alyden\AppData\Local\Temp\ipykernel_14260\2588050965.py:2: FutureWarning:
-
-DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
-
-C:\Users\alyden\AppData\Local\Temp\ipykernel_14260\2588050965.py:27: FutureWarning:
-
-DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
-
-</pre></div></div>
-</div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Removing columns where generation is zero</span>
@@ -1454,7 +1197,7 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setting all negative generation values to zero</span>
@@ -1464,7 +1207,7 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1523,15 +1266,15 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
     <tr>
       <th>2050-02-27 00:00:00</th>
       <td>0.000000</td>
-      <td>67851.607768</td>
-      <td>310.121350</td>
+      <td>69986.995700</td>
+      <td>310.121345</td>
       <td>0.0</td>
       <td>0.000000</td>
-      <td>5404.377240</td>
-      <td>1464.50626</td>
-      <td>63.155296</td>
-      <td>15519.542288</td>
-      <td>0.000000</td>
+      <td>3921.447816</td>
+      <td>759.23073</td>
+      <td>63.777891</td>
+      <td>15519.542239</td>
+      <td>1882.754614</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
@@ -1540,70 +1283,70 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
     <tr>
       <th>2050-02-27 01:00:00</th>
       <td>0.000000</td>
-      <td>67923.595807</td>
-      <td>273.448550</td>
+      <td>67779.623878</td>
+      <td>298.024594</td>
       <td>0.0</td>
       <td>9.743333</td>
-      <td>3173.353390</td>
-      <td>1389.04186</td>
-      <td>64.801440</td>
-      <td>16299.965750</td>
+      <td>1959.353389</td>
+      <td>910.91790</td>
+      <td>64.890085</td>
+      <td>18211.085298</td>
+      <td>1477.870092</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>7480.0</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-02-27 02:00:00</th>
-      <td>0.000000</td>
-      <td>68971.112957</td>
-      <td>271.049395</td>
+      <td>23.466889</td>
+      <td>66565.382496</td>
+      <td>344.755340</td>
       <td>0.0</td>
       <td>176.361167</td>
-      <td>1093.860770</td>
-      <td>1296.69025</td>
-      <td>66.411007</td>
-      <td>16568.025909</td>
+      <td>359.531523</td>
+      <td>360.08413</td>
+      <td>66.411006</td>
+      <td>20582.155915</td>
+      <td>528.027296</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>7480.0</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-02-27 03:00:00</th>
       <td>0.000000</td>
-      <td>69790.833859</td>
-      <td>270.363922</td>
+      <td>70075.831322</td>
+      <td>330.611955</td>
       <td>0.0</td>
       <td>613.563556</td>
-      <td>396.523302</td>
-      <td>1251.25323</td>
-      <td>66.884592</td>
-      <td>15903.672920</td>
+      <td>380.523302</td>
+      <td>580.85676</td>
+      <td>66.884595</td>
+      <td>18177.047391</td>
+      <td>1554.431495</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>7480.0</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-02-27 04:00:00</th>
       <td>0.000000</td>
-      <td>69666.780462</td>
-      <td>270.363922</td>
+      <td>69928.049142</td>
+      <td>274.253140</td>
       <td>0.0</td>
       <td>126.037889</td>
-      <td>3254.954789</td>
-      <td>1219.83621</td>
-      <td>64.993007</td>
-      <td>14480.072406</td>
+      <td>3121.129456</td>
+      <td>402.54362</td>
+      <td>64.993005</td>
+      <td>15265.720711</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>0.000000</td>
-      <td>7480.0</td>
+      <td>634.952757</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>...</th>
@@ -1625,87 +1368,87 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
     <tr>
       <th>2050-03-01 19:00:00</th>
       <td>3.028498</td>
-      <td>71777.291044</td>
-      <td>799.175246</td>
+      <td>72122.687287</td>
+      <td>799.175243</td>
       <td>0.0</td>
       <td>0.000000</td>
-      <td>2263.285035</td>
-      <td>501.84280</td>
-      <td>10.313573</td>
-      <td>3660.429777</td>
-      <td>11678.838097</td>
-      <td>1347.634191</td>
-      <td>730.373810</td>
-      <td>1620.172309</td>
-      <td>7480.0</td>
+      <td>2128.939917</td>
+      <td>545.90952</td>
+      <td>10.313571</td>
+      <td>3660.429756</td>
+      <td>10338.915718</td>
+      <td>2147.803387</td>
+      <td>1164.563494</td>
+      <td>2477.960271</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-03-01 20:00:00</th>
-      <td>3.408919</td>
-      <td>71424.629010</td>
-      <td>793.888141</td>
+      <td>5.599488</td>
+      <td>72080.488553</td>
+      <td>793.888134</td>
       <td>0.0</td>
-      <td>7.536139</td>
-      <td>3285.813022</td>
-      <td>505.09943</td>
-      <td>9.912310</td>
-      <td>3285.299154</td>
-      <td>6501.109555</td>
-      <td>2217.743226</td>
-      <td>1020.102332</td>
-      <td>1979.600866</td>
-      <td>7480.0</td>
+      <td>7.536138</td>
+      <td>2948.480255</td>
+      <td>591.37252</td>
+      <td>10.851067</td>
+      <td>3459.975167</td>
+      <td>5274.748322</td>
+      <td>1532.253686</td>
+      <td>1671.219656</td>
+      <td>2003.356218</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-03-01 21:00:00</th>
-      <td>4.316516</td>
-      <td>70730.197648</td>
-      <td>706.944642</td>
+      <td>4.316515</td>
+      <td>71971.745207</td>
+      <td>706.944635</td>
       <td>0.0</td>
       <td>3.842111</td>
-      <td>2999.955404</td>
-      <td>549.83108</td>
-      <td>9.704074</td>
-      <td>2720.403211</td>
-      <td>2193.331776</td>
-      <td>1385.419509</td>
-      <td>284.206185</td>
-      <td>1912.203293</td>
-      <td>7480.0</td>
+      <td>1821.959767</td>
+      <td>856.89065</td>
+      <td>9.704073</td>
+      <td>2720.403208</td>
+      <td>1010.598716</td>
+      <td>75.614402</td>
+      <td>940.369335</td>
+      <td>3001.416948</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-03-01 22:00:00</th>
       <td>6.090054</td>
-      <td>71281.605999</td>
-      <td>709.294466</td>
+      <td>71731.573656</td>
+      <td>709.294462</td>
       <td>0.0</td>
       <td>0.000000</td>
-      <td>1673.985975</td>
-      <td>536.77406</td>
+      <td>712.774907</td>
+      <td>887.98511</td>
       <td>10.813267</td>
-      <td>2044.134126</td>
-      <td>400.680500</td>
+      <td>2044.134142</td>
+      <td>532.625630</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>1599.329234</td>
-      <td>7480.0</td>
+      <td>1167.902156</td>
+      <td>6460.0</td>
     </tr>
     <tr>
       <th>2050-03-01 23:00:00</th>
-      <td>7.515320</td>
-      <td>71915.069948</td>
-      <td>637.037368</td>
+      <td>7.515319</td>
+      <td>72080.488553</td>
+      <td>637.037375</td>
       <td>0.0</td>
       <td>262.434667</td>
-      <td>538.378159</td>
-      <td>541.83339</td>
-      <td>11.660448</td>
-      <td>2051.779911</td>
+      <td>272.964795</td>
+      <td>922.91711</td>
+      <td>11.660449</td>
+      <td>2104.231767</td>
+      <td>621.154234</td>
       <td>0.000000</td>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>629.280821</td>
-      <td>7480.0</td>
+      <td>6460.0</td>
     </tr>
   </tbody>
 </table>
@@ -1713,7 +1456,7 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define colors for each generation/storage/interconnector type (note that Interconnector Export colour not defined in this way)</span>
@@ -1761,7 +1504,7 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot network-wide generation time series by generation type</span>
@@ -1795,14 +1538,12 @@ DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without a
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\plotting\_matplotlib\core.py:1800: UserWarning:
-
-Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
-
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\plotting\_matplotlib\core.py:1391: UserWarning: Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.
+  ax.set_ylim(None, 0)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1819,10 +1560,10 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </section>
 <section id="Emissions-by-Generation-Type-(including-Interconnectors)">
-<h3>Emissions by Generation Type (including Interconnectors)<a class="headerlink" href="#Emissions-by-Generation-Type-(including-Interconnectors)" title="Link to this heading"></a></h3>
+<h3>Emissions by Generation Type (including Interconnectors)<a class="headerlink" href="#Emissions-by-Generation-Type-(including-Interconnectors)" title="Link to this heading">#</a></h3>
 <p>This section calculates a time series of emissions from each generation type according to the real power time series calculated in the previous section. Note that these data include the emissions from interconnection, which is an important consideration - whether gross emissions from GB power sector include continental emissions.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span> <span class="c1"># arrange p_by_type columns into alphabetical order to ensure consistency with EI factors</span>
@@ -1856,54 +1597,36 @@ Text(0.5, 0, &#39;&#39;)
 <div class="highlight"><pre>
 <span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
 <span class="ansi-red-intense-fg ansi-bold">ValueError</span>                                Traceback (most recent call last)
-<span class="ansi-green-intense-fg ansi-bold">~\AppData\Local\Temp\ipykernel_14260\19385573.py</span> in <span class="ansi-cyan-fg">?</span><span class="ansi-blue-intense-fg ansi-bold">()</span>
-<span class="ansi-green-fg">     13</span> <span class="ansi-red-intense-fg ansi-bold"># Create energy generation mix dataframe by multiplying power generation mix by the time step [MWh]</span>
-<span class="ansi-green-fg">     14</span> E_by_type <span class="ansi-yellow-intense-fg ansi-bold">=</span> p_by_type<span class="ansi-yellow-intense-fg ansi-bold">.</span>multiply<span class="ansi-yellow-intense-fg ansi-bold">(</span>time_step<span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">     15</span>
-<span class="ansi-green-fg">     16</span> <span class="ansi-red-intense-fg ansi-bold"># Create emissions dataframe. Multiply all columns in the energy dataframe by the numpy array of emissions intensity factors</span>
-<span class="ansi-green-intense-fg ansi-bold">---&gt; 17</span><span class="ansi-yellow-intense-fg ansi-bold"> </span>Emit_by_type <span class="ansi-yellow-intense-fg ansi-bold">=</span> E_by_type<span class="ansi-yellow-intense-fg ansi-bold">.</span>multiply<span class="ansi-yellow-intense-fg ansi-bold">(</span>EI_factors<span class="ansi-yellow-intense-fg ansi-bold">,</span> axis<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-cyan-intense-fg ansi-bold">1</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">     18</span>
-<span class="ansi-green-fg">     19</span> <span class="ansi-red-intense-fg ansi-bold"># Convert gCO2/kWh * MWh to teCO2; the quotient of kWh:MWh (1e3) and gCO2:teCO2 (1e6) = 1e3</span>
-<span class="ansi-green-fg">     20</span> Emit_by_type_te <span class="ansi-yellow-intense-fg ansi-bold">=</span> Emit_by_type<span class="ansi-yellow-intense-fg ansi-bold">.</span>div<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-cyan-intense-fg ansi-bold">1e3</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\notebooks\5c - Floating Wind, Marine and Emissions Modelling.ipynb Cell 35</span> line <span class="ansi-cyan-fg">1
+</span><span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.ipynb#X46sZmlsZQ%3D%3D?line=13&#39;&gt;14&lt;/a&gt;</span> E_by_type = p_by_type.multiply(time_step)
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.ipynb#X46sZmlsZQ%3D%3D?line=15&#39;&gt;16&lt;/a&gt;</span> # Create emissions dataframe. Multiply all columns in the energy dataframe by the numpy array of emissions intensity factors
+<span class="ansi-green-intense-fg ansi-bold">---&gt; &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.ipynb#X46sZmlsZQ%3D%3D?line=16&#39;&gt;17&lt;/a&gt;</span> Emit_by_type = E_by_type.multiply(EI_factors, axis=1)
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.ipynb#X46sZmlsZQ%3D%3D?line=18&#39;&gt;19&lt;/a&gt;</span> # Convert gCO2/kWh * MWh to teCO2; the quotient of kWh:MWh (1e3) and gCO2:teCO2 (1e6) = 1e3
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.ipynb#X46sZmlsZQ%3D%3D?line=19&#39;&gt;20&lt;/a&gt;</span> Emit_by_type_te = Emit_by_type.div(1e3)
 
-<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\core\frame.py</span> in <span class="ansi-cyan-fg">?</span><span class="ansi-blue-intense-fg ansi-bold">(self, other, axis, level, fill_value)</span>
-<span class="ansi-green-fg">   8379</span>     <span class="ansi-yellow-intense-fg ansi-bold">@</span>Appender<span class="ansi-yellow-intense-fg ansi-bold">(</span>ops<span class="ansi-yellow-intense-fg ansi-bold">.</span>make_flex_doc<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-blue-intense-fg ansi-bold">&#34;mul&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-blue-intense-fg ansi-bold">&#34;dataframe&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8380</span>     def mul(
-<span class="ansi-green-fg">   8381</span>         self<span class="ansi-yellow-intense-fg ansi-bold">,</span> other<span class="ansi-yellow-intense-fg ansi-bold">,</span> axis<span class="ansi-yellow-intense-fg ansi-bold">:</span> Axis <span class="ansi-yellow-intense-fg ansi-bold">=</span> <span class="ansi-blue-intense-fg ansi-bold">&#34;columns&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> level<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-green-intense-fg ansi-bold">None</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> fill_value<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-green-intense-fg ansi-bold">None</span>
-<span class="ansi-green-fg">   8382</span>     <span class="ansi-yellow-intense-fg ansi-bold">)</span> <span class="ansi-yellow-intense-fg ansi-bold">-&gt;</span> DataFrame<span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 8383</span><span class="ansi-yellow-intense-fg ansi-bold">         return self._flex_arith_method(
-</span><span class="ansi-green-fg">   8384</span>             other<span class="ansi-yellow-intense-fg ansi-bold">,</span> operator<span class="ansi-yellow-intense-fg ansi-bold">.</span>mul<span class="ansi-yellow-intense-fg ansi-bold">,</span> level<span class="ansi-yellow-intense-fg ansi-bold">=</span>level<span class="ansi-yellow-intense-fg ansi-bold">,</span> fill_value<span class="ansi-yellow-intense-fg ansi-bold">=</span>fill_value<span class="ansi-yellow-intense-fg ansi-bold">,</span> axis<span class="ansi-yellow-intense-fg ansi-bold">=</span>axis
-<span class="ansi-green-fg">   8385</span>         <span class="ansi-yellow-intense-fg ansi-bold">)</span>
+File <span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\ops\__init__.py:433</span>, in <span class="ansi-cyan-fg">flex_arith_method_FRAME.&lt;locals&gt;.f</span><span class="ansi-blue-intense-fg ansi-bold">(self, other, axis, level, fill_value)</span>
+<span class="ansi-green-fg">    430</span> axis = self._get_axis_number(axis) if axis is not None else 1
+<span class="ansi-green-fg">    432</span> other = maybe_prepare_scalar_for_op(other, self.shape)
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 433</span> self, other = align_method_FRAME(self, other, axis, flex=True, level=level)
+<span class="ansi-green-fg">    435</span> if isinstance(other, ABCDataFrame):
+<span class="ansi-green-fg">    436</span>     # Another DataFrame
+<span class="ansi-green-fg">    437</span>     new_data = self._combine_frame(other, na_op, fill_value)
 
-<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\core\frame.py</span> in <span class="ansi-cyan-fg">?</span><span class="ansi-blue-intense-fg ansi-bold">(self, other, op, axis, level, fill_value)</span>
-<span class="ansi-green-fg">   8260</span>             <span class="ansi-red-intense-fg ansi-bold">#  through the DataFrame path</span>
-<span class="ansi-green-fg">   8261</span>             <span class="ansi-green-intense-fg ansi-bold">raise</span> NotImplementedError<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-yellow-intense-fg ansi-bold">f&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">fill_value </span><span class="ansi-yellow-intense-fg ansi-bold">{</span>fill_value<span class="ansi-yellow-intense-fg ansi-bold">}</span><span class="ansi-yellow-intense-fg ansi-bold"> not supported.</span><span class="ansi-yellow-intense-fg ansi-bold">&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8262</span>
-<span class="ansi-green-fg">   8263</span>         other <span class="ansi-yellow-intense-fg ansi-bold">=</span> ops<span class="ansi-yellow-intense-fg ansi-bold">.</span>maybe_prepare_scalar_for_op<span class="ansi-yellow-intense-fg ansi-bold">(</span>other<span class="ansi-yellow-intense-fg ansi-bold">,</span> self<span class="ansi-yellow-intense-fg ansi-bold">.</span>shape<span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 8264</span><span class="ansi-yellow-intense-fg ansi-bold">         </span>self<span class="ansi-yellow-intense-fg ansi-bold">,</span> other <span class="ansi-yellow-intense-fg ansi-bold">=</span> self<span class="ansi-yellow-intense-fg ansi-bold">.</span>_align_for_op<span class="ansi-yellow-intense-fg ansi-bold">(</span>other<span class="ansi-yellow-intense-fg ansi-bold">,</span> axis<span class="ansi-yellow-intense-fg ansi-bold">,</span> flex<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-green-intense-fg ansi-bold">True</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> level<span class="ansi-yellow-intense-fg ansi-bold">=</span>level<span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8265</span>
-<span class="ansi-green-fg">   8266</span>         <span class="ansi-green-intense-fg ansi-bold">with</span> np<span class="ansi-yellow-intense-fg ansi-bold">.</span>errstate<span class="ansi-yellow-intense-fg ansi-bold">(</span>all<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-blue-intense-fg ansi-bold">&#34;ignore&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-fg">   8267</span>             <span class="ansi-green-intense-fg ansi-bold">if</span> isinstance<span class="ansi-yellow-intense-fg ansi-bold">(</span>other<span class="ansi-yellow-intense-fg ansi-bold">,</span> DataFrame<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+File <span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\ops\__init__.py:247</span>, in <span class="ansi-cyan-fg">align_method_FRAME</span><span class="ansi-blue-intense-fg ansi-bold">(left, right, axis, flex, level)</span>
+<span class="ansi-green-fg">    244</span> if isinstance(right, np.ndarray):
+<span class="ansi-green-fg">    246</span>     if right.ndim == 1:
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 247</span>         right = to_series(right)
+<span class="ansi-green-fg">    249</span>     elif right.ndim == 2:
+<span class="ansi-green-fg">    250</span>         if right.shape == left.shape:
 
-<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\core\frame.py</span> in <span class="ansi-cyan-fg">?</span><span class="ansi-blue-intense-fg ansi-bold">(self, other, axis, flex, level)</span>
-<span class="ansi-green-fg">   8137</span>             <span class="ansi-green-intense-fg ansi-bold">return</span> right
-<span class="ansi-green-fg">   8138</span>
-<span class="ansi-green-fg">   8139</span>         <span class="ansi-green-intense-fg ansi-bold">if</span> isinstance<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">,</span> np<span class="ansi-yellow-intense-fg ansi-bold">.</span>ndarray<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-fg">   8140</span>             <span class="ansi-green-intense-fg ansi-bold">if</span> right<span class="ansi-yellow-intense-fg ansi-bold">.</span>ndim <span class="ansi-yellow-intense-fg ansi-bold">==</span> <span class="ansi-cyan-intense-fg ansi-bold">1</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 8141</span><span class="ansi-yellow-intense-fg ansi-bold">                 </span>right <span class="ansi-yellow-intense-fg ansi-bold">=</span> to_series<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8142</span>
-<span class="ansi-green-fg">   8143</span>             <span class="ansi-green-intense-fg ansi-bold">elif</span> right<span class="ansi-yellow-intense-fg ansi-bold">.</span>ndim <span class="ansi-yellow-intense-fg ansi-bold">==</span> <span class="ansi-cyan-intense-fg ansi-bold">2</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-fg">   8144</span>                 <span class="ansi-red-intense-fg ansi-bold"># We need to pass dtype=right.dtype to retain object dtype</span>
-
-<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\core\frame.py</span> in <span class="ansi-cyan-fg">?</span><span class="ansi-blue-intense-fg ansi-bold">(right)</span>
-<span class="ansi-green-fg">   8129</span>                     <span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8130</span>                 right <span class="ansi-yellow-intense-fg ansi-bold">=</span> left<span class="ansi-yellow-intense-fg ansi-bold">.</span>_constructor_sliced<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">,</span> index<span class="ansi-yellow-intense-fg ansi-bold">=</span>left<span class="ansi-yellow-intense-fg ansi-bold">.</span>index<span class="ansi-yellow-intense-fg ansi-bold">,</span> dtype<span class="ansi-yellow-intense-fg ansi-bold">=</span>dtype<span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8131</span>             <span class="ansi-green-intense-fg ansi-bold">else</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-fg">   8132</span>                 <span class="ansi-green-intense-fg ansi-bold">if</span> len<span class="ansi-yellow-intense-fg ansi-bold">(</span>left<span class="ansi-yellow-intense-fg ansi-bold">.</span>columns<span class="ansi-yellow-intense-fg ansi-bold">)</span> <span class="ansi-yellow-intense-fg ansi-bold">!=</span> len<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-intense-fg ansi-bold">-&gt; 8133</span><span class="ansi-yellow-intense-fg ansi-bold">                     raise ValueError(
-</span><span class="ansi-green-fg">   8134</span>                         msg<span class="ansi-yellow-intense-fg ansi-bold">.</span>format<span class="ansi-yellow-intense-fg ansi-bold">(</span>req_len<span class="ansi-yellow-intense-fg ansi-bold">=</span>len<span class="ansi-yellow-intense-fg ansi-bold">(</span>left<span class="ansi-yellow-intense-fg ansi-bold">.</span>columns<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> given_len<span class="ansi-yellow-intense-fg ansi-bold">=</span>len<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8135</span>                     <span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">   8136</span>                 right <span class="ansi-yellow-intense-fg ansi-bold">=</span> left<span class="ansi-yellow-intense-fg ansi-bold">.</span>_constructor_sliced<span class="ansi-yellow-intense-fg ansi-bold">(</span>right<span class="ansi-yellow-intense-fg ansi-bold">,</span> index<span class="ansi-yellow-intense-fg ansi-bold">=</span>left<span class="ansi-yellow-intense-fg ansi-bold">.</span>columns<span class="ansi-yellow-intense-fg ansi-bold">,</span> dtype<span class="ansi-yellow-intense-fg ansi-bold">=</span>dtype<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+File <span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\Anaconda3\envs\PyPSA-GB\lib\site-packages\pandas\core\ops\__init__.py:238</span>, in <span class="ansi-cyan-fg">align_method_FRAME.&lt;locals&gt;.to_series</span><span class="ansi-blue-intense-fg ansi-bold">(right)</span>
+<span class="ansi-green-fg">    236</span> else:
+<span class="ansi-green-fg">    237</span>     if len(left.columns) != len(right):
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 238</span>         raise ValueError(
+<span class="ansi-green-fg">    239</span>             msg.format(req_len=len(left.columns), given_len=len(right))
+<span class="ansi-green-fg">    240</span>         )
+<span class="ansi-green-fg">    241</span>     right = left._constructor_sliced(right, index=left.columns)
+<span class="ansi-green-fg">    242</span> return right
 
 <span class="ansi-red-intense-fg ansi-bold">ValueError</span>: Unable to coerce to Series, length must be 14: given 13
 </pre></div></div>
@@ -1943,7 +1666,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </section>
 <section id="Emissions-Intensity-(including-Interconnectors)">
-<h3>Emissions Intensity (including Interconnectors)<a class="headerlink" href="#Emissions-Intensity-(including-Interconnectors)" title="Link to this heading"></a></h3>
+<h3>Emissions Intensity (including Interconnectors)<a class="headerlink" href="#Emissions-Intensity-(including-Interconnectors)" title="Link to this heading">#</a></h3>
 <p>A time series of the network-wide (including continental interconnectors) emissions intensity is determined below. This is repeated later in the notebook, but excludes interconnectors.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -1961,7 +1684,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </div>
 <section id="Average-Emissions-Intensity-(including-Interconnectors)">
-<h4>Average Emissions Intensity (including Interconnectors)<a class="headerlink" href="#Average-Emissions-Intensity-(including-Interconnectors)" title="Link to this heading"></a></h4>
+<h4>Average Emissions Intensity (including Interconnectors)<a class="headerlink" href="#Average-Emissions-Intensity-(including-Interconnectors)" title="Link to this heading">#</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1990,34 +1713,121 @@ Average emissions intensity over the period, Method 2 =  14.783137298565755 gCO2
 </section>
 
 
-           </div>
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Environments-and-Modules">Environments and Modules</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Defining-the-Simulation-Period">Defining the Simulation Period</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Selecting-the-Future-Energy-Scenario">Selecting the Future Energy Scenario</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Running-the-Optimisation">Running the Optimisation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Results">Results</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Power-by-Generation-Type">Power by Generation Type</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Emissions-by-Generation-Type-(including-Interconnectors)">Emissions by Generation Type (including Interconnectors)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Emissions-Intensity-(including-Interconnectors)">Emissions Intensity (including Interconnectors)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Average-Emissions-Intensity-(including-Interconnectors)">Average Emissions Intensity (including Interconnectors)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="7%20-%20Network%20Expansion.html" class="btn btn-neutral float-left" title="Network Expansion" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Scotland_Curtailment_2035.html" class="btn btn-neutral float-right" title="Curtailment in Scotland - 2035" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
     </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2021, Andrew Lyden.</p>
   </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
 
-</footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
 
-</body>
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

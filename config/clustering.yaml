@@ -1,0 +1,190 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB Clustering Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# Predefined clustering methods that can be referenced by name in scenarios.yaml
+#
+# USAGE in scenarios.yaml:
+#   clustering: gsp_spatial     # Use preset by name
+#   clustering:                 # Or inline custom config
+#     method: kmeans
+#     n_clusters: 5
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CLUSTERING PRESETS
+# ──────────────────────────────────────────────────────────────────────────────
+# Reference these by name in scenarios.yaml: clustering: gsp_spatial
+
+presets:
+
+  # GSP Spatial Clustering (recommended for most use cases)
+  # NOTE: ETYS network uses OSGB36 (EPSG:27700) coordinates in x/y columns
+  gsp_spatial:
+    method: spatial
+    boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
+    cluster_column: "GSPs"
+    bus_crs: "EPSG:27700"  # ETYS network uses OSGB36 meters in x/y
+    boundary_crs: "EPSG:27700"
+    fallback: "nearest_centroid"
+    convert_transformers_to_lines: true
+
+  # Administrative Regions (larger zones)
+  admin_regions:
+    method: spatial
+    boundaries_path: "data/zone/uk_admin_regions.geojson"
+    cluster_column: "region_name"
+    bus_crs: "EPSG:27700"  # ETYS network uses OSGB36 meters in x/y
+    boundary_crs: "EPSG:27700"
+    fallback: "nearest_centroid"
+
+  # K-means Geographical (10 clusters)
+  kmeans_10:
+    method: kmeans
+    n_clusters: 10
+    random_state: 42
+    init_method: "k-means++"
+
+  # K-means Geographical (5 clusters - for reduced networks)
+  kmeans_5:
+    method: kmeans
+    n_clusters: 5
+    random_state: 42
+    init_method: "k-means++"
+
+  # Hierarchical Clustering (15 clusters)
+  hierarchical_15:
+    method: hierarchical
+    n_clusters: 15
+    linkage: "ward"
+    distance_metric: "euclidean"
+
+  # Custom Busmap (explicit bus-to-cluster mapping)
+  custom_busmap:
+    method: busmap
+    busmap_source: "data/clustering/custom_bus_mapping.csv"
+    default_cluster: "unassigned"
+    validate_buses: true
+
+  # Zonal Busmap (for zonal network)
+  zonal_busmap:
+    method: busmap
+    busmap_source: "data/zone/zonal_bus_mapping.csv"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# AGGREGATION STRATEGIES
+# ──────────────────────────────────────────────────────────────────────────────
+# How component attributes are combined when clustering
+
+aggregation_strategies:
+
+  # Default strategy (balanced)
+  default:
+    bus:
+      x: mean
+      y: mean
+    line:
+      v_nom: max
+      s_nom: sum
+      length: sum
+      r: mean
+      x: mean
+    transformer:
+      v_nom: max
+      s_nom: sum
+    generator:
+      p_nom: sum
+      marginal_cost: mean
+      efficiency: mean
+    load:
+      p_nom: sum
+    storage_unit:
+      p_nom: sum
+      max_hours: mean
+      efficiency_store: mean
+      efficiency_dispatch: mean
+    store:
+      e_nom: sum
+    link:
+      p_nom: sum
+      efficiency: mean
+
+  # Aggressive (maximum reduction, some accuracy loss)
+  aggressive:
+    bus:
+      x: mean
+      y: mean
+    line:
+      v_nom: max
+      s_nom: sum
+    generator:
+      p_nom: sum
+      marginal_cost: min         # Dispatch cheapest first
+    load:
+      p_nom: sum
+    storage_unit:
+      p_nom: sum
+      max_hours: mean
+    link:
+      p_nom: sum
+
+  # Economic (preserve dispatch economics)
+  economic:
+    bus:
+      x: mean
+      y: mean
+    line:
+      v_nom: max
+      s_nom: sum
+      capital_cost: sum
+    generator:
+      p_nom: sum
+      marginal_cost: mean
+      capital_cost: mean
+    load:
+      p_nom: sum
+    storage_unit:
+      p_nom: sum
+      marginal_cost: mean
+      capital_cost: mean
+
+# ──────────────────────────────────────────────────────────────────────────────
+# METHOD DOCUMENTATION
+# ──────────────────────────────────────────────────────────────────────────────
+
+methods:
+  spatial:
+    description: "Cluster buses based on geographical boundaries (e.g., GSP regions)"
+    required: [boundaries_path]
+    optional:
+      cluster_column: "Column name containing cluster IDs"
+      bus_crs: "Coordinate reference system for buses (default: EPSG:4326)"
+      boundary_crs: "CRS for boundaries (default: EPSG:27700)"
+      fallback: "Method for unassigned buses: nearest_centroid, nearest_neighbor, default_cluster"
+      convert_transformers_to_lines: "Convert transformers to lines before clustering"
+
+  busmap:
+    description: "Explicit bus-to-cluster mapping from CSV file"
+    required: [busmap_source]
+    optional:
+      default_cluster: "Name for buses not in mapping"
+      validate_buses: "Check all network buses are in mapping"
+
+  kmeans:
+    description: "K-means clustering based on geographical coordinates"
+    required: [n_clusters]
+    optional:
+      random_state: "Random seed for reproducibility"
+      init_method: "Centroid initialization: k-means++, random"
+
+  hierarchical:
+    description: "Hierarchical clustering based on electrical/geographical distances"
+    required: [n_clusters]
+    optional:
+      linkage: "Linkage criterion: ward, complete, average"
+      distance_metric: "Distance metric: euclidean, etc."
+
+  custom:
+    description: "Custom clustering using user-defined function"
+    required: [function_path, function_name]
+    optional:
+      custom_params: "Additional parameters passed to function"

@@ -1,57 +1,684 @@
 
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Historical Years &mdash; PyPSA-GB  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Historical Years &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
   
-      <script src="../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9a2dae69"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="../_static/js/theme.js"></script>
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/5a - Historical Years';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Future Years" href="5b%20-%20Future%20Years.html" />
-    <link rel="prev" title="Renewable Power and Storage" href="4%20-%20Renewable%20Power%20and%20Storage.html" /> 
-</head>
+    <link rel="prev" title="Renewable Power and Storage" href="4%20-%20Renewable%20Power%20and%20Storage.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
-          
-          
-          <a href="../index.html" class="icon icon-home">
-            PyPSA-GB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="1%20-%20Network.html">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Data and Functionality</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html">Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="1%20-%20Network.html#Zonal-model">Zonal model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="2%20-%20Demand.html">Demand</a></li>
@@ -68,43 +695,87 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5d%20-%20Zonal%20Network.html">LOPF using the Zonal Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Scotland_Curtailment_2035.html">Curtailment in Scotland - 2035</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
 </ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PyPSA-GB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Historical Years</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/5a - Historical Years.nblink.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4%20-%20Renewable%20Power%20and%20Storage.html"
+                          title="previous chapter">Renewable Power and Storage</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="5b%20-%20Future%20Years.html"
+                          title="next chapter">Future Years</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Historical Years</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
   <section id="Historical-Years">
-<h1>Historical Years<a class="headerlink" href="#Historical-Years" title="Link to this heading"></a></h1>
+<h1>Historical Years<a class="headerlink" href="#Historical-Years" title="Link to this heading">#</a></h1>
 <p>PyPSA-GB can model the GB power system by solving a network constrained Linear Optimal Power Flow (LOPF) problem. This notebook shows the example application of a historical 3 day period.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -127,10 +798,7 @@
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">PerformanceWarning</span><span class="p">)</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
 
 <span class="kn">import</span> <span class="nn">data_reader_writer</span>
@@ -138,7 +806,7 @@
 </div>
 </div>
 <section id="Setting-up-simulation">
-<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Link to this heading"></a></h2>
+<h2>Setting up simulation<a class="headerlink" href="#Setting-up-simulation" title="Link to this heading">#</a></h2>
 <p>Set the required inputs for the LOPF: the start, end and year of simulation, and the timestep.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -149,7 +817,7 @@
 <span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;2016-12-03 23:30:00&#39;</span>
 <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 <span class="c1"># time step as fraction of hour</span>
-<span class="n">time_step</span> <span class="o">=</span> <span class="mf">1.</span>
+<span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.5</span>
 </pre></div>
 </div>
 </div>
@@ -167,47 +835,631 @@
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\encodings\unicode_escape.py:26: DeprecationWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
 
-invalid escape sequence &#39;\F&#39;
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
 
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\interconnectors.py:73: UserWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:314: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\renewables.py:315: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:73: UserWarning:
 
 Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
 
-C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB-fix\PyPSA-GB\PyPSA-GB\interconnectors.py:103: UserWarning:
+C:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\interconnectors.py:103: UserWarning:
 
 Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
 
@@ -228,8 +1480,24 @@ Could not infer format, so each element will be parsed individually, falling bac
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-WARNING:pypsa.io:Importing network from PyPSA version v? while current version is v0.33.2. Read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html to prepare your network for import.
-INFO:pypsa.networks:Applying weightings to all columns of `snapshot_weightings`
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\components.py:323: FutureWarning:
+
+Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[]&#39; has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\components.py:323: FutureWarning:
+
+Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[]&#39; has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\components.py:323: FutureWarning:
+
+Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[]&#39; has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\components.py:323: FutureWarning:
+
+Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;[]&#39; has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+
+WARNING:pypsa.io:Importing network from PyPSA version v? while current version is v0.25.1. Read the release notes at https://pypsa.readthedocs.io/en/latest/release_notes.html to prepare your network for import.
+INFO:pypsa.components:Applying weightings to all columns of `snapshot_weightings`
 INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, storage_units
 </pre></div></div>
 </div>
@@ -245,12 +1513,12 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </div>
 </section>
 <section id="Running-the-optimisation">
-<h2>Running the optimisation<a class="headerlink" href="#Running-the-optimisation" title="Link to this heading"></a></h2>
+<h2>Running the optimisation<a class="headerlink" href="#Running-the-optimisation" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;highs&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">network</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">solver_name</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span> <span class="n">pyomo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -259,54 +1527,189 @@ INFO:pypsa.io:Imported network LOPF_data has buses, generators, lines, loads, st
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-WARNING:pypsa.consistency:The following lines have carriers which are not defined:
-Index([&#39;0&#39;, &#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;7&#39;, &#39;8&#39;, &#39;9&#39;,
-       ...
-       &#39;95&#39;, &#39;96&#39;, &#39;97&#39;, &#39;98&#39;, &#39;99&#39;, &#39;100&#39;, &#39;101&#39;, &#39;102&#39;, &#39;103&#39;, &#39;104&#39;],
-      dtype=&#39;object&#39;, name=&#39;Line&#39;, length=105)
-WARNING:pypsa.consistency:The following lines have zero r, which could break the linear load flow:
+WARNING:pypsa.components:The following lines have zero r, which could break the linear load flow:
 Index([&#39;16&#39;, &#39;99&#39;, &#39;100&#39;, &#39;101&#39;, &#39;102&#39;, &#39;103&#39;, &#39;104&#39;], dtype=&#39;object&#39;, name=&#39;Line&#39;)
-WARNING:pypsa.consistency:The following generators have carriers which are not defined:
-Index([&#39;Drax - coal units&#39;, &#39;Ratcliffe&#39;, &#39;Cottam&#39;, &#39;West Burton&#39;, &#39;Eggborough&#39;,
-       &#39;Rugeley&#39;, &#39;Aberthaw B&#39;, &#39;Fiddler`s Ferry&#39;, &#39;Dungeness B&#39;, &#39;Hartlepool&#39;,
-       ...
-       &#39;Small Hydro Stella West&#39;, &#39;Small Hydro Neilston&#39;, &#39;Small Hydro Beauly&#39;,
-       &#39;Small Hydro Denny/Bonnybridge&#39;, &#39;Small Hydro Errochty&#39;,
-       &#39;Interconnector Deeside&#39;, &#39;Interconnector Sellindge&#39;,
-       &#39;Interconnector Neilston&#39;, &#39;Interconnector Kemsley&#39;,
-       &#39;Interconnector Lovedean&#39;],
-      dtype=&#39;object&#39;, name=&#39;Generator&#39;, length=657)
-WARNING:pypsa.consistency:The following storage_units have carriers which are not defined:
-Index([&#39;Dinorwig&#39;, &#39;Ffestiniog&#39;, &#39;Cruachan&#39;, &#39;Foyers&#39;], dtype=&#39;object&#39;, name=&#39;StorageUnit&#39;)
-WARNING:pypsa.consistency:The following buses have carriers which are not defined:
-Index([&#39;Beauly&#39;, &#39;Peterhead&#39;, &#39;Errochty&#39;, &#39;Denny/Bonnybridge&#39;, &#39;Neilston&#39;,
-       &#39;Strathaven&#39;, &#39;Torness&#39;, &#39;Eccles&#39;, &#39;Harker&#39;, &#39;Stella West&#39;,
-       &#39;Penwortham&#39;, &#39;Deeside&#39;, &#39;Daines&#39;, &#39;Th. Marsh/Stocksbridge&#39;,
-       &#39;Thornton/Drax/Eggborough&#39;, &#39;Keadby&#39;, &#39;Ratcliffe&#39;, &#39;Feckenham&#39;,
-       &#39;Walpole&#39;, &#39;Bramford&#39;, &#39;Pelham&#39;, &#39;Sundon/East Claydon&#39;, &#39;Melksham&#39;,
-       &#39;Bramley&#39;, &#39;London&#39;, &#39;Kemsley&#39;, &#39;Sellindge&#39;, &#39;Lovedean&#39;, &#39;S.W.Penisula&#39;,
-       &#39;Netherlands&#39;, &#39;Belgium&#39;, &#39;France1&#39;, &#39;France2&#39;, &#39;Ireland&#39;,
-       &#39;N. Ireland&#39;],
-      dtype=&#39;object&#39;, name=&#39;Bus&#39;)
-WARNING:pypsa.networks:Warning, sub network 0 contains buses with mixed carriers! Value counts:
+WARNING:pypsa.components:The following lines have zero r, which could break the linear load flow:
+Index([&#39;16&#39;, &#39;99&#39;, &#39;100&#39;, &#39;101&#39;, &#39;102&#39;, &#39;103&#39;, &#39;104&#39;], dtype=&#39;object&#39;, name=&#39;Line&#39;)
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Generator&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;StorageUnit&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;StorageUnit&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Line&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Line&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\optimization\constraints.py:531: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Generator&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;StorageUnit&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;StorageUnit&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Line&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\expressions.py:176: FutureWarning:
+
+the `pandas.MultiIndex` object(s) passed as &#39;Line&#39; coordinate(s) or data variable(s) will no longer be implicitly promoted and wrapped into multiple indexed coordinates in the future (i.e., one coordinate for each multi-index level + one dimension coordinate). If you want to keep this behavior, you need to first wrap it explicitly using `mindex_coords = xarray.Coordinates.from_pandas_multiindex(mindex_obj, &#39;dim&#39;)` and pass it as coordinates, e.g., `xarray.Dataset(coords=mindex_coords)`, `dataset.assign_coords(mindex_coords)` or `dataarray.assign_coords(mindex_coords)`.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\optimization\constraints.py:531: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
+WARNING:pypsa.components:Warning, sub network 0 contains buses with mixed carriers! Value counts:
 carrier
 AC    29
 DC     6
 Name: count, dtype: int64
-INFO:linopy.model: Solve problem using Highs solver
-INFO:linopy.io:Writing objective.
-Writing constraints.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 16/16 [00:01&lt;00:00, 15.97it/s]
-Writing continuous variables.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 5/5 [00:00&lt;00:00, 48.71it/s]
-INFO:linopy.io: Writing time: 1.12s
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\pf.py:1133: FutureWarning:
+
+Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value &#39;Drax - coal units&#39; has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\scipy\sparse\_construct.py:148: FutureWarning:
+
+Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+
+INFO:linopy.model: Solve problem using Gurobi solver
+INFO:linopy.model:Solver options:
+ - pyomo: False
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Set parameter Username
+Academic license - for non-commercial use only - expires 2024-10-11
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Writing constraints.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 16/16 [00:02&lt;00:00,  6.95it/s]
+Writing continuous variables.: 100%|<span style="color: rgb(128,191,255)">██████████</span>| 6/6 [00:00&lt;00:00, 22.53it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Read LP format model from file C:\Users\alyden\AppData\Local\Temp\linopy-problem-z_b96piw.lp
+Reading time = 0.74 seconds
+obj: 426654 rows, 111456 columns, 753944 nonzeros
+No parameters matching &#39;pyomo&#39; found
+Gurobi Optimizer version 10.0.3 build v10.0.3rc0 (win64)
+
+CPU model: 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Optimize a model with 426654 rows, 111456 columns and 753944 nonzeros
+Model fingerprint: 0x9f6c01b4
+Coefficient statistics:
+  Matrix range     [6e-05, 1e+00]
+  Objective range  [3e+00, 4e+01]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [2e-31, 9e+03]
+Presolve removed 419121 rows and 89964 columns
+Presolve time: 0.28s
+Presolved: 7533 rows, 22636 columns, 46342 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA&#39; NZ     : 2.989e+04
+ Factor NZ  : 1.477e+05 (roughly 13 MB of memory)
+ Factor Ops : 4.043e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.55296177e+09 -7.05002759e+09  2.65e+04 5.03e-01  5.88e+05     0s
+   1   2.30932794e+08 -1.62135389e+09  2.51e+03 7.11e-14  6.85e+04     0s
+   2   1.19068182e+08 -3.19417401e+08  4.54e+02 3.13e-13  1.33e+04     0s
+   3   9.36167861e+07  2.68857189e+07  3.57e+01 1.02e-12  1.61e+03     0s
+   4   8.49741150e+07  6.87494268e+07  5.58e+00 1.49e-13  3.64e+02     0s
+   5   8.15776647e+07  7.53650150e+07  2.04e+00 5.51e-14  1.38e+02     0s
+   6   8.05694339e+07  7.76347416e+07  1.12e+00 2.84e-14  6.48e+01     0s
+   7   7.99156018e+07  7.85213703e+07  5.56e-01 4.26e-14  3.07e+01     0s
+   8   7.94351718e+07  7.90552485e+07  1.57e-01 5.68e-14  8.35e+00     0s
+   9   7.93585810e+07  7.91200073e+07  9.72e-02 2.84e-14  5.24e+00     0s
+  10   7.92713474e+07  7.92041723e+07  3.08e-02 4.26e-14  1.47e+00     0s
+  11   7.92558122e+07  7.92185052e+07  1.95e-02 5.68e-14  8.18e-01     0s
+  12   7.92422883e+07  7.92240329e+07  1.01e-02 5.68e-14  4.00e-01     0s
+  13   7.92322072e+07  7.92265476e+07  3.00e-03 2.84e-14  1.24e-01     0s
+  14   7.92293335e+07  7.92268793e+07  1.08e-03 2.84e-14  5.39e-02     0s
+  15   7.92286229e+07  7.92273451e+07  6.02e-04 2.84e-14  2.80e-02     0s
+  16   7.92283370e+07  7.92275747e+07  4.11e-04 2.84e-14  1.67e-02     0s
+  17   7.92278533e+07  7.92276876e+07  9.59e-05 2.84e-14  3.63e-03     0s
+  18   7.92277136e+07  7.92277010e+07  4.32e-06 8.53e-14  2.78e-04     0s
+  19   7.92277058e+07  7.92277058e+07  3.29e-09 1.57e-12  3.37e-07     0s
+  20   7.92277058e+07  7.92277058e+07  4.33e-11 2.22e-13  1.81e-08     0s
+  21   7.92277058e+07  7.92277058e+07  7.28e-12 1.18e-12  2.43e-09     0s
+
+Barrier solved model in 21 iterations and 0.50 seconds (0.45 work units)
+Optimal objective 7.92277058e+07
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    6648    7.9227706e+07   0.000000e+00   0.000000e+00      1s
+
+Solved in 6648 iterations and 0.71 seconds (0.58 work units)
+Optimal objective  7.922770579e+07
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
 INFO:linopy.constants: Optimization successful:
 Status: ok
 Termination condition: optimal
-Solution: 55728 primals, 212670 duals
+Solution: 111456 primals, 426654 duals
 Objective: 7.92e+07
 Solver model: available
-Solver message: optimal
+Solver message: 2
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\linopy\common.py:124: UserWarning:
+
+Coordinates across variables not equal. Perform outer join.
 
 INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-fix-p-lower, Generator-fix-p-upper, Generator-fix-p-ramp_limit_up, Generator-fix-p-ramp_limit_down, Line-fix-s-lower, Line-fix-s-upper, StorageUnit-fix-p_dispatch-lower, StorageUnit-fix-p_dispatch-upper, StorageUnit-fix-p_store-lower, StorageUnit-fix-p_store-upper, StorageUnit-fix-state_of_charge-lower, StorageUnit-fix-state_of_charge-upper, Kirchhoff-Voltage-Law, StorageUnit-energy_balance were not assigned to the network.
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pypsa\optimization\optimize.py:473: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -320,7 +1723,7 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
 </div>
 </section>
 <section id="Power-output-by-generation-type">
-<h2>Power output by generation type<a class="headerlink" href="#Power-output-by-generation-type" title="Link to this heading"></a></h2>
+<h2>Power output by generation type<a class="headerlink" href="#Power-output-by-generation-type" title="Link to this heading">#</a></h2>
 <p>Group the generators by the carrier, and print their summed power outputs over the simulation period.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -359,6 +1762,21 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
 <span class="n">p_by_carrier</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\alyden\AppData\Local\Temp\ipykernel_13604\4020419505.py:1: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
+C:\Users\alyden\AppData\Local\Temp\ipykernel_13604\4020419505.py:4: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -430,111 +1848,111 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
     <tr>
       <th>2016-12-01 00:00:00</th>
       <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
-      <td>1225.000030</td>
+      <td>1159.000046</td>
       <td>743.500001</td>
-      <td>123.564542</td>
-      <td>18434.173870</td>
+      <td>77.048420</td>
+      <td>19054.167342</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
       <td>23.0</td>
-      <td>14.435458</td>
+      <td>9.320824</td>
       <td>0.0</td>
       <td>2029.771917</td>
-      <td>3943.378169</td>
-      <td>740.000000</td>
+      <td>4308.015596</td>
+      <td>440.000000</td>
+      <td>1032.100002</td>
+    </tr>
+    <tr>
+      <th>2016-12-01 00:30:00</th>
+      <td>244.200001</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>356.436</td>
+      <td>1291.000043</td>
+      <td>743.500001</td>
+      <td>66.636471</td>
+      <td>17860.361848</td>
+      <td>6510.14</td>
+      <td>0.0</td>
+      <td>44.4</td>
+      <td>23.0</td>
+      <td>8.061253</td>
+      <td>0.0</td>
+      <td>2102.063143</td>
+      <td>4042.882466</td>
+      <td>572.318877</td>
       <td>1032.100002</td>
     </tr>
     <tr>
       <th>2016-12-01 01:00:00</th>
       <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
-      <td>1297.000044</td>
+      <td>1297.000034</td>
       <td>743.500001</td>
-      <td>112.819800</td>
-      <td>18676.036879</td>
+      <td>66.115874</td>
+      <td>18353.223942</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
       <td>23.0</td>
-      <td>13.180201</td>
+      <td>7.998275</td>
       <td>0.0</td>
       <td>2137.095635</td>
-      <td>4128.599503</td>
-      <td>498.592301</td>
+      <td>4403.397135</td>
+      <td>239.492947</td>
+      <td>1032.100002</td>
+    </tr>
+    <tr>
+      <th>2016-12-01 01:30:00</th>
+      <td>244.200001</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>356.436</td>
+      <td>1297.000037</td>
+      <td>743.500001</td>
+      <td>65.074679</td>
+      <td>19025.956426</td>
+      <td>6510.14</td>
+      <td>0.0</td>
+      <td>44.4</td>
+      <td>23.0</td>
+      <td>7.872317</td>
+      <td>0.0</td>
+      <td>2134.869392</td>
+      <td>4431.714010</td>
+      <td>259.837220</td>
       <td>1032.100002</td>
     </tr>
     <tr>
       <th>2016-12-01 02:00:00</th>
       <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
-      <td>1297.500042</td>
+      <td>1298.000036</td>
       <td>743.500001</td>
-      <td>95.807290</td>
-      <td>18654.904276</td>
+      <td>56.224523</td>
+      <td>18829.795818</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
       <td>23.0</td>
-      <td>11.192710</td>
+      <td>6.801682</td>
       <td>0.0</td>
       <td>2119.227793</td>
-      <td>4354.619356</td>
-      <td>238.572589</td>
-      <td>1032.100002</td>
-    </tr>
-    <tr>
-      <th>2016-12-01 03:00:00</th>
-      <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>356.436</td>
-      <td>1296.500039</td>
-      <td>743.500001</td>
-      <td>94.911895</td>
-      <td>17982.174155</td>
-      <td>6510.14</td>
-      <td>0.0</td>
-      <td>44.4</td>
-      <td>23.0</td>
-      <td>11.088105</td>
-      <td>0.0</td>
-      <td>2105.413336</td>
-      <td>4297.966632</td>
-      <td>228.770206</td>
-      <td>1032.100002</td>
-    </tr>
-    <tr>
-      <th>2016-12-01 04:00:00</th>
-      <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>356.436</td>
-      <td>1297.000034</td>
-      <td>743.500001</td>
-      <td>90.434919</td>
-      <td>17484.266995</td>
-      <td>6510.14</td>
-      <td>0.0</td>
-      <td>44.4</td>
-      <td>24.0</td>
-      <td>10.565081</td>
-      <td>0.0</td>
-      <td>2066.067050</td>
-      <td>4400.695404</td>
-      <td>107.294465</td>
+      <td>4212.193045</td>
+      <td>445.081121</td>
       <td>1032.100002</td>
     </tr>
     <tr>
@@ -560,104 +1978,82 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
       <td>...</td>
     </tr>
     <tr>
-      <th>2016-12-03 19:00:00</th>
+      <th>2016-12-03 21:30:00</th>
       <td>244.200001</td>
-      <td>509.54</td>
-      <td>1026.380001</td>
-      <td>302.486999</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
-      <td>1973.000066</td>
+      <td>1686.000041</td>
       <td>743.500001</td>
-      <td>421.731155</td>
-      <td>29827.448915</td>
+      <td>216.685647</td>
+      <td>26487.083223</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
       <td>24.0</td>
-      <td>49.268845</td>
+      <td>25.314354</td>
       <td>0.0</td>
-      <td>1796.253466</td>
-      <td>780.214217</td>
+      <td>1908.477049</td>
+      <td>916.763755</td>
       <td>0.000000</td>
-      <td>2568.020002</td>
-    </tr>
-    <tr>
-      <th>2016-12-03 20:00:00</th>
-      <td>244.200001</td>
-      <td>38.69</td>
-      <td>713.403937</td>
-      <td>0.000000</td>
-      <td>356.436</td>
-      <td>1127.499994</td>
-      <td>743.500001</td>
-      <td>291.003451</td>
-      <td>29859.334040</td>
-      <td>6510.14</td>
-      <td>0.0</td>
-      <td>44.4</td>
-      <td>24.0</td>
-      <td>33.996549</td>
-      <td>0.0</td>
-      <td>1850.403789</td>
-      <td>809.992467</td>
-      <td>0.000000</td>
-      <td>1784.193939</td>
-    </tr>
-    <tr>
-      <th>2016-12-03 21:00:00</th>
-      <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>356.436</td>
-      <td>1670.000052</td>
-      <td>743.500001</td>
-      <td>223.401111</td>
-      <td>27157.598030</td>
-      <td>6510.14</td>
-      <td>0.0</td>
-      <td>44.4</td>
-      <td>24.0</td>
-      <td>26.098889</td>
-      <td>0.0</td>
-      <td>1890.424424</td>
-      <td>866.909286</td>
-      <td>121.392052</td>
       <td>1032.100002</td>
     </tr>
     <tr>
       <th>2016-12-03 22:00:00</th>
       <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
-      <td>1427.500053</td>
+      <td>1416.000017</td>
       <td>743.500001</td>
-      <td>103.418150</td>
-      <td>24770.013215</td>
+      <td>108.342823</td>
+      <td>25468.278089</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
       <td>24.0</td>
-      <td>12.081851</td>
+      <td>12.657177</td>
       <td>0.0</td>
       <td>1921.804079</td>
       <td>966.242318</td>
-      <td>6.764123</td>
+      <td>0.000000</td>
+      <td>1032.100002</td>
+    </tr>
+    <tr>
+      <th>2016-12-03 22:30:00</th>
+      <td>244.200001</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>356.436</td>
+      <td>1439.000036</td>
+      <td>743.500001</td>
+      <td>98.493476</td>
+      <td>24045.990453</td>
+      <td>6510.14</td>
+      <td>0.0</td>
+      <td>44.4</td>
+      <td>24.0</td>
+      <td>11.506524</td>
+      <td>0.0</td>
+      <td>1927.268289</td>
+      <td>1000.065340</td>
+      <td>0.000000</td>
       <td>1032.100002</td>
     </tr>
     <tr>
       <th>2016-12-03 23:00:00</th>
       <td>244.200001</td>
-      <td>0.00</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
       <td>356.436</td>
       <td>944.999988</td>
       <td>743.500001</td>
       <td>109.238219</td>
-      <td>23497.437188</td>
+      <td>23797.437188</td>
       <td>6510.14</td>
       <td>0.0</td>
       <td>44.4</td>
@@ -666,12 +2062,34 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
       <td>0.0</td>
       <td>1924.869680</td>
       <td>1016.017302</td>
-      <td>300.000000</td>
+      <td>0.000000</td>
+      <td>1032.100002</td>
+    </tr>
+    <tr>
+      <th>2016-12-03 23:30:00</th>
+      <td>244.200001</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>356.436</td>
+      <td>1074.999990</td>
+      <td>743.500001</td>
+      <td>112.819800</td>
+      <td>22480.436932</td>
+      <td>6510.14</td>
+      <td>0.0</td>
+      <td>44.4</td>
+      <td>24.0</td>
+      <td>13.180201</td>
+      <td>0.0</td>
+      <td>1924.869680</td>
+      <td>1016.017302</td>
+      <td>0.000000</td>
       <td>1032.100002</td>
     </tr>
   </tbody>
 </table>
-<p>72 rows × 19 columns</p>
+<p>144 rows × 19 columns</p>
 </div></div>
 </div>
 <p>Graph the power output of the different generation types…</p>
@@ -750,7 +2168,7 @@ INFO:pypsa.optimization.optimize:The shadow-prices of the constraints Generator-
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\pandas\plotting\_matplotlib\core.py:1800: UserWarning:
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\pandas\plotting\_matplotlib\core.py:1608: UserWarning:
 
 Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
 
@@ -774,7 +2192,7 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </section>
 <section id="Plotting-storage">
-<h2>Plotting storage<a class="headerlink" href="#Plotting-storage" title="Link to this heading"></a></h2>
+<h2>Plotting storage<a class="headerlink" href="#Plotting-storage" title="Link to this heading">#</a></h2>
 <p>Graph the pumped hydro dispatch and state of charge…</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -813,13 +2231,13 @@ Text(0.5, 0, &#39;&#39;)
 </div>
 </section>
 <section id="Plotting-line-loading">
-<h2>Plotting line loading<a class="headerlink" href="#Plotting-line-loading" title="Link to this heading"></a></h2>
+<h2>Plotting line loading<a class="headerlink" href="#Plotting-line-loading" title="Link to this heading">#</a></h2>
 <p>Look at the line loading stats and graph…</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">now</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">60</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">now</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">139</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;With the linear load flow, there is the following per unit loading:&quot;</span><span class="p">)</span>
 <span class="n">loading</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">lines_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">now</span><span class="p">]</span> <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span>
@@ -842,13 +2260,13 @@ With the linear load flow, there is the following per unit loading:
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 count    105.000000
-mean      -0.016344
-std        0.196331
-min       -0.653502
-25%       -0.098152
-50%        0.000000
-75%        0.060394
-max        0.700000
+mean      -0.097652
+std        0.184447
+min       -0.656329
+25%       -0.190292
+50%       -0.074569
+75%        0.005036
+max        0.306884
 dtype: float64
 </pre></div></div>
 </div>
@@ -864,24 +2282,24 @@ dtype: float64
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\cartopy\mpl\feature_artist.py:144: UserWarning:
-
-facecolor will have no effect as it has been defined as &#34;never&#34;.
-
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;matplotlib.collections.PatchCollection at 0x1d813a6b2c0&gt;,
- &lt;matplotlib.collections.LineCollection at 0x1d813c27050&gt;)
+(&lt;matplotlib.collections.PatchCollection at 0x200067360d0&gt;,
+ &lt;matplotlib.collections.LineCollection at 0x20007fdd0d0&gt;)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\cartopy\mpl\style.py:76: UserWarning:
+
+facecolor will have no effect as it has been defined as &#34;never&#34;.
+
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -893,7 +2311,7 @@ facecolor will have no effect as it has been defined as &#34;never&#34;.
 </div>
 </section>
 <section id="Plotting-locational-marginal-prices">
-<h2>Plotting locational marginal prices<a class="headerlink" href="#Plotting-locational-marginal-prices" title="Link to this heading"></a></h2>
+<h2>Plotting locational marginal prices<a class="headerlink" href="#Plotting-locational-marginal-prices" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -920,7 +2338,15 @@ facecolor will have no effect as it has been defined as &#34;never&#34;.
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-c:\Users\alyden\Anaconda3\envs\PyPSA-GB2\Lib\site-packages\cartopy\mpl\feature_artist.py:144: UserWarning:
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\numpy\core\fromnumeric.py:3504: RuntimeWarning:
+
+Mean of empty slice.
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\numpy\core\_methods.py:129: RuntimeWarning:
+
+invalid value encountered in scalar divide
+
+c:\Users\alyden\Anaconda3\envs\PyPSA-GB\Lib\site-packages\cartopy\mpl\style.py:76: UserWarning:
 
 facecolor will have no effect as it has been defined as &#34;never&#34;.
 
@@ -935,7 +2361,7 @@ facecolor will have no effect as it has been defined as &#34;never&#34;.
 </div>
 </section>
 <section id="Plotting-curtailment">
-<h2>Plotting curtailment<a class="headerlink" href="#Plotting-curtailment" title="Link to this heading"></a></h2>
+<h2>Plotting curtailment<a class="headerlink" href="#Plotting-curtailment" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
@@ -963,53 +2389,159 @@ facecolor will have no effect as it has been defined as &#34;never&#34;.
 </div>
 </div>
 <div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\alyden\AppData\Local\Temp\ipykernel_13604\601895047.py:5: FutureWarning:
+
+DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x1d816758290&gt;
+&lt;matplotlib.legend.Legend at 0x2006be797d0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_5a_-_Historical_Years_29_1.png" src="../_images/notebooks_5a_-_Historical_Years_29_1.png" />
+<img alt="../_images/notebooks_5a_-_Historical_Years_29_2.png" src="../_images/notebooks_5a_-_Historical_Years_29_2.png" />
 </div>
 </div>
 </section>
 </section>
 
 
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="4%20-%20Renewable%20Power%20and%20Storage.html" class="btn btn-neutral float-left" title="Renewable Power and Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="5b%20-%20Future%20Years.html" class="btn btn-neutral float-right" title="Future Years" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2021, Andrew Lyden.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="4%20-%20Renewable%20Power%20and%20Storage.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Renewable Power and Storage</p>
       </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+    </a>
+    <a class="right-next"
+       href="5b%20-%20Future%20Years.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Future Years</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
-</body>
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setting-up-simulation">Setting up simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Running-the-optimisation">Running the optimisation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Power-output-by-generation-type">Power output by generation type</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plotting-storage">Plotting storage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plotting-line-loading">Plotting line loading</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plotting-locational-marginal-prices">Plotting locational marginal prices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plotting-curtailment">Plotting curtailment</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

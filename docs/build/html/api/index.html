@@ -1,0 +1,1226 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API Reference &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/index';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Core Modules" href="core_modules.html" />
+    <link rel="prev" title="Hydrogen Systems" href="../tutorials/12-hydrogen.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html">Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html">Integration Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-api">Using the API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#function-documentation">Function Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#type-hints">Type Hints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docstring-format">Docstring Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extending-pypsa-gb">Extending PyPSA-GB</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../tutorials/12-hydrogen.html"
+                          title="previous chapter">Hydrogen Systems</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="core_modules.html"
+                          title="next chapter">Core Modules</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">API Reference</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h1>
+<p>Technical documentation for PyPSA-GB modules and functions.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="core_modules.html">Core Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#solve-network">solve_network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#build-network">build_network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#scenario-detection">scenario_detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#carrier-definitions">carrier_definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#logging-config">logging_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#time-utils">time_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core_modules.html#validation-utils">validation_utils</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="integration_modules.html">Integration Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html#integrate-thermal-generators">integrate_thermal_generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html#integrate-renewable-generators">integrate_renewable_generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html#add-storage">add_storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html#spatial-utils">spatial_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="integration_modules.html#add-interconnectors">add_interconnectors</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>PyPSA-GB is organized into modular scripts:</p>
+<section id="core-modules">
+<h3>Core Modules<a class="headerlink" href="#core-modules" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve_network.py</span></code></p></td>
+<td><p>Network optimization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">build_network.py</span></code></p></td>
+<td><p>Base network construction</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scenario_detection.py</span></code></p></td>
+<td><p>Historical/future routing</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">carrier_definitions.py</span></code></p></td>
+<td><p>Technology definitions</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">logging_config.py</span></code></p></td>
+<td><p>Logging setup</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="integration-modules">
+<h3>Integration Modules<a class="headerlink" href="#integration-modules" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">integrate_thermal_generators.py</span></code></p></td>
+<td><p>Thermal generator integration</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators.py</span></code></p></td>
+<td><p>Renewable generator integration</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">add_storage.py</span></code></p></td>
+<td><p>Storage unit integration</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">spatial_utils.py</span></code></p></td>
+<td><p>Geographic mapping utilities</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="utility-modules">
+<h3>Utility Modules<a class="headerlink" href="#utility-modules" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">time_utils.py</span></code></p></td>
+<td><p>Time series handling</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">coordinate_utils.py</span></code></p></td>
+<td><p>Coordinate transformations</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">validation_utils.py</span></code></p></td>
+<td><p>Data validation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="using-the-api">
+<h2>Using the API<a class="headerlink" href="#using-the-api" title="Link to this heading">#</a></h2>
+<section id="direct-import">
+<h3>Direct Import<a class="headerlink" href="#direct-import" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.scenario_detection</span> <span class="kn">import</span> <span class="n">is_historical_scenario</span><span class="p">,</span> <span class="n">auto_configure_scenario</span>
+<span class="kn">from</span> <span class="nn">scripts.carrier_definitions</span> <span class="kn">import</span> <span class="n">get_carrier_definitions</span>
+<span class="kn">from</span> <span class="nn">scripts.spatial_utils</span> <span class="kn">import</span> <span class="n">map_sites_to_buses</span>
+</pre></div>
+</div>
+</section>
+<section id="within-snakemake">
+<h3>Within Snakemake<a class="headerlink" href="#within-snakemake" title="Link to this heading">#</a></h3>
+<p>Scripts are typically invoked via Snakemake rules, but can also be run standalone:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example: Run network building manually</span>
+<span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">from</span> <span class="nn">scripts.build_network</span> <span class="kn">import</span> <span class="n">build_base_network</span>
+
+<span class="n">network</span> <span class="o">=</span> <span class="n">build_base_network</span><span class="p">(</span>
+    <span class="n">network_model</span><span class="o">=</span><span class="s2">&quot;ETYS&quot;</span><span class="p">,</span>
+    <span class="n">year</span><span class="o">=</span><span class="mi">2035</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="function-documentation">
+<h2>Function Documentation<a class="headerlink" href="#function-documentation" title="Link to this heading">#</a></h2>
+<p>Detailed documentation is available in the subpages:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="core_modules.html"><span class="doc">Core Modules</span></a> - Core functionality</p></li>
+<li><p><a class="reference internal" href="integration_modules.html"><span class="doc">Integration Modules</span></a> - Data integration modules</p></li>
+</ul>
+</section>
+<section id="type-hints">
+<h2>Type Hints<a class="headerlink" href="#type-hints" title="Link to this heading">#</a></h2>
+<p>Most functions include type hints:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">is_historical_scenario</span><span class="p">(</span><span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if scenario models a historical year.&quot;&quot;&quot;</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="docstring-format">
+<h2>Docstring Format<a class="headerlink" href="#docstring-format" title="Link to this heading">#</a></h2>
+<p>Functions use NumPy-style docstrings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">map_sites_to_buses</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">sites_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nearest&#39;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map generator sites to network buses.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        The PyPSA network with bus coordinates</span>
+<span class="sd">    sites_df : pd.DataFrame</span>
+<span class="sd">        Sites with &#39;lat&#39;, &#39;lon&#39; columns</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        Mapping method: &#39;nearest&#39; or &#39;voronoi&#39;</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Sites with &#39;bus&#39; column added</span>
+<span class="sd">        </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; sites = map_sites_to_buses(network, wind_sites)</span>
+<span class="sd">    &gt;&gt;&gt; sites.groupby(&#39;bus&#39;).capacity_mw.sum()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading">#</a></h2>
+<p>Modules use consistent error handling:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.logging_config</span> <span class="kn">import</span> <span class="n">setup_logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">process_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid input data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">raise</span>
+<span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optional file not found: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">default_value</span>
+</pre></div>
+</div>
+</section>
+<section id="extending-pypsa-gb">
+<h2>Extending PyPSA-GB<a class="headerlink" href="#extending-pypsa-gb" title="Link to this heading">#</a></h2>
+<section id="adding-a-new-data-source">
+<h3>Adding a New Data Source<a class="headerlink" href="#adding-a-new-data-source" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Create processing script in <code class="docutils literal notranslate"><span class="pre">scripts/</span></code></p></li>
+<li><p>Add Snakemake rule in <code class="docutils literal notranslate"><span class="pre">rules/</span></code></p></li>
+<li><p>Document the module here</p></li>
+<li><p>Update configuration options</p></li>
+</ol>
+</section>
+<section id="adding-a-new-technology">
+<h3>Adding a New Technology<a class="headerlink" href="#adding-a-new-technology" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Add to <code class="docutils literal notranslate"><span class="pre">carrier_definitions.py</span></code></p></li>
+<li><p>Update integration module</p></li>
+<li><p>Add test cases</p></li>
+<li><p>Document the carrier</p></li>
+</ol>
+<p>See <a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> for guidelines.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../tutorials/12-hydrogen.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Hydrogen Systems</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="core_modules.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Core Modules</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core-modules">Core Modules</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-modules">Integration Modules</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#utility-modules">Utility Modules</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-the-api">Using the API</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#direct-import">Direct Import</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#within-snakemake">Within Snakemake</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#function-documentation">Function Documentation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#type-hints">Type Hints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#docstring-format">Docstring Format</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-handling">Error Handling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#extending-pypsa-gb">Extending PyPSA-GB</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-new-data-source">Adding a New Data Source</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-new-technology">Adding a New Technology</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,63 +1,686 @@
 
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Network &mdash; PyPSA-GB  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Network &#8212; PyPSA-GB 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
   
-      <script src="../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9a2dae69"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="../_static/js/theme.js"></script>
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=9d21ab04" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/1 - Network';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Demand" href="2%20-%20Demand.html" />
-    <link rel="prev" title="Installation" href="../installation.html" /> 
-</head>
+    <link rel="prev" title="Tutorials" href="../tutorials/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
-          
-          
-          <a href="../index.html" class="icon icon-home">
-            PyPSA-GB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Data and Functionality</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Network</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Reduced-network-model">Reduced network model</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Voronoi-cells">Voronoi cells</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Reduced-network-GB">Reduced network GB</a></li>
-</ul>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
 </li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Network
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Network
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="2%20-%20Demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="3%20-%20Generator%20and%20Marginal%20Prices.html">
+    Generator and Marginal Prices
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">
+    Renewable Power and Storage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5a%20-%20Historical%20Years.html">
+    Historical Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="5b%20-%20Future%20Years.html">
+    Future Years
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Reduced-network-model">Reduced network model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Interconnectors">Interconnectors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Future-interconnectors">Future interconnectors</a></li>
 </ul>
@@ -68,50 +691,94 @@
 <li class="toctree-l1"><a class="reference internal" href="4%20-%20Renewable%20Power%20and%20Storage.html">Renewable Power and Storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5a%20-%20Historical%20Years.html">Historical Years</a></li>
 <li class="toctree-l1"><a class="reference internal" href="5b%20-%20Future%20Years.html">Future Years</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5d%20-%20Zonal%20Network.html">LOPF using the Zonal Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="6%20-%20Unit%20Commitment.html">Unit Commitment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="9%20-%20Comparison%20To%20Historical%20Data.html">Comparison To Historical Data</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="7%20-%20Network%20Expansion.html">Network Expansion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="5c%20-%20Floating%20Wind%2C%20Marine%20and%20Emissions%20Modelling.html">Floating Wind &amp; Marine, and Emissions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Scotland_Curtailment_2035.html">Curtailment in Scotland - 2035</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
 </ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PyPSA-GB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Network</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/1 - Network.nblink.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../tutorials/index.html"
+                          title="previous chapter">Tutorials</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="2%20-%20Demand.html"
+                          title="next chapter">Demand</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Network</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
   <section id="Network">
-<h1>Network<a class="headerlink" href="#Network" title="Link to this heading"></a></h1>
+<h1>Network<a class="headerlink" href="#Network" title="Link to this heading">#</a></h1>
 <p>This notebook explores the reduced network model included with PyPSA-GB. Two network options are available: reduced network model; and a zone based model.</p>
 <p>The reduced network model has 29 buses and 99 lines and the zone based model has 20 buses and XX lines. Both represent the high voltage AC transmission network of the Great Britain (GB) electricity system.</p>
 <p>Interconnections to other countries are also included for historical years. For future years the pipeline up to 2030 is included, and these are scaled to match projected interconnector capacities.</p>
 <section id="Reduced-network-model">
-<h2>Reduced network model<a class="headerlink" href="#Reduced-network-model" title="Link to this heading"></a></h2>
+<h2>Reduced network model<a class="headerlink" href="#Reduced-network-model" title="Link to this heading">#</a></h2>
 <section id="Voronoi-cells">
-<h3>Voronoi cells<a class="headerlink" href="#Voronoi-cells" title="Link to this heading"></a></h3>
+<h3>Voronoi cells<a class="headerlink" href="#Voronoi-cells" title="Link to this heading">#</a></h3>
 <p>Generators are connected to the buses by calculating the nearest bus by distance. Voronoi cells have been generated for the diagram below to illustrate the areas which correspond to the nearest bus. Voronoi cells show regions where all the points in one region are closer to one bus than any other bus.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -129,7 +796,7 @@
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="s1">&#39;../pics/voronoi_reduced_model.png&#39;</span>
@@ -139,7 +806,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -148,10 +815,10 @@
 </div>
 </section>
 <section id="Reduced-network-GB">
-<h3>Reduced network GB<a class="headerlink" href="#Reduced-network-GB" title="Link to this heading"></a></h3>
+<h3>Reduced network GB<a class="headerlink" href="#Reduced-network-GB" title="Link to this heading">#</a></h3>
 <p>The reduced GB network has been adapted from the openly available Reduced GB Network which was developed at the University of Strathclyde in 2010 (<a class="reference external" href="https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/">https://www.maths.ed.ac.uk/optenergy/NetworkData/reducedGB/</a>). The main change is the addition of the Western HVDC link which strengthens the connection between Scotland and England, as well as upgrades of various lines.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -172,7 +839,7 @@
 </div>
 <p>Data for the buses and lines is read in…</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/BusesBasedGBsystem/buses.csv&#39;</span><span class="p">)</span>
@@ -190,7 +857,7 @@
 </div>
 <p>The coordinates of the buses between lines is extracted for plotting.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
@@ -206,7 +873,7 @@
 </div>
 <p>This data is plotted using the geo package cartopy and plotting package matplotlib which is used extensively in this documentation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
@@ -251,7 +918,7 @@
 </div>
 <p>This shows the underlying bus data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_buses</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">29</span><span class="p">,</span> <span class="p">:]</span>
@@ -259,7 +926,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -504,7 +1171,7 @@
 </div>
 <p>This shows the underlying line data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span>
@@ -512,7 +1179,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -659,10 +1326,10 @@
 </section>
 </section>
 <section id="Interconnectors">
-<h2>Interconnectors<a class="headerlink" href="#Interconnectors" title="Link to this heading"></a></h2>
+<h2>Interconnectors<a class="headerlink" href="#Interconnectors" title="Link to this heading">#</a></h2>
 <p>The historical years model interconnectors as fixed import/export from historical data. There are 6 existing interconnectors and their use is reflected in the historical data. Interconnectors which have only recently become operational, such as IFA2 which begun operation in January 2021, will not be operational before that date in the model and will have fixed zero imports/exports.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/BusesBasedGBsystem/interconnectors/links.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -671,7 +1338,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -755,7 +1422,7 @@
 </div>
 <p>The interconnectors are plotted alongside the reduced network model below.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/BusesBasedGBsystem/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -814,10 +1481,10 @@
 </div>
 </section>
 <section id="Future-interconnectors">
-<h2>Future interconnectors<a class="headerlink" href="#Future-interconnectors" title="Link to this heading"></a></h2>
+<h2>Future interconnectors<a class="headerlink" href="#Future-interconnectors" title="Link to this heading">#</a></h2>
 <p>Future interconnectors are modelled as bi-directional controllable links with fixed marginal costs (see PyPSA documentation). The pipeline of interconnector projects can be found up to 2030 and is shown below, along with assumptions for marginal costs.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_interconnectors_future</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/BusesBasedGBsystem/interconnectors/links_future.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -826,7 +1493,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -998,7 +1665,7 @@
 </div>
 <p>Future interconnectors are plotted alongside the reduced network model and current interconnectors below.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_lines</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/network/BusesBasedGBsystem/lines.csv&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1065,9 +1732,9 @@
 </section>
 </section>
 <section id="Zonal-model">
-<h1>Zonal model<a class="headerlink" href="#Zonal-model" title="Link to this heading"></a></h1>
+<h1>Zonal model<a class="headerlink" href="#Zonal-model" title="Link to this heading">#</a></h1>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">allocate_to_zone</span> <span class="kn">import</span> <span class="o">*</span>
@@ -1077,7 +1744,7 @@
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file_path</span> <span class="o">=</span> <span class="s1">&#39;../data/network/ZonesBasedGBSystem/zone/zones_json.geojson&#39;</span>
@@ -1087,7 +1754,7 @@
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -1098,7 +1765,7 @@
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;salmon&#39;</span><span class="p">,</span> <span class="s1">&#39;lightgreen&#39;</span><span class="p">,</span> <span class="s1">&#39;violet&#39;</span><span class="p">,</span><span class="s1">&#39;navajowhite&#39;</span><span class="p">,</span> <span class="s1">&#39;skyblue&#39;</span><span class="p">,]</span>
@@ -1118,9 +1785,8 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">plot_polygon</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
-        <span class="k">pass</span>
-        <span class="c1"># for i in range(len(z)):</span>
-        <span class="c1">#     plot_polygon(ax, z[i], facecolor=c, edgecolor=&#39;black&#39;)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)):</span>
+            <span class="n">plot_polygon</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">facecolor</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
     <span class="n">z_name</span> <span class="o">=</span> <span class="n">json_file</span><span class="p">[</span><span class="n">_</span><span class="p">][</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;Name_1&#39;</span><span class="p">]</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">z</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">z</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">z</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">z_name</span><span class="p">,</span> <span class="n">bbox</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">))</span>
 
@@ -1130,44 +1796,178 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
+<span class="ansi-red-intense-fg ansi-bold">AttributeError</span>                            Traceback (most recent call last)
+<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\notebooks\1 - Network.ipynb Cell 35</span> line <span class="ansi-cyan-fg">1
+</span><span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=14&#39;&gt;15&lt;/a&gt;</span> try:
+<span class="ansi-green-intense-fg ansi-bold">---&gt; &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=15&#39;&gt;16&lt;/a&gt;</span>     plot_polygon(ax, z, facecolor=c, edgecolor=&#39;black&#39;)
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=16&#39;&gt;17&lt;/a&gt;</span> except:
+
+File <span class="ansi-green-intense-fg ansi-bold">~\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\PyPSA-GB\allocate_to_zone.py:69</span>, in <span class="ansi-cyan-fg">plot_polygon</span><span class="ansi-blue-intense-fg ansi-bold">(ax, poly, **kwargs)</span>
+<span class="ansi-green-fg">     67</span> def plot_polygon(ax, poly, **kwargs):
+<span class="ansi-green-fg">     68</span>     path = Path.make_compound_path(
+<span class="ansi-green-intense-fg ansi-bold">---&gt; 69</span>         Path(np.asarray(poly.exterior.coords)[:, :2]),
+<span class="ansi-green-fg">     70</span>         *[Path(np.asarray(ring.coords)[:, :2]) for ring in poly.interiors])
+<span class="ansi-green-fg">     72</span>     patch = PathPatch(path, **kwargs)
+
+<span class="ansi-red-intense-fg ansi-bold">AttributeError</span>: &#39;MultiPolygon&#39; object has no attribute &#39;exterior&#39;
+
+During handling of the above exception, another exception occurred:
+
+<span class="ansi-red-intense-fg ansi-bold">TypeError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-intense-fg ansi-bold">c:\Users\alyden\OneDrive - University of Edinburgh\Python\PyPSA-GB v0.0.1\notebooks\1 - Network.ipynb Cell 35</span> line <span class="ansi-cyan-fg">1
+</span><span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=15&#39;&gt;16&lt;/a&gt;</span>     plot_polygon(ax, z, facecolor=c, edgecolor=&#39;black&#39;)
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=16&#39;&gt;17&lt;/a&gt;</span> except:
+<span class="ansi-green-intense-fg ansi-bold">---&gt; &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=17&#39;&gt;18&lt;/a&gt;</span>     for i in range(len(z)):
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=18&#39;&gt;19&lt;/a&gt;</span>         plot_polygon(ax, z[i], facecolor=c, edgecolor=&#39;black&#39;)
+<span class="ansi-green-fg">     &lt;a href=&#39;vscode-notebook-cell:/c%3A/Users/alyden/OneDrive%20-%20University%20of%20Edinburgh/Python/PyPSA-GB%20v0.0.1/notebooks/1%20-%20Network.ipynb#X46sZmlsZQ%3D%3D?line=19&#39;&gt;20&lt;/a&gt;</span> z_name = json_file[_][&#39;properties&#39;][&#39;Name_1&#39;]
+
+<span class="ansi-red-intense-fg ansi-bold">TypeError</span>: object of type &#39;MultiPolygon&#39; has no len()
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_1_-_Network_34_0.png" src="../_images/notebooks_1_-_Network_34_0.png" />
+<img alt="../_images/notebooks_1_-_Network_34_1.png" src="../_images/notebooks_1_-_Network_34_1.png" />
 </div>
 </div>
 </section>
 
 
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="2%20-%20Demand.html" class="btn btn-neutral float-right" title="Demand" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2021, Andrew Lyden.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../tutorials/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Tutorials</p>
       </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+    </a>
+    <a class="right-next"
+       href="2%20-%20Demand.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Demand</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
-</body>
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Network</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reduced-network-model">Reduced network model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Voronoi-cells">Voronoi cells</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Reduced-network-GB">Reduced network GB</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interconnectors">Interconnectors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Future-interconnectors">Future interconnectors</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#Zonal-model">Zonal model</a></li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
 </html>

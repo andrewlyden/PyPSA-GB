@@ -1,0 +1,240 @@
+"""
+PyPSA-GB: Cutout Generation Workflow
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    EXPENSIVE OPERATIONS ONLY                               ║
+║                                                                            ║
+║ This workflow ONLY downloads and prepares weather cutouts.                 ║
+║ Each cutout takes 2-4 hours per year and ~700MB per file.                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK START GUIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.  CONFIGURE YEARS (config/cutouts_config.yaml):
+   Edit years_config section to specify which years to download:
+   
+   years_config:
+     method: "manual"              # or "from_scenarios" or "all_scenarios_plus_manual"
+     years_to_generate: [2021, 2022, 2023]  # Add/remove years as needed
+
+2.  RUN CUTOUT GENERATION:
+   
+   # Generate all configured cutouts (recommended):
+   snakemake -s Snakefile_cutouts --cores 1
+   
+   # Dry-run to see what will be downloaded:
+   snakemake -s Snakefile_cutouts -n
+   
+   # Generate specific year only:
+   snakemake -s Snakefile_cutouts resources/atlite/cutouts/uk-2021.nc
+
+3.  VERIFY CUTOUTS:
+   Check that files exist:
+   dir resources\\atlite\\cutouts\\*.nc
+   
+   Or use Python:
+   import xarray as xr
+   ds = xr.open_dataset('resources/atlite/cutouts/uk-2021.nc')
+   print(ds)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONFIGURATION OPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• years_config.method:
+  - "manual": Use only years_to_generate list
+  - "from_scenarios": Auto-detect from scenarios.yaml
+  - "all_scenarios_plus_manual": Combine both approaches
+
+• safety.skip_existing: true (default)
+  - Prevents re-downloading existing cutouts
+  - Set to false to force re-download (not recommended)
+
+• download.max_parallel_downloads: 1 (recommended)
+  - Multiple downloads can overload ERA5 servers
+  - Only increase if you have special arrangements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TIME REQUIREMENTS:
+   • Each year takes 2-4 hours to download from ERA5
+   • Example: 4 years = 8-16 hours total
+   • Run overnight or during off-hours
+
+STORAGE REQUIREMENTS:
+   • ~700 MB per year uncompressed
+   • Example: 10 years = ~7 GB
+   • Check available disk space first
+
+ERA5 API REQUIREMENTS:
+   • Requires CDS (Copernicus Data Store) API credentials
+   • Set up: https://cds.climate.copernicus.eu/api-how-to
+   • Create ~/.cdsapirc with your API key
+
+BACKUP RECOMMENDATION:
+   Before running workflow changes that might affect cutouts:
+   
+   # Windows:
+   robocopy resources\\atlite\\cutouts C:\\cutouts_backup /E
+   
+   # Linux/Mac:
+   cp -r resources/atlite/cutouts ~/cutouts_backup/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: "CDS API key not found"
+Solution: Set up ~/.cdsapirc with your API key from CDS website
+
+Problem: Download fails/times out
+Solution: ERA5 servers can be overloaded. Wait 30min and retry.
+          Check retry settings in cutouts_config.yaml
+
+Problem: "ModuleNotFoundError: No module named 'atlite'"
+Solution: Activate conda environment: conda activate pypsa-gb
+
+Problem: Out of disk space
+Solution: Free up space or change cutouts_dir in cutouts_config.yaml
+
+Problem: Cutout file exists but seems corrupted
+Solution: Delete the file and re-run to force fresh download
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"""
+
+import yaml
+from pathlib import Path
+
+# === Load cutout-specific config file ===
+configfile: "config/cutouts_config.yaml"
+
+# Load scenarios if needed
+# try:
+#     with open(config["paths"]["scenarios_file"]) as f:
+#         master = yaml.safe_load(f)
+#     scenarios = master["scenarios"]
+# except Exception as e:
+#     print(f"Warning: Could not load scenarios file: {e}")
+#     scenarios = {}
+
+# Get demand years based on configuration method
+def get_demand_years():
+    """Get years to generate cutouts for based on config method."""
+    try:
+        years = set()
+        method = config["years_config"]["method"]
+        
+        if method in ["from_scenarios", "all_scenarios_plus_manual"]:
+            # Extract years from scenarios
+            scenarios_file = config["paths"]["scenarios_file"]
+            with open(scenarios_file, 'r') as f:
+                scenarios_data = yaml.safe_load(f)
+            
+            for scenario_name, scenario_config in scenarios_data["scenarios"].items():
+                if 'demand_year' in scenario_config:
+                    years.add(scenario_config['demand_year'])
+                if 'renewables_year' in scenario_config:
+                    years.add(scenario_config['renewables_year'])
+                if 'modelled_year' in scenario_config:
+                    years.add(scenario_config['modelled_year'])
+        
+        if method in ["manual", "all_scenarios_plus_manual"]:
+            # Add manual years
+            manual_years = config["years_config"]["years_to_generate"]
+            years.update(manual_years)
+        
+        # Always include specified years
+        always_include = config["years_config"]["always_include"]
+        years.update(always_include)
+        
+        # Add default years if none found
+        if not years:
+            years = {2020}
+                
+        return sorted(list(years))
+    except Exception as e:
+        print(f"Warning: Could not parse years from config: {e}")
+        return [2020]  # Fallback default
+
+# # Configuration paths from config
+atlite_cutouts_path = config["paths"]["cutouts_dir"]
+log_dir = config["paths"]["log_dir"]
+
+# Get demand years for cutouts
+demand_years = get_demand_years()
+
+# Create log directory if needed
+Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+print(f"[CUTOUT GENERATION WORKFLOW]")
+print(f"Configuration method: {config['years_config']['method']}")
+print(f"Will generate cutouts for years: {demand_years}")
+print(f"Expected download time: {len(demand_years) * 2}-{len(demand_years) * 4} hours")
+print(f"Expected storage: {len(demand_years) * 0.7:.1f} GB")
+print(f"Output directory: {atlite_cutouts_path}")
+if config["safety"]["skip_existing"]:
+    print(f"[OK] Skip existing cutouts: enabled")
+print(f"")
+
+# =============================================================================
+# CUTOUT GENERATION RULE
+# =============================================================================
+
+rule prepare_cutouts:
+    """
+    Generate atlite weather cutout files for renewable profile generation.
+    
+    WARNING: EXPENSIVE DOWNLOADS
+    Each cutout takes 2-4 hours to download from ERA5 servers.
+    Total data size: ~700MB per year. Use with caution!
+    
+    BACKUP RECOMMENDATION:
+    Before running workflow changes that might affect this rule:
+    1. Copy cutouts manually: 
+       robocopy resources\\atlite\\cutouts\\ C:\\cutouts_backup\\ /E
+    2. Or use backup script: python scripts/backup_cutouts.py
+    
+    TIP: Use --rerun-triggers mtime to avoid unnecessary re-downloads
+    when only code (not data dependencies) has changed.
+    
+    Example: snakemake prepare_cutouts --rerun-triggers mtime
+    """
+    output:
+        expand(f"{atlite_cutouts_path}/uk-{{year}}.nc", year=demand_years),
+    params:
+        years=demand_years,
+        config=config
+    log:
+        expand(f"{log_dir}/prepare_cutouts_{{year}}.log", year=demand_years)
+    # conda:
+    #     config["environment"]["conda_env"]
+    script:
+        "scripts/utilities/prepare_cutouts.py"
+
+# =============================================================================
+# TARGET RULE
+# =============================================================================
+
+rule all_cutouts:
+    """Generate all required weather cutouts."""
+    input:
+        expand(f"{atlite_cutouts_path}/uk-{{year}}.nc", year=demand_years)
+    run:
+        print("[SUCCESS] ALL CUTOUTS GENERATED SUCCESSFULLY!")
+        print(f"Generated {len(demand_years)} cutout files:")
+        for year in demand_years:
+            cutout_file = f"{atlite_cutouts_path}/uk-{year}.nc"
+            print(f"  [OK] {cutout_file}")
+        print("")
+        print("[INFO] Now you can run the main workflow:")
+        print("   snakemake --cores 8")
+
+rule all:
+    input:
+        rules.all_cutouts.input

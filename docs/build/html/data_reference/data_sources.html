@@ -1,0 +1,1734 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Data Sources &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'data_reference/data_sources';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Network Data" href="network_data.html" />
+    <link rel="prev" title="Data Reference" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Data Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#neso-future-energy-scenarios-fes">NESO Future Energy Scenarios (FES)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dukes-digest-of-uk-energy-statistics">DUKES (Digest of UK Energy Statistics)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#repd-renewable-energy-planning-database">REPD (Renewable Energy Planning Database)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#etys-electricity-ten-year-statement">ETYS (Electricity Ten Year Statement)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#era5-weather-data">ERA5 Weather Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#espeni-demand-data">ESPENI Demand Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tec-register">TEC Register</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-quality-notes">Data Quality Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comprehensive-data-sources-table">Comprehensive Data Sources Table</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Data Reference</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="network_data.html"
+                          title="next chapter">Network Data</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Data Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Data Sources</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="data-sources">
+<h1>Data Sources<a class="headerlink" href="#data-sources" title="Link to this heading">#</a></h1>
+<p>This page documents all external data sources used in PyPSA-GB.</p>
+<section id="neso-future-energy-scenarios-fes">
+<h2>NESO Future Energy Scenarios (FES)<a class="headerlink" href="#neso-future-energy-scenarios-fes" title="Link to this heading">#</a></h2>
+<p>The primary source for future capacity projections.</p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>NESO (formerly National Grid ESO)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Annual (typically July)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>GB electricity system 2025-2050</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>Technology × GSP × Year</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>Open API + Excel files</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Available Releases</strong></p></td>
+<td><p>FES 2021, 2022, 2023, 2024, 2025</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fes-releases-and-scenarios">
+<h3>FES Releases and Scenarios<a class="headerlink" href="#fes-releases-and-scenarios" title="Link to this heading">#</a></h3>
+<p>NESO publishes updated FES reports annually. You can model any FES release to compare how projections evolve.</p>
+</section>
+<section id="data-fields">
+<h3>Data Fields<a class="headerlink" href="#data-fields" title="Link to this heading">#</a></h3>
+<p>FES provides capacity by:</p>
+<ul class="simple">
+<li><p><strong>Technology</strong>: Wind, Solar, Nuclear, CCGT, etc.</p></li>
+<li><p><strong>Technology Detail</strong>: Offshore Wind, Onshore Wind, etc.</p></li>
+<li><p><strong>GSP</strong>: Grid Supply Point (connection location)</p></li>
+<li><p><strong>Year</strong>: 2025-2050</p></li>
+</ul>
+</section>
+<section id="location">
+<h3>Location<a class="headerlink" href="#location" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/FES/
+├── FES_api_urls.yaml          # API endpoints
+├── FES_2024_*.xlsx            # Raw Excel downloads
+└── gsp_boundaries/            # GSP geographic data
+</pre></div>
+</div>
+</section>
+<section id="usage-in-model">
+<h3>Usage in Model<a class="headerlink" href="#usage-in-model" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Processed FES data - example for 2024 release</span>
+<span class="n">resources</span><span class="o">/</span><span class="n">FES</span><span class="o">/</span><span class="n">FES_2024_data</span><span class="o">.</span><span class="n">csv</span>
+</pre></div>
+</div>
+<p>When configuring a scenario in <code class="docutils literal notranslate"><span class="pre">config/scenarios.yaml</span></code>, specify both the FES release year and the pathway name:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">FES_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span><span class="w">              </span><span class="c1"># Which FES release to use</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span><span class="w">  </span><span class="c1"># Which pathway within that release</span>
+</pre></div>
+</div>
+<p>For future years (<code class="docutils literal notranslate"><span class="pre">modelled_year</span> <span class="pre">&gt;</span> <span class="pre">2024</span></code>), PyPSA-GB uses the specified FES release to provide:</p>
+<ul class="simple">
+<li><p>Thermal generation capacity</p></li>
+<li><p>Renewable capacity by technology</p></li>
+<li><p>Storage capacity (GSP-level)</p></li>
+<li><p>Demand projections</p></li>
+</ul>
+<p><strong>Note</strong>: Different FES releases may have different scenario names and capacity values for the same modelled year. Use this to explore sensitivity to FES updates.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="dukes-digest-of-uk-energy-statistics">
+<h2>DUKES (Digest of UK Energy Statistics)<a class="headerlink" href="#dukes-digest-of-uk-energy-statistics" title="Link to this heading">#</a></h2>
+<p>Historical power station data from UK Government.</p>
+<section id="id1">
+<h3>Overview<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>DESNZ (UK Government)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Annual (March/July)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>All major UK power stations</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>Individual power stations</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>Open data (Excel)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="key-tables">
+<h3>Key Tables<a class="headerlink" href="#key-tables" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Table</p></th>
+<th class="head"><p>Content</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DUKES 5.11</p></td>
+<td><p>Power stations (capacity, fuel, location)</p></td>
+</tr>
+<tr class="row-odd"><td><p>DUKES 5.10</p></td>
+<td><p>Plant efficiencies</p></td>
+</tr>
+<tr class="row-even"><td><p>DUKES 5.6</p></td>
+<td><p>Fuel input statistics</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id2">
+<h3>Data Fields<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Station name</p></li>
+<li><p>Installed capacity (MW)</p></li>
+<li><p>Fuel type</p></li>
+<li><p>Company/owner</p></li>
+<li><p>Commissioning year</p></li>
+<li><p>Grid reference (for mapping)</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3>Location<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/generators/
+├── DUKES_5.11_2025.xlsx       # Latest DUKES
+├── DUKES_5.10_*.xlsx          # Efficiency data
+└── fuel_prices/               # Fuel cost data
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h3>Usage in Model<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<p>For historical years (<code class="docutils literal notranslate"><span class="pre">modelled_year</span> <span class="pre">≤</span> <span class="pre">2024</span></code>), DUKES provides:</p>
+<ul class="simple">
+<li><p>Thermal generator capacities</p></li>
+<li><p>Fuel types and efficiencies</p></li>
+<li><p>Approximate locations</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="repd-renewable-energy-planning-database">
+<h2>REPD (Renewable Energy Planning Database)<a class="headerlink" href="#repd-renewable-energy-planning-database" title="Link to this heading">#</a></h2>
+<p>Site-level data for all renewable projects in the UK.</p>
+<section id="id5">
+<h3>Overview<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>DESNZ (UK Government)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Quarterly</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>All renewable projects (planned + operational)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>Individual sites</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>Open data (CSV)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id6">
+<h3>Data Fields<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Site name and reference</p></li>
+<li><p>Technology type</p></li>
+<li><p>Installed capacity (MW)</p></li>
+<li><p>Development status (Operational, Under Construction, etc.)</p></li>
+<li><p>Location (postcode, coordinates)</p></li>
+<li><p>Planning authority</p></li>
+<li><p>Connection voltage</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3>Location<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/renewables/
+├── repd-q2-jul-2025.csv       # Latest REPD
+└── repd_technology_mapping.yaml
+</pre></div>
+</div>
+</section>
+<section id="id8">
+<h3>Usage in Model<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Historical</strong>: Direct use of operational sites</p></li>
+<li><p><strong>Future</strong>: Distribution patterns for FES capacity</p></li>
+</ul>
+</section>
+<section id="technology-mapping">
+<h3>Technology Mapping<a class="headerlink" href="#technology-mapping" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>REPD Technology</p></th>
+<th class="head"><p>PyPSA Carrier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Wind Onshore</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wind_onshore</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Wind Offshore</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wind_offshore</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Solar Photovoltaics</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">solar_pv</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Battery</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">battery</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Hydro</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">large_hydro</span></code> / <code class="docutils literal notranslate"><span class="pre">small_hydro</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="etys-electricity-ten-year-statement">
+<h2>ETYS (Electricity Ten Year Statement)<a class="headerlink" href="#etys-electricity-ten-year-statement" title="Link to this heading">#</a></h2>
+<p>Transmission network data from NESO.</p>
+<section id="id9">
+<h3>Overview<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>NESO</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Annual (November)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>GB transmission network</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>Individual circuits and transformers</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>Open data (Excel appendices)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="key-appendices">
+<h3>Key Appendices<a class="headerlink" href="#key-appendices" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Appendix</p></th>
+<th class="head"><p>Content</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>B-1</p></td>
+<td><p>Substation data (buses)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-2</p></td>
+<td><p>Circuit data (lines)</p></td>
+</tr>
+<tr class="row-even"><td><p>B-3</p></td>
+<td><p>Transformer data</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-4</p></td>
+<td><p>HVDC data</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id10">
+<h3>Data Fields<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
+<p><strong>Substations (Buses)</strong>:</p>
+<ul class="simple">
+<li><p>Name and identifier</p></li>
+<li><p>Voltage level (400kV, 275kV, 132kV)</p></li>
+<li><p>Coordinates (OSGB36)</p></li>
+</ul>
+<p><strong>Circuits (Lines)</strong>:</p>
+<ul class="simple">
+<li><p>From/To buses</p></li>
+<li><p>Resistance, Reactance, Susceptance</p></li>
+<li><p>Thermal rating (MVA)</p></li>
+<li><p>Length (km)</p></li>
+</ul>
+</section>
+<section id="id11">
+<h3>Location<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/network/
+├── ETYS/
+│   ├── ETYS_2023_substations.csv
+│   ├── ETYS_2023_circuits.csv
+│   └── ETYS_2023_transformers.csv
+├── Reduced/
+│   └── reduced_network.csv
+└── Zonal/
+    └── zonal_network.csv
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="era5-weather-data">
+<h2>ERA5 Weather Data<a class="headerlink" href="#era5-weather-data" title="Link to this heading">#</a></h2>
+<p>Reanalysis weather data for renewable generation profiles.</p>
+<section id="id12">
+<h3>Overview<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>ECMWF / Copernicus</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Hourly</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>Global (subset for GB)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>~30km grid</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>CDS API (free registration)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="variables-used">
+<h3>Variables Used<a class="headerlink" href="#variables-used" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>100m wind speed (for wind power)</p></li>
+<li><p>10m wind speed</p></li>
+<li><p>Surface solar radiation</p></li>
+<li><p>Temperature (for PV efficiency)</p></li>
+<li><p>Runoff (for hydro)</p></li>
+</ul>
+</section>
+<section id="id13">
+<h3>Location<a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>resources/atlite/
+├── GB_2019.nc                 # Weather cutout for 2019
+├── GB_2020.nc
+└── ...
+</pre></div>
+</div>
+</section>
+<section id="generation">
+<h3>Generation<a class="headerlink" href="#generation" title="Link to this heading">#</a></h3>
+<p>Weather cutouts are generated using Atlite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2019.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="espeni-demand-data">
+<h2>ESPENI Demand Data<a class="headerlink" href="#espeni-demand-data" title="Link to this heading">#</a></h2>
+<p>Historical electricity demand profiles.</p>
+<section id="id14">
+<h3>Overview<a class="headerlink" href="#id14" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>University of Edinburgh / ESPENI project</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Half-hourly</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>GB total demand 2009-2024</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Granularity</strong></p></td>
+<td><p>National total</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Access</strong></p></td>
+<td><p>Open data (CC-BY-4.0)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id15">
+<h3>Data Fields<a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Timestamp</p></li>
+<li><p>Demand (MW)</p></li>
+<li><p>Settlement period</p></li>
+</ul>
+</section>
+<section id="id16">
+<h3>Location<a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/demand/
+├── ESPENI/
+│   ├── demand_2019.csv
+│   ├── demand_2020.csv
+│   └── ...
+└── profiles/
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Historical years</strong>: Direct use</p></li>
+<li><p><strong>Future years</strong>: Profile shape scaled to FES demand</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="tec-register">
+<h2>TEC Register<a class="headerlink" href="#tec-register" title="Link to this heading">#</a></h2>
+<p>Transmission Entry Capacity from NESO.</p>
+<section id="id17">
+<h3>Overview<a class="headerlink" href="#id17" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Details</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Publisher</strong></p></td>
+<td><p>NESO</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Frequency</strong></p></td>
+<td><p>Monthly</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coverage</strong></p></td>
+<td><p>All transmission-connected generators</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Access</strong></p></td>
+<td><p>Open data (CSV)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="id18">
+<h3>Data Fields<a class="headerlink" href="#id18" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Generator name (BMU ID)</p></li>
+<li><p>TEC capacity (MW)</p></li>
+<li><p>Connection point</p></li>
+<li><p>Fuel type</p></li>
+<li><p>Effective dates</p></li>
+</ul>
+</section>
+<section id="id19">
+<h3>Location<a class="headerlink" href="#id19" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/generators/
+├── tec-register-july-2025.csv
+└── tec_fuel_mapping.yaml
+</pre></div>
+</div>
+</section>
+<section id="id20">
+<h3>Usage<a class="headerlink" href="#id20" title="Link to this heading">#</a></h3>
+<p>Used to cross-reference DUKES data and validate capacities.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-quality-notes">
+<h2>Data Quality Notes<a class="headerlink" href="#data-quality-notes" title="Link to this heading">#</a></h2>
+<section id="known-issues">
+<h3>Known Issues<a class="headerlink" href="#known-issues" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Issue</p></th>
+<th class="head"><p>Mitigation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DUKES</p></td>
+<td><p>Missing coordinates for some stations</p></td>
+<td><p>Manual geocoding</p></td>
+</tr>
+<tr class="row-odd"><td><p>REPD</p></td>
+<td><p>Duplicate entries</p></td>
+<td><p>Deduplication script</p></td>
+</tr>
+<tr class="row-even"><td><p>ETYS</p></td>
+<td><p>Some circuits under construction</p></td>
+<td><p>Filter by status</p></td>
+</tr>
+<tr class="row-odd"><td><p>FES</p></td>
+<td><p>GSP names change between years</p></td>
+<td><p>Mapping tables</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="validation">
+<h3>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h3>
+<p>The model validates data during build:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/validate_scenarios.py
+</pre></div>
+</div>
+<p>This checks:</p>
+<ul class="simple">
+<li><p>All generators have valid coordinates</p></li>
+<li><p>Capacity totals match expected values</p></li>
+<li><p>No orphan buses in network</p></li>
+</ul>
+</section>
+</section>
+<section id="comprehensive-data-sources-table">
+<h2>Comprehensive Data Sources Table<a class="headerlink" href="#comprehensive-data-sources-table" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Data</p></th>
+<th class="head"><p>Data Processing</p></th>
+<th class="head"><p>Source and License</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Network</strong></p></td>
+<td><p>Reduced network model</p></td>
+<td><p>Matpower file converted to buses and lines</p></td>
+<td><p>Bell and Tleis, Bukhsh et al. – GPL-3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Zonal model</p></td>
+<td><p>Excel data converted to buses and links</p></td>
+<td><p>National Grid’s ETYS – NG ESO Open Data Licence v1.0</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Electrical Demand</strong></p></td>
+<td><p>ESPENI</p></td>
+<td><p>Excel file converted to loads</p></td>
+<td><p>Wilson et al. – CC-BY-NC-4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Marginal Costs</strong></p></td>
+<td><p>Fuel costs from FES</p></td>
+<td><p>Excel data converted to marginal price with addition of EU-ETS and CPS</p></td>
+<td><p>National Grid’s FES – NG ESO Open Data Licence v1.0</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>EU-ETS</p></td>
+<td><p>Excel data converted to marginal price in addition to fuel costs and CPS</p></td>
+<td><p>Ember Climate – CC-BY-4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Carbon Price Support (CPS)</p></td>
+<td><p>Excel data converted to marginal price in addition to fuel costs and EU-ETS</p></td>
+<td><p>UK Gov BEIS – Open Government Licence v3.0</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Thermal Power Plants &amp; Hydropower</strong></p></td>
+<td><p>Historical data (location, fuel, type, capacity)</p></td>
+<td><p>Conversion from Excel data to generators</p></td>
+<td><p>DUKES dataset – Open Government Licence v3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Coordinates</p></td>
+<td><p>Coordinate data converted to generator attributes</p></td>
+<td><p>OpenStreetMap (ODbL), Global Energy Monitor (CC-BY-4.0), Google Maps</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Technical characteristics</p></td>
+<td><p>Data from papers converted to generator attributes</p></td>
+<td><p>Schröder et al., Angerer et al.</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Hydropower power output timeseries</p></td>
+<td><p>Excel data converted to generator power timeseries</p></td>
+<td><p>Elexon – BSC Open Data Licence</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Future installed capacities and locations</p></td>
+<td><p>Excel data converted to generator attributes</p></td>
+<td><p>National Grid’s FES – NG ESO Open Data Licence v1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Renewable Power</strong></p></td>
+<td><p>Renewable power timeseries</p></td>
+<td><p>ERA5 weather data converted to generator power timeseries using Atlite</p></td>
+<td><p>ERA5 (CC-BY-4.0), Atlite (MIT)</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Historical location, type, capacity</p></td>
+<td><p>Excel data converted to generator attributes</p></td>
+<td><p>REPD – Open Government Licence v3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Historical annual generation</p></td>
+<td><p>Report data used to scale REPD for &lt;150kW installations</p></td>
+<td><p>UK Gov BEIS – Open Government Licence v3.0</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Future installed capacities and locations</p></td>
+<td><p>Excel data converted to generator attributes</p></td>
+<td><p>National Grid’s FES – NG ESO Open Data Licence v1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Offshore wind (near-term)</p></td>
+<td><p>Report data for near-term spatial distribution</p></td>
+<td><p>REPD, Scottish Sectoral Marine Plan – OGL v3.0</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Tidal lagoon and stream</p></td>
+<td><p>Generator power timeseries using Thetis coastal ocean model</p></td>
+<td><p>Thetis – MIT</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Wave power generation</p></td>
+<td><p>ERA5 wave climate converted using power matrix</p></td>
+<td><p>ERA5 (CC-BY-4.0), Power Matrix</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Storage</strong></p></td>
+<td><p>Historical pumped hydro</p></td>
+<td><p>Excel data converted to storage unit attributes</p></td>
+<td><p>DUKES dataset – Open Government Licence v3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p></p></td>
+<td><p>Future storage capacities and locations</p></td>
+<td><p>Excel data converted to storage unit attributes</p></td>
+<td><p>National Grid’s FES – NG ESO Open Data Licence v1.0</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td><p>Efficiency and losses</p></td>
+<td><p>Report data converted to storage attributes</p></td>
+<td><p>Moseley and Garche</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Emissions</strong></p></td>
+<td><p>Direct emissions factors</p></td>
+<td><p>Data from various sources converted to carbon factors</p></td>
+<td><p>Staffell, Schlömer et al.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr class="docutils" />
+<hr class="docutils" />
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Data Reference</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="network_data.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Network Data</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#neso-future-energy-scenarios-fes">NESO Future Energy Scenarios (FES)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-releases-and-scenarios">FES Releases and Scenarios</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-fields">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#location">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usage-in-model">Usage in Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dukes-digest-of-uk-energy-statistics">DUKES (Digest of UK Energy Statistics)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-tables">Key Tables</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Usage in Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#repd-renewable-energy-planning-database">REPD (Renewable Energy Planning Database)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Usage in Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#technology-mapping">Technology Mapping</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-electricity-ten-year-statement">ETYS (Electricity Ten Year Statement)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-appendices">Key Appendices</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">Location</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#era5-weather-data">ERA5 Weather Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#variables-used">Variables Used</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generation">Generation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#espeni-demand-data">ESPENI Demand Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tec-register">TEC Register</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">Overview</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">Data Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">Location</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">Usage</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-quality-notes">Data Quality Notes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issues">Known Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">Validation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#comprehensive-data-sources-table">Comprehensive Data Sources Table</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

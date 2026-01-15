@@ -1,0 +1,1360 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contributing &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'development/contributing';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="prev" title="Integration Modules" href="../api/integration_modules.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../api/integration_modules.html"
+                          title="previous chapter">Integration Modules</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="architecture.html"
+                          title="next chapter">Architecture</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Contributing</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">#</a></h1>
+<p>Thank you for your interest in contributing to PyPSA-GB!</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>Fork the repository on GitHub</p></li>
+<li><p>Clone your fork:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR-USERNAME/PyPSA-GB.git
+<span class="nb">cd</span><span class="w"> </span>PyPSA-GB
+</pre></div>
+</div>
+</li>
+<li><p>Set up the development environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
+conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+</pre></div>
+</div>
+</li>
+<li><p>Add the upstream remote:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>https://github.com/andrewlyden/PyPSA-GB.git
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading">#</a></h2>
+<section id="create-a-branch">
+<h3>1. Create a Branch<a class="headerlink" href="#create-a-branch" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-new-feature
+<span class="c1"># or</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>fix/bug-description
+</pre></div>
+</div>
+</section>
+<section id="make-changes">
+<h3>2. Make Changes<a class="headerlink" href="#make-changes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Follow the code style guidelines below</p></li>
+<li><p>Add tests for new functionality</p></li>
+<li><p>Update documentation as needed</p></li>
+</ul>
+</section>
+<section id="test-your-changes">
+<h3>3. Test Your Changes<a class="headerlink" href="#test-your-changes" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Validate scenarios</span>
+python<span class="w"> </span>scripts/validate_scenarios.py
+
+<span class="c1"># Run a test scenario</span>
+snakemake<span class="w"> </span>resources/network/Test_reduced_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Check for errors</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+<section id="commit-your-changes">
+<h3>4. Commit Your Changes<a class="headerlink" href="#commit-your-changes" title="Link to this heading">#</a></h3>
+<p>Use clear commit messages:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: Add support for new storage technology&quot;</span>
+</pre></div>
+</div>
+<p><strong>Commit message prefixes</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat:</span></code> - New feature</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix:</span></code> - Bug fix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs:</span></code> - Documentation only</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data:</span></code> - Data file updates</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">refactor:</span></code> - Code restructuring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test:</span></code> - Adding tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chore:</span></code> - Maintenance tasks</p></li>
+</ul>
+</section>
+<section id="push-and-create-pr">
+<h3>5. Push and Create PR<a class="headerlink" href="#push-and-create-pr" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/my-new-feature
+</pre></div>
+</div>
+<p>Then create a Pull Request on GitHub.</p>
+</section>
+</section>
+<section id="code-style">
+<h2>Code Style<a class="headerlink" href="#code-style" title="Link to this heading">#</a></h2>
+<section id="python-style">
+<h3>Python Style<a class="headerlink" href="#python-style" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Follow PEP 8</p></li>
+<li><p>Use type hints for function signatures</p></li>
+<li><p>Maximum line length: 100 characters</p></li>
+<li><p>Use descriptive variable names</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good</span>
+<span class="k">def</span> <span class="nf">calculate_curtailment</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">carrier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;wind_offshore&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate curtailment for a carrier.&quot;&quot;&quot;</span>
+    <span class="o">...</span>
+
+<span class="c1"># Bad</span>
+<span class="k">def</span> <span class="nf">calc</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;wind&quot;</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="docstrings">
+<h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading">#</a></h3>
+<p>Use NumPy-style docstrings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">map_sites_to_buses</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">sites_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nearest&#39;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map generator sites to nearest network buses.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        PyPSA network with bus coordinates</span>
+<span class="sd">    sites_df : pd.DataFrame</span>
+<span class="sd">        Sites with &#39;lat&#39; and &#39;lon&#39; columns</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        Mapping method: &#39;nearest&#39; (default) or &#39;voronoi&#39;</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Input DataFrame with &#39;bus&#39; column added</span>
+<span class="sd">        </span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If sites_df lacks coordinate columns</span>
+<span class="sd">        </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; mapped = map_sites_to_buses(network, wind_farms)</span>
+<span class="sd">    &gt;&gt;&gt; mapped.groupby(&#39;bus&#39;).p_nom.sum()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Link to this heading">#</a></h3>
+<p>Use the centralized logging configuration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.logging_config</span> <span class="kn">import</span> <span class="n">setup_logging</span>
+
+<span class="c1"># At module level (for imports)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="s2">&quot;module_name&quot;</span><span class="p">)</span>
+
+<span class="c1"># In main block (for Snakemake)</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">snk</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;snakemake&#39;</span><span class="p">)</span>
+    <span class="n">log_path</span> <span class="o">=</span> <span class="n">snk</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">snk</span> <span class="ow">and</span> <span class="n">snk</span><span class="o">.</span><span class="n">log</span> <span class="k">else</span> <span class="s2">&quot;module_name&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="adding-new-features">
+<h2>Adding New Features<a class="headerlink" href="#adding-new-features" title="Link to this heading">#</a></h2>
+<section id="new-data-source">
+<h3>New Data Source<a class="headerlink" href="#new-data-source" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Add raw data to <code class="docutils literal notranslate"><span class="pre">data/</span></code> directory</p></li>
+<li><p>Create processing script in <code class="docutils literal notranslate"><span class="pre">scripts/</span></code></p></li>
+<li><p>Add Snakemake rule in <code class="docutils literal notranslate"><span class="pre">rules/</span></code></p></li>
+<li><p>Update documentation</p></li>
+<li><p>Add validation checks</p></li>
+</ol>
+</section>
+<section id="new-technology-carrier">
+<h3>New Technology/Carrier<a class="headerlink" href="#new-technology-carrier" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>Add to <code class="docutils literal notranslate"><span class="pre">scripts/carrier_definitions.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;my_new_tech&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;nice_name&#39;</span><span class="p">:</span> <span class="s1">&#39;My New Technology&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;#HEXCODE&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;co2_emissions&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s1">&#39;renewable&#39;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p>Update integration modules to handle the carrier</p></li>
+<li><p>Add test cases</p></li>
+<li><p>Document in data reference</p></li>
+</ol>
+</section>
+<section id="new-network-model">
+<h3>New Network Model<a class="headerlink" href="#new-network-model" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Create topology files in <code class="docutils literal notranslate"><span class="pre">data/network/</span></code></p></li>
+<li><p>Update <code class="docutils literal notranslate"><span class="pre">scripts/build_network.py</span></code> to load it</p></li>
+<li><p>Add to configuration options</p></li>
+<li><p>Document in network models guide</p></li>
+</ol>
+</section>
+</section>
+<section id="snakemake-rules">
+<h2>Snakemake Rules<a class="headerlink" href="#snakemake-rules" title="Link to this heading">#</a></h2>
+<section id="rule-style">
+<h3>Rule Style<a class="headerlink" href="#rule-style" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rule</span> <span class="n">my_rule</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Brief description of what this rule does.&quot;&quot;&quot;</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="n">network</span><span class="o">=</span><span class="s2">&quot;resources/network/</span><span class="si">{scenario}</span><span class="s2">_network.nc&quot;</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="s2">&quot;data/my_data.csv&quot;</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="s2">&quot;resources/network/</span><span class="si">{scenario}</span><span class="s2">_with_feature.nc&quot;</span>
+    <span class="n">log</span><span class="p">:</span>
+        <span class="s2">&quot;logs/my_rule/</span><span class="si">{scenario}</span><span class="s2">.log&quot;</span>
+    <span class="n">params</span><span class="p">:</span>
+        <span class="n">param1</span><span class="o">=</span><span class="k">lambda</span> <span class="n">wildcards</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;scenarios&#39;</span><span class="p">][</span><span class="n">wildcards</span><span class="o">.</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;param1&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">)</span>
+    <span class="n">script</span><span class="p">:</span>
+        <span class="s2">&quot;../scripts/my_script.py&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="rule-guidelines">
+<h3>Rule Guidelines<a class="headerlink" href="#rule-guidelines" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Include <code class="docutils literal notranslate"><span class="pre">log:</span></code> directive for every rule</p></li>
+<li><p>Use wildcards consistently</p></li>
+<li><p>Document complex rules</p></li>
+<li><p>Keep scripts focused on one task</p></li>
+</ul>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">#</a></h2>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># All tests</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># Specific test file</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_scenario_detection.py<span class="w"> </span>-v
+
+<span class="c1"># With coverage</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>--cov<span class="o">=</span>scripts
+</pre></div>
+</div>
+</section>
+<section id="writing-tests">
+<h3>Writing Tests<a class="headerlink" href="#writing-tests" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/test_my_feature.py</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+<span class="kn">from</span> <span class="nn">scripts.my_module</span> <span class="kn">import</span> <span class="n">my_function</span>
+
+<span class="k">def</span> <span class="nf">test_my_function_basic</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test basic functionality.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">my_function</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">expected_output</span>
+
+<span class="k">def</span> <span class="nf">test_my_function_edge_case</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test edge case handling.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+        <span class="n">my_function</span><span class="p">(</span><span class="n">invalid_input</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
+<section id="building-docs-locally">
+<h3>Building Docs Locally<a class="headerlink" href="#building-docs-locally" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs/readthedocs
+make<span class="w"> </span>html
+<span class="c1"># Open build/html/index.html</span>
+</pre></div>
+</div>
+</section>
+<section id="documentation-style">
+<h3>Documentation Style<a class="headerlink" href="#documentation-style" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Use clear, concise language</p></li>
+<li><p>Include code examples</p></li>
+<li><p>Add cross-references with <code class="docutils literal notranslate"><span class="pre">{doc}</span></code> and <code class="docutils literal notranslate"><span class="pre">{ref}</span></code></p></li>
+<li><p>Include diagrams for complex concepts</p></li>
+</ul>
+</section>
+</section>
+<section id="reporting-issues">
+<h2>Reporting Issues<a class="headerlink" href="#reporting-issues" title="Link to this heading">#</a></h2>
+<section id="bug-reports">
+<h3>Bug Reports<a class="headerlink" href="#bug-reports" title="Link to this heading">#</a></h3>
+<p>Include:</p>
+<ol class="arabic simple">
+<li><p>PyPSA-GB version (git commit hash)</p></li>
+<li><p>Python and key package versions</p></li>
+<li><p>Operating system</p></li>
+<li><p>Full error message and traceback</p></li>
+<li><p>Minimal reproduction steps</p></li>
+<li><p>Relevant configuration snippets</p></li>
+</ol>
+</section>
+<section id="feature-requests">
+<h3>Feature Requests<a class="headerlink" href="#feature-requests" title="Link to this heading">#</a></h3>
+<p>Include:</p>
+<ol class="arabic simple">
+<li><p>Clear description of the feature</p></li>
+<li><p>Use case / motivation</p></li>
+<li><p>Proposed implementation (if any)</p></li>
+<li><p>Impact on existing functionality</p></li>
+</ol>
+</section>
+</section>
+<section id="code-review">
+<h2>Code Review<a class="headerlink" href="#code-review" title="Link to this heading">#</a></h2>
+<p>All contributions go through code review:</p>
+<ol class="arabic simple">
+<li><p><strong>Functionality</strong>: Does it work as intended?</p></li>
+<li><p><strong>Tests</strong>: Are there adequate tests?</p></li>
+<li><p><strong>Documentation</strong>: Is it documented?</p></li>
+<li><p><strong>Style</strong>: Does it follow guidelines?</p></li>
+<li><p><strong>Performance</strong>: Any performance concerns?</p></li>
+</ol>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">#</a></h2>
+<p>By contributing, you agree that your contributions will be licensed under the MIT License.</p>
+</section>
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Lead Developer</strong>: Dr Andrew Lyden</p></li>
+<li><p><strong>Email</strong>: andrew.lyden&#64;ed.ac.uk</p></li>
+<li><p><strong>GitHub Issues</strong>: For bug reports and feature requests</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../api/integration_modules.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Integration Modules</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="architecture.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Architecture</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-workflow">Development Workflow</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-a-branch">1. Create a Branch</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#make-changes">2. Make Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#test-your-changes">3. Test Your Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#commit-your-changes">4. Commit Your Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#push-and-create-pr">5. Push and Create PR</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code-style">Code Style</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-style">Python Style</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#docstrings">Docstrings</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-new-features">Adding New Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#new-data-source">New Data Source</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#new-technology-carrier">New Technology/Carrier</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#new-network-model">New Network Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#snakemake-rules">Snakemake Rules</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rule-style">Rule Style</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rule-guidelines">Rule Guidelines</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing">Testing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-tests">Running Tests</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#writing-tests">Writing Tests</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#building-docs-locally">Building Docs Locally</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation-style">Documentation Style</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reporting-issues">Reporting Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bug-reports">Bug Reports</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#feature-requests">Feature Requests</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code-review">Code Review</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#license">License</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contact">Contact</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

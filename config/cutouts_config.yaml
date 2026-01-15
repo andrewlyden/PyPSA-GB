@@ -1,0 +1,171 @@
+# ════════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB Cutout Generation Configuration
+# ════════════════════════════════════════════════════════════════════════════════
+# This config controls the expensive weather cutout download workflow.
+# 
+# ⚠️  WARNING: Each cutout download takes 2-4 hours and ~700MB storage
+# 
+# 🎯 USAGE:
+#   snakemake -s Snakefile_cutouts --configfile config/cutouts_config.yaml --cores 4
+#
+# 💡 TIP: Modify years_to_generate to control which cutouts are downloaded
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ────────────────────────────────────────────────────────────
+# Years Configuration
+# ────────────────────────────────────────────────────────────
+# Control which weather years to download cutouts for
+years_config:
+  # Method for determining years to generate:
+  # - "manual": Use years_to_generate list below
+  # - "from_scenarios": Extract from scenarios_master.yaml automatically
+  # - "all_scenarios_plus_manual": Combine both approaches
+  method: "manual"
+  
+  # Manual list of years (used when method is "manual" or "all_scenarios_plus_manual")
+  years_to_generate:
+    - 2009
+  
+  # Additional years to always include regardless of method
+  always_include: []  # Remove 2020 to focus on 2021 only
+
+# ────────────────────────────────────────────────────────────
+# Download Configuration
+# ────────────────────────────────────────────────────────────
+download:
+  # Maximum parallel cutout downloads
+  max_parallel_downloads: 1
+  
+  # Retry configuration for failed downloads
+  retry:
+    attempts: 3
+    delay_minutes: 30
+  
+  # ERA5 server configuration
+  era5:
+    # Time range for each cutout (full year)
+    months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    
+    # Spatial bounds for UK
+    bounds:
+      north: 61.0   # Northern Scotland
+      south: 49.5   # Southern England  
+      west: -11.0   # Western Ireland
+      east: 2.5     # Eastern England
+    
+    # Resolution (degrees)
+    dx: 0.25  # ~25km resolution
+    dy: 0.25
+    
+    # Time resolution  
+    dt: "h"   # Hourly data
+
+# ────────────────────────────────────────────────────────────
+# File Paths
+# ────────────────────────────────────────────────────────────
+paths:
+  # Output directory for cutouts
+  cutouts_dir: "resources/atlite/cutouts"
+  
+  # Backup directory (optional - for safety)
+  backup_dir: "backup/cutouts"
+  
+  # Log directory for cutout generation
+  log_dir: "logs/cutouts"
+  
+  # Scenarios configuration file
+  scenarios_file: "config/scenarios.yaml"
+
+# ────────────────────────────────────────────────────────────
+# Storage Management
+# ────────────────────────────────────────────────────────────
+storage:
+  # Automatically clean up temporary files
+  cleanup_temp: true
+  
+  # Compress cutout files (saves ~30% space but slightly slower access)
+  compression:
+    enabled: true
+    level: 4  # 1-9, higher = more compression but slower
+  
+  # Check available disk space before download
+  check_disk_space: true
+  min_free_gb: 5.0  # Minimum GB free space required
+
+# ────────────────────────────────────────────────────────────
+# Validation
+# ────────────────────────────────────────────────────────────
+validation:
+  # Validate cutout files after download
+  validate_after_download: true
+  
+  # Check for required variables in cutouts
+  required_variables:
+    - "temperature"
+    - "wnd10m" 
+    - "wnd100m"
+    - "influx_direct"
+    - "influx_diffuse"
+  
+  # Check temporal coverage (ensure full year)
+  check_temporal_coverage: true
+  expected_hours_per_year: 8760  # 365 days * 24 hours
+
+# ────────────────────────────────────────────────────────────
+# Logging Configuration
+# ────────────────────────────────────────────────────────────
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_to_file: true
+  log_directory: "logs/cutouts"
+  
+  # Include detailed download progress
+  show_download_progress: true
+  
+  # Log download statistics  
+  log_download_stats: true
+
+# ────────────────────────────────────────────────────────────
+# Environment Configuration
+# ────────────────────────────────────────────────────────────
+# environment:
+#   # Conda environment for cutout generation
+#   conda_env: "envs/pypsa.yaml"
+  
+#   # Memory limits (important for large cutouts)
+#   memory:
+#     max_memory_gb: 8
+#     chunk_size_mb: 500
+
+# ────────────────────────────────────────────────────────────
+# Safety Features
+# ────────────────────────────────────────────────────────────
+safety:
+  # Prevent accidental re-downloads of existing cutouts
+  skip_existing: true
+  
+  # Backup existing cutouts before overwriting
+  backup_before_overwrite: true
+  
+  # Confirm before expensive operations
+  confirm_large_downloads: true
+  large_download_threshold: 5  # GB total download size
+  
+  # Lock file to prevent multiple simultaneous downloads
+  use_lock_file: true
+  lock_file: "resources/atlite/.download_lock"
+
+# ────────────────────────────────────────────────────────────
+# Performance Tuning
+# ────────────────────────────────────────────────────────────
+performance:
+  # Number of workers for atlite operations  
+  atlite_workers: 1
+  
+  # Chunk sizes for processing
+  time_chunk: "1M"  # Monthly chunks
+  spatial_chunk: "auto"
+  
+  # Use dask for memory management
+  use_dask: true
+  dask_scheduler: "threads"

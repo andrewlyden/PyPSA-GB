@@ -1,0 +1,223 @@
+"""
+Extract fuel and carbon prices from FES Data Workbooks.
+
+This script extracts commodity price assumptions from NESO FES workbooks:
+- Fuel prices (gas, coal, oil, biomass) from CP1 sheet
+- Carbon prices (EU ETS, UK carbon price) from CP2 sheet
+
+Author: PyPSA-GB
+License: MIT
+"""
+
+import sys
+import logging
+from pathlib import Path
+import pandas as pd
+import re
+
+# Add project root to path for imports
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
+
+try:
+    from scripts.utilities.logging_config import setup_logging
+except ImportError:
+    logging.basicConfig(level=logging.INFO)
+    def setup_logging(log_path):
+        return logging.getLogger(__name__)
+
+# Setup logging
+logger = setup_logging(snakemake.log[0] if "snakemake" in dir() else "extract_FES_prices.log")
+
+
+def extract_fuel_prices(workbook_path: str, fes_year: int) -> pd.DataFrame:
+    """
+    Extract fuel price assumptions from FES workbook sheet CP1.
+    
+    Args:
+        workbook_path: Path to FES workbook
+        fes_year: FES year
+        
+    Returns:
+        pd.DataFrame: Fuel prices with columns [year, fuel, price_gbp_per_mwh_thermal]
+    """
+    logger.info(f"Extracting fuel prices from {workbook_path}")
+    
+    try:
+        # Read fuel prices from CP1 sheet
+        df_FES = pd.read_excel(
+            workbook_path,
+            sheet_name='CP1', 
+            usecols="L:BA", 
+            header=8, 
+            dtype=str,
+            index_col=0
+        )
+        
+        df_FES.dropna(axis='rows', inplace=True)
+        df_FES.drop(['Year'], inplace=True, errors='ignore')
+        
+        # Transpose so years are rows
+        df_FES = df_FES.T
+        df_FES = df_FES[df_FES.index >= 2021]  # Keep only future years
+        
+        # Convert to numeric
+        for col in df_FES.columns:
+            df_FES[col] = pd.to_numeric(df_FES[col], errors='coerce')
+        
+        # Reshape to long format
+        fuel_prices = []
+        for year in df_FES.index:
+            for fuel_col in df_FES.columns:
+                # Map FES column names to standard fuel names
+                fuel_name = fuel_col.lower()
+                if 'gas' in fuel_name:
+                    fuel = 'gas'
+                    efficiency = 0.50  # CCGT efficiency
+                elif 'coal' in fuel_name:
+                    fuel = 'coal'
+                    efficiency = 0.35
+                elif 'oil' in fuel_name:
+                    fuel = 'oil'
+                    efficiency = 0.35
+                elif 'biomass' in fuel_name:
+                    fuel = 'biomass'
+                    efficiency = 0.35
+                else:
+                    continue
+                
+                # Convert p/kWh to £/MWh thermal (divide by efficiency)
+                price_pkwh = df_FES.loc[year, fuel_col]
+                price_gbp_per_mwh_thermal = (price_pkwh * 10) / efficiency  # p/kWh -> £/MWh
+                
+                fuel_prices.append({
+                    'year': int(year),
+                    'fuel': fuel,
+                    'price_gbp_per_mwh_thermal': price_gbp_per_mwh_thermal
+                })
+        
+        result = pd.DataFrame(fuel_prices)
+        logger.info(f"✓ Extracted {len(result)} fuel price records")
+        logger.info(f"  Years: {sorted(result['year'].unique())}")
+        logger.info(f"  Fuels: {sorted(result['fuel'].unique())}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to extract fuel prices: {e}")
+        logger.warning("Returning default fuel price assumptions")
+        
+        # Return defaults
+        default_prices = pd.DataFrame({
+            "year": [2021, 2030, 2040, 2050] * 5,
+            "fuel": ['gas'] * 4 + ['coal'] * 4 + ['oil'] * 4 + ['nuclear'] * 4 + ['biomass'] * 4,
+            "price_gbp_per_mwh_thermal": [20] * 4 + [10] * 4 + [40] * 4 + [5] * 4 + [15] * 4
+        })
+        return default_prices
+
+
+def extract_carbon_prices(workbook_path: str, fes_year: int) -> pd.DataFrame:
+    """
+    Extract carbon price assumptions from FES workbook sheet CP2.
+    
+    Args:
+        workbook_path: Path to FES workbook
+        fes_year: FES year
+        
+    Returns:
+        pd.DataFrame: Carbon prices with columns [year, carbon_price_gbp_per_tco2]
+    """
+    logger.info(f"Extracting carbon prices from {workbook_path}")
+    
+    try:
+        # Read carbon prices from CP2 sheet
+        df_FES = pd.read_excel(
+            workbook_path,
+            sheet_name='CP2', 
+            usecols="N:BC", 
+            header=7, 
+            dtype=str,
+            index_col=0
+        )
+        
+        df_FES.drop(columns=range(2010, 2021), inplace=True, errors='ignore')
+        df_FES.dropna(axis='rows', inplace=True)
+        df_FES.drop(['Year'], inplace=True, errors='ignore')
+        
+        # Remove last three summary rows if present
+        df_FES = df_FES[:-3].T if len(df_FES) > 3 else df_FES.T
+        df_FES = df_FES[df_FES.index >= 2021]  # Keep only future years
+        
+        # Look for UK carbon price column (varies by FES year)
+        carbon_col = None
+        for col in df_FES.columns:
+            if 'UK' in str(col) and ('carbon' in str(col).lower() or 'price' in str(col).lower()):
+                carbon_col = col
+                break
+        
+        if carbon_col is None and len(df_FES.columns) > 0:
+            carbon_col = df_FES.columns[0]  # Use first column as fallback
+            logger.warning(f"Could not find UK carbon price column, using {carbon_col}")
+        
+        # Convert to numeric
+        df_FES[carbon_col] = pd.to_numeric(df_FES[carbon_col], errors='coerce')
+        
+        # Create output dataframe
+        carbon_prices = pd.DataFrame({
+            'year': df_FES.index.astype(int),
+            'carbon_price_gbp_per_tco2': df_FES[carbon_col].values
+        })
+        
+        logger.info(f"✓ Extracted {len(carbon_prices)} carbon price records")
+        logger.info(f"  Years: {sorted(carbon_prices['year'].unique())}")
+        logger.info(f"  Price range: £{carbon_prices['carbon_price_gbp_per_tco2'].min():.1f}-{carbon_prices['carbon_price_gbp_per_tco2'].max():.1f}/tCO2")
+        
+        return carbon_prices
+        
+    except Exception as e:
+        logger.error(f"Failed to extract carbon prices: {e}")
+        logger.warning("Returning default carbon price assumptions")
+        
+        # Return defaults
+        default_prices = pd.DataFrame({
+            "year": [2021, 2030, 2040, 2050],
+            "carbon_price_gbp_per_tco2": [40, 60, 80, 100]
+        })
+        return default_prices
+
+
+def main():
+    """Main execution function."""
+    logger.info("=" * 80)
+    logger.info("FES Fuel and Carbon Price Extraction")
+    logger.info("=" * 80)
+    
+    # Get parameters from Snakemake
+    workbook_path = snakemake.input.workbook
+    fes_year = snakemake.params.fes_year
+    
+    output_fuel = snakemake.output.fuel_prices
+    output_carbon = snakemake.output.carbon_prices
+    
+    logger.info(f"FES Year: {fes_year}")
+    logger.info(f"Workbook: {workbook_path}")
+    
+    # Extract prices
+    fuel_prices = extract_fuel_prices(workbook_path, fes_year)
+    carbon_prices = extract_carbon_prices(workbook_path, fes_year)
+    
+    # Save outputs
+    logger.info(f"Saving fuel prices to {output_fuel}")
+    fuel_prices.to_csv(output_fuel, index=False)
+    
+    logger.info(f"Saving carbon prices to {output_carbon}")
+    carbon_prices.to_csv(output_carbon, index=False)
+    
+    logger.info("=" * 80)
+    logger.info("FES Price Extraction Complete")
+    logger.info("=" * 80)
+
+
+if __name__ == "__main__":
+    main()
+

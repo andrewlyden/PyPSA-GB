@@ -1,0 +1,1346 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Scenario Design &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/scenarios';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Network Models" href="network_models.html" />
+    <link rel="prev" title="Configuration Reference" href="configuration.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration Reference</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Scenario Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_models.html">Network Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#key-concepts">Key Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#common-tasks">Common Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#getting-help">Getting Help</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Scenario Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scenario-types">Scenario Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fes-pathway-selection">FES Pathway Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#weather-year-selection">Weather Year Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#time-period-selection">Time Period Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensitivity-analysis">Sensitivity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-scenario-comparison">Multi-Scenario Comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scenario-checklist">Scenario Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="configuration.html"
+                          title="previous chapter">Configuration Reference</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="network_models.html"
+                          title="next chapter">Network Models</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Scenario Design</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="scenario-design">
+<h1>Scenario Design<a class="headerlink" href="#scenario-design" title="Link to this heading">#</a></h1>
+<p>This guide covers how to design effective scenarios for your analysis.</p>
+<section id="scenario-types">
+<h2>Scenario Types<a class="headerlink" href="#scenario-types" title="Link to this heading">#</a></h2>
+<section id="historical-scenarios">
+<h3>Historical Scenarios<a class="headerlink" href="#historical-scenarios" title="Link to this heading">#</a></h3>
+<p>Model past years using actual data (not FES projections).</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Historical_2022</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Validation</span><span class="nv"> </span><span class="s">against</span><span class="nv"> </span><span class="s">2022</span><span class="nv"> </span><span class="s">outturn&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2022</span>
+<span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2022</span><span class="w">    </span><span class="c1"># Must match for consistency</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2022</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+<span class="w">  </span><span class="c1"># No FES_scenario needed</span>
+</pre></div>
+</div>
+<p><strong>Use cases</strong>:</p>
+<ul class="simple">
+<li><p>Model validation against historical outturn</p></li>
+<li><p>Understanding past system behavior</p></li>
+<li><p>Baseline for comparison</p></li>
+</ul>
+<p><strong>Data sources</strong>:</p>
+<ul class="simple">
+<li><p>Thermal generation: DUKES statistics</p></li>
+<li><p>Renewables: REPD (Renewable Energy Planning Database)</p></li>
+<li><p>Demand: ESPENI profiles</p></li>
+</ul>
+</section>
+<section id="future-scenarios">
+<h3>Future Scenarios<a class="headerlink" href="#future-scenarios" title="Link to this heading">#</a></h3>
+<p>Project future years using NESO Future Energy Scenarios.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Future_2035</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035</span><span class="nv"> </span><span class="s">under</span><span class="nv"> </span><span class="s">Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">    </span><span class="c1"># Historical weather pattern</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+<span class="w">  </span><span class="nt">FES_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+</pre></div>
+</div>
+<p><strong>Data sources</strong>:</p>
+<ul class="simple">
+<li><p>Thermal/Renewables/Storage: FES projections</p></li>
+<li><p>Demand: FES annual totals with historical profiles</p></li>
+<li><p>Network: ETYS planned upgrades (optional)</p></li>
+</ul>
+</section>
+</section>
+<section id="fes-pathway-selection">
+<h2>FES Pathway Selection<a class="headerlink" href="#fes-pathway-selection" title="Link to this heading">#</a></h2>
+<section id="holistic-transition">
+<h3>Holistic Transition<a class="headerlink" href="#holistic-transition" title="Link to this heading">#</a></h3>
+<p>Balanced approach with multiple low-carbon vectors.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Moderate electrification</p></li>
+<li><p>Green hydrogen development</p></li>
+<li><p>Biomass and CCS</p></li>
+<li><p>Good for “central” scenarios</p></li>
+</ul>
+</section>
+<section id="electric-engagement">
+<h3>Electric Engagement<a class="headerlink" href="#electric-engagement" title="Link to this heading">#</a></h3>
+<p>Maximum electrification pathway.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Electric</span><span class="nv"> </span><span class="s">Engagement&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Very high electricity demand</p></li>
+<li><p>Extensive heat pump deployment</p></li>
+<li><p>Limited hydrogen role</p></li>
+<li><p>Tests grid capacity limits</p></li>
+</ul>
+</section>
+<section id="hydrogen-evolution">
+<h3>Hydrogen Evolution<a class="headerlink" href="#hydrogen-evolution" title="Link to this heading">#</a></h3>
+<p>Hydrogen-centric decarbonization.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Hydrogen</span><span class="nv"> </span><span class="s">Evolution&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Blue hydrogen from natural gas + CCS</p></li>
+<li><p>Hydrogen for heat and transport</p></li>
+<li><p>Lower electricity demand growth</p></li>
+<li><p>Industrial hydrogen clusters</p></li>
+</ul>
+</section>
+<section id="falling-short">
+<h3>Falling Short<a class="headerlink" href="#falling-short" title="Link to this heading">#</a></h3>
+<p>Slower progress scenario.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Falling</span><span class="nv"> </span><span class="s">Short&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Misses 2050 net zero</p></li>
+<li><p>Tests system resilience</p></li>
+<li><p>Useful for stress testing</p></li>
+</ul>
+</section>
+</section>
+<section id="weather-year-selection">
+<h2>Weather Year Selection<a class="headerlink" href="#weather-year-selection" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">renewables_year</span></code> determines the weather pattern for renewable generation.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">  </span><span class="c1"># Choose based on your analysis goals</span>
+</pre></div>
+</div>
+<section id="high-wind-years">
+<h3>High Wind Years<a class="headerlink" href="#high-wind-years" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>2015, 2019: Above-average wind output</p></li>
+</ul>
+</section>
+<section id="low-wind-years">
+<h3>Low Wind Years<a class="headerlink" href="#low-wind-years" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>2010, 2021: Below-average wind</p></li>
+</ul>
+</section>
+<section id="extreme-events">
+<h3>Extreme Events<a class="headerlink" href="#extreme-events" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>2018: “Beast from the East” cold snap</p></li>
+<li><p>Check ERA5 data for specific events</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For robust analysis, run multiple weather years and compare results.</p>
+</div>
+</section>
+</section>
+<section id="time-period-selection">
+<h2>Time Period Selection<a class="headerlink" href="#time-period-selection" title="Link to this heading">#</a></h2>
+<section id="full-year">
+<h3>Full Year<a class="headerlink" href="#full-year" title="Link to this heading">#</a></h3>
+<p>For complete annual analysis:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+</section>
+<section id="representative-weeks">
+<h3>Representative Weeks<a class="headerlink" href="#representative-weeks" title="Link to this heading">#</a></h3>
+<p>For faster analysis:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-13</span><span class="nv"> </span><span class="s">00:00&quot;</span><span class="w">   </span><span class="c1"># Winter week</span>
+<span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-19</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="typical-periods">
+<h3>Typical Periods<a class="headerlink" href="#typical-periods" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Period</p></th>
+<th class="head"><p>Dates</p></th>
+<th class="head"><p>Characteristics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Winter peak</p></td>
+<td><p>Jan 10-17</p></td>
+<td><p>High demand, low solar</p></td>
+</tr>
+<tr class="row-odd"><td><p>Summer low</p></td>
+<td><p>Aug 1-8</p></td>
+<td><p>Low demand, high solar</p></td>
+</tr>
+<tr class="row-even"><td><p>Autumn wind</p></td>
+<td><p>Nov 1-8</p></td>
+<td><p>High wind, moderate demand</p></td>
+</tr>
+<tr class="row-odd"><td><p>Spring transition</p></td>
+<td><p>Apr 15-22</p></td>
+<td><p>Variable conditions</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="stress-testing">
+<h3>Stress Testing<a class="headerlink" href="#stress-testing" title="Link to this heading">#</a></h3>
+<p>For extreme conditions:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find the peak demand day in your weather year</span>
+<span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-15</span><span class="nv"> </span><span class="s">00:00&quot;</span>
+<span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-22</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="sensitivity-analysis">
+<h2>Sensitivity Analysis<a class="headerlink" href="#sensitivity-analysis" title="Link to this heading">#</a></h2>
+<section id="capacity-sensitivities">
+<h3>Capacity Sensitivities<a class="headerlink" href="#capacity-sensitivities" title="Link to this heading">#</a></h3>
+<p>Create variants with modified assumptions:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_baseline</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+
+<span class="nt">HT35_more_wind</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+<span class="w">  </span><span class="nt">capacity_scaling</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">wind_offshore</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.2</span><span class="w">  </span><span class="c1"># 20% more offshore wind</span>
+
+<span class="nt">HT35_less_nuclear</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+<span class="w">  </span><span class="nt">capacity_scaling</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">nuclear</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w">  </span><span class="c1"># 50% less nuclear</span>
+</pre></div>
+</div>
+</section>
+<section id="economic-sensitivities">
+<h3>Economic Sensitivities<a class="headerlink" href="#economic-sensitivities" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_high_gas</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">fuel_prices</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">natural_gas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">150</span><span class="w">  </span><span class="c1"># £/MWh (vs default ~80)</span>
+
+<span class="nt">HT35_high_carbon</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">carbon_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">  </span><span class="c1"># £/tCO2 (vs default ~100)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="multi-scenario-comparison">
+<h2>Multi-Scenario Comparison<a class="headerlink" href="#multi-scenario-comparison" title="Link to this heading">#</a></h2>
+<section id="defining-a-suite">
+<h3>Defining a Suite<a class="headerlink" href="#defining-a-suite" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/scenarios.yaml</span>
+<span class="nt">HT35_suite</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_baseline</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_wind</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_low_nuclear</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_demand</span>
+</pre></div>
+</div>
+</section>
+<section id="running-all">
+<h3>Running All<a class="headerlink" href="#running-all" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/config.yaml</span>
+<span class="nt">scenarios</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_baseline</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_wind</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_low_nuclear</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w">  </span><span class="c1"># Runs all active scenarios</span>
+</pre></div>
+</div>
+</section>
+<section id="comparing-results">
+<h3>Comparing Results<a class="headerlink" href="#comparing-results" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">scenarios</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HT35_baseline&#39;</span><span class="p">,</span> <span class="s1">&#39;HT35_high_wind&#39;</span><span class="p">,</span> <span class="s1">&#39;HT35_low_nuclear&#39;</span><span class="p">]</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;resources/network/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">_solved.nc&quot;</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;scenario&#39;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+        <span class="s1">&#39;system_cost&#39;</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">objective</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span>
+        <span class="s1">&#39;curtailment&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> 
+                       <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">p_nom</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+        <span class="s1">&#39;emissions&#39;</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;p_nom * carrier_emissions&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="p">})</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="naming-conventions">
+<h2>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading">#</a></h2>
+<p>Use consistent naming for clarity:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">FES_Pathway</span><span class="p">}{</span><span class="n">Year</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">Network</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">Variant</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Examples:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">HT35</span></code> - Holistic Transition 2035, ETYS network</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">HT35_reduced</span></code> - Same but reduced network</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EE40_high_wind</span></code> - Electric Engagement 2040, high wind variant</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Historical_2022</span></code> - Historical validation</p></li>
+</ul>
+</section>
+<section id="scenario-checklist">
+<h2>Scenario Checklist<a class="headerlink" href="#scenario-checklist" title="Link to this heading">#</a></h2>
+<p>Before running a new scenario, verify:</p>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> <code class="docutils literal notranslate"><span class="pre">modelled_year</span></code> makes sense for your analysis</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> <code class="docutils literal notranslate"><span class="pre">renewables_year</span></code> has available cutout data</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> <code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code> is valid (for future years)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> <code class="docutils literal notranslate"><span class="pre">solve_period</span></code> is appropriate for your question</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Solver settings are configured</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/validate_scenarios.py</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="configuration.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Configuration Reference</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="network_models.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Network Models</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-types">Scenario Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#historical-scenarios">Historical Scenarios</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#future-scenarios">Future Scenarios</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-pathway-selection">FES Pathway Selection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#holistic-transition">Holistic Transition</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#electric-engagement">Electric Engagement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hydrogen-evolution">Hydrogen Evolution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#falling-short">Falling Short</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weather-year-selection">Weather Year Selection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#high-wind-years">High Wind Years</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#low-wind-years">Low Wind Years</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extreme-events">Extreme Events</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time-period-selection">Time Period Selection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#full-year">Full Year</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#representative-weeks">Representative Weeks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#typical-periods">Typical Periods</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#stress-testing">Stress Testing</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sensitivity-analysis">Sensitivity Analysis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#capacity-sensitivities">Capacity Sensitivities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#economic-sensitivities">Economic Sensitivities</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multi-scenario-comparison">Multi-Scenario Comparison</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-a-suite">Defining a Suite</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-all">Running All</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comparing-results">Comparing Results</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#naming-conventions">Naming Conventions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-checklist">Scenario Checklist</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

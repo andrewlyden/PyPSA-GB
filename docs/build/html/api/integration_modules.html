@@ -1,0 +1,1540 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Integration Modules &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/integration_modules';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="../development/contributing.html" />
+    <link rel="prev" title="Core Modules" href="core_modules.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/troubleshooting.html">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_modules.html">Core Modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Integration Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#integrate-thermal-generators">integrate_thermal_generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integrate-renewable-generators">integrate_renewable_generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#add-storage">add_storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spatial-utils">spatial_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#add-interconnectors">add_interconnectors</a></li>
+</ul>
+</li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/troubleshooting.html">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="core_modules.html"
+                          title="previous chapter">Core Modules</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../development/contributing.html"
+                          title="next chapter">Contributing</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">API Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Integration Modules</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="integration-modules">
+<h1>Integration Modules<a class="headerlink" href="#integration-modules" title="Link to this heading">#</a></h1>
+<p>Documentation for data integration modules that add components to the network.</p>
+<section id="integrate-thermal-generators">
+<h2>integrate_thermal_generators<a class="headerlink" href="#integrate-thermal-generators" title="Link to this heading">#</a></h2>
+<p>Integrates thermal generators from DUKES (historical) or FES (future).</p>
+<section id="main-functions">
+<h3>Main Functions<a class="headerlink" href="#main-functions" title="Link to this heading">#</a></h3>
+<section id="id1">
+<h4><code class="docutils literal notranslate"><span class="pre">integrate_thermal_generators()</span></code><a class="headerlink" href="#id1" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">integrate_thermal_generators</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add thermal generators to network.</span>
+<span class="sd">    </span>
+<span class="sd">    Automatically routes to DUKES or FES based on modelled_year.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network to add generators to</span>
+<span class="sd">    scenario : dict</span>
+<span class="sd">        Scenario configuration</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger for output</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pypsa.Network</span>
+<span class="sd">        Network with thermal generators added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="load-dukes-generators">
+<h4><code class="docutils literal notranslate"><span class="pre">load_dukes_generators()</span></code><a class="headerlink" href="#load-dukes-generators" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">load_dukes_generators</span><span class="p">(</span>
+    <span class="n">dukes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load thermal generators from DUKES Excel file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dukes_file : str</span>
+<span class="sd">        Path to DUKES 5.11 Excel file</span>
+<span class="sd">    year : int, optional</span>
+<span class="sd">        Filter to stations operational in year</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Thermal generators with columns:</span>
+<span class="sd">        - name, carrier, p_nom, efficiency</span>
+<span class="sd">        - lat, lon (coordinates)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="load-fes-thermal">
+<h4><code class="docutils literal notranslate"><span class="pre">load_fes_thermal()</span></code><a class="headerlink" href="#load-fes-thermal" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">load_fes_thermal</span><span class="p">(</span>
+    <span class="n">fes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load thermal capacity from FES projections.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fes_file : str</span>
+<span class="sd">        Path to processed FES CSV</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Modelled year</span>
+<span class="sd">    scenario : str</span>
+<span class="sd">        FES scenario name</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Thermal generators from FES</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="carrier-mapping">
+<h3>Carrier Mapping<a class="headerlink" href="#carrier-mapping" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>DUKES Fuel</p></th>
+<th class="head"><p>PyPSA Carrier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Combined Cycle Gas Turbine</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CCGT</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Open Cycle Gas Turbine</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OCGT</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Coal</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">coal</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Nuclear</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nuclear</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Biomass</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">biomass</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Oil</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">oil</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="integrate-renewable-generators">
+<h2>integrate_renewable_generators<a class="headerlink" href="#integrate-renewable-generators" title="Link to this heading">#</a></h2>
+<p>Integrates renewable generators with capacity and generation profiles.</p>
+<section id="id2">
+<h3>Main Functions<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<section id="id3">
+<h4><code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators()</span></code><a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">integrate_renewable_generators</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">profiles_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add renewable generators with time series.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network to add generators to</span>
+<span class="sd">    scenario : dict</span>
+<span class="sd">        Scenario configuration</span>
+<span class="sd">    profiles_path : str</span>
+<span class="sd">        Path to renewable profiles CSV</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger for output</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pypsa.Network</span>
+<span class="sd">        Network with renewables added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="load-fes-renewable-generators">
+<h4><code class="docutils literal notranslate"><span class="pre">load_fes_renewable_generators()</span></code><a class="headerlink" href="#load-fes-renewable-generators" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">load_fes_renewable_generators</span><span class="p">(</span>
+    <span class="n">fes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load renewable capacity from FES with spatial distribution.</span>
+<span class="sd">    </span>
+<span class="sd">    Handles:</span>
+<span class="sd">    - GSP-level capacity (direct mapping)</span>
+<span class="sd">    - Direct-connected capacity (REPD-distributed)</span>
+<span class="sd">    - Unconnected capacity (geographic distribution)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fes_file : str</span>
+<span class="sd">        Processed FES data path</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Target year</span>
+<span class="sd">    scenario : str</span>
+<span class="sd">        FES scenario</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network for bus mapping</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Renewable sites with bus assignments</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="technology-mapping">
+<h3>Technology Mapping<a class="headerlink" href="#technology-mapping" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>FES Technology</p></th>
+<th class="head"><p>FES Detail</p></th>
+<th class="head"><p>PyPSA Carrier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Wind</p></td>
+<td><p>Offshore Wind</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wind_offshore</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Wind</p></td>
+<td><p>Onshore Wind</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wind_onshore</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Solar</p></td>
+<td><p>Large Scale Solar</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">solar_pv</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Solar</p></td>
+<td><p>Small Scale Solar</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">solar_pv</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Hydro</p></td>
+<td><p>Large Hydro</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">large_hydro</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Marine</p></td>
+<td><p>Tidal Stream</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">marine</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="add-storage">
+<h2>add_storage<a class="headerlink" href="#add-storage" title="Link to this heading">#</a></h2>
+<p>Integrates storage units (batteries, pumped hydro).</p>
+<section id="id4">
+<h3>Main Functions<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<section id="id5">
+<h4><code class="docutils literal notranslate"><span class="pre">add_storage()</span></code><a class="headerlink" href="#id5" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add_storage</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add storage units to network.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network to modify</span>
+<span class="sd">    scenario : dict</span>
+<span class="sd">        Scenario configuration</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pypsa.Network</span>
+<span class="sd">        Network with storage added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="load-fes-storage-data">
+<h4><code class="docutils literal notranslate"><span class="pre">load_fes_storage_data()</span></code><a class="headerlink" href="#load-fes-storage-data" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">load_fes_storage_data</span><span class="p">(</span>
+    <span class="n">fes_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load storage from FES with proper distribution.</span>
+<span class="sd">    </span>
+<span class="sd">    Handles:</span>
+<span class="sd">    - GSP-connected storage (FES location)</span>
+<span class="sd">    - Direct-connected (REPD distribution)</span>
+<span class="sd">    - Pumped hydro (existing infrastructure)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Storage units with columns:</span>
+<span class="sd">        - name, carrier, bus</span>
+<span class="sd">        - p_nom (MW), max_hours</span>
+<span class="sd">        - efficiency_store, efficiency_dispatch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="storage-types">
+<h3>Storage Types<a class="headerlink" href="#storage-types" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Carrier</p></th>
+<th class="head"><p>Typical max_hours</p></th>
+<th class="head"><p>Efficiency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">battery</span></code></p></td>
+<td><p>2-4 hours</p></td>
+<td><p>90% round-trip</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pumped_hydro</span></code></p></td>
+<td><p>6-10 hours</p></td>
+<td><p>75% round-trip</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="spatial-utils">
+<h2>spatial_utils<a class="headerlink" href="#spatial-utils" title="Link to this heading">#</a></h2>
+<p>Geographic mapping utilities for assigning components to buses.</p>
+<section id="id6">
+<h3>Main Functions<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<section id="map-sites-to-buses">
+<h4><code class="docutils literal notranslate"><span class="pre">map_sites_to_buses()</span></code><a class="headerlink" href="#map-sites-to-buses" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">map_sites_to_buses</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">sites_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nearest&#39;</span><span class="p">,</span>
+    <span class="n">preserve_existing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map sites with coordinates to network buses.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network with bus coordinates</span>
+<span class="sd">    sites_df : pd.DataFrame</span>
+<span class="sd">        Sites with &#39;lat&#39;, &#39;lon&#39; or &#39;x&#39;, &#39;y&#39; columns</span>
+<span class="sd">    method : str</span>
+<span class="sd">        &#39;nearest&#39; - nearest bus</span>
+<span class="sd">        &#39;voronoi&#39; - Voronoi region</span>
+<span class="sd">    preserve_existing : bool</span>
+<span class="sd">        Keep pre-assigned &#39;bus&#39; values</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Sites with &#39;bus&#39; column</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="detect-coordinate-system">
+<h4><code class="docutils literal notranslate"><span class="pre">detect_coordinate_system()</span></code><a class="headerlink" href="#detect-coordinate-system" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">detect_coordinate_system</span><span class="p">(</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Detect if coordinates are WGS84 or OSGB36.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coords : pd.DataFrame</span>
+<span class="sd">        DataFrame with x/y or lon/lat columns</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        &#39;WGS84&#39; or &#39;OSGB36&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="convert-coordinates">
+<h4><code class="docutils literal notranslate"><span class="pre">convert_coordinates()</span></code><a class="headerlink" href="#convert-coordinates" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">convert_coordinates</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">from_crs</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">to_crs</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert coordinates between systems.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x, y : float</span>
+<span class="sd">        Input coordinates</span>
+<span class="sd">    from_crs : str</span>
+<span class="sd">        Source CRS (&#39;WGS84&#39; or &#39;OSGB36&#39;)</span>
+<span class="sd">    to_crs : str</span>
+<span class="sd">        Target CRS</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[float, float]</span>
+<span class="sd">        Converted (x, y) coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="coordinate-systems">
+<h3>Coordinate Systems<a class="headerlink" href="#coordinate-systems" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>System</p></th>
+<th class="head"><p>EPSG</p></th>
+<th class="head"><p>X Range</p></th>
+<th class="head"><p>Y Range</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>WGS84</p></td>
+<td><p>4326</p></td>
+<td><p>-180 to 180</p></td>
+<td><p>-90 to 90</p></td>
+<td><p>Degrees</p></td>
+</tr>
+<tr class="row-odd"><td><p>OSGB36</p></td>
+<td><p>27700</p></td>
+<td><p>0-700k</p></td>
+<td><p>0-1200k</p></td>
+<td><p>Meters</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="usage-example">
+<h3>Usage Example<a class="headerlink" href="#usage-example" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.spatial_utils</span> <span class="kn">import</span> <span class="n">map_sites_to_buses</span><span class="p">,</span> <span class="n">convert_coordinates</span>
+
+<span class="c1"># Map wind farm sites to buses</span>
+<span class="n">wind_farms</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Farm1&#39;</span><span class="p">,</span> <span class="s1">&#39;Farm2&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">55.5</span><span class="p">,</span> <span class="mf">56.2</span><span class="p">],</span>
+    <span class="s1">&#39;lon&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">3.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.5</span><span class="p">],</span>
+    <span class="s1">&#39;capacity_mw&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="n">wind_farms</span> <span class="o">=</span> <span class="n">map_sites_to_buses</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">wind_farms</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">wind_farms</span><span class="p">[[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;capacity_mw&#39;</span><span class="p">]])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="add-interconnectors">
+<h2>add_interconnectors<a class="headerlink" href="#add-interconnectors" title="Link to this heading">#</a></h2>
+<p>Adds cross-border interconnector links.</p>
+<section id="id7">
+<h3>Main Functions<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<section id="id8">
+<h4><code class="docutils literal notranslate"><span class="pre">add_interconnectors()</span></code><a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add_interconnectors</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add interconnector links to network.</span>
+<span class="sd">    </span>
+<span class="sd">    Creates Link components for:</span>
+<span class="sd">    - GB-France (IFA, IFA2, ElecLink)</span>
+<span class="sd">    - GB-Netherlands (BritNed)</span>
+<span class="sd">    - GB-Belgium (Nemo)</span>
+<span class="sd">    - GB-Norway (NSL)</span>
+<span class="sd">    - GB-Ireland (EWIC, Moyle)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Network to modify</span>
+<span class="sd">    scenario : dict</span>
+<span class="sd">        Scenario config (for future capacity)</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pypsa.Network</span>
+<span class="sd">        Network with interconnectors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="interconnector-data">
+<h3>Interconnector Data<a class="headerlink" href="#interconnector-data" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># resources/interconnectors/interconnectors.csv</span>
+<span class="n">name</span><span class="p">,</span><span class="n">bus0</span><span class="p">,</span><span class="n">bus1</span><span class="p">,</span><span class="n">p_nom</span><span class="p">,</span><span class="n">efficiency</span>
+<span class="n">IFA</span><span class="p">,</span><span class="n">SELL41</span><span class="p">,</span><span class="n">FR</span><span class="p">,</span><span class="mi">2000</span><span class="p">,</span><span class="mf">0.97</span>
+<span class="n">IFA2</span><span class="p">,</span><span class="n">BRAW21</span><span class="p">,</span><span class="n">FR</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mf">0.97</span>
+<span class="n">BritNed</span><span class="p">,</span><span class="n">GRAI41</span><span class="p">,</span><span class="n">NL</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mf">0.97</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="core_modules.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Core Modules</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../development/contributing.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Contributing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integrate-thermal-generators">integrate_thermal_generators</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#main-functions">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">integrate_thermal_generators()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#load-dukes-generators"><code class="docutils literal notranslate"><span class="pre">load_dukes_generators()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#load-fes-thermal"><code class="docutils literal notranslate"><span class="pre">load_fes_thermal()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#carrier-mapping">Carrier Mapping</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integrate-renewable-generators">integrate_renewable_generators</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id3"><code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#load-fes-renewable-generators"><code class="docutils literal notranslate"><span class="pre">load_fes_renewable_generators()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#technology-mapping">Technology Mapping</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-storage">add_storage</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id5"><code class="docutils literal notranslate"><span class="pre">add_storage()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#load-fes-storage-data"><code class="docutils literal notranslate"><span class="pre">load_fes_storage_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#storage-types">Storage Types</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#spatial-utils">spatial_utils</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#map-sites-to-buses"><code class="docutils literal notranslate"><span class="pre">map_sites_to_buses()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#detect-coordinate-system"><code class="docutils literal notranslate"><span class="pre">detect_coordinate_system()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#convert-coordinates"><code class="docutils literal notranslate"><span class="pre">convert_coordinates()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coordinate-systems">Coordinate Systems</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usage-example">Usage Example</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-interconnectors">add_interconnectors</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8"><code class="docutils literal notranslate"><span class="pre">add_interconnectors()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interconnector-data">Interconnector Data</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

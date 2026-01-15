@@ -1,0 +1,1363 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Troubleshooting &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'development/troubleshooting';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Release Notes" href="release_notes.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Troubleshooting
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quickstart: Run Your First Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/first_scenario.html">
+    Your First Custom Scenario
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/workflow.html">
+    Snakemake Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/scenarios.html">
+    Scenario Design
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/network_models.html">
+    Network Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/clustering.html">
+    Network Clustering
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/data_sources.html">
+    Data Sources
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/network_data.html">
+    Network Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/maintenance.html">
+    Data Maintenance
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/1-historical-baseload-2015.html">
+    Historical Baseload
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/2-historical-renewables-2023.html">
+    Historical Renewables Era
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/3-future-holistic-transition-2035.html">
+    Future Scenario: Holistic Transition (2035)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/4-future-electric-engagement-2050.html">
+    Future Scenario: Electric Engagement (2050)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/5-networks.html">
+    Networks
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/6-demand.html">
+    Demand
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/7-generators.html">
+    Generators
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/8-marginal-costs.html">
+    Marginal Costs
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/9-renewables.html">
+    Renewable Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/10-storage.html">
+    Storage Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/11-interconnectors.html">
+    Interconnectors
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/12-hydrogen.html">
+    Hydrogen Systems
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/core_modules.html">
+    Core Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/integration_modules.html">
+    Integration Modules
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="architecture.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="release_notes.html">
+    Release Notes
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Troubleshooting
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart: Run Your First Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/first_scenario.html">Your First Custom Scenario</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/clustering.html">Network Clustering</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/index.html">Data Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/network_data.html">Network Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_reference/maintenance.html">Data Maintenance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/12-hydrogen.html">Hydrogen Systems</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core_modules.html">Core Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/integration_modules.html">Integration Modules</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a></li>
+</ul>
+</div>
+        <div class="sidebar-primary-item">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="release_notes.html"
+                          title="previous chapter">Release Notes</a></p>
+  </div></div>
+        <div class="sidebar-primary-item">
+<div id="searchbox"></div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Troubleshooting</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h1>
+<p>Common issues and their solutions.</p>
+<section id="installation-issues">
+<h2>Installation Issues<a class="headerlink" href="#installation-issues" title="Link to this heading">#</a></h2>
+<section id="conda-environment-creation-fails">
+<h3>Conda Environment Creation Fails<a class="headerlink" href="#conda-environment-creation-fails" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Error during <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">env</span> <span class="pre">create</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Update conda first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>update<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>conda
+</pre></div>
+</div>
+</li>
+<li><p>Try mamba (faster resolver):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>mamba
+mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
+</pre></div>
+</div>
+</li>
+<li><p>Clear package cache:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>clean<span class="w"> </span>--all
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="gurobi-license-not-found">
+<h3>Gurobi License Not Found<a class="headerlink" href="#gurobi-license-not-found" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">GurobiError:</span> <span class="pre">No</span> <span class="pre">Gurobi</span> <span class="pre">license</span> <span class="pre">found</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check license file location:</p>
+<ul class="simple">
+<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">C:\Users\&lt;username&gt;\gurobi.lic</span></code></p></li>
+<li><p>Linux/Mac: <code class="docutils literal notranslate"><span class="pre">~/gurobi.lic</span></code></p></li>
+</ul>
+</li>
+<li><p>Regenerate license (if academic):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>grbgetkey<span class="w"> </span>YOUR-LICENSE-KEY
+</pre></div>
+</div>
+</li>
+<li><p>Use HiGHS instead:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solver</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;highs&quot;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="snakemake-not-found">
+<h3>Snakemake Not Found<a class="headerlink" href="#snakemake-not-found" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">snakemake:</span> <span class="pre">command</span> <span class="pre">not</span> <span class="pre">found</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Ensure environment is activated:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+which<span class="w"> </span>snakemake
+</pre></div>
+</div>
+</li>
+<li><p>Reinstall snakemake:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>pypsa-gb<span class="w"> </span>snakemake
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="workflow-issues">
+<h2>Workflow Issues<a class="headerlink" href="#workflow-issues" title="Link to this heading">#</a></h2>
+<section id="missing-input-files">
+<h3>“Missing Input Files”<a class="headerlink" href="#missing-input-files" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Snakemake reports missing input files</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check the file exists:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>path/to/expected/file
+</pre></div>
+</div>
+</li>
+<li><p>Generate the missing file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>path/to/missing/file<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</li>
+<li><p>Check for typos in scenario name</p></li>
+</ol>
+</section>
+<section id="rule-fails-with-exit-code-1">
+<h3>Rule Fails with Exit Code 1<a class="headerlink" href="#rule-fails-with-exit-code-1" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Rule fails, exit code 1</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check the log file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>logs/&lt;rule_name&gt;/&lt;scenario&gt;.log
+</pre></div>
+</div>
+</li>
+<li><p>Re-run with verbose output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>--verbose
+</pre></div>
+</div>
+</li>
+<li><p>Check Python errors in log</p></li>
+</ol>
+</section>
+<section id="no-rule-to-produce-target">
+<h3>“No Rule to Produce Target”<a class="headerlink" href="#no-rule-to-produce-target" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">No</span> <span class="pre">rule</span> <span class="pre">to</span> <span class="pre">produce</span> <span class="pre">&lt;target&gt;</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Check target filename matches pattern</p></li>
+<li><p>Verify scenario is defined in <code class="docutils literal notranslate"><span class="pre">scenarios.yaml</span></code></p></li>
+<li><p>Check for wildcards mismatch</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="network-issues">
+<h2>Network Issues<a class="headerlink" href="#network-issues" title="Link to this heading">#</a></h2>
+<section id="all-generators-at-same-bus">
+<h3>All Generators at Same Bus<a class="headerlink" href="#all-generators-at-same-bus" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: All generators mapped to one bus (e.g., <code class="docutils literal notranslate"><span class="pre">INDQ41</span></code>)</p>
+<p><strong>Cause</strong>: Coordinate system mismatch (WGS84 vs OSGB36)</p>
+<p><strong>Solution</strong>: The issue is in spatial mapping. Check:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.spatial_utils</span> <span class="kn">import</span> <span class="n">detect_coordinate_system</span>
+
+<span class="c1"># Check bus coordinates</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">detect_coordinate_system</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]))</span>
+<span class="c1"># Should output: &#39;OSGB36&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="network-not-connected">
+<h3>Network Not Connected<a class="headerlink" href="#network-not-connected" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Isolated buses, disconnected regions</p>
+<p><strong>Solution</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;resources/network/my_network.nc&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check connectivity</span>
+<span class="kn">from</span> <span class="nn">pypsa.topology</span> <span class="kn">import</span> <span class="n">find_disconnected_buses</span>
+<span class="n">disconnected</span> <span class="o">=</span> <span class="n">find_disconnected_buses</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected buses: </span><span class="si">{</span><span class="n">disconnected</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="negative-line-impedance">
+<h3>Negative Line Impedance<a class="headerlink" href="#negative-line-impedance" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Warnings about negative impedance</p>
+<p><strong>Solution</strong>: Usually data issue. Check raw network files for data entry errors.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="solver-issues">
+<h2>Solver Issues<a class="headerlink" href="#solver-issues" title="Link to this heading">#</a></h2>
+<section id="infeasible-optimization">
+<h3>Infeasible Optimization<a class="headerlink" href="#infeasible-optimization" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Solver returns “infeasible” or “unbounded”</p>
+<p><strong>Causes &amp; Solutions</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Demand exceeds supply</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;resources/network/pre_solve.nc&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generation: </span><span class="si">{</span><span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">p_nom</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GW&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peak demand: </span><span class="si">{</span><span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GW&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Network disconnected</strong>: See above</p></li>
+<li><p><strong>Zero capacity lines</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span> <span class="o">==</span> <span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Missing generators</strong>: Check if integration ran correctly</p></li>
+</ol>
+</section>
+<section id="solver-runs-forever">
+<h3>Solver Runs Forever<a class="headerlink" href="#solver-runs-forever" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Solver doesn’t converge</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Add time limit:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solver</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">TimeLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># 1 hour</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use barrier method:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solver</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">crossover</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reduce problem size:</p>
+<ul class="simple">
+<li><p>Use reduced network</p></li>
+<li><p>Shorten solve period</p></li>
+<li><p>Cluster network</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="out-of-memory">
+<h3>Out of Memory<a class="headerlink" href="#out-of-memory" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Process killed, memory error</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Reduce parallel jobs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use network clustering</p></li>
+<li><p>Reduce timesteps:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-01&quot;</span>
+<span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-02&quot;</span><span class="w">  </span><span class="c1"># Shorter period</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-issues">
+<h2>Data Issues<a class="headerlink" href="#data-issues" title="Link to this heading">#</a></h2>
+<section id="fes-data-not-found">
+<h3>FES Data Not Found<a class="headerlink" href="#fes-data-not-found" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Error loading FES data</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check FES year is available:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/FES/
+</pre></div>
+</div>
+</li>
+<li><p>Regenerate FES data:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/FES/FES_2024_data.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="dukes-coordinates-missing">
+<h3>DUKES Coordinates Missing<a class="headerlink" href="#dukes-coordinates-missing" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Generators without coordinates</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check for manual coordinate file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>data/generators/manual_coordinates.csv
+</pre></div>
+</div>
+</li>
+<li><p>Run coordinate geocoding:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/geocode_missing_coordinates.py
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="weather-cutout-missing">
+<h3>Weather Cutout Missing<a class="headerlink" href="#weather-cutout-missing" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: “Cutout not found” for renewables year</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Check available cutouts:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/atlite/
+</pre></div>
+</div>
+</li>
+<li><p>Generate missing cutout:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2019.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use existing weather year:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">  </span><span class="c1"># Year with available cutout</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="logging-issues">
+<h2>Logging Issues<a class="headerlink" href="#logging-issues" title="Link to this heading">#</a></h2>
+<section id="empty-log-files">
+<h3>Empty Log Files<a class="headerlink" href="#empty-log-files" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Log files exist but are empty</p>
+<p><strong>Cause</strong>: Scripts not using <code class="docutils literal notranslate"><span class="pre">snakemake.log[0]</span></code></p>
+<p><strong>Solution</strong>: This was fixed in v0.1. If still occurring:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In script&#39;s main block</span>
+<span class="n">log_path</span> <span class="o">=</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">log</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">log</span> <span class="k">else</span> <span class="s2">&quot;fallback&quot;</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="logger-not-defined">
+<h3>“Logger Not Defined”<a class="headerlink" href="#logger-not-defined" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">NameError:</span> <span class="pre">name</span> <span class="pre">'logger'</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">defined</span></code></p>
+<p><strong>Solution</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.logging_config</span> <span class="kn">import</span> <span class="n">setup_logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="s2">&quot;my_script&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">#</a></h2>
+<section id="before-asking">
+<h3>Before Asking<a class="headerlink" href="#before-asking" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Check this troubleshooting guide</p></li>
+<li><p>Search existing <a class="reference external" href="https://github.com/andrewlyden/PyPSA-GB/issues">GitHub Issues</a></p></li>
+<li><p>Check the relevant log file</p></li>
+</ol>
+</section>
+<section id="information-to-include">
+<h3>Information to Include<a class="headerlink" href="#information-to-include" title="Link to this heading">#</a></h3>
+<p>When reporting an issue:</p>
+<ol class="arabic">
+<li><p><strong>Environment</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;pypsa|snakemake|pandas&quot;</span>
+python<span class="w"> </span>--version
+</pre></div>
+</div>
+</li>
+<li><p><strong>Command run</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Full error message</strong> (copy from terminal)</p></li>
+<li><p><strong>Log file contents</strong> (from <code class="docutils literal notranslate"><span class="pre">logs/</span></code>)</p></li>
+<li><p><strong>Configuration snippet</strong> (relevant scenario)</p></li>
+</ol>
+</section>
+<section id="quick-diagnostic">
+<h3>Quick Diagnostic<a class="headerlink" href="#quick-diagnostic" title="Link to this heading">#</a></h3>
+<p>Run this to collect system info:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">snakemake</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Python: </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PyPSA: </span><span class="si">{</span><span class="n">pypsa</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pandas: </span><span class="si">{</span><span class="n">pandas</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Snakemake: </span><span class="si">{</span><span class="n">snakemake</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="release_notes.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Release Notes</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-issues">Installation Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conda-environment-creation-fails">Conda Environment Creation Fails</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gurobi-license-not-found">Gurobi License Not Found</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#snakemake-not-found">Snakemake Not Found</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow-issues">Workflow Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#missing-input-files">“Missing Input Files”</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rule-fails-with-exit-code-1">Rule Fails with Exit Code 1</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#no-rule-to-produce-target">“No Rule to Produce Target”</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#network-issues">Network Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#all-generators-at-same-bus">All Generators at Same Bus</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-not-connected">Network Not Connected</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#negative-line-impedance">Negative Line Impedance</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-issues">Solver Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#infeasible-optimization">Infeasible Optimization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-runs-forever">Solver Runs Forever</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#out-of-memory">Out of Memory</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-issues">Data Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-data-not-found">FES Data Not Found</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dukes-coordinates-missing">DUKES Coordinates Missing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weather-cutout-missing">Weather Cutout Missing</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logging-issues">Logging Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#empty-log-files">Empty Log Files</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#logger-not-defined">“Logger Not Defined”</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-help">Getting Help</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#before-asking">Before Asking</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#information-to-include">Information to Include</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-diagnostic">Quick Diagnostic</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
