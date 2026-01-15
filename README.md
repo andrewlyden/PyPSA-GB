@@ -44,6 +44,6 @@ If you use PyPSA-GB in your research, please cite:
 
 ## Documentation
 
-See [full documentation](https://pypsa-gb.readthedocs.io) for detailed usage and the `AGENTS.md` file for developer reference.
+See [full documentation](https://pypsa-gb.readthedocs.io) for detailed usage.
 
 ![PyPSA-GB Reduced Network Model](pics/voronoi_reduced_model.jpg)
