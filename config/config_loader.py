@@ -71,6 +71,19 @@ def resolve_clustering(clustering_value: Any, clustering_presets: Dict) -> Dict:
         return config
     
     if isinstance(clustering_value, dict):
+        # Allow referencing preset while extending with custom options
+        if "preset" in clustering_value:
+            preset_name = clustering_value.get("preset")
+            if preset_name not in clustering_presets:
+                raise ValueError(f"Unknown clustering preset: '{preset_name}'. "
+                               f"Available: {list(clustering_presets.keys())}")
+            config = deep_merge(
+                deepcopy(clustering_presets[preset_name]),
+                {k: v for k, v in clustering_value.items() if k != "preset"}
+            )
+            config["enabled"] = True
+            return config
+        
         # If 'method' is specified, clustering should be enabled
         # (even if 'enabled: false' was inherited from defaults)
         if "method" in clustering_value:

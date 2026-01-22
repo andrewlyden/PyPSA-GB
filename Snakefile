@@ -371,8 +371,23 @@ for rid in run_ids:
     else:
         clustering_enabled = False
     if clustering_enabled:
+        # Optional post-clustering aggregation of identical components
+        agg_cfg = clustering_config.get("aggregate_components", {}) if isinstance(clustering_config, dict) else {}
+        if isinstance(agg_cfg, bool):
+            aggregation_enabled = agg_cfg
+        elif isinstance(agg_cfg, dict):
+            aggregation_enabled = agg_cfg.get("enabled", False)
+        else:
+            aggregation_enabled = False
+
+        clustered_network_path = (
+            f"{resources_path}/network/{rid}_network_clustered_aggregated_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+            if aggregation_enabled
+            else f"{resources_path}/network/{rid}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+        )
+
         # Clustered network outputs
-        network_targets.append(f"{resources_path}/network/{rid}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc")
+        network_targets.append(clustered_network_path)
         network_targets.append(f"{resources_path}/network/{rid}_clustering_busmap.csv")
         network_targets.append(f"{resources_path}/validation/{rid}_clustered_network_validation_report.html")
     # Network validation targets for all scenarios (optional - only for clustered networks)

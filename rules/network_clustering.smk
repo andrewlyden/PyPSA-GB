@@ -42,6 +42,42 @@ def _get_clustering_config(wildcards):
             if k not in ['enabled', 'method']}
 
 
+def _is_component_aggregation_enabled(wildcards):
+    """Check if post-clustering component aggregation is enabled."""
+    scenario_config = scenarios.get(wildcards.scenario, {})
+    clustering = scenario_config.get('clustering', {})
+    
+    if isinstance(clustering, dict):
+        agg_cfg = clustering.get('aggregate_components', {})
+        if isinstance(agg_cfg, bool):
+            return agg_cfg
+        if isinstance(agg_cfg, dict):
+            return agg_cfg.get('enabled', False)
+    return False
+
+
+def _get_component_aggregation_config(wildcards):
+    """Return component aggregation configuration for the scenario."""
+    scenario_config = scenarios.get(wildcards.scenario, {})
+    clustering = scenario_config.get('clustering', {})
+    
+    if isinstance(clustering, dict):
+        agg_cfg = clustering.get('aggregate_components', {})
+        if isinstance(agg_cfg, bool):
+            return {"enabled": agg_cfg}
+        if isinstance(agg_cfg, dict):
+            return agg_cfg
+    return {"enabled": False}
+
+
+def _get_clustered_network_output(wildcards):
+    """Choose clustered output path (aggregated vs. raw) based on config."""
+    base = f"{resources_path}/network/{wildcards.scenario}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    if _is_component_aggregation_enabled(wildcards):
+        return f"{resources_path}/network/{wildcards.scenario}_network_clustered_aggregated_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    return base
+
+
 def _get_aggregation_strategies(wildcards):
     """Get aggregation strategies for clustering."""
     scenario_config = scenarios.get(wildcards.scenario, {})
@@ -155,6 +191,26 @@ rule cluster_network:
         "../scripts/network_clustering/cluster_network.py"
 
 
+rule aggregate_clustered_components:
+    """
+    Optionally aggregate identical generators/storage after clustering to reduce problem size.
+    """
+    input:
+        network=f"{resources_path}/network/{{scenario}}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    output:
+        aggregated_network=f"{resources_path}/network/{{scenario}}_network_clustered_aggregated_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    params:
+        aggregation_config=_get_component_aggregation_config
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    log:
+        "logs/network_clustering/aggregate_clustered_{scenario}.log"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/network_clustering/aggregate_components.py"
+
+
 rule validate_network_clustered:
     """
     Validate clustered network connectivity and properties.
@@ -169,7 +225,7 @@ rule validate_network_clustered:
     Performance: ~10-20s
     """
     input:
-        network=f"{resources_path}/network/{{scenario}}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+        network=_get_clustered_network_output
     output:
         validation_report=f"{resources_path}/validation/{{scenario}}_clustered_network_validation_report.html"
     params:

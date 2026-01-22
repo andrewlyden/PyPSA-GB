@@ -102,6 +102,26 @@ def _is_clustering_enabled(scenario_id):
             return 'method' in clustering_config
     return False
 
+
+def _is_component_aggregation_enabled(scenario_id):
+    """Return True if post-clustering aggregation is enabled."""
+    clustering_config = _scenarios.get(scenario_id, {}).get('clustering', None)
+    if isinstance(clustering_config, dict):
+        agg_cfg = clustering_config.get("aggregate_components", {})
+        if isinstance(agg_cfg, bool):
+            return agg_cfg
+        if isinstance(agg_cfg, dict):
+            return agg_cfg.get("enabled", False)
+    return False
+
+
+def _clustered_network_output(scenario_id):
+    """Return path to clustered network (aggregated variant if configured)."""
+    base = f"{resources_path}/network/{scenario_id}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    if _is_component_aggregation_enabled(scenario_id):
+        return f"{resources_path}/network/{scenario_id}_network_clustered_aggregated_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+    return base
+
 # ══════════════════════════════════════════════════════════════════════════════
 # RULES
 # ══════════════════════════════════════════════════════════════════════════════
@@ -135,7 +155,7 @@ rule finalize_network:
     """
     input:
         network=lambda wildcards: (
-            f"{resources_path}/network/{wildcards.scenario}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
+            _clustered_network_output(wildcards.scenario)
             if _is_clustering_enabled(wildcards.scenario)
             else f"{resources_path}/network/{wildcards.scenario}_network_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc"
         )

@@ -281,6 +281,24 @@ HT35:
     start: "2035-01-01 00:00"
     end: "2035-01-07 23:00"
 
+HT35_year:
+  description: "FES 2024 Holistic Transition 2035 - Full ETYS (1 year)"
+  modelled_year: 2035
+  FES_year: 2025
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2013           # Weather proxy year
+  demand_year: 2013               # Demand baseline (scaled to 2035)
+  network_model: "ETYS"
+  clustering:
+    method: kmeans
+    n_clusters: 20
+    aggregate_components:
+      enabled: true
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-12-31 23:00"
+
 HT35_without_network_upgrades:
   description: "FES 2024 Holistic Transition 2035 - Full ETYS with Network Upgrades"
   modelled_year: 2035
