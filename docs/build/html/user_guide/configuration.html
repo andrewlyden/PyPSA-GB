@@ -45,7 +45,6 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/configuration';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -991,6 +990,14 @@ document.write(`
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">  </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+
+<span class="c1"># Clustering defaults (disabled unless scenario opts in)</span>
+<span class="nt">clustering</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">aggregate_components</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </pre></div>
 </div>
 </section>
@@ -1095,20 +1102,27 @@ document.write(`
 <section id="clustering-configuration">
 <h2>Clustering Configuration<a class="headerlink" href="#clustering-configuration" title="Link to this heading">#</a></h2>
 <p>In <code class="docutils literal notranslate"><span class="pre">config/clustering.yaml</span></code>:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clustering presets</span>
-<span class="nt">gsp</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
-<span class="w">  </span><span class="nt">n_clusters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="w">  </span>
-<span class="nt">regional</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;busmap&quot;</span>
-<span class="w">  </span><span class="nt">regions</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;dno&quot;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clustering presets (example)</span>
+<span class="nt">presets</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">gsp_spatial</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">spatial</span>
+<span class="w">    </span><span class="nt">boundaries_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/network/GSP/GSP_regions_27700_20250109.geojson&quot;</span>
+<span class="w">    </span><span class="nt">cluster_column</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GSPs&quot;</span>
+<span class="w">  </span><span class="nt">kmeans_10</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kmeans</span>
+<span class="w">    </span><span class="nt">n_clusters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
 </pre></div>
 </div>
 <p>Use in scenario:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_clustered</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">preset</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gsp&quot;</span>
+<span class="w">    </span><span class="nt">preset</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gsp_spatial&quot;</span><span class="w">   </span><span class="c1"># or inline: { method: kmeans, n_clusters: 10 }</span>
+
+<span class="w">    </span><span class="c1"># Optional: aggregate identical components after clustering</span>
+<span class="w">    </span><span class="nt">aggregate_components</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical StorageUnits</span>
+<span class="w">      </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Stores (rarely used)</span>
 </pre></div>
 </div>
 </section>

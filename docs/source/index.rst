@@ -1,7 +1,7 @@
 .. PyPSA-GB documentation master file
 
 ==============================================
-PyPSA-GB: Great Britain Power System Model
+PyPSA-GB: Great Britain Energy System Model
 ==============================================
 
 .. raw:: html

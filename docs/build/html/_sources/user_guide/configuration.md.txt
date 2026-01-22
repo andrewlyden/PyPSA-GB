@@ -117,6 +117,14 @@ solve_period:
   enabled: false
   start: null
   end: null
+
+# Clustering defaults (disabled unless scenario opts in)
+clustering:
+  enabled: false
+  aggregate_components:
+    enabled: false
+    include_storage_units: false
+    include_stores: false
 ```
 
 ## Key Parameters
@@ -201,21 +209,28 @@ Half-hourly (30 min) doubles computation time but captures faster dynamics.
 In `config/clustering.yaml`:
 
 ```yaml
-# Clustering presets
-gsp:
-  algorithm: "kmeans"
-  n_clusters: 100
-  
-regional:
-  algorithm: "busmap"
-  regions: "dno"
+# Clustering presets (example)
+presets:
+  gsp_spatial:
+    method: spatial
+    boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
+    cluster_column: "GSPs"
+  kmeans_10:
+    method: kmeans
+    n_clusters: 10
 ```
 
 Use in scenario:
 ```yaml
 HT35_clustered:
   clustering:
-    preset: "gsp"
+    preset: "gsp_spatial"   # or inline: { method: kmeans, n_clusters: 10 }
+
+    # Optional: aggregate identical components after clustering
+    aggregate_components:
+      enabled: true
+      include_storage_units: true   # merge identical StorageUnits
+      include_stores: false         # merge Stores (rarely used)
 ```
 
 ## Environment Variables

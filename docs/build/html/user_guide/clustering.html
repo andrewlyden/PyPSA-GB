@@ -45,7 +45,6 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
@@ -1127,7 +1126,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Network Clustering</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#why-cluster">Why Cluster?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#clustering-methods">Clustering Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clustering-methods-configurable">Clustering Methods (configurable)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#running-clustered-scenarios">Running Clustered Scenarios</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-clustering-works">How Clustering Works</a></li>
@@ -1260,48 +1259,42 @@ document.write(`
 <li><p>Enable faster iteration</p></li>
 </ul>
 </section>
-<section id="clustering-methods">
-<h2>Clustering Methods<a class="headerlink" href="#clustering-methods" title="Link to this heading">#</a></h2>
-<section id="k-means-clustering">
-<h3>K-Means Clustering<a class="headerlink" href="#k-means-clustering" title="Link to this heading">#</a></h3>
-<p>Groups buses based on geographic location:</p>
+<section id="clustering-methods-configurable">
+<h2>Clustering Methods (configurable)<a class="headerlink" href="#clustering-methods-configurable" title="Link to this heading">#</a></h2>
+<p>These map to presets in <code class="docutils literal notranslate"><span class="pre">config/clustering.yaml</span></code> (resolved by <code class="docutils literal notranslate"><span class="pre">clustering:</span> <span class="pre">&lt;preset&gt;</span></code> in <code class="docutils literal notranslate"><span class="pre">scenarios.yaml</span></code>), or can be inlined with <code class="docutils literal notranslate"><span class="pre">clustering:</span> <span class="pre">{</span> <span class="pre">method:</span> <span class="pre">&lt;...&gt;</span> <span class="pre">}</span></code>.</p>
+<section id="k-means-method-kmeans">
+<h3>K-Means (<code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">kmeans</span></code>)<a class="headerlink" href="#k-means-method-kmeans" title="Link to this heading">#</a></h3>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_kmeans</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">    </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
 <span class="w">    </span><span class="nt">n_clusters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
 </pre></div>
 </div>
 <p><strong>Pros</strong>: Simple, fast, good spatial distribution<br />
 <strong>Cons</strong>: May split electrically-connected areas</p>
 </section>
-<section id="gsp-based-clustering">
-<h3>GSP-Based Clustering<a class="headerlink" href="#gsp-based-clustering" title="Link to this heading">#</a></h3>
-<p>Groups buses by Grid Supply Point:</p>
+<section id="gsp-spatial-preset-gsp-spatial-method-spatial">
+<h3>GSP Spatial (<code class="docutils literal notranslate"><span class="pre">preset:</span> <span class="pre">gsp_spatial</span></code>, <code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">spatial</span></code>)<a class="headerlink" href="#gsp-spatial-preset-gsp-spatial-method-spatial" title="Link to this heading">#</a></h3>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_gsp</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
-<span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">    </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gsp&quot;</span>
+<span class="w">  </span><span class="nt">clustering</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gsp_spatial</span><span class="w">    </span><span class="c1"># uses method: spatial + GSP boundaries</span>
 </pre></div>
 </div>
-<p><strong>Pros</strong>: Aligns with FES data granularity<br />
-<strong>Cons</strong>: Fixed number of clusters (~300)</p>
+<p><strong>Pros</strong>: Aligns with FES GSP granularity<br />
+<strong>Cons</strong>: Fixed cluster count (~300)</p>
 </section>
-<section id="regional-clustering">
-<h3>Regional Clustering<a class="headerlink" href="#regional-clustering" title="Link to this heading">#</a></h3>
-<p>Groups by DNO region:</p>
+<section id="busmap-regional-method-busmap">
+<h3>Busmap / Regional (<code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">busmap</span></code>)<a class="headerlink" href="#busmap-regional-method-busmap" title="Link to this heading">#</a></h3>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_regional</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">    </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;regional&quot;</span>
-<span class="w">    </span><span class="nt">regions</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;dno&quot;</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;busmap&quot;</span>
+<span class="w">    </span><span class="nt">busmap_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/zone/zonal_bus_mapping.csv&quot;</span>
 </pre></div>
 </div>
-<p><strong>Pros</strong>: Meaningful regional analysis<br />
-<strong>Cons</strong>: Only ~15 clusters</p>
+<p><strong>Pros</strong>: Meaningful regional analysis, explicit control<br />
+<strong>Cons</strong>: Fixed mapping; you must maintain the CSV</p>
 </section>
 </section>
 <section id="configuration">
@@ -1319,20 +1312,13 @@ document.write(`
 <h3>Advanced Options<a class="headerlink" href="#advanced-options" title="Link to this heading">#</a></h3>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">MyScenario</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">    </span><span class="nt">algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
 <span class="w">    </span><span class="nt">n_clusters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="c1"># Preserve specific buses</span>
-<span class="w">    </span><span class="nt">preserve_buses</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;BEAU41&quot;</span><span class="w">    </span><span class="c1"># Beauly (major Scottish node)</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;HARW41&quot;</span><span class="w">    </span><span class="c1"># Harwich (interconnector)</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="c1"># Weight by generation capacity</span>
-<span class="w">    </span><span class="nt">weight_by</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;generation&quot;</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="c1"># Aggregate line parameters</span>
-<span class="w">    </span><span class="nt">line_aggregation</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;series&quot;</span><span class="w">  </span><span class="c1"># or &quot;parallel&quot;</span>
+<span class="w">    </span><span class="c1"># Optional: post-clustering component aggregation</span>
+<span class="w">    </span><span class="nt">aggregate_components</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical storage units</span>
+<span class="w">      </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Store components</span>
 </pre></div>
 </div>
 </section>
@@ -1369,18 +1355,9 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<
     B3 --&gt; C2
     B4 --&gt; C2
     </pre></section>
-<section id="generator-aggregation">
-<h3>2. Generator Aggregation<a class="headerlink" href="#generator-aggregation" title="Link to this heading">#</a></h3>
-<p>Generators at clustered buses are summed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Original: 3 wind farms at different buses</span>
-<span class="c1"># Bus A: 500 MW wind</span>
-<span class="c1"># Bus B: 300 MW wind  </span>
-<span class="c1"># Bus C: 200 MW wind</span>
-
-<span class="c1"># After clustering (A, B, C → Cluster 1):</span>
-<span class="c1"># Cluster 1: 1000 MW wind</span>
-</pre></div>
-</div>
+<section id="generator-storage-aggregation-optional">
+<h3>2. Generator &amp; Storage Aggregation (optional)<a class="headerlink" href="#generator-storage-aggregation-optional" title="Link to this heading">#</a></h3>
+<p>If <code class="docutils literal notranslate"><span class="pre">aggregate_components.enabled:</span> <span class="pre">true</span></code>, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Dispatch is unchanged, but asset count drops sharply (useful for memory).</p>
 </section>
 <section id="line-aggregation">
 <h3>3. Line Aggregation<a class="headerlink" href="#line-aggregation" title="Link to this heading">#</a></h3>
@@ -1537,11 +1514,15 @@ snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"
 </section>
 <section id="memory-issues">
 <h3>Memory Issues<a class="headerlink" href="#memory-issues" title="Link to this heading">#</a></h3>
-<p>If clustering itself uses too much memory:</p>
+<p>If clustering or solving uses too much memory:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reduce parallel jobs</span>
 snakemake<span class="w"> </span>resources/network/HT35_clustered.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li><p>Enable <code class="docutils literal notranslate"><span class="pre">aggregate_components</span></code> to reduce asset count after clustering.</p></li>
+<li><p>Shorten <code class="docutils literal notranslate"><span class="pre">solve_period</span></code> or increase <code class="docutils literal notranslate"><span class="pre">timestep_minutes</span></code> to reduce time steps during solve.</p></li>
+</ul>
 </section>
 </section>
 </section>
@@ -1593,10 +1574,10 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered.nc<span class=
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-cluster">Why Cluster?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#clustering-methods">Clustering Methods</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#k-means-clustering">K-Means Clustering</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gsp-based-clustering">GSP-Based Clustering</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#regional-clustering">Regional Clustering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#clustering-methods-configurable">Clustering Methods (configurable)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#k-means-method-kmeans">K-Means (<code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">kmeans</span></code>)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gsp-spatial-preset-gsp-spatial-method-spatial">GSP Spatial (<code class="docutils literal notranslate"><span class="pre">preset:</span> <span class="pre">gsp_spatial</span></code>, <code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">spatial</span></code>)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#busmap-regional-method-busmap">Busmap / Regional (<code class="docutils literal notranslate"><span class="pre">method:</span> <span class="pre">busmap</span></code>)</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a><ul class="nav section-nav flex-column">
@@ -1607,7 +1588,7 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered.nc<span class=
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-clustered-scenarios">Running Clustered Scenarios</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-clustering-works">How Clustering Works</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bus-aggregation">1. Bus Aggregation</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generator-aggregation">2. Generator Aggregation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generator-storage-aggregation-optional">2. Generator &amp; Storage Aggregation (optional)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#line-aggregation">3. Line Aggregation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#demand-aggregation">4. Demand Aggregation</a></li>
 </ul>

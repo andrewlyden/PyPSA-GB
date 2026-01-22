@@ -14,54 +14,46 @@ Clustering to 50-200 buses can:
 - Maintain most accuracy for aggregate results
 - Enable faster iteration
 
-## Clustering Methods
+## Clustering Methods (configurable)
 
-### K-Means Clustering
+These map to presets in `config/clustering.yaml` (resolved by `clustering: <preset>` in `scenarios.yaml`), or can be inlined with `clustering: { method: <...> }`.
 
-Groups buses based on geographic location:
+### K-Means (`method: kmeans`)
 
 ```yaml
 HT35_kmeans:
   network_model: "ETYS"
   clustering:
-    enabled: true
-    algorithm: "kmeans"
+    method: "kmeans"
     n_clusters: 100
 ```
 
 **Pros**: Simple, fast, good spatial distribution  
 **Cons**: May split electrically-connected areas
 
-### GSP-Based Clustering
-
-Groups buses by Grid Supply Point:
+### GSP Spatial (`preset: gsp_spatial`, `method: spatial`)
 
 ```yaml
 HT35_gsp:
   network_model: "ETYS"
-  clustering:
-    enabled: true
-    algorithm: "gsp"
+  clustering: gsp_spatial    # uses method: spatial + GSP boundaries
 ```
 
-**Pros**: Aligns with FES data granularity  
-**Cons**: Fixed number of clusters (~300)
+**Pros**: Aligns with FES GSP granularity  
+**Cons**: Fixed cluster count (~300)
 
-### Regional Clustering
-
-Groups by DNO region:
+### Busmap / Regional (`method: busmap`)
 
 ```yaml
 HT35_regional:
   network_model: "ETYS"
   clustering:
-    enabled: true
-    algorithm: "regional"
-    regions: "dno"
+    method: "busmap"
+    busmap_source: "data/zone/zonal_bus_mapping.csv"
 ```
 
-**Pros**: Meaningful regional analysis  
-**Cons**: Only ~15 clusters
+**Pros**: Meaningful regional analysis, explicit control  
+**Cons**: Fixed mapping; you must maintain the CSV
 
 ## Configuration
 
@@ -79,20 +71,13 @@ MyScenario:
 ```yaml
 MyScenario:
   clustering:
-    enabled: true
-    algorithm: "kmeans"
+    method: "kmeans"
     n_clusters: 100
-    
-    # Preserve specific buses
-    preserve_buses:
-      - "BEAU41"    # Beauly (major Scottish node)
-      - "HARW41"    # Harwich (interconnector)
-    
-    # Weight by generation capacity
-    weight_by: "generation"
-    
-    # Aggregate line parameters
-    line_aggregation: "series"  # or "parallel"
+    # Optional: post-clustering component aggregation
+    aggregate_components:
+      enabled: true
+      include_storage_units: true   # merge identical storage units
+      include_stores: false         # merge Store components
 ```
 
 ## Running Clustered Scenarios
@@ -130,19 +115,9 @@ flowchart LR
     B4 --> C2
 ```
 
-### 2. Generator Aggregation
+### 2. Generator & Storage Aggregation (optional)
 
-Generators at clustered buses are summed:
-
-```python
-# Original: 3 wind farms at different buses
-# Bus A: 500 MW wind
-# Bus B: 300 MW wind  
-# Bus C: 200 MW wind
-
-# After clustering (A, B, C → Cluster 1):
-# Cluster 1: 1000 MW wind
-```
+If `aggregate_components.enabled: true`, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Dispatch is unchanged, but asset count drops sharply (useful for memory).
 
 ### 3. Line Aggregation
 
@@ -275,9 +250,12 @@ Expected differences are 5-15%. If larger:
 
 ### Memory Issues
 
-If clustering itself uses too much memory:
+If clustering or solving uses too much memory:
 
 ```bash
 # Reduce parallel jobs
 snakemake resources/network/HT35_clustered.nc -j 1
 ```
+
+- Enable `aggregate_components` to reduce asset count after clustering.
+- Shorten `solve_period` or increase `timestep_minutes` to reduce time steps during solve.
