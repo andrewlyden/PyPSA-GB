@@ -411,6 +411,7 @@ const load = async () => {
 window.addEventListener("load", load);
 </script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/clustering';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Data Reference" href="../data_reference/index.html" />
@@ -1317,6 +1318,7 @@ document.write(`
 <span class="w">    </span><span class="c1"># Optional: post-clustering component aggregation</span>
 <span class="w">    </span><span class="nt">aggregate_components</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">include_loads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># merge loads per bus</span>
 <span class="w">      </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical storage units</span>
 <span class="w">      </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Store components</span>
 </pre></div>
@@ -1357,7 +1359,7 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<
     </pre></section>
 <section id="generator-storage-aggregation-optional">
 <h3>2. Generator &amp; Storage Aggregation (optional)<a class="headerlink" href="#generator-storage-aggregation-optional" title="Link to this heading">#</a></h3>
-<p>If <code class="docutils literal notranslate"><span class="pre">aggregate_components.enabled:</span> <span class="pre">true</span></code>, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Dispatch is unchanged, but asset count drops sharply (useful for memory).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">aggregate_components.enabled:</span> <span class="pre">true</span></code>, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. Dispatch is unchanged, but asset count drops sharply (useful for memory).</p>
 </section>
 <section id="line-aggregation">
 <h3>3. Line Aggregation<a class="headerlink" href="#line-aggregation" title="Link to this heading">#</a></h3>
