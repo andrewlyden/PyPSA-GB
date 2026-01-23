@@ -39,6 +39,48 @@ DEFAULT_IGNORE_COLUMNS = {
 }
 
 
+def _aggregate_loads_by_bus(network: pypsa.Network) -> int:
+    """Aggregate loads on the same bus by summing their time series."""
+    if network.loads.empty:
+        return 0
+
+    original_index_name = network.loads.index.name
+    removed = 0
+    new_rows = []
+    new_p_set = {}
+    new_q_set = {}
+
+    p_set = getattr(network.loads_t, "p_set", None)
+    q_set = getattr(network.loads_t, "q_set", None)
+
+    for bus, group in network.loads.groupby("bus"):
+        names = list(group.index)
+        base = group.iloc[0].copy()
+        new_name = names[0] if len(names) == 1 else f"{bus}_load"
+        base.name = new_name
+        new_rows.append(base)
+
+        if p_set is not None and not p_set.empty:
+            cols = [c for c in names if c in p_set.columns]
+            if cols:
+                new_p_set[new_name] = p_set[cols].sum(axis=1)
+        if q_set is not None and not q_set.empty:
+            cols = [c for c in names if c in q_set.columns]
+            if cols:
+                new_q_set[new_name] = q_set[cols].sum(axis=1)
+
+        removed += len(names) - 1
+
+    network.loads = pd.DataFrame(new_rows)
+    network.loads.index.name = original_index_name or "load"
+    if new_p_set:
+        network.loads_t.p_set = pd.DataFrame(new_p_set, index=p_set.index)
+    if new_q_set:
+        network.loads_t.q_set = pd.DataFrame(new_q_set, index=q_set.index)
+
+    return removed
+
+
 def _hash_series(series: pd.Series) -> int:
     """Stable hash for time series columns."""
     if series is None or series.empty:
@@ -207,6 +249,7 @@ def main():
     include_generators = agg_config.get("include_generators", True)
     include_storage_units = agg_config.get("include_storage_units", True)
     include_stores = agg_config.get("include_stores", False)
+    include_loads = agg_config.get("include_loads", True)
     include_committable = agg_config.get("include_committable", False)
     tol = agg_config.get("tolerance", 1e-9)
 
@@ -244,6 +287,9 @@ def main():
             tol=tol,
         )
 
+    if include_loads:
+        removed_total += _aggregate_loads_by_bus(network)
+
     logger.info(f"Total components removed via aggregation: {removed_total}")
     save_network(network, output_path, custom_logger=logger)
 
@@ -258,6 +304,7 @@ def main():
             "include_generators": include_generators,
             "include_storage_units": include_storage_units,
             "include_stores": include_stores,
+            "include_loads": include_loads,
         },
     )
 

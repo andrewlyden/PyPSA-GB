@@ -76,6 +76,7 @@ MyScenario:
     # Optional: post-clustering component aggregation
     aggregate_components:
       enabled: true
+      include_loads: true           # merge loads per bus
       include_storage_units: true   # merge identical storage units
       include_stores: false         # merge Store components
 ```
@@ -117,7 +118,7 @@ flowchart LR
 
 ### 2. Generator & Storage Aggregation (optional)
 
-If `aggregate_components.enabled: true`, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Dispatch is unchanged, but asset count drops sharply (useful for memory).
+If `aggregate_components.enabled: true`, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. Dispatch is unchanged, but asset count drops sharply (useful for memory).
 
 ### 3. Line Aggregation
 

@@ -229,6 +229,7 @@ HT35_clustered:
     # Optional: aggregate identical components after clustering
     aggregate_components:
       enabled: true
+      include_loads: true            # merge loads per bus
       include_storage_units: true   # merge identical StorageUnits
       include_stores: false         # merge Stores (rarely used)
 ```
