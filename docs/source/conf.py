@@ -204,6 +204,9 @@ html_theme_options = {
 html_static_path = ['_static']
 html_css_files = ['custom.css']
 
+# Gurubase "Ask AI" widget
+html_js_files = ['gurubase-widget.js']
+
 # Custom sidebar
 html_sidebars = {
     '**': [
