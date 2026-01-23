@@ -122,28 +122,85 @@ def build_historical_bus_distribution(network: pypsa.Network, carrier: str) -> d
     return bus_weights
 
 
+def _extract_transmission_region(gsp_value: str) -> str:
+    """
+    Extract transmission region from GSP string like 'Direct(NGET)'.
+
+    The three transmission network operators in GB are:
+    - SHETL: Scottish Hydro Electric Transmission Limited (Northern Scotland, lat > 57.0)
+    - SPTL: Scottish Power Transmission Limited (Southern Scotland, 55.5 < lat <= 57.0)
+    - NGET: National Grid Electricity Transmission (England & Wales, lat <= 55.5)
+
+    Args:
+        gsp_value: GSP string, e.g., 'Direct(NGET)', 'Direct(SPTL)', 'Direct(SHETL)'
+
+    Returns:
+        Region code: 'SHETL', 'SPTL', or 'NGET'
+    """
+    gsp_str = str(gsp_value)
+    if 'SHETL' in gsp_str:
+        return 'SHETL'
+    elif 'SPTL' in gsp_str:
+        return 'SPTL'
+    return 'NGET'  # Default for Direct(NGET) and unspecified
+
+
+def _get_buses_in_region(network: pypsa.Network, region: str) -> list:
+    """
+    Get list of bus names within a transmission region based on latitude.
+
+    Uses approximate latitude bands matching the transmission network boundaries:
+    - SHETL: Northern Scotland (y > 57.0)
+    - SPTL: Southern Scotland (55.5 < y <= 57.0)
+    - NGET: England & Wales (y <= 55.5)
+
+    Args:
+        network: PyPSA Network with buses having 'y' coordinate (latitude)
+        region: Region code ('SHETL', 'SPTL', or 'NGET')
+
+    Returns:
+        List of bus names in the region
+    """
+    buses = network.buses
+
+    if region == 'SHETL':
+        region_buses = buses[buses['y'] > 57.0]
+    elif region == 'SPTL':
+        region_buses = buses[(buses['y'] > 55.5) & (buses['y'] <= 57.0)]
+    else:  # NGET
+        region_buses = buses[buses['y'] <= 55.5]
+
+    return region_buses.index.tolist()
+
+
 def distribute_fes_generators_spatially(
-    fes_data: pd.DataFrame, 
+    fes_data: pd.DataFrame,
     network: pypsa.Network,
     repd_sites: pd.DataFrame = None
 ) -> pd.DataFrame:
     """
-    Distribute FES "Direct" connected generators spatially based on historical patterns.
-    
-    For FES generators connected to "Direct(NGET)", "Direct(SPTL)", etc., this function:
-    1. Identifies the carrier type of each generator
-    2. Looks up historical bus distribution for that carrier from REPD/existing network
-    3. Distributes the FES capacity proportionally across those buses
-    
-    This ensures future scenarios maintain realistic spatial distribution of generation.
-    
+    Distribute FES "Direct" connected generators spatially based on transmission region.
+
+    For FES generators connected to "Direct(NGET)", "Direct(SPTL)", or "Direct(SHETL)",
+    this function:
+    1. Extracts the transmission region from the GSP field
+    2. Filters buses to only those within the geographic region:
+       - SHETL: Northern Scotland (lat > 57.0)
+       - SPTL: Southern Scotland (55.5 < lat <= 57.0)
+       - NGET: England & Wales (lat <= 55.5)
+    3. Looks up historical bus distribution for that carrier within the region
+    4. Distributes the FES capacity proportionally across region-appropriate buses
+
+    This ensures future scenarios maintain realistic spatial distribution of generation
+    within the correct transmission network areas.
+
     Args:
         fes_data: DataFrame with FES generators (must have 'gsp', 'capacity_mw', 'fuel_type' columns)
         network: PyPSA Network with existing generators and buses
         repd_sites: Optional REPD sites DataFrame for additional spatial reference
-        
+
     Returns:
-        Updated DataFrame with generators distributed across multiple buses
+        Updated DataFrame with generators distributed across buses within their regions
     """
     if 'gsp' not in fes_data.columns:
         logger.info("No GSP column in FES data - skipping spatial distribution")
@@ -157,75 +214,109 @@ def distribute_fes_generators_spatially(
     
     direct_gens = fes_data[direct_mask].copy()
     non_direct_gens = fes_data[~direct_mask].copy()
-    
+
     if len(direct_gens) == 0:
         logger.info("No 'Direct' connected FES generators to distribute")
         return fes_data
-    
+
+    # Extract transmission region from GSP (e.g., 'Direct(NGET)' -> 'NGET')
+    direct_gens['region'] = direct_gens['gsp'].apply(_extract_transmission_region)
+
     logger.info(f"Distributing {len(direct_gens)} 'Direct' connected FES generators spatially")
     direct_capacity = direct_gens['capacity_mw'].sum()
     logger.info(f"  Total 'Direct' capacity: {direct_capacity:,.1f} MW")
-    
-    # Group Direct generators by carrier/fuel_type
+
+    # Log breakdown by region
+    for region in direct_gens['region'].unique():
+        region_cap = direct_gens[direct_gens['region'] == region]['capacity_mw'].sum()
+        logger.info(f"    {region}: {region_cap:,.1f} MW")
+
+    # Group Direct generators by carrier/fuel_type AND region
     carrier_col = 'fuel_type' if 'fuel_type' in direct_gens.columns else 'carrier'
-    
+
     distributed_rows = []
-    
-    for carrier, carrier_gens in direct_gens.groupby(carrier_col):
+
+    for (carrier, region), carrier_gens in direct_gens.groupby([carrier_col, 'region']):
         carrier_capacity = carrier_gens['capacity_mw'].sum()
-        logger.info(f"  Distributing {carrier}: {carrier_capacity:,.1f} MW")
-        
+        logger.info(f"  Distributing {carrier} in {region}: {carrier_capacity:,.1f} MW")
+
+        # Get the list of buses in this transmission region
+        region_buses = set(_get_buses_in_region(network, region))
+        if not region_buses:
+            logger.warning(f"    No buses found in region {region}, using all buses")
+            region_buses = set(network.buses.index)
+
         # Get historical bus distribution for this carrier
         bus_weights = build_historical_bus_distribution(network, carrier)
-        
+
+        # Filter to only buses in the region
+        if bus_weights:
+            bus_weights = {b: w for b, w in bus_weights.items() if b in region_buses}
+            # Re-normalize weights after filtering
+            if bus_weights:
+                total_weight = sum(bus_weights.values())
+                bus_weights = {b: w / total_weight for b, w in bus_weights.items()}
+                logger.info(f"    Using historical pattern: {len(bus_weights)} buses in {region}")
+
         if not bus_weights:
-            # No historical pattern - try to use REPD sites if available
+            # No historical pattern in region - try to use REPD sites if available
             if repd_sites is not None and len(repd_sites) > 0:
                 # Look for matching carrier in REPD
                 repd_match = repd_sites[repd_sites['fuel_type'].str.lower() == carrier.lower()]
                 if len(repd_match) > 0 and 'bus' in repd_match.columns:
-                    bus_capacity = repd_match.groupby('bus')['capacity_mw'].sum()
-                    total = bus_capacity.sum()
-                    if total > 0:
-                        bus_weights = (bus_capacity / total).to_dict()
-                        logger.info(f"    Using REPD distribution: {len(bus_weights)} buses")
-        
+                    # Filter REPD sites to region
+                    repd_match = repd_match[repd_match['bus'].isin(region_buses)]
+                    if len(repd_match) > 0:
+                        bus_capacity = repd_match.groupby('bus')['capacity_mw'].sum()
+                        total = bus_capacity.sum()
+                        if total > 0:
+                            bus_weights = (bus_capacity / total).to_dict()
+                            logger.info(f"    Using REPD distribution: {len(bus_weights)} buses in {region}")
+
         if not bus_weights:
-            # Still no pattern - use network bus degree as fallback
-            logger.warning(f"    No historical pattern for {carrier} - using major buses")
-            # Find major transmission buses (high connectivity)
+            # Still no pattern - use network bus degree in region as fallback
+            logger.warning(f"    No historical pattern for {carrier} in {region} - using major buses in region")
+            # Find major transmission buses (high connectivity) within the region
             bus_degree = {}
             for line in network.lines.index:
                 b0, b1 = network.lines.loc[line, ['bus0', 'bus1']]
-                bus_degree[b0] = bus_degree.get(b0, 0) + 1
-                bus_degree[b1] = bus_degree.get(b1, 0) + 1
-            
-            # Use top 20 most connected buses
-            sorted_buses = sorted(bus_degree.items(), key=lambda x: x[1], reverse=True)[:20]
-            total_degree = sum(d for _, d in sorted_buses)
-            bus_weights = {b: d/total_degree for b, d in sorted_buses}
-        
+                if b0 in region_buses:
+                    bus_degree[b0] = bus_degree.get(b0, 0) + 1
+                if b1 in region_buses:
+                    bus_degree[b1] = bus_degree.get(b1, 0) + 1
+
+            if bus_degree:
+                # Use top 20 most connected buses in the region
+                sorted_buses = sorted(bus_degree.items(), key=lambda x: x[1], reverse=True)[:20]
+                total_degree = sum(d for _, d in sorted_buses)
+                bus_weights = {b: d / total_degree for b, d in sorted_buses}
+            else:
+                # Last resort: distribute evenly across all buses in region
+                logger.warning(f"    No connected buses in {region}, using even distribution")
+                bus_weights = {b: 1.0 / len(region_buses) for b in region_buses}
+
         # Distribute this carrier's capacity across buses
+        buses_used = 0
         for bus, weight in bus_weights.items():
             if bus not in network.buses.index:
                 continue
-            
+
             allocated_capacity = carrier_capacity * weight
             if allocated_capacity < 0.1:  # Skip very small allocations
                 continue
-            
+
             # Create a new row for this bus allocation
             # Use the first generator in this carrier group as template
             template_row = carrier_gens.iloc[0].to_dict()
             template_row['bus'] = bus
             template_row['capacity_mw'] = allocated_capacity
             # Update station name to indicate distributed allocation
-            original_name = template_row.get('technology', carrier)
-            template_row['station_name'] = f"FES_{carrier}_{bus}"
-            
+            template_row['station_name'] = f"FES_{carrier}_{region}_{bus}"
+
             distributed_rows.append(template_row)
-        
-        logger.info(f"    Distributed to {len(bus_weights)} buses")
+            buses_used += 1
+
+        logger.info(f"    Distributed to {buses_used} buses in {region}")
     
     # Combine distributed generators with non-direct generators
     if distributed_rows:

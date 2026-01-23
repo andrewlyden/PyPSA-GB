@@ -94,7 +94,7 @@ if unknown:
 # ------------------------------------------------------------------------------
 
 import logging
-logging.basicConfig(level=logging.WARNING)  # Suppress INFO logging during initialization
+logging.basicConfig(level=logging.INFO)  # Enable INFO logging during initialization
 
 enhanced_scenarios = {}
 validation_errors = []

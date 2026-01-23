@@ -284,7 +284,7 @@ rule generate_renewable_profiles:
         # Note: Removed other technologies as they don't require weather-based timeseries:
         # - Geothermal: dispatchable baseload (p_max_pu ~0.9)
         # - Large Hydro: storage-like operation (no generation profile needed)
-        # - Tidal Stream/Wave/Lagoon: synthetic cyclic timeseries (separate rule if needed)
+        # - Tidal Stream/Wave/Lagoon: separate rule
         # - Storage technologies: modeled as storage units, not generators
     params:
         renewables_year=lambda wc: sorted(required_years),
