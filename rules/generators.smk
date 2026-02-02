@@ -957,17 +957,45 @@ rule finalize_generator_integration:
 
 rule apply_marginal_costs_to_network:
     """
-    Compute and apply time-varying marginal costs to thermal generators.
-    
-    This rule calculates marginal costs based on:
-      - Fuel prices (gas, coal, oil) - time-varying from FES or defaults
-      - Carbon prices (UK ETS + carbon support price) - time-varying
-      - Generator efficiency (thermal efficiency affects fuel cost per MWh)
-      - Emission factors (CO2 kg/MWh by fuel type)
-    
-    Marginal Cost Formula:
+    Compute and apply marginal costs to thermal generators.
+
+    CONFIGURATION:
+    --------------
+    Marginal costs are configured in YAML files (no code editing needed):
+
+    In config/defaults.yaml (project-wide defaults):
+        marginal_costs:
+          carbon_price: 85.0              # £/tonne CO2
+          fuel_prices:
+            gas: 35.0                     # £/MWh thermal
+            coal: 30.0
+          use_fes_prices: true            # Use FES dynamic prices if available
+
+    In config/scenarios.yaml (scenario-specific override):
+        My_Scenario:
+          modelled_year: 2035
+          FES_year: 2024
+          marginal_costs:
+            carbon_price: 150.0           # Override carbon price
+            fuel_prices:
+              gas: 50.0                   # Override gas price only
+
+    AUTOMATIC BEHAVIOR:
+    -------------------
+    Priority order for price selection:
+      1. Scenario-specific override (scenarios.yaml)
+      2. Historical lookup tables (for modelled_year ≤ 2024)
+      3. FES dynamic prices (if FES_year specified and use_fes_prices=true)
+      4. Configuration defaults (defaults.yaml)
+      5. Fallback hardcoded values
+
+    Historical scenarios (≤2024): Uses built-in historical lookup tables
+    Future scenarios (>2024): Uses FES projections → config defaults → fallback
+
+    MARGINAL COST FORMULA:
+    ----------------------
       MC = (Fuel_Price / Efficiency) + (Carbon_Price × Emission_Factor / Efficiency)
-    
+
     Typical Values (2024):
       - CCGT: £50-80/MWh (gas £30-50 + carbon £20-30)
       - OCGT: £80-120/MWh (less efficient than CCGT)
@@ -975,35 +1003,36 @@ rule apply_marginal_costs_to_network:
       - Nuclear: £15/MWh (low marginal operating cost)
       - Renewables: £0/MWh (zero fuel cost)
       - Storage: £0.05-0.20/MWh (wear and tear)
-    
-    Data Sources:
-      - Historical (≤2024): BEIS fuel price data + UK ETS prices
-      - Future (>2024): FES fuel/carbon price projections
-    
+
+    INPUT/OUTPUT:
+    -------------
     Input:
       - Network with generators (zero marginal costs from integration)
-      - Optional: Fuel price time series (CSV)
-      - Optional: Carbon price time series (CSV)
-    
+      - Optional: FES fuel/carbon price CSVs (auto-loaded for future scenarios)
+
     Output:
       - Updated network with marginal costs applied to generators
       - CSV with marginal cost breakdown (fuel + carbon components)
-    
+
     Performance: ~5-10 seconds
-    
+
     Critical for Optimization:
       Without marginal costs, thermal generators have zero cost, creating
       unbounded optimization (infinite free generation + storage arbitrage).
     """
     input:
-        network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl"
+        network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
+        # Optional: FES price inputs for future scenarios (>2024)
+        fuel_prices=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
+        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_costs.pkl",
         marginal_costs_csv=f"{resources_path}/generators/{{scenario}}_marginal_costs_breakdown.csv"
     params:
         scenario_config=lambda w: scenarios[w.scenario],
-        carbon_price=lambda w: scenarios[w.scenario].get('carbon_price', 85.0),  # £/tonne CO2
-        fuel_prices=lambda w: scenarios[w.scenario].get('fuel_prices', {})  # Optional override
+        # Optional: Pass FES price file paths to script for dynamic price loading
+        fuel_price_file=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
+        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None
     log:
         "logs/marginal_costs_{scenario}.log"
     benchmark:
@@ -1106,74 +1135,19 @@ rule add_generators:
 
 
 # =============================================================================
-# MARGINAL COST CALCULATION
+# LEGACY MARGINAL COST RULES - REMOVED
 # =============================================================================
-
-rule compute_marginal_costs:
-    """
-    Compute marginal costs for all generators in the network.
-    
-    This rule calculates fuel costs, carbon costs, and total marginal costs
-    for each generator based on their carrier type, efficiency, and current
-    fuel and carbon prices.
-    
-    Dependencies:
-    - Network with generators integrated
-    - Fuel price data (from FES or configuration)
-    - Carbon price data (from FES or configuration)
-    
-    Outputs:
-    - CSV file with detailed marginal costs per generator
-    
-    Usage:
-        snakemake resources/marginal_costs/marginal_costs_{scenario}.csv --cores 1
-    """
-    input:
-        network=f"{resources_path}/network/{{scenario}}_base_demand_generators.nc"
-    output:
-        marginal_costs=f"{resources_path}/marginal_costs/marginal_costs_{{scenario}}.csv"
-    params:
-        scenario=lambda wildcards: wildcards.scenario
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/marginal_costs_{scenario}.log"
-    script:
-        "../scripts/generators/marginal_costs.py"
-
-
-rule compute_marginal_costs_with_update:
-    """
-    Compute marginal costs and update the network file.
-    
-    This variant updates the network generators with the computed marginal costs
-    and saves the updated network. This is useful when you want the marginal costs
-    embedded directly in the network file for optimization.
-    
-    Dependencies:
-    - Network with generators integrated
-    - Fuel price data (from FES or configuration)
-    - Carbon price data (from FES or configuration)
-    
-    Outputs:
-    - Updated network file with marginal costs applied to generators
-    - Detailed CSV file with marginal cost breakdown
-    
-    Usage:
-        snakemake resources/network/{scenario}_with_costs.nc --cores 1
-    """
-    input:
-        network=f"{resources_path}/network/{{scenario}}_base_demand_generators.nc"
-    output:
-        network_updated=f"{resources_path}/network/{{scenario}}_with_costs.nc",
-        marginal_costs=f"{resources_path}/marginal_costs/marginal_costs_{{scenario}}_detailed.csv"
-    params:
-        scenario=lambda wildcards: wildcards.scenario,
-        update_network=True
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/marginal_costs_update_{scenario}.log"
-    script:
-        "../scripts/generators/marginal_costs.py"
+# The legacy compute_marginal_costs and compute_marginal_costs_with_update rules
+# have been removed. These used scripts/generators/marginal_costs.py which is NOT
+# part of the main workflow.
+#
+# For marginal cost calculation, the active rule is:
+#   apply_marginal_costs_to_network (line 958)
+#
+# This rule uses scripts/generators/apply_marginal_costs.py and is integrated
+# into the standard workflow.
+#
+# Configuration is now via config/defaults.yaml and config/scenarios.yaml.
+# See documentation for details.
+# =============================================================================
 

@@ -81,7 +81,13 @@ CARBON_EMISSION_FACTORS = {
     'tidal_stream': 15,
     'shoreline_wave': 15,
     'Conventional Steam': 846,  # Assume coal-based
-    'Conventional steam': 846
+    'Conventional steam': 846,
+    # Future/emerging technologies
+    'H2': 0,               # Green hydrogen (negligible lifecycle emissions)
+    'micro_CHP': 488,      # Natural gas basis (same as CCGT)
+    'gas_engine': 600,     # Reciprocating engine (higher emissions than turbine)
+    'fuel_cell': 0,        # Assume green hydrogen input
+    'CHP': 488             # Combined Heat & Power (natural gas basis)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -182,33 +188,39 @@ def get_historical_carbon_price(year: int) -> float:
 
 def load_fuel_prices(scenario_config: dict) -> dict:
     """
-    Load fuel prices - automatically uses historical values for historical scenarios.
-    
-    Logic:
-    1. If scenario explicitly provides fuel_prices, use those
-    2. If modelled_year <= 2024 (historical), use historical lookup table
-    3. Otherwise, use default future prices
-    
+    Load fuel prices with automatic source selection.
+
+    Priority order:
+    1. Scenario-specific override in scenarios.yaml (marginal_costs.fuel_prices)
+    2. Historical lookup table (for modelled_year ≤ 2024)
+    3. FES dynamic prices (if FES_year specified, use_fes_prices=true, and CSV exists)
+    4. Configuration defaults from defaults.yaml (marginal_costs.fuel_prices)
+    5. Fallback hardcoded values (for backward compatibility)
+
     Parameters
     ----------
     scenario_config : dict
-        Scenario configuration dictionary
-        
+        Scenario configuration dictionary (includes defaults merged in)
+
     Returns
     -------
     dict
         Fuel prices in £/MWh_thermal (before efficiency adjustment)
     """
-    # Check if scenario explicitly provides fuel prices (override)
-    fuel_prices = scenario_config.get('fuel_prices', {})
-    
-    if fuel_prices:
-        logger.info(f"Using scenario-specific fuel prices (explicit override): {fuel_prices}")
-        return _expand_fuel_prices(fuel_prices)
-    
-    # Check if this is a historical scenario
+    # Load marginal cost configuration
+    mc_config = load_marginal_cost_config(scenario_config)
+
+    # 1. Check if scenario explicitly provides fuel prices (highest priority override)
+    if 'marginal_costs' in scenario_config and 'fuel_prices' in scenario_config['marginal_costs']:
+        explicit_prices = scenario_config['marginal_costs']['fuel_prices']
+        logger.info(f"Using scenario-specific fuel prices (explicit override):")
+        for fuel, price in explicit_prices.items():
+            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
+        return _expand_fuel_prices(explicit_prices)
+
+    # 2. Check if this is a historical scenario
     modelled_year = scenario_config.get('modelled_year')
-    
+
     if modelled_year and modelled_year <= 2024:
         # Historical scenario - use historical lookup
         historical_prices = get_historical_fuel_prices(modelled_year)
@@ -216,18 +228,25 @@ def load_fuel_prices(scenario_config: dict) -> dict:
         for fuel, price in historical_prices.items():
             logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
         return _expand_fuel_prices(historical_prices)
-    
-    # Future scenario or no year specified - use defaults
-    logger.info("Using DEFAULT fuel prices (future scenario):")
-    default_prices = {
-        'gas': 35.0,
-        'coal': 30.0,
-        'oil': 75.0,
-        'biomass': 45.0
-    }
-    for fuel, price in default_prices.items():
+
+    # 3. Try FES dynamic prices for future scenarios
+    if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:
+        fes_year = scenario_config.get('FES_year')
+        fuel_price_file = scenario_config.get('_fuel_price_file')  # Passed from Snakemake params
+
+        if fes_year:
+            fes_prices = load_fes_fuel_prices(fes_year, modelled_year, fuel_price_file)
+            if fes_prices:
+                logger.info(f"Using FES DYNAMIC fuel prices for {modelled_year} (FES {fes_year})")
+                return _expand_fuel_prices(fes_prices)
+            else:
+                logger.info(f"FES fuel prices not available, falling back to configured defaults")
+
+    # 4. Use configured defaults from defaults.yaml
+    logger.info(f"Using CONFIGURED DEFAULT fuel prices (future scenario):")
+    for fuel, price in mc_config['fuel_prices'].items():
         logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-    return _expand_fuel_prices(default_prices)
+    return _expand_fuel_prices(mc_config['fuel_prices'])
 
 
 def _expand_fuel_prices(base_prices: dict) -> dict:
@@ -312,49 +331,260 @@ def _expand_fuel_prices(base_prices: dict) -> dict:
         # Marine renewables
         'geothermal': 3.0,
         'tidal_stream': 1.0,
-        'shoreline_wave': 1.0
+        'shoreline_wave': 1.0,
+
+        # Future/emerging technologies
+        'H2': 50.0,                  # Hydrogen production cost
+        'micro_CHP': gas_price,      # Same as CCGT/OCGT (natural gas)
+        'gas_engine': gas_price,     # Natural gas fuel
+        'fuel_cell': 50.0,           # High hydrogen cost
+        'CHP': gas_price,            # Combined Heat & Power (was defaulting to 0, should be gas)
+        'waste': biomass_price * 0.5 # Waste-to-energy (low/negative gate fee)
     }
+
+
+def load_marginal_cost_config(scenario_config: dict) -> dict:
+    """
+    Load marginal cost configuration from scenario config (merged with defaults).
+
+    Parameters
+    ----------
+    scenario_config : dict
+        Scenario configuration dictionary (includes defaults.yaml merged in)
+
+    Returns
+    -------
+    dict
+        {'carbon_price': float, 'fuel_prices': dict, 'use_fes_prices': bool}
+    """
+    # Get marginal_costs block from scenario config (merged with defaults)
+    mc_config = scenario_config.get('marginal_costs', {})
+
+    # Fallback defaults (for backward compatibility if not in config)
+    default_carbon = 85.0
+    default_fuels = {
+        'gas': 35.0, 'coal': 30.0, 'oil': 75.0, 'biomass': 45.0,
+        'nuclear': 8.0, 'hydro': 5.0, 'wind': 0.5, 'solar': 0.5,
+        'battery': 0.1
+    }
+
+    # Get carbon price (scenario override → config default → hardcoded)
+    carbon_price = mc_config.get('carbon_price', default_carbon)
+
+    # Get fuel prices (merge scenario overrides with defaults)
+    config_fuels = mc_config.get('fuel_prices', {})
+    fuel_prices = {**default_fuels, **config_fuels}
+
+    # Get FES price usage flag
+    use_fes_prices = mc_config.get('use_fes_prices', True)
+
+    logger.debug("Marginal cost configuration:")
+    logger.debug(f"  Carbon price: £{carbon_price:.2f}/tonne CO2")
+    logger.debug(f"  Use FES prices: {use_fes_prices}")
+    if config_fuels:
+        logger.debug(f"  Fuel price overrides: {list(config_fuels.keys())}")
+
+    return {
+        'carbon_price': carbon_price,
+        'fuel_prices': fuel_prices,
+        'use_fes_prices': use_fes_prices
+    }
+
+
+def load_fes_fuel_prices(fes_year: int, modelled_year: int, fuel_price_file: str = None) -> dict:
+    """
+    Load dynamic fuel prices from FES extraction CSV files.
+
+    Parameters
+    ----------
+    fes_year : int
+        FES publication year (e.g., 2024)
+    modelled_year : int
+        Target year for prices (e.g., 2035)
+    fuel_price_file : str, optional
+        Path to FES fuel prices CSV. If None, constructs from fes_year.
+
+    Returns
+    -------
+    dict
+        Fuel prices by carrier {fuel: price_gbp_per_mwh_thermal}
+    """
+    from pathlib import Path
+
+    if fuel_price_file is None:
+        fuel_price_file = f"resources/marginal_costs/fuel_prices_{fes_year}.csv"
+
+    fuel_price_path = Path(fuel_price_file)
+
+    if not fuel_price_path.exists():
+        logger.warning(f"FES fuel price file not found: {fuel_price_file}")
+        return None
+
+    try:
+        # Read FES price CSV
+        df = pd.read_csv(fuel_price_path)
+
+        # Expected columns: [year, fuel, price_gbp_per_mwh_thermal]
+        if 'year' not in df.columns or 'fuel' not in df.columns or 'price_gbp_per_mwh_thermal' not in df.columns:
+            logger.warning(f"FES fuel price CSV has unexpected format: {df.columns.tolist()}")
+            return None
+
+        # Filter/interpolate for modelled_year
+        fuel_prices = {}
+        for fuel in df['fuel'].unique():
+            fuel_df = df[df['fuel'] == fuel].sort_values('year')
+
+            if len(fuel_df) == 0:
+                continue
+
+            # Exact match
+            exact = fuel_df[fuel_df['year'] == modelled_year]
+            if len(exact) > 0:
+                fuel_prices[fuel] = float(exact.iloc[0]['price_gbp_per_mwh_thermal'])
+                continue
+
+            # Interpolate
+            years = fuel_df['year'].values
+            prices = fuel_df['price_gbp_per_mwh_thermal'].values
+
+            if modelled_year < years.min():
+                fuel_prices[fuel] = float(prices[0])
+            elif modelled_year > years.max():
+                fuel_prices[fuel] = float(prices[-1])
+            else:
+                fuel_prices[fuel] = float(np.interp(modelled_year, years, prices))
+
+        logger.info(f"Loaded FES fuel prices for {modelled_year} from FES {fes_year}:")
+        for fuel, price in fuel_prices.items():
+            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
+
+        return fuel_prices
+
+    except Exception as e:
+        logger.warning(f"Failed to load FES fuel prices from {fuel_price_file}: {e}")
+        return None
+
+
+def load_fes_carbon_price(fes_year: int, modelled_year: int, carbon_price_file: str = None) -> float:
+    """
+    Load dynamic carbon price from FES extraction CSV.
+
+    Parameters
+    ----------
+    fes_year : int
+        FES publication year (e.g., 2024)
+    modelled_year : int
+        Target year for price (e.g., 2035)
+    carbon_price_file : str, optional
+        Path to FES carbon prices CSV. If None, constructs from fes_year.
+
+    Returns
+    -------
+    float or None
+        Carbon price in £/tonne CO2, or None if not available
+    """
+    from pathlib import Path
+
+    if carbon_price_file is None:
+        carbon_price_file = f"resources/marginal_costs/carbon_prices_{fes_year}.csv"
+
+    carbon_price_path = Path(carbon_price_file)
+
+    if not carbon_price_path.exists():
+        logger.warning(f"FES carbon price file not found: {carbon_price_file}")
+        return None
+
+    try:
+        # Read FES price CSV
+        df = pd.read_csv(carbon_price_path)
+
+        # Expected columns: [year, carbon_price_gbp_per_tco2]
+        if 'year' not in df.columns or 'carbon_price_gbp_per_tco2' not in df.columns:
+            logger.warning(f"FES carbon price CSV has unexpected format: {df.columns.tolist()}")
+            return None
+
+        df = df.sort_values('year')
+        years = df['year'].values
+        prices = df['carbon_price_gbp_per_tco2'].values
+
+        # Exact match
+        exact = df[df['year'] == modelled_year]
+        if len(exact) > 0:
+            carbon_price = float(exact.iloc[0]['carbon_price_gbp_per_tco2'])
+            logger.info(f"Loaded FES carbon price for {modelled_year} from FES {fes_year}: £{carbon_price:.2f}/tonne CO2")
+            return carbon_price
+
+        # Interpolate
+        if modelled_year < years.min():
+            carbon_price = float(prices[0])
+        elif modelled_year > years.max():
+            carbon_price = float(prices[-1])
+        else:
+            carbon_price = float(np.interp(modelled_year, years, prices))
+
+        logger.info(f"Interpolated FES carbon price for {modelled_year} from FES {fes_year}: £{carbon_price:.2f}/tonne CO2")
+        return carbon_price
+
+    except Exception as e:
+        logger.warning(f"Failed to load FES carbon price from {carbon_price_file}: {e}")
+        return None
 
 
 def get_carbon_price(scenario_config: dict) -> float:
     """
-    Get carbon price - automatically uses historical values for historical scenarios.
-    
-    Logic:
-    1. If scenario explicitly provides carbon_price, use that
-    2. If modelled_year <= 2024 (historical), use historical lookup table
-    3. Otherwise, use default future price
-    
+    Get carbon price with automatic source selection.
+
+    Priority order:
+    1. Scenario-specific override in scenarios.yaml (marginal_costs.carbon_price)
+    2. Historical lookup table (for modelled_year ≤ 2024)
+    3. FES dynamic price (if FES_year specified, use_fes_prices=true, and CSV exists)
+    4. Configuration default from defaults.yaml (marginal_costs.carbon_price)
+    5. Fallback hardcoded value (for backward compatibility)
+
     Parameters
     ----------
     scenario_config : dict
-        Scenario configuration dictionary
-        
+        Scenario configuration dictionary (includes defaults merged in)
+
     Returns
     -------
     float
         Carbon price in £/tonne CO2
     """
-    # Check if scenario explicitly provides carbon price (override)
-    carbon_price = scenario_config.get('carbon_price')
-    
-    if carbon_price is not None:
+    # Load marginal cost configuration
+    mc_config = load_marginal_cost_config(scenario_config)
+
+    # 1. Check if scenario explicitly provides carbon price (highest priority override)
+    if 'marginal_costs' in scenario_config and 'carbon_price' in scenario_config['marginal_costs']:
+        carbon_price = scenario_config['marginal_costs']['carbon_price']
         logger.info(f"Using scenario carbon price (explicit override): £{carbon_price:.2f}/tonne CO2")
         return carbon_price
-    
-    # Check if this is a historical scenario
+
+    # 2. Check if this is a historical scenario
     modelled_year = scenario_config.get('modelled_year')
-    
+
     if modelled_year and modelled_year <= 2024:
         # Historical scenario - use historical lookup
         historical_carbon = get_historical_carbon_price(modelled_year)
         logger.info(f"Using HISTORICAL carbon price for {modelled_year}: £{historical_carbon:.2f}/tonne CO2")
         return historical_carbon
-    
-    # Future scenario - use default
-    default_carbon_price = 85.0  # £/tonne CO2
-    logger.info(f"Using DEFAULT carbon price (future scenario): £{default_carbon_price:.2f}/tonne CO2")
-    return default_carbon_price
+
+    # 3. Try FES dynamic carbon price for future scenarios
+    if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:
+        fes_year = scenario_config.get('FES_year')
+        carbon_price_file = scenario_config.get('_carbon_price_file')  # Passed from Snakemake params
+
+        if fes_year:
+            fes_carbon = load_fes_carbon_price(fes_year, modelled_year, carbon_price_file)
+            if fes_carbon is not None:
+                logger.info(f"Using FES DYNAMIC carbon price for {modelled_year} (FES {fes_year})")
+                return fes_carbon
+            else:
+                logger.info(f"FES carbon price not available, falling back to configured default")
+
+    # 4. Use configured default from defaults.yaml
+    logger.info(f"Using CONFIGURED DEFAULT carbon price (future scenario): £{mc_config['carbon_price']:.2f}/tonne CO2")
+    return mc_config['carbon_price']
 
 
 def calculate_marginal_cost(carrier: str, 
@@ -580,7 +810,13 @@ def main():
         
         # Get parameters
         scenario_config = snakemake.params.scenario_config
-        
+
+        # Add file paths to scenario_config if provided (for FES integration)
+        if hasattr(snakemake.params, 'fuel_price_file') and snakemake.params.fuel_price_file:
+            scenario_config['_fuel_price_file'] = snakemake.params.fuel_price_file
+        if hasattr(snakemake.params, 'carbon_price_file') and snakemake.params.carbon_price_file:
+            scenario_config['_carbon_price_file'] = snakemake.params.carbon_price_file
+
         # Load fuel prices and carbon price
         fuel_prices = load_fuel_prices(scenario_config)
         carbon_price = get_carbon_price(scenario_config)
