@@ -166,7 +166,7 @@ solve_period:
   end: "2035-01-22 23:00"
 ```
 
-## Sensitivity Analysis
+<!-- ## Sensitivity Analysis
 
 ### Capacity Sensitivities
 
@@ -263,7 +263,7 @@ Examples:
 - `HT35` - Holistic Transition 2035, ETYS network
 - `HT35_reduced` - Same but reduced network
 - `EE40_high_wind` - Electric Engagement 2040, high wind variant
-- `Historical_2022` - Historical validation
+- `Historical_2022` - Historical validation -->
 
 ## Scenario Checklist
 
