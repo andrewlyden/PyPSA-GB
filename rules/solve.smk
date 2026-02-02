@@ -56,10 +56,14 @@ def _get_solver_config(scenario_id=None):
             "threads": solver_config.get("threads", 4),
             "method": solver_config.get("method", 2),
             "crossover": solver_config.get("crossover", 0),
-            "BarConvTol": solver_config.get("BarConvTol", 1.e-5),
-            "FeasibilityTol": solver_config.get("FeasibilityTol", 1.e-6),
-            "OptimalityTol": solver_config.get("OptimalityTol", 1.e-6),
+            "BarHomogeneous": solver_config.get("BarHomogeneous", 1),  # Handle numerical issues
+            "BarConvTol": solver_config.get("BarConvTol", 1.e-4),
+            "FeasibilityTol": solver_config.get("FeasibilityTol", 1.e-4),
+            "OptimalityTol": solver_config.get("OptimalityTol", 1.e-4),
+            "NumericFocus": solver_config.get("NumericFocus", 3),  # Max numerical stability
+            "ScaleFlag": solver_config.get("ScaleFlag", 2),  # Aggressive scaling
             "DualReductions": solver_config.get("DualReductions", 0),
+            "BarIterLimit": solver_config.get("BarIterLimit", 200),  # More iterations
         }
     elif solver_name == "highs":
         solver_options = {

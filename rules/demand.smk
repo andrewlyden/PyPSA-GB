@@ -72,7 +72,15 @@ def get_component_names(scenario):
     if not config.get("enabled", False):
         return []
     components = config.get("components", [])
-    return [c["name"] for c in components]
+    names = []
+    for comp in components:
+        if isinstance(comp, str):
+            names.append(comp)
+        elif isinstance(comp, dict):
+            name = comp.get("name")
+            if name:
+                names.append(name)
+    return names
 
 
 def get_component_config(scenario, component_name):
@@ -80,28 +88,60 @@ def get_component_config(scenario, component_name):
     config = get_disaggregation_config(scenario)
     components = config.get("components", [])
     for comp in components:
-        if comp["name"] == component_name:
+        if isinstance(comp, str) and comp == component_name:
+            return {}
+        if isinstance(comp, dict) and comp.get("name") == component_name:
             return comp
     return None
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Demand Flexibility Helper Functions
+# ──────────────────────────────────────────────────────────────────────────────
+
+def get_flexibility_config(scenario):
+    """Get demand flexibility config for a scenario."""
+    scenario_config = scenarios.get(scenario, {})
+    return scenario_config.get("demand_flexibility", config.get("demand_flexibility", {}))
+
+
+def is_flexibility_enabled(scenario):
+    """Check if demand flexibility is enabled for this scenario."""
+    flex_config = get_flexibility_config(scenario)
+    return flex_config.get("enabled", False)
+
+
+def is_hp_flexibility_enabled(scenario):
+    """Check if heat pump flexibility is enabled for this scenario."""
+    if not is_flexibility_enabled(scenario):
+        return False
+    flex_config = get_flexibility_config(scenario)
+    hp_config = flex_config.get("heat_pumps", {})
+    return hp_config.get("enabled", False)
+
+
+def is_ev_flexibility_enabled(scenario):
+    """Check if EV flexibility is enabled for this scenario."""
+    if not is_flexibility_enabled(scenario):
+        return False
+    flex_config = get_flexibility_config(scenario)
+    ev_config = flex_config.get("electric_vehicles", {})
+    return ev_config.get("enabled", False)
+
+
+def is_event_flexibility_enabled(scenario):
+    """Check if event response flexibility is enabled for this scenario."""
+    if not is_flexibility_enabled(scenario):
+        return False
+    flex_config = get_flexibility_config(scenario)
+    event_config = flex_config.get("event_response", {})
+    return event_config.get("enabled", False)
+
+
 def get_final_demand_network(wildcards):
-    """
-    Return the appropriate final network file based on disaggregation config.
-    
-    - If disaggregation disabled → base_demand.nc (simple case)
-    - If disaggregation enabled → final.nc (with all components integrated)
-    
-    This function is used by downstream rules (generators, storage, etc.) to
-    automatically use the correct network file.
-    """
+    """Return the finalized demand-side network for downstream rules."""
     scenario = wildcards.scenario
-    if is_disaggregation_enabled(scenario):
-        return f"{resources_path}/network/{scenario}_final.nc"
-    else:
-        # Return the network file containing base demand (pickle for fast I/O).
-        # CSV profiles are no longer saved; downstream rules should use the network pickle instead.
-        return f"{resources_path}/network/{scenario}_network_demand.pkl"
+    return f"{resources_path}/network/{scenario}_network_demand.pkl"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -148,7 +188,7 @@ rule build_base_demand:
       5. Attach base demand to network buses
       6. Export network with demand attached
     
-    Transforms: {scenario}_network.nc → {scenario}_network_demand.pkl
+    Transforms: {scenario}_network.nc → {scenario}_network_demand_base.pkl
     
     Inputs:
       - fes_data: FES demand totals by GSP for future scenarios (CSV)
@@ -175,8 +215,7 @@ rule build_base_demand:
       - Zonal: Demand aggregated to 20 zone buses
     
     Next Steps:
-      - If disaggregation DISABLED → This is the final demand
-      - If disaggregation ENABLED → Components processed by Stage 2
+      - finalize_demand combines disaggregation + flexibility (or passes through)
     
     Performance:
       - ETYS: ~30-40s (GSP spatial mapping)
@@ -193,7 +232,8 @@ rule build_base_demand:
         egy="data/demand/egy_7649_mmc1.xlsx",
         base_network=f"{resources_path}/network/{{scenario}}_network.nc"
     output:
-        network_with_base_demand=f"{resources_path}/network/{{scenario}}_network_demand.pkl"
+        network_with_base_demand=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
+        base_demand_profile=f"{resources_path}/demand/{{scenario}}_base_profile.csv"
     params:
         fes_year=lambda wildcards: scenarios[wildcards.scenario].get("FES_year"),
         fes_scenario=lambda wildcards: scenarios[wildcards.scenario].get("FES_scenario"),
@@ -228,7 +268,7 @@ rule build_base_demand:
 # Architecture:
 #   1. build_base_demand (above) → Creates total demand
 #   2. disaggregate_* rules (below) → Process individual components in PARALLEL
-#   3. integrate_disaggregated_loads → Combine all components into final network
+#   3. finalize_demand -> Combine components + flexibility into final demand network
 #
 # To Add a New Component:
 #   1. Create scripts/demand_components/your_component.py
@@ -241,34 +281,57 @@ rule build_base_demand:
 rule disaggregate_heat_pumps:
     """
     Disaggregate heat pump demand from total electricity demand.
-    
+
     Process:
-      1. Load heat pump demand profile from source file (or generate synthetic)
-      2. Scale to match configured fraction of total demand
-      3. Allocate spatially across network buses using selected method
-      4. Create separate timeseries for heat pump load
-    
+      1. Generate temperature-based thermal demand profile (heating degree hours)
+      2. Calculate temperature-dependent COP profile
+      3. Compute electrical demand = thermal demand / COP
+      4. Scale to match configured fraction of total demand
+      5. Allocate spatially across network buses using selected method
+
+    Key Physics:
+      - Thermal demand driven by outdoor temperature (heating degree hours)
+      - COP inversely related to temperature lift (outdoor to indoor)
+      - Electrical demand = Thermal demand / COP
+      - Cold weather: high thermal demand + low COP = very high electrical demand
+
     Allocation Methods:
       - proportional: Distribute proportional to existing demand
       - uniform: Equal distribution across all buses
       - urban_weighted: Weighted towards high-demand (urban) areas
-    
+      - fes_gsp: Use FES building block GSP distribution (future scenarios)
+
     Outputs:
-      - profile: Hourly/half-hourly heat pump demand timeseries (GWh)
+      - profile: Hourly/half-hourly HP electrical demand timeseries (MW)
       - allocation: Spatial distribution across buses (GWh per bus per year)
-    
+      - cop_profile: Temperature-dependent COP timeseries
+      - thermal_profile: Thermal demand timeseries (MW thermal)
+
     See Also:
-      - scripts/demand_components/heat_pumps.py for implementation
+      - scripts/demand/heat_pumps.py for implementation
+      - scripts/demand/build_heat_profiles.py for Atlite-based profiles
     """
     input:
         # Use the network pickle that contains base demand (fast I/O)
-        base_network_demand=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
+        base_demand=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
+        base_profile=f"{resources_path}/demand/{{scenario}}_base_profile.csv",
+        fes_data=get_fes_data_input,
+        # Atlite-generated heat profiles (temperature-based)
+        heat_demand_profile=f"{resources_path}/demand/heat_demand_{{scenario}}.nc",
+        cop_ashp_profile=f"{resources_path}/demand/cop_ashp_{{scenario}}.nc",
     output:
         profile=f"{resources_path}/demand/components/{{scenario}}_heat_pumps_profile.csv",
-        allocation=f"{resources_path}/demand/components/{{scenario}}_heat_pumps_allocation.csv"
+        allocation=f"{resources_path}/demand/components/{{scenario}}_heat_pumps_allocation.csv",
+        cop_profile=f"{resources_path}/demand/components/{{scenario}}_heat_pumps_cop.csv",
+        thermal_profile=f"{resources_path}/demand/components/{{scenario}}_heat_pumps_thermal.csv"
     params:
         component_config=lambda wildcards: get_component_config(wildcards.scenario, "heat_pumps"),
-        scenario=lambda wildcards: wildcards.scenario
+        scenario=lambda wildcards: wildcards.scenario,
+        modelled_year=lambda wildcards: scenarios[wildcards.scenario]["modelled_year"],
+        fes_scenario=lambda wildcards: scenarios[wildcards.scenario].get("FES_scenario"),
+        fes_year=lambda wildcards: scenarios[wildcards.scenario].get("FES_year"),
+        network_model=lambda wildcards: scenarios[wildcards.scenario]["network_model"],
+        is_historical=lambda wildcards: scenario_is_historical(wildcards.scenario)
     message:
         "Disaggregating heat pump demand for {wildcards.scenario}"
     benchmark:
@@ -297,6 +360,12 @@ rule disaggregate_electric_vehicles:
       - Peak evening charging (18:00-22:00)
       - Higher weekday usage
       - Concentrated in urban areas
+
+    Allocation Methods:
+      - proportional: Distribute proportional to existing demand
+      - uniform: Equal distribution across all buses
+      - urban_weighted: Weighted towards high-demand (urban) areas
+      - fes_gsp: Use FES building block GSP distribution (future scenarios)
     
     Outputs:
       - profile: Hourly/half-hourly EV charging demand timeseries (GWh)
@@ -307,13 +376,20 @@ rule disaggregate_electric_vehicles:
     """
     input:
         # Use the network pickle that contains base demand (fast I/O)
-        base_network_demand=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
+        base_demand=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
+        base_profile=f"{resources_path}/demand/{{scenario}}_base_profile.csv",
+        fes_data=get_fes_data_input,
     output:
         profile=f"{resources_path}/demand/components/{{scenario}}_ev_profile.csv",
         allocation=f"{resources_path}/demand/components/{{scenario}}_ev_allocation.csv"
     params:
         component_config=lambda wildcards: get_component_config(wildcards.scenario, "electric_vehicles"),
-        scenario=lambda wildcards: wildcards.scenario
+        scenario=lambda wildcards: wildcards.scenario,
+        modelled_year=lambda wildcards: scenarios[wildcards.scenario]["modelled_year"],
+        fes_scenario=lambda wildcards: scenarios[wildcards.scenario].get("FES_scenario"),
+        fes_year=lambda wildcards: scenarios[wildcards.scenario].get("FES_year"),
+        network_model=lambda wildcards: scenarios[wildcards.scenario]["network_model"],
+        is_historical=lambda wildcards: scenario_is_historical(wildcards.scenario)
     message:
         "Disaggregating EV charging demand for {wildcards.scenario}"
     benchmark:
@@ -328,113 +404,208 @@ rule disaggregate_electric_vehicles:
         "../scripts/demand/electric_vehicles.py"
 
 
-rule integrate_disaggregated_loads:
+rule finalize_demand:
     """
-    Integrate all disaggregated components back into the network.
-    
-    This is the FINAL STAGE of demand modeling for disaggregated scenarios.
-    
-    Process:
-      1. Load base demand network
-      2. Load all component profiles and allocations
-      3. Adjust base demand to remove component totals (avoid double-counting)
-      4. Add each component as separate Load in PyPSA network
-      5. Attach component-specific timeseries
-      6. Validate energy conservation (total = original base)
-      7. Export final network with all load components
-    
-    Energy Balance:
-      Adjusted Base = Original Base - Sum(Component Totals)
-      Final Total = Adjusted Base + Sum(Components) = Original Base ✓
-    
-    Validation:
-      - Energy conservation check (tolerance: 0.1 GWh)
-      - Bus topology validation
-      - Component fraction sanity checks
-    
-    Outputs:
-      - final_network: Network with base + all disaggregated components (NetCDF)
-      - component_summary: Summary table of all components (CSV)
-    
-    See Also:
-      - scripts/demand_components/integrate.py for implementation
+    Finalize complete demand-side network (disaggregation + flexibility).
+
+    This rule orchestrates:
+    1. Load base demand network
+    2. Integrate disaggregated components (if enabled)
+    3. Add demand flexibility components (if enabled)
+
+    Output is complete demand-side network ready for generator integration.
     """
     input:
-        # Use the network pickle that contains base demand (fast I/O)
-        base_network_demand=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
-        # Dynamic inputs based on configured components
-        component_profiles=lambda wildcards: [
-            f"{resources_path}/demand/components/{wildcards.scenario}_{comp}_profile.csv"
-            for comp in get_component_names(wildcards.scenario)
-        ],
-        component_allocations=lambda wildcards: [
-            f"{resources_path}/demand/components/{wildcards.scenario}_{comp}_allocation.csv"
-            for comp in get_component_names(wildcards.scenario)
-        ]
+        base_network=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
+        base_profile=f"{resources_path}/demand/{{scenario}}_base_profile.csv",
+        # Disaggregation inputs (conditional)
+        hp_profile=lambda w: f"{resources_path}/demand/components/{w.scenario}_heat_pumps_profile.csv" if is_disaggregation_enabled(w.scenario) and "heat_pumps" in get_component_names(w.scenario) else [],
+        hp_allocation=lambda w: f"{resources_path}/demand/components/{w.scenario}_heat_pumps_allocation.csv" if is_disaggregation_enabled(w.scenario) and "heat_pumps" in get_component_names(w.scenario) else [],
+        hp_cop=lambda w: f"{resources_path}/demand/components/{w.scenario}_heat_pumps_cop.csv" if is_disaggregation_enabled(w.scenario) and "heat_pumps" in get_component_names(w.scenario) else [],
+        hp_thermal=lambda w: f"{resources_path}/demand/components/{w.scenario}_heat_pumps_thermal.csv" if is_disaggregation_enabled(w.scenario) and "heat_pumps" in get_component_names(w.scenario) else [],
+        ev_profile=lambda w: f"{resources_path}/demand/components/{w.scenario}_ev_profile.csv" if is_disaggregation_enabled(w.scenario) and "electric_vehicles" in get_component_names(w.scenario) else [],
+        ev_allocation=lambda w: f"{resources_path}/demand/components/{w.scenario}_ev_allocation.csv" if is_disaggregation_enabled(w.scenario) and "electric_vehicles" in get_component_names(w.scenario) else [],
+        # Flexibility inputs (conditional)
+        cop_ashp=lambda w: f"{resources_path}/demand/cop_ashp_{w.scenario}.nc" if is_hp_flexibility_enabled(w.scenario) else [],
+        ev_availability=lambda w: f"{resources_path}/demand/ev_availability_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
+        ev_dsm=lambda w: f"{resources_path}/demand/ev_dsm_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else []
     output:
-        final_network=f"{resources_path}/network/{{scenario}}_final.nc",
-        component_summary=f"{resources_path}/demand/components/{{scenario}}_summary.csv"
+        network=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
+        summary=f"{resources_path}/demand/{{scenario}}_demand_integration_summary.csv"
     params:
-        component_names=lambda wildcards: get_component_names(wildcards.scenario),
-        scenario=lambda wildcards: wildcards.scenario
-    message:
-        "Integrating disaggregated components for {wildcards.scenario}"
-    benchmark:
-        "benchmarks/demand/integrate_components_{scenario}.txt"
+        disaggregation_config=lambda w: get_disaggregation_config(w.scenario),
+        flexibility_config=lambda w: get_flexibility_config(w.scenario)
+    log:
+        "logs/demand/finalize_demand_{scenario}.log"
     conda:
         "../envs/pypsa-gb.yaml"
-    log:
-        "logs/demand/integrate_components_{scenario}.log"
-    wildcard_constraints:
-        scenario="[A-Za-z0-9_-]+"
     script:
-        "../scripts/demand/integrate.py"
+        "../scripts/demand/finalize_demand_integration.py"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # STAGE 3: DEMAND-SIDE FLEXIBILITY
 # ══════════════════════════════════════════════════════════════════════════════
 #
 # Optional third stage: Model demand-side flexibility resources.
 #
 # Flexibility Types:
-#   - EV Smart Charging (V1G): Load shifting within availability window
-#   - Vehicle-to-Grid (V2G): Bidirectional battery storage
-#   - Thermal Storage: Pre-heating/cooling during low-price periods
-#   - Demand Response: Industrial/commercial load shedding/shifting
+#   - Heat Pump Flexibility: TANK (hot water storage) or COSY (thermal inertia)
+#   - EV Flexibility: GO (night window), INT (smart charging), V2G (bidirectional)
+#   - Event Response: Saving Sessions style demand reduction
 #
-# Architecture:
-#   Stage 3a: EV flexibility (V1G + V2G)
-#   Stage 3b: Thermal storage
-#   Stage 3c: Demand response
-#   Stage 3d: Network integration
+# Configuration (in scenarios_master.yaml or defaults.yaml):
+#   demand_flexibility:
+#     enabled: true/false  # Master switch
+#     heat_pumps:
+#       enabled: true/false
+#       mode: "TANK" / "COSY"
+#     electric_vehicles:
+#       enabled: true/false
+#       tariff: "GO" / "INT" / "V2G"
+#     event_response:
+#       enabled: true/false
+#       mode: "regular" / "winter" / "both"
 #
+# ──────────────────────────────────────────────────────────────────────────────
+# Stage 3 Pre-requisites: Heat Profiles and EV Availability
+# ──────────────────────────────────────────────────────────────────────────────
+
+rule build_heat_profiles_atlite:
+    """
+    Generate heat demand profiles and COPs using Atlite weather data.
+
+    This rule uses Atlite cutouts (weather data) to generate:
+    - Spatially-resolved heat demand profiles using degree-day method
+    - Temperature-dependent ASHP COPs
+    - Ground-temperature dependent GSHP COPs
+
+    Heat Demand Method:
+    - Uses heating degree hours (HDH) with reference temperature
+    - HDH = max(0, T_ref - T_ambient) for each hour
+    - Profiles normalized and scaled to annual heat demand
+
+    COP Calculations:
+    - ASHP: COP = 6.81 - 0.121*dT + 0.000630*dT² (Staffell et al.)
+    - GSHP: Uses stable ground temperature (~10-12°C)
+
+    Inputs:
+      - cutout: Atlite cutout with temperature data
+      - network: Network for bus locations
+
+    Outputs:
+      - heat_demand: Heat demand profiles by bus (NetCDF)
+      - cop_ashp: ASHP COP profiles by bus (NetCDF)
+      - cop_gshp: GSHP COP profiles by bus (NetCDF)
+
+    Performance: ~30-60 seconds depending on cutout size
+    """
+    input:
+        cutout=lambda wildcards: (
+            f"{resources_path}/atlite/cutouts/uk-{scenarios[wildcards.scenario].get('renewables_year', 2020)}.nc"
+        ),
+        network=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl"
+    output:
+        heat_demand=f"{resources_path}/demand/heat_demand_{{scenario}}.nc",
+        cop_ashp=f"{resources_path}/demand/cop_ashp_{{scenario}}.nc",
+        cop_gshp=f"{resources_path}/demand/cop_gshp_{{scenario}}.nc"
+    params:
+        modelled_year=lambda wildcards: scenarios[wildcards.scenario]["modelled_year"],
+        heat_config=lambda wildcards: get_flexibility_config(wildcards.scenario).get("heat_pumps", {}),
+        reference_temp=15.5,
+        indoor_temp=20.0,
+        ground_temp=11.0
+    message:
+        "Building Atlite heat profiles for {wildcards.scenario}"
+    benchmark:
+        "benchmarks/demand/build_heat_profiles_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    log:
+        "logs/demand/build_heat_profiles_{scenario}.log"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    script:
+        "../scripts/demand/build_heat_profiles.py"
+
+
+rule build_ev_availability:
+    """
+    Build EV availability and DSM profiles from GB traffic patterns.
+
+    Creates time-series profiles for:
+    - Charging availability (when vehicles are plugged in)
+    - DSM minimum SOC requirements (departure readiness)
+
+    Methodology:
+    - EV availability is inversely related to traffic flow
+    - High traffic = cars on road = low charging availability
+    - Uses GB-specific weekday/weekend traffic patterns from DfT
+
+    Formula (from PyPSA-FES):
+      avail = avail_max - (avail_max - avail_mean) *
+              (traffic - traffic_min) / (traffic_mean - traffic_min)
+
+    DSM Profile:
+    - Enforces minimum SOC at departure times (default 7am)
+    - Ensures EVs meet daily driving needs
+
+    Inputs:
+      - network: Network for bus locations and timestamps
+      - dft_traffic (optional): DfT traffic count data
+
+    Outputs:
+      - availability_profile: Hourly EV plugged-in availability (0-1)
+      - dsm_profile: Minimum SOC requirements at departure times
+
+    Performance: ~5-10 seconds
+    """
+    input:
+        network=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl"
+    output:
+        availability_profile=f"{resources_path}/demand/ev_availability_{{scenario}}.csv",
+        dsm_profile=f"{resources_path}/demand/ev_dsm_{{scenario}}.csv"
+    params:
+        modelled_year=lambda wildcards: scenarios[wildcards.scenario]["modelled_year"],
+        timestep_minutes=lambda wildcards: scenarios[wildcards.scenario].get("timestep_minutes", 60),
+        ev_config=lambda wildcards: get_flexibility_config(wildcards.scenario).get("electric_vehicles", {}),
+        avail_max=lambda wildcards: get_flexibility_config(wildcards.scenario).get("electric_vehicles", {}).get("availability", {}).get("avail_max", 0.95),
+        avail_mean=lambda wildcards: get_flexibility_config(wildcards.scenario).get("electric_vehicles", {}).get("availability", {}).get("avail_mean", 0.80)
+    message:
+        "Building EV availability profiles for {wildcards.scenario}"
+    benchmark:
+        "benchmarks/demand/build_ev_availability_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    log:
+        "logs/demand/build_ev_availability_{scenario}.log"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    script:
+        "../scripts/demand/build_ev_availability.py"
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 3a: Electric Vehicle Flexibility
 # ──────────────────────────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────────────────────────
+# DEPRECATED RULES (Legacy - kept for reference)
+# ──────────────────────────────────────────────────────────────────────────────
+# The following rules are DEPRECATED placeholders that were never implemented.
+# They are superseded by the new configuration-driven approach:
+#   - build_heat_profiles_atlite: Generates heat demand and COPs from Atlite
+#   - build_ev_availability: Generates EV availability from GB traffic patterns
+#   - integrate_demand_flexibility_into_network: Integrates all flexibility
+#
+# EV/HP projections now come from existing FES.smk building blocks.
+# ──────────────────────────────────────────────────────────────────────────────
+
 rule calculate_ev_fleet_projections:
     """
-    Calculate EV fleet size and distribution projections.
-    
-    Uses FES data or external projections to estimate:
-    - Total EV fleet size by year
-    - Geographic distribution (by region or bus)
-    - Vehicle types (BEV, PHEV, light/heavy duty)
-    - Ownership patterns (private, fleet, commercial)
-    
-    Data Sources:
-    - FES EV uptake scenarios
-    - DfT vehicle statistics
-    - SMMT registration data
-    - Academic studies
-    
-    Outputs:
-    - EV fleet projections by scenario and year
-    - Regional distribution factors
-    - Technology mix (BEV vs PHEV)
-    
-    Performance: ~3-5 seconds
+    DEPRECATED: EV fleet projections now come from FES.smk building blocks.
+
+    This rule was a placeholder that was never implemented. Use the FES data
+    pipeline instead: resources/FES/FES_{year}_data.csv contains EV projections.
     """
     input:
         fes_data=f"{resources_path}/FES/FES_{{fes_year}}_processed.csv"
@@ -816,70 +987,6 @@ rule configure_demand_response_parameters:
 # Stage 3d: Flexibility Network Integration
 # ──────────────────────────────────────────────────────────────────────────────
 
-rule integrate_demand_flexibility_into_network:
-    """
-    Integrate all demand-side flexibility into PyPSA network.
-    
-    Integration Approach:
-    1. Load EV, thermal, and DR flexibility parameters
-    2. Map flexibility resources to network buses (by region)
-    3. Add appropriate PyPSA components:
-       - EV: Link (charge) + Store (battery) + Link (V2G discharge)
-       - Thermal: Link (heat) + Store (thermal mass) + Load (demand)
-       - DR: Link (shift) with time-coupled constraints
-    4. Configure operational constraints
-    5. Validate network consistency
-    
-    Component Mapping:
-    - EV Smart Charging (V1G): Link + Store (electricity → battery storage)
-    - EV Vehicle-to-Grid (V2G): Link (battery → electricity)
-    - Thermal Storage: Link + Store (electricity → thermal store)
-    - Demand Response: Link (load reduction/shift)
-    
-    Regional Aggregation:
-    - Flexibility resources aggregated to bus level
-    - Weighted by population, industrial activity, etc.
-    
-    Dependencies:
-    - Network with generators and storage integrated
-    - EV, thermal, and DR parameter databases
-    
-    Outputs:
-    - Network with demand flexibility integrated
-    - Flexibility integration summary
-    - Component mapping report
-    
-    Performance: ~30-45 seconds
-    
-    Usage:
-        snakemake resources/network/{scenario}_with_flexibility.nc --cores 1
-    """
-    input:
-        network=f"{resources_path}/network/{{scenario}}_with_storage.nc",
-        ev_params=f"{resources_path}/flexibility/ev/flexibility_parameters_{{fes_year}}.csv",
-        thermal_params=f"{resources_path}/flexibility/thermal/flexibility_parameters_{{fes_year}}.csv",
-        dr_params=f"{resources_path}/flexibility/dr/flexibility_parameters_{{fes_year}}.csv"
-    output:
-        network=f"{resources_path}/network/{{scenario}}_with_flexibility.nc",
-        integration_summary=f"{resources_path}/flexibility/{{scenario}}_integration_summary.csv",
-        component_mapping=f"{resources_path}/flexibility/{{scenario}}_component_mapping.csv"
-    params:
-        distribution_method="population_weighted",
-        enable_ev_v1g=True,
-        enable_ev_v2g=True,
-        enable_thermal_storage=True,
-        enable_demand_response=True
-    log:
-        "logs/flexibility/integrate_demand_flexibility_{scenario}.log"
-    benchmark:
-        "benchmarks/flexibility/integrate_flexibility_{scenario}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/add_demand_flexibility.py"
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 # AGGREGATE RULES
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -940,22 +1047,27 @@ rule build_demand_flexibility_database:
         "echo 'Demand-side flexibility database complete!' > {output.marker}"
 
 
-rule integrate_demand_flexibility:
+# New Flexibility Workflow Helper Rules
+# ──────────────────────────────────────────────────────────────────────────────
+
+rule build_flexibility_prerequisites:
     """
-    Complete demand flexibility integration for a specific scenario.
-    
-    This is the recommended entry point for demand flexibility integration.
-    
+    Build all prerequisite data for flexibility integration.
+
+    This rule builds the heat profiles and EV availability data needed for
+    the flexibility integration, regardless of whether flexibility is enabled.
+    Useful for generating data for analysis without running the full integration.
+
     Usage:
-        snakemake integrate_demand_flexibility_{scenario} --cores 1
-        
-    Example:
-        snakemake integrate_demand_flexibility_HT35_clustered_gsp --cores 1
+        snakemake build_flexibility_prerequisites_{scenario} --cores 1
     """
     input:
-        network=f"{resources_path}/network/{{scenario}}_with_flexibility.nc",
-        integration_summary=f"{resources_path}/flexibility/{{scenario}}_integration_summary.csv"
+        heat_demand=f"{resources_path}/demand/heat_demand_{{scenario}}.nc",
+        cop_ashp=f"{resources_path}/demand/cop_ashp_{{scenario}}.nc",
+        cop_gshp=f"{resources_path}/demand/cop_gshp_{{scenario}}.nc",
+        ev_availability=f"{resources_path}/demand/ev_availability_{{scenario}}.csv",
+        ev_dsm=f"{resources_path}/demand/ev_dsm_{{scenario}}.csv"
     output:
-        marker=f"{resources_path}/flexibility/{{scenario}}_integration_complete.txt"
+        marker=f"{resources_path}/demand/flexibility_prerequisites_{{scenario}}.txt"
     shell:
-        "echo 'Demand flexibility integration complete for scenario: {wildcards.scenario}' > {output.marker}"
+        "echo 'Flexibility prerequisites built for scenario: {wildcards.scenario}' > {output.marker}"

@@ -32,12 +32,13 @@ solver:
   method: 2                       # 0=primal, 1=dual, 2=barrier
   crossover: 0                    # 0=disabled (faster), -1=auto (enables crossover)
   BarHomogeneous: 1               # 1=enable homogeneous barrier (handles numerical issues)
-  BarConvTol: 1.e-5
-  FeasibilityTol: 1.e-5           # Relaxed from 1.e-6 for numerical stability
-  OptimalityTol: 1.e-5            # Relaxed from 1.e-6 for numerical stability
-  NumericFocus: 2                 # 0-3, higher = more careful numerics (2=moderate)
+  BarConvTol: 1.e-4               # Relaxed for numerical stability with large storage
+  FeasibilityTol: 1.e-4           # Relaxed for numerical stability with large storage
+  OptimalityTol: 1.e-4            # Relaxed for numerical stability with large storage
+  NumericFocus: 3                 # 0-3, higher = more careful numerics (3=max)
   ScaleFlag: 2                    # 0-3, automatic scaling (2=aggressive)
   DualReductions: 0               # 0=disable (clearer error messages)
+  BarIterLimit: 200               # Increase from default 1000 iterations
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OPTIMIZATION MODE
@@ -96,3 +97,90 @@ logging:
   level: "INFO"                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
   log_to_file: true
   log_directory: "logs"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEMAND DISAGGREGATION (optional, disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+# When enabled in a scenario, components are disaggregated from total demand.
+# Defaults prefer FES-based fractions and GSP spatial allocation for future scenarios.
+
+demand_disaggregation:
+  enabled: false
+  components:
+    - name: "heat_pumps"
+      allocation_method: "fes_gsp"
+      use_fes_fraction: true
+      min_gwh_threshold: 0.01
+    - name: "electric_vehicles"
+      allocation_method: "fes_gsp"
+      use_fes_fraction: true
+      min_gwh_threshold: 0.01
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEMAND-SIDE FLEXIBILITY
+# ──────────────────────────────────────────────────────────────────────────────
+# Model demand-side flexibility from heat pumps, EVs, and demand response.
+# Each flexibility type can be independently enabled/disabled.
+# Requires demand_disaggregation to be enabled for HP and EV components.
+
+demand_flexibility:
+  # Master switch - must be true for any flexibility to be modeled
+  enabled: false
+
+  # HEAT PUMP FLEXIBILITY (independently toggleable)
+  # Requires heat_pumps in demand_disaggregation.components
+  heat_pumps:
+    enabled: false                    # Independent toggle for HP flexibility
+    mode: "MIXED"                     # TANK, COSY, or MIXED (use mix shares below)
+    flex_share: 0.2                   # Fraction of HP demand that is flexible
+    mix:
+      tank_share: 0.5                 # Fraction of flexible HP demand using TANK mode
+      cosy_share: 0.5                 # Fraction of flexible HP demand using COSY mode
+    # COSY mode: Pre-heating using building thermal mass
+    cosy:
+      morning_window: ["07:00", "09:00"]   # Morning pre-heat window
+      evening_window: ["17:00", "19:00"]   # Evening pre-heat window
+      max_temp_deviation_celsius: 2.0      # Max comfort deviation (±°C)
+      thermal_mass_hours: 2.0              # Hours of heating that can be pre-heated
+    # TANK mode: Hot water tank storage
+    tank:
+      volume_liters: 200              # Average tank volume
+      temp_range: [50, 65]            # Min/max temperature (°C)
+      standing_loss_per_hour: 0.01    # Heat loss fraction per hour (1%)
+      heater_power_kw: 3.0            # Immersion heater power
+
+  # ELECTRIC VEHICLE FLEXIBILITY (independently toggleable)
+  # Requires electric_vehicles in demand_disaggregation.components
+  electric_vehicles:
+    enabled: false                    # Independent toggle for EV flexibility
+    tariff: "INT"                     # GO, INT, or V2G
+    # GO tariff: Octopus Go style fixed night window
+    go:
+      window: ["00:00", "04:00"]      # Charging window (4 hours)
+    # INT tariff: Intelligent/smart charging - fully optimizable
+    int:
+      min_soc: 0.20                   # Minimum state of charge (range anxiety buffer)
+      target_departure_soc: 0.80      # Target SOC at departure time
+      charger_power_kw: 7.0           # Home charger power
+    # V2G: Vehicle-to-grid bidirectional
+    v2g:
+      participation_rate: 0.30        # Fraction of fleet with V2G capability
+      discharge_efficiency: 0.90      # Round-trip efficiency for discharge
+      max_discharge_soc: 0.80         # Don't discharge below 20% SOC
+      degradation_cost_per_mwh: 50.0  # Battery wear cost (£/MWh)
+    # Availability profile parameters
+    availability:
+      avail_max: 0.95                 # Max fraction of time plugged in
+      avail_mean: 0.80                # Mean fraction of time plugged in
+
+  # EVENT RESPONSE / DEMAND RESPONSE (independently toggleable)
+  # Saving Sessions style demand response events
+  event_response:
+    enabled: false                    # Independent toggle for event response
+    mode: "regular"                   # regular, winter, or both
+    # Regular mode: 2 events/week throughout year
+    # Winter mode: 5 events/week during Oct-Mar
+    event_window: ["17:00", "19:00"]  # Default event time window
+    participation_rate: 0.33          # Fixed participation rate (33%)
+    max_reduction_fraction: 0.10      # Max demand reduction per event (10%)
+    winter_months: [10, 11, 12, 1, 2, 3]  # Oct-Mar for winter mode

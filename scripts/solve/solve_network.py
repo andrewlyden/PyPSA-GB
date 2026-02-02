@@ -749,7 +749,12 @@ if __name__ == "__main__":
         if not storage_df.empty:
             storage_df.to_csv(snakemake.output.storage_csv, index=False)
             logger.info(f"  Saved: {snakemake.output.storage_csv}")
-        
+        else:
+            # Create empty CSV file so Snakemake output file exists (e.g., networks without storage)
+            with open(snakemake.output.storage_csv, 'w') as f:
+                f.write("# No storage results available (network has no storage units)\n")
+            logger.info(f"  Created empty storage file: {snakemake.output.storage_csv}")
+
         if not flows_df.empty:
             flows_df.to_csv(snakemake.output.flows_csv)
             logger.info(f"  Saved: {snakemake.output.flows_csv}")

@@ -281,6 +281,40 @@ HT35:
     start: "2035-01-01 00:00"
     end: "2035-01-07 23:00"
 
+HT35_flex:
+  description: "FES 2024 Holistic Transition 2035 - Full ETYS"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020           # Weather proxy year
+  demand_year: 2020               # Demand baseline (scaled to 2035)
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2035-01-13 00:00"
+    end: "2035-01-19 23:00"
+  demand_disaggregation:
+    enabled: true
+    components:
+      - name: "heat_pumps"
+        allocation_method: "fes_gsp"
+        use_fes_fraction: true
+        min_gwh_threshold: 0.01
+  demand_flexibility:
+    enabled: true
+    heat_pumps:
+      enabled: true
+    electric_vehicles:
+      enabled: false
+    event_response:
+      enabled: false
+  clustering: 
+    preset: gsp_spatial
+    aggregate_components:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+
 HT35_year:
   description: "FES 2024 Holistic Transition 2035 - Full ETYS (1 year)"
   modelled_year: 2035

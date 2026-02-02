@@ -207,7 +207,7 @@ def extract_disaggregation_configs():
     """
     Extract demand disaggregation configurations from scenarios.
     Returns dictionary with scenario IDs as keys.
-    
+
     Returns:
         dict: {scenario_id: disaggregation_config} or {scenario_id: {'enabled': False}}
     """
@@ -215,6 +215,35 @@ def extract_disaggregation_configs():
     for rid in run_ids:
         if "demand_disaggregation" in scenarios[rid]:
             configs[rid] = scenarios[rid]["demand_disaggregation"]
+        else:
+            configs[rid] = {"enabled": False}  # Default: disabled
+    return configs
+
+
+def is_flexibility_enabled(scenario_id):
+    """
+    Check if demand flexibility is enabled for a scenario.
+
+    Returns:
+        bool: True if flexibility is enabled
+    """
+    if "demand_flexibility" in scenarios[scenario_id]:
+        return scenarios[scenario_id]["demand_flexibility"].get("enabled", False)
+    return False
+
+
+def extract_flexibility_configs():
+    """
+    Extract demand flexibility configurations from scenarios.
+    Returns dictionary with scenario IDs as keys.
+
+    Returns:
+        dict: {scenario_id: flexibility_config} or {scenario_id: {'enabled': False}}
+    """
+    configs = {}
+    for rid in run_ids:
+        if "demand_flexibility" in scenarios[rid]:
+            configs[rid] = scenarios[rid]["demand_flexibility"]
         else:
             configs[rid] = {"enabled": False}  # Default: disabled
     return configs
@@ -292,6 +321,7 @@ demand_timeseries         = extract_from_scenarios("demand_timeseries")
 network_models            = extract_from_scenarios("network_model")
 renewables_year           = extract_from_scenarios("renewables_year")
 demand_disaggregation_configs = extract_disaggregation_configs()
+demand_flexibility_configs = extract_flexibility_configs()
 
 # ------------------------------------------------------------------------------
 # ATLITE PATH DEFINITIONS
@@ -345,7 +375,7 @@ network_targets = []
 
 # Final fully-assembled networks (with all components) for each scenario
 network_targets += expand(
-    f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc", 
+    f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc",
     scenario=run_ids
 )
 
