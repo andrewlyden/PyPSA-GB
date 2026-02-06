@@ -107,10 +107,10 @@ years_to_generate:
     - 2020
 ```
  3. Generate the Cutouts
- 
+
 ```bash
 # Generate cutouts for a specific year
-snakemake -s Snakefile_cutouts -j 2 --config year=2019
+snakemake -s Snakefile_cutouts -j 2 --config year=2020
 ```
 
 ```{warning}
