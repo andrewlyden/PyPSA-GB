@@ -26,7 +26,11 @@ from scripts.utilities.logging_config import setup_logging
 
 # Import flexibility modules
 from scripts.demand.heat_pumps import add_heat_pump_flexibility
-from scripts.demand.electric_vehicles import add_ev_flexibility
+from scripts.demand.electric_vehicles import (
+    add_ev_flexibility, 
+    load_fes_v2g_capacity,
+    load_fes_smart_charging_capacity
+)
 from scripts.demand.event_flex import add_event_flexibility
 
 
@@ -235,6 +239,10 @@ def integrate_demand_flexibility(n: pypsa.Network,
                                  ev_dsm: Optional[pd.DataFrame] = None,
                                  ev_allocation: Optional[pd.DataFrame] = None,
                                  base_demand_mw: Optional[pd.DataFrame] = None,
+                                 fes_v2g_capacity: Optional[pd.Series] = None,
+                                 fes_path: Optional[str] = None,
+                                 fes_scenario: Optional[str] = None,
+                                 modelled_year: Optional[int] = None,
                                  add_load_shedding: bool = True,
                                  logger: Optional[logging.Logger] = None) -> pypsa.Network:
     """
@@ -252,6 +260,10 @@ def integrate_demand_flexibility(n: pypsa.Network,
         ev_availability: EV plugged-in availability (0-1)
         ev_dsm: EV minimum SOC requirements (0-1)
         base_demand_mw: Base electricity demand for event flex scaling
+        fes_v2g_capacity: FES V2G capacity per bus (from Srg_BB005)
+        fes_path: Path to FES data file (for MIXED mode smart charging capacity)
+        fes_scenario: FES scenario name (for MIXED mode)
+        modelled_year: Modelled year (for MIXED mode)
         add_load_shedding: Add load shedding generators for flexibility buses
         logger: Logger instance
 
@@ -342,6 +354,15 @@ def integrate_demand_flexibility(n: pypsa.Network,
         if ev_demand_mw is not None:
             # Get buses with EV demand
             ev_buses = [col for col in ev_demand_mw.columns if col in n.buses.index]
+            
+            # Remove existing 'electric_vehicles' loads to avoid double-counting
+            # These were added by disaggregation, but flexibility handles them now
+            ev_flex_share = ev_config.get('flex_share', 1.0)
+            removed = _scale_loads_by_carrier(n, "electric_vehicles", 1.0 - ev_flex_share, logger)
+            if removed == 0 and logger:
+                logger.info("No 'electric_vehicles' loads to remove (may be first run)")
+            elif logger:
+                logger.info(f"Removed {removed} 'electric_vehicles' loads (flex_share={ev_flex_share:.1%})")
 
             # Create default profiles if not provided
             if ev_availability is None:
@@ -362,6 +383,20 @@ def integrate_demand_flexibility(n: pypsa.Network,
                     columns=ev_buses
                 )
 
+            # Load FES smart charging capacity for MIXED mode
+            tariff = ev_config.get('tariff', 'INT')
+            fes_smart_capacity = None
+            if tariff.upper() == 'MIXED' and fes_path and fes_scenario and modelled_year:
+                fes_smart_capacity = load_fes_smart_charging_capacity(
+                    fes_path=fes_path,
+                    fes_scenario=fes_scenario,
+                    modelled_year=modelled_year,
+                    logger=logger
+                )
+                # Pass FES smart capacity through flex_config for MIXED mode
+                if fes_smart_capacity is not None:
+                    flex_config['_fes_smart_capacity'] = fes_smart_capacity
+
             n = add_ev_flexibility(
                 n=n,
                 buses=ev_buses,
@@ -369,9 +404,10 @@ def integrate_demand_flexibility(n: pypsa.Network,
                 availability_profile=ev_availability,
                 dsm_profile=ev_dsm,
                 flex_config=flex_config,
-                logger=logger
+                logger=logger,
+                fes_v2g_capacity=fes_v2g_capacity
             )
-            components_added.append(f"EVs ({ev_config.get('tariff', 'INT')})")
+            components_added.append(f"EVs ({tariff})")
         else:
             if logger:
                 logger.warning("EV flexibility enabled but no demand data provided")
@@ -644,6 +680,31 @@ if __name__ == "__main__":
             ev_allocation = pd.read_csv(snakemake.input.ev_allocation)
             logger.info(f"Loaded EV allocation: {ev_allocation.shape}")
 
+        # Load FES V2G capacity if available (for V2G tariff with future scenarios)
+        fes_v2g_capacity = None
+        ev_config = flex_config.get('electric_vehicles', {})
+        tariff = ev_config.get('tariff', 'INT').upper()
+        use_fes_v2g = ev_config.get('v2g_config', {}).get('use_fes_capacity', False)
+        
+        if tariff == 'V2G' and use_fes_v2g:
+            if hasattr(snakemake.input, 'fes_data') and snakemake.input.fes_data:
+                fes_scenario = snakemake.params.get('fes_scenario')
+                modelled_year = snakemake.params.get('modelled_year')
+                if fes_scenario and modelled_year:
+                    fes_v2g_capacity = load_fes_v2g_capacity(
+                        fes_path=snakemake.input.fes_data,
+                        fes_scenario=fes_scenario,
+                        modelled_year=modelled_year,
+                        network=n,
+                        logger=logger
+                    )
+                    if fes_v2g_capacity is not None:
+                        logger.info(f"Loaded FES V2G capacity: {fes_v2g_capacity.sum():,.0f} MW total")
+                else:
+                    logger.warning("V2G FES capacity requested but fes_scenario or modelled_year not provided")
+            else:
+                logger.warning("V2G FES capacity requested but FES data file not available")
+
         # Integrate flexibility
         n = integrate_demand_flexibility(
             n=n,
@@ -655,6 +716,7 @@ if __name__ == "__main__":
             ev_availability=ev_availability,
             ev_dsm=ev_dsm,
             ev_allocation=ev_allocation,
+            fes_v2g_capacity=fes_v2g_capacity,
             logger=logger
         )
 

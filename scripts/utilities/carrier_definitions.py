@@ -441,6 +441,29 @@ def get_carrier_definitions():
             'max_relative_growth': 0.0
         },
         
+        # Flexible Demand / Demand-Side Response
+        'heat_pumps': {
+            'color': '#E377C2',  # Pink - flexible heating demand
+            'nice_name': 'Heat Pumps',
+            'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EVs': {
+            'color': '#17BECF',  # Cyan - flexible transport demand
+            'nice_name': 'Electric Vehicles',
+            'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'electricity_demand': {
+            'color': '#7F7F7F',  # Gray - base electricity demand
+            'nice_name': 'Electricity Demand',
+            'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        
         # European Imports (External Generators)
         'EU_import': {
             'color': '#9467BD',  # Purple - represents external/foreign source

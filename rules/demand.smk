@@ -138,6 +138,17 @@ def is_event_flexibility_enabled(scenario):
     return event_config.get("enabled", False)
 
 
+def is_v2g_with_fes_enabled(scenario):
+    """Check if V2G tariff with FES capacity is enabled."""
+    if not is_ev_flexibility_enabled(scenario):
+        return False
+    flex_config = get_flexibility_config(scenario)
+    ev_config = flex_config.get("electric_vehicles", {})
+    tariff = ev_config.get("tariff", "INT").upper()
+    use_fes = ev_config.get("v2g", {}).get("use_fes_capacity", False)
+    return tariff == "V2G" and use_fes
+
+
 def get_final_demand_network(wildcards):
     """Return the finalized demand-side network for downstream rules."""
     scenario = wildcards.scenario
@@ -428,13 +439,17 @@ rule finalize_demand:
         # Flexibility inputs (conditional)
         cop_ashp=lambda w: f"{resources_path}/demand/cop_ashp_{w.scenario}.nc" if is_hp_flexibility_enabled(w.scenario) else [],
         ev_availability=lambda w: f"{resources_path}/demand/ev_availability_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
-        ev_dsm=lambda w: f"{resources_path}/demand/ev_dsm_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else []
+        ev_dsm=lambda w: f"{resources_path}/demand/ev_dsm_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
+        # FES data for V2G capacity (conditional)
+        fes_data=lambda w: get_fes_data_input(w) if is_v2g_with_fes_enabled(w.scenario) else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
         summary=f"{resources_path}/demand/{{scenario}}_demand_integration_summary.csv"
     params:
         disaggregation_config=lambda w: get_disaggregation_config(w.scenario),
-        flexibility_config=lambda w: get_flexibility_config(w.scenario)
+        flexibility_config=lambda w: get_flexibility_config(w.scenario),
+        fes_scenario=lambda w: scenarios.get(w.scenario, {}).get("FES_scenario", "Holistic Transition"),
+        modelled_year=lambda w: scenarios.get(w.scenario, {}).get("modelled_year", 2035)
     log:
         "logs/demand/finalize_demand_{scenario}.log"
     conda:

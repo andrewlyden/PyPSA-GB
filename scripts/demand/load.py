@@ -2694,7 +2694,7 @@ def add_loads_to_network_by_model(
         for bus_id in available_buses:
             if bus_id in demand_data.index:
                 try:
-                    network.add("Load", f"load_{bus_id}", bus=str(bus_id))
+                    network.add("Load", f"load_{bus_id}", bus=str(bus_id), carrier="electricity")
                     annual_energy_gwh = demand_data.loc[bus_id].iloc[0]
                     logger.debug(f"Added load for bus {bus_id}: {annual_energy_gwh:.3f} GWh")
                 except Exception as e:
@@ -2709,7 +2709,7 @@ def add_loads_to_network_by_model(
             if str(node_id) in available_buses:
                 annual_energy_gwh = demand_data.loc[node_id].iloc[0]
                 try:
-                    network.add("Load", f"load_{node_id}", bus=str(node_id))
+                    network.add("Load", f"load_{node_id}", bus=str(node_id), carrier="electricity")
                     matched_nodes_count += 1
                     logger.debug(f"Added load for bus {node_id}: {annual_energy_gwh:.3f} GWh")
                 except Exception as e:
@@ -2800,7 +2800,7 @@ def add_component_loads_to_network(network: pypsa.Network, components: dict, log
             if str(node_id) in network.buses.index:
                 load_name = f"{node_id}_{comp_name}"
                 try:
-                    network.add("Load", load_name, bus=str(node_id))
+                    network.add("Load", load_name, bus=str(node_id), carrier="electricity")
                     logger.debug(f"Added component load: {load_name}")
                 except Exception as e:
                     logger.warning(f"Could not add component load {load_name}: {e}")

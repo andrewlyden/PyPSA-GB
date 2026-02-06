@@ -282,7 +282,7 @@ HT35:
     end: "2035-01-07 23:00"
 
 HT35_flex:
-  description: "FES 2024 Holistic Transition 2035 - Full ETYS"
+  description: "FES 2024 Holistic Transition 2035 - Full ETYS with EV flexibility"
   modelled_year: 2035
   FES_year: 2024
   FES_scenario: "Holistic Transition"
@@ -296,18 +296,17 @@ HT35_flex:
   demand_disaggregation:
     enabled: true
     components:
-      - name: "heat_pumps"
+      - name: "electric_vehicles"
         allocation_method: "fes_gsp"
         use_fes_fraction: true
-        min_gwh_threshold: 0.01
   demand_flexibility:
     enabled: true
     heat_pumps:
-      enabled: true
+      enabled: false
     electric_vehicles:
       enabled: false
     event_response:
-      enabled: false
+      enabled: true
   clustering: 
     preset: gsp_spatial
     aggregate_components:

@@ -4,12 +4,58 @@ Heat Pump Demand Disaggregation and Flexibility
 This script disaggregates heat pump electricity demand from the total demand
 and optionally adds flexibility modeling (TANK or COSY modes).
 
-Flexibility Modes:
-- TANK: Hot water tank storage - stores thermal energy in hot water cylinder
-- COSY: Thermal inertia - uses building thermal mass for pre-heating
+================================================================================
+SPACE HEATING FLEXIBILITY MECHANISMS
+================================================================================
 
-Without flexibility, heat pumps are modeled as simple Load components.
-With flexibility enabled, additional Store and Link components are added.
+Both TANK and COSY modes are mechanisms for providing SPACE HEATING flexibility.
+They represent different physical storage mechanisms for pre-heating:
+
+TANK Mode (Hot Water Tank Storage):
+    - Uses hot water cylinder/tank as thermal energy storage
+    - Heat pump pre-heats water stored in tank during low-cost periods
+    - Tank releases heat to space heating system when needed
+    - Physical component: Hot water cylinder (e.g., 200-500L tank)
+    - Typical storage capacity: 10-50 kWh thermal
+    - Heat loss: ~1-3% per hour depending on insulation
+    - PyPSA components created:
+        * Bus: thermal bus for heat flow
+        * Store: hot water tank (energy storage in kWh)
+        * Link: heat pump (converts electricity to heat at COP efficiency)
+        * Load: space heating demand at thermal bus
+
+COSY Mode (Building Thermal Inertia):
+    - Uses building thermal mass (walls, floors, furniture) as storage
+    - Heat pump pre-heats building fabric during low-cost periods  
+    - Building slowly releases stored heat, maintaining comfort
+    - Physical component: Building fabric itself (concrete, brick, etc.)
+    - Typical storage capacity: 2-10 kWh thermal per 100m² floor area
+    - Heat loss: Depends on building insulation (EPC rating)
+    - PyPSA components created:
+        * Bus: thermal inertia bus for heat flow
+        * Store: building thermal mass (energy storage in kWh)
+        * Link: heat pump (converts electricity to heat at COP efficiency)
+        * Load: space heating demand at thermal bus
+
+Key Equations (same for both modes):
+    thermal_demand_mw = electric_demand_mw * COP
+    
+    Where COP (Coefficient of Performance) is temperature-dependent:
+    - Higher COP in milder weather (COP ~4-5 at 10°C ambient)
+    - Lower COP in cold weather (COP ~2-3 at 0°C ambient)
+
+Configuration (config/defaults.yaml):
+    heat_pumps:
+      enabled: true
+      flexibility:
+        enabled: true
+        tank_share: 0.5    # 50% of HP demand uses TANK mechanism
+        cosy_share: 0.5    # 50% of HP demand uses COSY mechanism
+        # Note: tank_share + cosy_share should equal 1.0
+
+Without flexibility enabled, heat pumps are modeled as simple Load components
+with fixed electricity demand profiles (no shifting capability).
+================================================================================
 """
 
 import pandas as pd
@@ -700,6 +746,8 @@ def add_hp_cosy_flexibility(n: pypsa.Network,
         n.add("Bus", thermal_bus_names, **bus_kwargs)
 
     if store_names:
+        # Note: e_min_pu=0.0 means building thermal mass cannot go below baseline temperature
+        # This represents realistic building thermal inertia - you can pre-heat but not pre-cool
         n.add(
             "Store",
             store_names,
@@ -708,7 +756,7 @@ def add_hp_cosy_flexibility(n: pypsa.Network,
             e_nom=store_e_nom,
             e_nom_extendable=False,
             e_cyclic=True,
-            e_min_pu=-1.0,
+            e_min_pu=0.0,  # Cannot go negative (can't have "borrowed" heat from future)
             e_max_pu=1.0,
             standing_loss=0.05,
         )

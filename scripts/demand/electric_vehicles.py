@@ -293,17 +293,546 @@ def _allocate_using_fes_gsp(
     return allocation
 
 # ──────────────────────────────────────────────────────────────────────────────
+# FES V2G Capacity Loading
+# ──────────────────────────────────────────────────────────────────────────────
+
+def load_fes_v2g_capacity(
+    fes_path: str,
+    fes_scenario: str,
+    modelled_year: int,
+    network: pypsa.Network,
+    logger: logging.Logger
+) -> Optional[pd.Series]:
+    """
+    Load V2G capacity from FES Srg_BB005 data by GSP.
+    
+    FES Srg_BB005 provides V2G capacity (MW availability) at GSP level.
+    Negative values indicate export capacity (V2G provides power to grid).
+    
+    Args:
+        fes_path: Path to FES data CSV
+        fes_scenario: FES scenario name (e.g., 'Holistic Transition')
+        modelled_year: Target year (e.g., 2035)
+        network: PyPSA network for bus mapping
+        logger: Logger instance
+        
+    Returns:
+        Series of V2G capacity (MW) indexed by network bus, or None if unavailable
+    """
+    if isinstance(fes_path, list):
+        fes_path = fes_path[0] if fes_path else None
+    
+    if not fes_path or not Path(fes_path).exists():
+        logger.info("FES data not available for V2G capacity")
+        return None
+    
+    try:
+        fes = pd.read_csv(fes_path, low_memory=False)
+    except Exception as exc:
+        logger.warning(f"Failed to read FES data: {exc}")
+        return None
+    
+    scenario_col = _get_fes_scenario_column(fes)
+    if scenario_col is None or 'Building Block ID Number' not in fes.columns:
+        logger.warning("FES data missing required columns for V2G")
+        return None
+    
+    year_col = str(modelled_year)
+    if year_col not in fes.columns or 'GSP' not in fes.columns:
+        logger.warning(f"FES data missing year {modelled_year} or GSP column")
+        return None
+    
+    # Filter for V2G capacity (Srg_BB005)
+    v2g_data = fes[
+        (fes['Building Block ID Number'] == 'Srg_BB005') &
+        (fes[scenario_col] == fes_scenario)
+    ].copy()
+    
+    if v2g_data.empty:
+        logger.info(f"No V2G data (Srg_BB005) found for {fes_scenario}")
+        return None
+    
+    v2g_data['GSP'] = v2g_data['GSP'].astype(str).str.strip()
+    v2g_data['v2g_mw'] = pd.to_numeric(v2g_data[year_col], errors='coerce')
+    
+    # V2G capacity is negative in FES (export to grid), take absolute value
+    v2g_data['v2g_mw'] = v2g_data['v2g_mw'].abs()
+    
+    gsp_v2g = v2g_data.groupby('GSP')['v2g_mw'].sum().dropna()
+    gsp_v2g = gsp_v2g[gsp_v2g > 0]
+    
+    if gsp_v2g.empty:
+        logger.info("No non-zero V2G capacity in FES data")
+        return None
+    
+    total_v2g = gsp_v2g.sum()
+    logger.info(f"Loaded FES V2G capacity: {total_v2g:,.0f} MW across {len(gsp_v2g)} GSPs")
+    
+    # Map GSP to network buses (simplified - use existing spatial mapping logic)
+    # For now, return GSP-level data; the caller can handle bus mapping
+    return gsp_v2g
+
+
+def load_fes_smart_charging_capacity(
+    fes_path: str,
+    fes_scenario: str,
+    modelled_year: int,
+    logger: logging.Logger
+) -> Optional[float]:
+    """
+    Load smart charging capacity from FES Srg_BB007a data.
+    
+    FES Srg_BB007a provides smart charging availability (MW) at GB level.
+    
+    Args:
+        fes_path: Path to FES data CSV
+        fes_scenario: FES scenario name (e.g., 'Holistic Transition')
+        modelled_year: Target year (e.g., 2035)
+        logger: Logger instance
+        
+    Returns:
+        Total smart charging capacity (MW), or None if unavailable
+    """
+    if isinstance(fes_path, list):
+        fes_path = fes_path[0] if fes_path else None
+    
+    if not fes_path or not Path(fes_path).exists():
+        logger.info("FES data not available for smart charging capacity")
+        return None
+    
+    try:
+        fes = pd.read_csv(fes_path, low_memory=False)
+    except Exception as exc:
+        logger.warning(f"Failed to read FES data: {exc}")
+        return None
+    
+    scenario_col = _get_fes_scenario_column(fes)
+    if scenario_col is None or 'Building Block ID Number' not in fes.columns:
+        logger.warning("FES data missing required columns for smart charging")
+        return None
+    
+    year_col = str(modelled_year)
+    if year_col not in fes.columns:
+        logger.warning(f"FES data missing year {modelled_year}")
+        return None
+    
+    # Filter for smart charging capacity (Srg_BB007a)
+    smart_data = fes[
+        (fes['Building Block ID Number'] == 'Srg_BB007a') &
+        (fes[scenario_col] == fes_scenario)
+    ].copy()
+    
+    if smart_data.empty:
+        logger.info(f"No smart charging data (Srg_BB007a) found for {fes_scenario}")
+        return None
+    
+    smart_data['smart_mw'] = pd.to_numeric(smart_data[year_col], errors='coerce')
+    
+    # Smart charging capacity should be positive (MW available for DSR)
+    total_smart = smart_data['smart_mw'].abs().sum()
+    
+    if total_smart <= 0:
+        logger.info("No non-zero smart charging capacity in FES data")
+        return None
+    
+    logger.info(f"Loaded FES smart charging capacity: {total_smart:,.0f} MW")
+    return total_smart
+
+
+def calculate_mixed_mode_shares(
+    ev_config: Dict[str, Any],
+    fes_v2g_capacity: Optional[pd.Series],
+    fes_smart_capacity: Optional[float],
+    total_ev_demand_mw: float,
+    logger: logging.Logger
+) -> Dict[str, float]:
+    """
+    Calculate the shares for MIXED mode (GO, INT, V2G).
+    
+    Uses FES building blocks to derive realistic shares:
+    - V2G share: FES Srg_BB005 (V2G MW) / total EV capacity
+    - INT share: FES Srg_BB007a (Smart charging MW) / total EV capacity - V2G share
+    - GO share: Remainder (non-smart charging EVs)
+    
+    Args:
+        ev_config: EV flexibility configuration
+        fes_v2g_capacity: FES V2G capacity per GSP (Srg_BB005)
+        fes_smart_capacity: FES smart charging capacity (Srg_BB007a)
+        total_ev_demand_mw: Total EV demand for capacity reference
+        logger: Logger instance
+        
+    Returns:
+        Dictionary with go_share, int_share, v2g_share (sum to 1.0)
+    """
+    mixed_config = ev_config.get('mixed', {})
+    mode = mixed_config.get('mode', 'fes')
+    
+    # Default manual shares
+    go_share = mixed_config.get('go_share', 0.30)
+    int_share = mixed_config.get('int_share', 0.50)
+    v2g_share = mixed_config.get('v2g_share', 0.20)
+    
+    if mode == 'fes':
+        # Get FES-derived shares
+        fes_overrides = mixed_config.get('fes_share_overrides') or {}
+        
+        # Estimate total EV charging capacity (MW) from demand
+        # Assume EVs need to charge ~4 hours/day on average
+        charging_hours_per_day = 4.0
+        estimated_capacity_mw = total_ev_demand_mw * 24 / charging_hours_per_day
+        
+        if estimated_capacity_mw <= 0:
+            logger.warning("Cannot calculate FES shares - zero EV capacity")
+            logger.info("Using manual shares")
+        else:
+            # Calculate V2G share from FES Srg_BB005
+            if fes_v2g_capacity is not None and len(fes_v2g_capacity) > 0:
+                total_v2g_mw = fes_v2g_capacity.sum()
+                fes_v2g_share = min(0.95, total_v2g_mw / estimated_capacity_mw)
+                logger.info(f"FES V2G share: {fes_v2g_share:.1%} ({total_v2g_mw:,.0f} MW / {estimated_capacity_mw:,.0f} MW est. capacity)")
+            else:
+                fes_v2g_share = None
+                logger.info("No FES V2G data - using manual v2g_share")
+            
+            # Calculate smart charging share from FES Srg_BB007a
+            if fes_smart_capacity is not None and fes_smart_capacity > 0:
+                fes_smart_share = min(0.95, fes_smart_capacity / estimated_capacity_mw)
+                logger.info(f"FES smart charging share: {fes_smart_share:.1%} ({fes_smart_capacity:,.0f} MW / {estimated_capacity_mw:,.0f} MW est. capacity)")
+            else:
+                fes_smart_share = None
+                logger.info("No FES smart charging data - using manual int_share")
+            
+            # Apply FES values with optional overrides
+            if fes_v2g_share is not None:
+                v2g_share = fes_overrides.get('v2g_share', fes_v2g_share)
+                if v2g_share is None:
+                    v2g_share = fes_v2g_share
+            
+            if fes_smart_share is not None:
+                # INT share = total smart - V2G (since V2G is a subset of smart charging)
+                fes_int_share = max(0, fes_smart_share - v2g_share)
+                int_share = fes_overrides.get('int_share', fes_int_share)
+                if int_share is None:
+                    int_share = fes_int_share
+            
+            # GO share is the remainder
+            go_share = fes_overrides.get('go_share')
+            if go_share is None:
+                go_share = max(0, 1.0 - int_share - v2g_share)
+    
+    # Normalize to ensure sum = 1.0
+    total = go_share + int_share + v2g_share
+    if total > 0 and abs(total - 1.0) > 0.001:
+        logger.warning(f"Shares sum to {total:.3f}, normalizing to 1.0")
+        go_share /= total
+        int_share /= total
+        v2g_share /= total
+    
+    shares = {
+        'go_share': go_share,
+        'int_share': int_share,
+        'v2g_share': v2g_share
+    }
+    
+    logger.info(f"MIXED mode shares: GO={go_share:.1%}, INT={int_share:.1%}, V2G={v2g_share:.1%}")
+    return shares
+
+
+def add_ev_mixed_mode(n: pypsa.Network,
+                      buses: list,
+                      ev_demand_mw: pd.DataFrame,
+                      availability_profile: pd.DataFrame,
+                      dsm_profile: pd.DataFrame,
+                      config: Dict[str, Any],
+                      shares: Dict[str, float],
+                      logger: Optional[logging.Logger] = None,
+                      fes_v2g_capacity: Optional[pd.Series] = None) -> pypsa.Network:
+    """
+    Add EV flexibility with MIXED mode - splitting fleet across GO, INT, and V2G.
+    
+    Creates separate components for each tariff type, scaled by their shares.
+    
+    Args:
+        n: PyPSA network
+        buses: List of bus names
+        ev_demand_mw: EV daily driving demand
+        availability_profile: When EVs are plugged in
+        dsm_profile: Minimum SOC requirements
+        config: Flexibility configuration
+        shares: Dictionary with go_share, int_share, v2g_share
+        logger: Logger instance
+        fes_v2g_capacity: Optional FES V2G capacity per GSP
+        
+    Returns:
+        Network with MIXED mode components
+    """
+    if logger:
+        logger.info("Adding EV MIXED mode flexibility...")
+        logger.info(f"  GO share: {shares['go_share']:.1%}")
+        logger.info(f"  INT share: {shares['int_share']:.1%}")
+        logger.info(f"  V2G share: {shares['v2g_share']:.1%}")
+    
+    # Get EV parameters
+    ev_params = _get_ev_params(config)
+    battery_capacity_kwh = ev_params['battery_capacity_kwh']
+    charge_efficiency = ev_params['charge_efficiency']
+    flex_participation = ev_params['flexibility_participation']
+    flex_share = config.get('flex_share', 1.0)
+    
+    go_config = config.get('go', {})
+    int_config = config.get('int', {})
+    v2g_config = config.get('v2g', {})
+    
+    window = go_config.get('window', ['00:00', '04:00'])
+    window_start = int(window[0].split(':')[0])
+    window_end = int(window[1].split(':')[0])
+    
+    charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
+    min_soc = int_config.get('min_soc', 0.20)
+    
+    discharge_efficiency = v2g_config.get('discharge_efficiency', DEFAULT_DISCHARGE_EFFICIENCY)
+    max_discharge_soc = v2g_config.get('max_discharge_soc', 0.80)
+    degradation_cost = v2g_config.get('degradation_cost_per_mwh', 50.0)
+    
+    # Create GO tariff cost profile (cheap during window, normal price outside)
+    go_window_cost = go_config.get('window_cost', 0.0)  # £/MWh during cheap window
+    go_offpeak_cost = go_config.get('offpeak_cost', 100.0)  # £/MWh outside window
+    go_cost_profile = create_go_tariff_cost_profile(
+        n.snapshots, window_start, window_end, go_window_cost, go_offpeak_cost
+    )
+    
+    if logger:
+        logger.info(f"GO charging window: {window_start}:00-{window_end}:00 at £{go_window_cost}/MWh")
+        logger.info(f"GO off-window cost: £{go_offpeak_cost}/MWh (charging still allowed)")
+    
+    # Calculate per-bus V2G capacity from FES if available
+    bus_v2g_capacity = None
+    use_fes_capacity = v2g_config.get('use_fes_capacity', True)
+    using_fes_v2g = (fes_v2g_capacity is not None and 
+                     len(fes_v2g_capacity) > 0 and 
+                     use_fes_capacity)
+    
+    if using_fes_v2g:
+        total_fes_v2g = fes_v2g_capacity.sum()
+        valid_buses = [b for b in buses if b in ev_demand_mw.columns]
+        total_ev_demand = sum(ev_demand_mw[b].sum() for b in valid_buses)
+        
+        if total_ev_demand > 0:
+            bus_v2g_capacity = {}
+            for bus in valid_buses:
+                bus_demand = ev_demand_mw[bus].sum()
+                demand_share = bus_demand / total_ev_demand
+                # V2G capacity is the V2G share of the FES total, scaled by flex_share
+                bus_v2g_capacity[bus] = total_fes_v2g * demand_share * shares['v2g_share'] * flex_share
+    
+    for bus in buses:
+        if bus not in ev_demand_mw.columns:
+            continue
+        
+        # Estimate fleet size
+        daily_demand_mwh = ev_demand_mw[bus].sum() / 365
+        n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
+        n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
+        
+        # Split demand across modes - ONLY flex_share fraction goes to EV battery buses
+        # The remaining (1 - flex_share) is dumb load handled separately
+        go_demand = ev_demand_mw[bus] * shares['go_share'] * flex_share
+        int_demand = ev_demand_mw[bus] * shares['int_share'] * flex_share
+        v2g_demand = ev_demand_mw[bus] * shares['v2g_share'] * flex_share
+        
+        # Get profiles
+        if bus in availability_profile.columns:
+            avail = availability_profile[bus]
+        else:
+            avail = availability_profile.mean(axis=1)
+        
+        if bus in dsm_profile.columns:
+            dsm = dsm_profile[bus]
+        else:
+            dsm = dsm_profile.mean(axis=1) if len(dsm_profile.columns) > 0 else pd.Series(min_soc, index=n.snapshots)
+        
+        e_min_pu = pd.Series(min_soc, index=n.snapshots)
+        e_min_pu = e_min_pu.combine(dsm, max)
+        
+        # ──── GO Mode Components ────
+        if shares['go_share'] > 0.001:
+            go_battery_bus = f"{bus} EV battery GO"
+            go_store_name = f"{bus} EV fleet battery GO"
+            go_charger_name = f"{bus} EV charger GO"
+            go_demand_name = f"{bus} EV driving GO"
+            
+            n_go_vehicles = max(1, int(n_flex_vehicles * shares['go_share']))
+            
+            if go_battery_bus not in n.buses.index:
+                bus_kwargs = {"carrier": "EV battery"}
+                bus_kwargs.update(_bus_coords_kwargs(n, bus))
+                n.add("Bus", go_battery_bus, **bus_kwargs)
+            
+            fleet_capacity_mwh = n_go_vehicles * battery_capacity_kwh / 1000 * flex_share
+            n.add("Store",
+                  go_store_name,
+                  bus=go_battery_bus,
+                  carrier="EV battery",
+                  e_nom=fleet_capacity_mwh,
+                  e_nom_extendable=False,
+                  e_cyclic=True,
+                  e_min_pu=min_soc)
+            
+            charger_power_mw = n_go_vehicles * charger_power_kw / 1000 * flex_share
+            n.add("Link",
+                  go_charger_name,
+                  bus0=bus,
+                  bus1=go_battery_bus,
+                  carrier="EV charger",
+                  efficiency=charge_efficiency,
+                  p_nom=charger_power_mw,
+                  p_nom_extendable=False,
+                  p_max_pu=avail,  # Use availability profile (same as INT)
+                  marginal_cost=go_cost_profile)  # Use cost to incentivize window charging
+            
+            n.add("Load",
+                  go_demand_name,
+                  bus=go_battery_bus,
+                  carrier="EV driving",
+                  p_set=go_demand)
+        
+        # ──── INT Mode Components ────
+        if shares['int_share'] > 0.001:
+            int_battery_bus = f"{bus} EV battery INT"
+            int_store_name = f"{bus} EV fleet battery INT"
+            int_charger_name = f"{bus} EV charger INT"
+            int_demand_name = f"{bus} EV driving INT"
+            
+            n_int_vehicles = max(1, int(n_flex_vehicles * shares['int_share']))
+            
+            if int_battery_bus not in n.buses.index:
+                bus_kwargs = {"carrier": "EV battery"}
+                bus_kwargs.update(_bus_coords_kwargs(n, bus))
+                n.add("Bus", int_battery_bus, **bus_kwargs)
+            
+            fleet_capacity_mwh = n_int_vehicles * battery_capacity_kwh / 1000 * flex_share
+            n.add("Store",
+                  int_store_name,
+                  bus=int_battery_bus,
+                  carrier="EV battery",
+                  e_nom=fleet_capacity_mwh,
+                  e_nom_extendable=False,
+                  e_cyclic=True,
+                  e_min_pu=e_min_pu)
+            
+            charger_power_mw = n_int_vehicles * charger_power_kw / 1000 * flex_share
+            n.add("Link",
+                  int_charger_name,
+                  bus0=bus,
+                  bus1=int_battery_bus,
+                  carrier="EV charger",
+                  efficiency=charge_efficiency,
+                  p_nom=charger_power_mw,
+                  p_nom_extendable=False,
+                  p_max_pu=avail)
+            
+            n.add("Load",
+                  int_demand_name,
+                  bus=int_battery_bus,
+                  carrier="EV driving",
+                  p_set=int_demand)
+        
+        # ──── V2G Mode Components ────
+        if shares['v2g_share'] > 0.001:
+            v2g_battery_bus = f"{bus} EV battery V2G"
+            v2g_store_name = f"{bus} EV fleet battery V2G"
+            v2g_charger_name = f"{bus} EV charger V2G"
+            v2g_discharge_name = f"{bus} V2G"
+            v2g_demand_name = f"{bus} EV driving V2G"
+            
+            n_v2g_vehicles = max(1, int(n_flex_vehicles * shares['v2g_share']))
+            
+            if v2g_battery_bus not in n.buses.index:
+                bus_kwargs = {"carrier": "EV battery"}
+                bus_kwargs.update(_bus_coords_kwargs(n, bus))
+                n.add("Bus", v2g_battery_bus, **bus_kwargs)
+            
+            fleet_capacity_mwh = n_v2g_vehicles * battery_capacity_kwh / 1000 * flex_share
+            n.add("Store",
+                  v2g_store_name,
+                  bus=v2g_battery_bus,
+                  carrier="EV battery",
+                  e_nom=fleet_capacity_mwh,
+                  e_nom_extendable=False,
+                  e_cyclic=True,
+                  e_min_pu=e_min_pu)
+            
+            charger_power_mw = n_v2g_vehicles * charger_power_kw / 1000 * flex_share
+            n.add("Link",
+                  v2g_charger_name,
+                  bus0=bus,
+                  bus1=v2g_battery_bus,
+                  carrier="EV charger",
+                  efficiency=charge_efficiency,
+                  p_nom=charger_power_mw,
+                  p_nom_extendable=False,
+                  p_max_pu=avail)
+            
+            # V2G discharge link
+            if using_fes_v2g and bus_v2g_capacity is not None and bus in bus_v2g_capacity:
+                v2g_power_mw = bus_v2g_capacity[bus]
+            else:
+                v2g_power_mw = n_v2g_vehicles * charger_power_kw / 1000 * flex_share
+            
+            if v2g_power_mw > 0:
+                n.add("Link",
+                      v2g_discharge_name,
+                      bus0=v2g_battery_bus,
+                      bus1=bus,
+                      carrier="V2G",
+                      efficiency=discharge_efficiency,
+                      p_nom=v2g_power_mw,
+                      p_nom_extendable=False,
+                      p_max_pu=avail * max_discharge_soc,
+                      marginal_cost=degradation_cost)
+            
+            n.add("Load",
+                  v2g_demand_name,
+                  bus=v2g_battery_bus,
+                  carrier="EV driving",
+                  p_set=v2g_demand)
+    
+    if logger:
+        logger.info(f"Added MIXED mode flexibility for {len(buses)} buses")
+    
+    return n
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # EV Flexibility Functions
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Default EV parameters
+# Default EV parameters (can be overridden in config/defaults.yaml)
 DEFAULT_BATTERY_CAPACITY_KWH = 60.0  # Average EV battery size
 DEFAULT_CHARGER_POWER_KW = 7.0       # Typical home charger
 DEFAULT_CHARGE_EFFICIENCY = 0.90     # Charging efficiency
 DEFAULT_DISCHARGE_EFFICIENCY = 0.90  # V2G discharge efficiency
 # Flexibility participation - not all EVs participate in smart charging
 # This scales down the modeled storage to represent available flexibility
+# Based on FES Srg_BB007 (EV Smart Charging participation %)
 DEFAULT_FLEXIBILITY_PARTICIPATION = 0.10  # 10% of fleet participates in flexibility
+
+
+def _get_ev_params(config: Dict[str, Any]) -> Dict[str, float]:
+    """
+    Extract EV parameters from config with sensible defaults.
+    
+    Args:
+        config: EV flexibility configuration dictionary
+        
+    Returns:
+        Dictionary with EV parameters
+    """
+    return {
+        'battery_capacity_kwh': config.get('battery_capacity_kwh', DEFAULT_BATTERY_CAPACITY_KWH),
+        'charge_efficiency': config.get('charge_efficiency', DEFAULT_CHARGE_EFFICIENCY),
+        'flexibility_participation': config.get('flexibility_participation', DEFAULT_FLEXIBILITY_PARTICIPATION),
+    }
 
 
 def add_ev_as_load(n: pypsa.Network,
@@ -361,6 +890,35 @@ def create_go_tariff_window(snapshots: pd.DatetimeIndex,
     return pd.Series(in_window.astype(float), index=snapshots)
 
 
+def create_go_tariff_cost_profile(snapshots: pd.DatetimeIndex,
+                                   window_start: int = 0,
+                                   window_end: int = 4,
+                                   window_cost: float = 0.0,
+                                   offpeak_cost: float = 100.0) -> pd.Series:
+    """
+    Create marginal cost profile for GO tariff charging.
+    
+    GO tariff encourages charging during the cheap window by using price
+    incentives rather than physical constraints. Charging can occur at
+    any time, but is much cheaper during the window.
+    
+    Args:
+        snapshots: DatetimeIndex for the model period
+        window_start: Hour when cheap window opens (default 0 = midnight)
+        window_end: Hour when cheap window closes (default 4 = 4am)
+        window_cost: Marginal cost during cheap window (£/MWh, default 0)
+        offpeak_cost: Marginal cost outside window (£/MWh, default 100)
+    
+    Returns:
+        Series with marginal costs - low during window, high outside
+    """
+    hours = snapshots.hour
+    in_window = (hours >= window_start) & (hours < window_end)
+    costs = pd.Series(offpeak_cost, index=snapshots)
+    costs[in_window] = window_cost
+    return costs
+
+
 def add_ev_go_tariff(n: pypsa.Network,
                      buses: list,
                      ev_demand_mw: pd.DataFrame,
@@ -390,21 +948,35 @@ def add_ev_go_tariff(n: pypsa.Network,
     if logger:
         logger.info("Adding EV GO tariff flexibility (fixed night window)...")
 
+    # Get EV parameters from config
+    ev_params = _get_ev_params(config)
+    battery_capacity_kwh = ev_params['battery_capacity_kwh']
+    charge_efficiency = ev_params['charge_efficiency']
+    flex_participation = ev_params['flexibility_participation']
+
     go_config = config.get('go', {})
     window = go_config.get('window', ['00:00', '04:00'])
     window_start = int(window[0].split(':')[0])
     window_end = int(window[1].split(':')[0])
+    
+    # GO tariff cost parameters
+    window_cost = go_config.get('window_cost', 0.0)
+    offpeak_cost = go_config.get('offpeak_cost', 100.0)
 
     int_config = config.get('int', {})
     charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
     min_soc = int_config.get('min_soc', 0.20)
 
     if logger:
-        logger.info(f"GO window: {window_start:02d}:00 - {window_end:02d}:00")
-        logger.info(f"Charger power: {charger_power_kw} kW")
+        logger.info(f"GO window: {window_start:02d}:00 - {window_end:02d}:00 at £{window_cost}/MWh")
+        logger.info(f"GO off-window cost: £{offpeak_cost}/MWh (charging still allowed)")
+        logger.info(f"Charger power: {charger_power_kw} kW, Battery: {battery_capacity_kwh} kWh")
+        logger.info(f"Flexibility participation: {flex_participation:.1%}")
 
-    # Create charging window profile
-    charging_window = create_go_tariff_window(n.snapshots, window_start, window_end)
+    # Create cost profile for GO tariff (cheap during window, expensive outside)
+    go_cost_profile = create_go_tariff_cost_profile(
+        n.snapshots, window_start, window_end, window_cost, offpeak_cost
+    )
 
     for bus in buses:
         if bus not in ev_demand_mw.columns:
@@ -420,7 +992,7 @@ def add_ev_go_tariff(n: pypsa.Network,
         n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))  # ~10 kWh/day per vehicle
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
-        n_flex_vehicles = max(1, int(n_vehicles * DEFAULT_FLEXIBILITY_PARTICIPATION))
+        n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
 
         # Add EV battery bus
         if battery_bus not in n.buses.index:
@@ -429,7 +1001,7 @@ def add_ev_go_tariff(n: pypsa.Network,
             n.add("Bus", battery_bus, **bus_kwargs)
 
         # Add EV fleet battery (Store) - scaled by participation
-        fleet_capacity_mwh = n_flex_vehicles * DEFAULT_BATTERY_CAPACITY_KWH / 1000
+        fleet_capacity_mwh = n_flex_vehicles * battery_capacity_kwh / 1000
         n.add("Store",
               store_name,
               bus=battery_bus,
@@ -439,17 +1011,19 @@ def add_ev_go_tariff(n: pypsa.Network,
               e_cyclic=True,
               e_min_pu=min_soc)  # Minimum SOC constraint
 
-        # Add charger (Link with time-limited availability) - scaled by participation
+        # Add charger (Link with cost-based incentive for window charging)
+        # GO tariff uses marginal cost to encourage window charging,
+        # but charging CAN occur at any time if needed
         charger_power_mw = n_flex_vehicles * charger_power_kw / 1000
         n.add("Link",
               charger_name,
               bus0=bus,  # Grid
               bus1=battery_bus,  # Battery
               carrier="EV charger",
-              efficiency=DEFAULT_CHARGE_EFFICIENCY,
+              efficiency=charge_efficiency,
               p_nom=charger_power_mw,
               p_nom_extendable=False,
-              p_max_pu=charging_window)  # Only charge during window
+              marginal_cost=go_cost_profile)  # Cost incentive for window charging
 
         # Add driving demand (Load from battery)
         n.add("Load",
@@ -498,14 +1072,24 @@ def add_ev_smart_charging(n: pypsa.Network,
     if logger:
         logger.info("Adding EV INT tariff flexibility (smart charging)...")
 
+    # Get EV parameters from config
+    ev_params = _get_ev_params(config)
+    battery_capacity_kwh = ev_params['battery_capacity_kwh']
+    charge_efficiency = ev_params['charge_efficiency']
+    flex_participation = ev_params['flexibility_participation']
+    
+    # Get flex_share - fraction of total EV demand that participates in flexibility
+    flex_share = config.get('flex_share', 1.0)
+
     int_config = config.get('int', {})
     charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
     min_soc = int_config.get('min_soc', 0.20)
     target_departure_soc = int_config.get('target_departure_soc', 0.80)
 
     if logger:
-        logger.info(f"Charger power: {charger_power_kw} kW")
+        logger.info(f"Charger power: {charger_power_kw} kW, Battery: {battery_capacity_kwh} kWh")
         logger.info(f"Min SOC: {min_soc*100:.0f}%, Target departure: {target_departure_soc*100:.0f}%")
+        logger.info(f"Flex share: {flex_share:.0%}, Flexibility participation: {flex_participation:.1%}")
 
     for bus in buses:
         if bus not in ev_demand_mw.columns:
@@ -521,7 +1105,7 @@ def add_ev_smart_charging(n: pypsa.Network,
         n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
-        n_flex_vehicles = max(1, int(n_vehicles * DEFAULT_FLEXIBILITY_PARTICIPATION))
+        n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
 
         # Add EV battery bus
         if battery_bus not in n.buses.index:
@@ -545,8 +1129,8 @@ def add_ev_smart_charging(n: pypsa.Network,
         e_min_pu = pd.Series(min_soc, index=n.snapshots)
         e_min_pu = e_min_pu.combine(dsm, max)  # Take maximum of base and DSM
 
-        # Add EV fleet battery (Store) - scaled by participation
-        fleet_capacity_mwh = n_flex_vehicles * DEFAULT_BATTERY_CAPACITY_KWH / 1000
+        # Add EV fleet battery (Store) - scaled by participation and flex_share
+        fleet_capacity_mwh = n_flex_vehicles * battery_capacity_kwh / 1000 * flex_share
         n.add("Store",
               store_name,
               bus=battery_bus,
@@ -556,14 +1140,14 @@ def add_ev_smart_charging(n: pypsa.Network,
               e_cyclic=True,
               e_min_pu=e_min_pu)  # Time-varying minimum SOC
 
-        # Add charger (Link with availability constraint) - scaled by participation
-        charger_power_mw = n_flex_vehicles * charger_power_kw / 1000
+        # Add charger (Link with availability constraint) - scaled by participation and flex_share
+        charger_power_mw = n_flex_vehicles * charger_power_kw / 1000 * flex_share
         n.add("Link",
               charger_name,
               bus0=bus,  # Grid
               bus1=battery_bus,  # Battery
               carrier="EV charger",
-              efficiency=DEFAULT_CHARGE_EFFICIENCY,
+              efficiency=charge_efficiency,
               p_nom=charger_power_mw,
               p_nom_extendable=False,
               p_max_pu=avail)  # Only charge when plugged in
@@ -587,13 +1171,18 @@ def add_ev_v2g(n: pypsa.Network,
                availability_profile: pd.DataFrame,
                dsm_profile: pd.DataFrame,
                config: Dict[str, Any],
-               logger: Optional[logging.Logger] = None) -> pypsa.Network:
+               logger: Optional[logging.Logger] = None,
+               fes_v2g_capacity: Optional[pd.Series] = None) -> pypsa.Network:
     """
     Add EV Vehicle-to-Grid (V2G) bidirectional flexibility.
 
     V2G allows EVs to discharge back to the grid, providing additional
     flexibility. Includes separate charge and discharge links with
     different efficiencies and constraints.
+    
+    V2G capacity can come from:
+    1. FES Srg_BB005 data (if fes_v2g_capacity provided) - distributed proportionally by EV demand
+    2. Calculated from vehicle count × charger power × participation rates
 
     Creates PyPSA components:
     - Store: EV battery
@@ -609,6 +1198,7 @@ def add_ev_v2g(n: pypsa.Network,
         dsm_profile: Minimum SOC requirements
         config: Flexibility configuration
         logger: Logger instance
+        fes_v2g_capacity: Optional GSP-level V2G capacity from FES Srg_BB005 (MW)
 
     Returns:
         Network with V2G components
@@ -616,18 +1206,65 @@ def add_ev_v2g(n: pypsa.Network,
     if logger:
         logger.info("Adding EV V2G flexibility (bidirectional)...")
 
+    # Get EV parameters from config
+    ev_params = _get_ev_params(config)
+    battery_capacity_kwh = ev_params['battery_capacity_kwh']
+    charge_efficiency = ev_params['charge_efficiency']
+    flex_participation = ev_params['flexibility_participation']
+    
+    # Get flex_share - fraction of total EV demand that participates in flexibility
+    flex_share = config.get('flex_share', 1.0)
+
     v2g_config = config.get('v2g', {})
     participation_rate = v2g_config.get('participation_rate', 0.30)
     discharge_efficiency = v2g_config.get('discharge_efficiency', DEFAULT_DISCHARGE_EFFICIENCY)
     max_discharge_soc = v2g_config.get('max_discharge_soc', 0.80)
     degradation_cost = v2g_config.get('degradation_cost_per_mwh', 50.0)
+    use_fes_capacity = v2g_config.get('use_fes_capacity', True)
 
     int_config = config.get('int', {})
     charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
     min_soc = int_config.get('min_soc', 0.20)
 
+    # Check if we should use FES V2G capacity
+    using_fes = (fes_v2g_capacity is not None and 
+                 len(fes_v2g_capacity) > 0 and 
+                 use_fes_capacity)
+    
+    # Calculate per-bus V2G capacity distribution based on EV demand
+    # This handles the case where FES GSP names don't match network bus names
+    bus_v2g_capacity = None
+    if using_fes:
+        total_fes_v2g = fes_v2g_capacity.sum()
+        # Calculate total EV demand across all buses
+        valid_buses = [b for b in buses if b in ev_demand_mw.columns]
+        total_ev_demand = sum(ev_demand_mw[b].sum() for b in valid_buses)
+        
+        if total_ev_demand > 0:
+            # Distribute FES V2G capacity proportionally by EV demand at each bus
+            bus_v2g_capacity = {}
+            for bus in valid_buses:
+                bus_demand = ev_demand_mw[bus].sum()
+                demand_share = bus_demand / total_ev_demand
+                bus_v2g_capacity[bus] = total_fes_v2g * demand_share * flex_share
+            
+            if logger:
+                logger.info(f"Using FES Srg_BB005 V2G capacity: {total_fes_v2g:,.0f} MW total")
+                logger.info(f"  Distributed proportionally to {len(bus_v2g_capacity)} buses by EV demand")
+                logger.info(f"  After flex_share ({flex_share:.0%}): {total_fes_v2g * flex_share:,.0f} MW")
+        else:
+            using_fes = False
+            if logger:
+                logger.warning("No EV demand found, falling back to calculated V2G capacity")
+    
+    if not using_fes and logger:
+        logger.info("Calculating V2G capacity from vehicle count × charger power")
+
     if logger:
-        logger.info(f"V2G participation rate: {participation_rate*100:.0f}%")
+        logger.info(f"Charger power: {charger_power_kw} kW, Battery: {battery_capacity_kwh} kWh")
+        logger.info(f"Flex share: {flex_share:.0%}, Flexibility participation: {flex_participation:.1%}")
+        if not using_fes:
+            logger.info(f"V2G participation rate: {participation_rate*100:.0f}%")
         logger.info(f"Discharge efficiency: {discharge_efficiency*100:.0f}%")
         logger.info(f"Max discharge SOC: {max_discharge_soc*100:.0f}%")
         logger.info(f"Degradation cost: £{degradation_cost}/MWh")
@@ -647,7 +1284,7 @@ def add_ev_v2g(n: pypsa.Network,
         n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
-        n_flex_vehicles = max(1, int(n_vehicles * DEFAULT_FLEXIBILITY_PARTICIPATION))
+        n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
         n_v2g_vehicles = max(1, int(n_flex_vehicles * participation_rate))
 
         # Add EV battery bus
@@ -670,8 +1307,8 @@ def add_ev_v2g(n: pypsa.Network,
         e_min_pu = pd.Series(min_soc, index=n.snapshots)
         e_min_pu = e_min_pu.combine(dsm, max)
 
-        # Add EV fleet battery (Store) - scaled by participation
-        fleet_capacity_mwh = n_flex_vehicles * DEFAULT_BATTERY_CAPACITY_KWH / 1000
+        # Add EV fleet battery (Store) - scaled by participation and flex_share
+        fleet_capacity_mwh = n_flex_vehicles * battery_capacity_kwh / 1000 * flex_share
         n.add("Store",
               store_name,
               bus=battery_bus,
@@ -681,21 +1318,26 @@ def add_ev_v2g(n: pypsa.Network,
               e_cyclic=True,
               e_min_pu=e_min_pu)
 
-        # Add charger (Grid -> Battery) - scaled by participation
-        charger_power_mw = n_flex_vehicles * charger_power_kw / 1000
+        # Add charger (Grid -> Battery) - scaled by participation and flex_share and flex_share
+        charger_power_mw = n_flex_vehicles * charger_power_kw / 1000 * flex_share
         n.add("Link",
               charger_name,
               bus0=bus,
               bus1=battery_bus,
               carrier="EV charger",
-              efficiency=DEFAULT_CHARGE_EFFICIENCY,
+              efficiency=charge_efficiency,
               p_nom=charger_power_mw,
               p_nom_extendable=False,
               p_max_pu=avail)
 
         # Add V2G discharge link (Battery -> Grid)
         # Only V2G-capable vehicles can discharge
-        v2g_power_mw = n_v2g_vehicles * charger_power_kw / 1000
+        if using_fes and bus_v2g_capacity is not None and bus in bus_v2g_capacity:
+            # Use FES Srg_BB005 V2G capacity distributed by EV demand (already scaled by flex_share)
+            v2g_power_mw = bus_v2g_capacity[bus]
+        else:
+            # Calculate from vehicle count × charger power, scaled by flex_share
+            v2g_power_mw = n_v2g_vehicles * charger_power_kw / 1000 * flex_share
         if v2g_power_mw > 0:
             n.add("Link",
                   v2g_name,
@@ -727,7 +1369,8 @@ def add_ev_flexibility(n: pypsa.Network,
                        availability_profile: pd.DataFrame,
                        dsm_profile: pd.DataFrame,
                        flex_config: Dict[str, Any],
-                       logger: Optional[logging.Logger] = None) -> pypsa.Network:
+                       logger: Optional[logging.Logger] = None,
+                       fes_v2g_capacity: Optional[pd.Series] = None) -> pypsa.Network:
     """
     Add EV flexibility to network based on configuration.
 
@@ -741,6 +1384,7 @@ def add_ev_flexibility(n: pypsa.Network,
         dsm_profile: Minimum SOC requirements
         flex_config: Flexibility configuration from defaults.yaml
         logger: Logger instance
+        fes_v2g_capacity: Optional FES V2G capacity per bus (from Srg_BB005)
 
     Returns:
         Network with appropriate flexibility components
@@ -764,7 +1408,23 @@ def add_ev_flexibility(n: pypsa.Network,
                                      dsm_profile, ev_config, logger)
     elif tariff.upper() == 'V2G':
         return add_ev_v2g(n, buses, ev_demand_mw, availability_profile,
-                          dsm_profile, ev_config, logger)
+                          dsm_profile, ev_config, logger, fes_v2g_capacity)
+    elif tariff.upper() == 'MIXED':
+        # Calculate average demand for share calculation
+        valid_buses = [b for b in buses if b in ev_demand_mw.columns]
+        total_ev_demand_mw = sum(ev_demand_mw[b].mean() for b in valid_buses)
+        
+        # Calculate shares (uses FES data if available)
+        shares = calculate_mixed_mode_shares(
+            ev_config=ev_config,
+            fes_v2g_capacity=fes_v2g_capacity,
+            fes_smart_capacity=flex_config.get('_fes_smart_capacity'),  # Passed from caller
+            total_ev_demand_mw=total_ev_demand_mw,
+            logger=logger
+        )
+        
+        return add_ev_mixed_mode(n, buses, ev_demand_mw, availability_profile,
+                                 dsm_profile, ev_config, shares, logger, fes_v2g_capacity)
     else:
         if logger:
             logger.warning(f"Unknown tariff '{tariff}', defaulting to simple loads")
@@ -867,15 +1527,31 @@ if __name__ == "__main__":
             timesteps = np.arange(n_timesteps)
             steps_per_day = max(1, timesteps_per_day)
 
-            # Daily charging pattern (peaks in evening ~18:00-22:00)
+            # Daily EV driving pattern - realistic multi-modal distribution
+            # Represents when EVs consume electricity (driving demand)
             hour_of_day = (timesteps % steps_per_day) * timestep_hours
-            evening_peak = np.exp(-((hour_of_day - 20) ** 2) / (2 * 2 ** 2))  # Peak at 20:00
+            
+            # Morning commute peak (08:00) - 30% of daily driving
+            morning_peak = 0.3 * np.exp(-((hour_of_day - 8) ** 2) / (2 * 1.5 ** 2))
+            
+            # Evening commute peak (18:00) - 30% of daily driving  
+            evening_peak = 0.3 * np.exp(-((hour_of_day - 18) ** 2) / (2 * 1.5 ** 2))
+            
+            # Midday usage (10:00-16:00) - 40% of daily driving, distributed
+            midday_usage = np.where(
+                (hour_of_day >= 10) & (hour_of_day <= 16),
+                0.4 * (1 - np.abs(hour_of_day - 13) / 3) * 0.5,
+                0
+            )
+            
+            # Combined profile (peak/mean ratio ~2.5x, realistic)
+            daily_profile = morning_peak + evening_peak + midday_usage
 
             # Weekly pattern (higher on weekdays)
             day_of_week = (timesteps // steps_per_day) % 7
             weekday_factor = np.where(day_of_week < 5, 1.2, 0.8)  # Higher Mon-Fri
 
-            synthetic_profile = evening_peak * weekday_factor
+            synthetic_profile = daily_profile * weekday_factor
             profile_shape = pd.Series(synthetic_profile, index=base_profile.index)
 
             logger.info(f"Generated synthetic EV profile: {profile_shape.shape}")

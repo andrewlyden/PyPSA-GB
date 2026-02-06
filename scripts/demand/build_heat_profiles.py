@@ -352,13 +352,24 @@ def process_heat_profiles(cutout_path: str,
     )
 
     # Save outputs as NetCDF
+    # IMPORTANT: Compute lazy Dask arrays before saving to avoid slow writes
+    logger.info("Computing lazy arrays before saving...")
+    
+    # Compute all arrays to load into memory (avoids slow on-the-fly computation during write)
+    if hasattr(heat_demand, 'compute'):
+        heat_demand = heat_demand.compute()
+        logger.info("Heat demand computed")
+    if hasattr(cop_ashp, 'compute'):
+        cop_ashp = cop_ashp.compute()
+        logger.info("ASHP COP computed")
+    
     logger.info("Saving outputs...")
 
     # Heat demand
     heat_demand_ds = xr.Dataset({'heat_demand': heat_demand})
     heat_demand_ds.attrs['description'] = 'Normalized heat demand profile based on heating degree hours'
     heat_demand_ds.attrs['base_temperature'] = HEATING_BASE_TEMP
-    heat_demand_ds.to_netcdf(output_heat_demand)
+    heat_demand_ds.to_netcdf(output_heat_demand, engine='netcdf4')
     logger.info(f"Saved heat demand profile to {output_heat_demand}")
 
     # ASHP COP
@@ -366,7 +377,7 @@ def process_heat_profiles(cutout_path: str,
     cop_ashp_ds.attrs['description'] = 'Air Source Heat Pump Coefficient of Performance'
     cop_ashp_ds.attrs['sink_temperature'] = ASHP_SINK_TEMP
     cop_ashp_ds.attrs['formula'] = f'COP = {ASHP_COP_A} - {ASHP_COP_B}*dT + {ASHP_COP_C}*dT^2'
-    cop_ashp_ds.to_netcdf(output_cop_ashp)
+    cop_ashp_ds.to_netcdf(output_cop_ashp, engine='netcdf4')
     logger.info(f"Saved ASHP COP to {output_cop_ashp}")
 
     # GSHP COP
@@ -375,7 +386,7 @@ def process_heat_profiles(cutout_path: str,
     cop_gshp_ds.attrs['sink_temperature'] = GSHP_SINK_TEMP
     cop_gshp_ds.attrs['ground_temp_mean'] = GROUND_TEMP_MEAN
     cop_gshp_ds.attrs['ground_temp_amplitude'] = GROUND_TEMP_AMPLITUDE
-    cop_gshp_ds.to_netcdf(output_cop_gshp)
+    cop_gshp_ds.to_netcdf(output_cop_gshp, engine='netcdf4')
     logger.info(f"Saved GSHP COP to {output_cop_gshp}")
 
     # Summary statistics

@@ -24,6 +24,7 @@ Interactive Jupyter notebook tutorials demonstrating PyPSA-GB's network-constrai
 10-storage
 11-interconnectors
 12-hydrogen
+13-heat-flexibility
 ```
 
 ## Tutorial Overview
@@ -55,6 +56,7 @@ Deep dives into specific aspects of power system modeling:
 | **10** | Storage | Flexibility Resources | Batteries, pumped hydro, state of charge, arbitrage |
 | **11** | Interconnectors | Cross-border Trade | HVDC links, import/export flows, utilization |
 | **12** | Hydrogen | Sector Coupling | Electrolysis, H2 storage, hydrogen-to-power |
+| **13** | Heat Flexibility | Heat Pump Demand | TANK/COSY modes, COP, thermal storage, demand shifting |
 
 
 ## Running Tutorials

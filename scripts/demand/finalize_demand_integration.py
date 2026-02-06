@@ -28,6 +28,7 @@ from scripts.demand.add_demand_flexibility import (
     generate_integration_summary,
     _load_cop_profile
 )
+from scripts.demand.electric_vehicles import load_fes_v2g_capacity
 
 
 def _extract_component_names(disaggregation_config: Dict) -> list:
@@ -106,7 +107,8 @@ def finalize_demand_integration(
     hp_cop_profile: Optional[pd.DataFrame],
     ev_availability: Optional[pd.DataFrame],
     ev_dsm: Optional[pd.DataFrame],
-    logger: logging.Logger
+    logger: logging.Logger,
+    fes_v2g_capacity: Optional[pd.Series] = None
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     logger.info("=" * 80)
     logger.info("FINALIZING DEMAND INTEGRATION")
@@ -133,6 +135,11 @@ def finalize_demand_integration(
         hp_data = component_data.get("heat_pumps", {})
         ev_data = component_data.get("electric_vehicles", {})
 
+        # Get FES parameters for MIXED mode
+        fes_path = snakemake.input.fes_data if hasattr(snakemake.input, 'fes_data') else None
+        fes_scenario = snakemake.params.get('fes_scenario')
+        modelled_year = snakemake.params.get('modelled_year')
+        
         n = integrate_demand_flexibility(
             n=n,
             flex_config=flexibility_config,
@@ -143,6 +150,10 @@ def finalize_demand_integration(
             ev_availability=ev_availability,
             ev_dsm=ev_dsm,
             ev_allocation=ev_data.get("allocation"),
+            fes_v2g_capacity=fes_v2g_capacity,
+            fes_path=fes_path,
+            fes_scenario=fes_scenario,
+            modelled_year=modelled_year,
             add_load_shedding=False,
             logger=logger
         )
@@ -194,16 +205,43 @@ if __name__ == "__main__":
         parse_dates=True
     )
 
+    # Load FES V2G capacity if V2G tariff is enabled and use_fes_capacity is true
+    fes_v2g_capacity = None
+    flexibility_config = snakemake.params.flexibility_config
+    ev_config = flexibility_config.get('electric_vehicles', {})
+    tariff = ev_config.get('tariff', 'INT').upper()
+    use_fes_v2g = ev_config.get('v2g', {}).get('use_fes_capacity', False)
+    
+    if tariff == 'V2G' and use_fes_v2g:
+        if hasattr(snakemake.input, 'fes_data') and snakemake.input.fes_data:
+            fes_scenario = snakemake.params.get('fes_scenario')
+            modelled_year = snakemake.params.get('modelled_year')
+            if fes_scenario and modelled_year:
+                fes_v2g_capacity = load_fes_v2g_capacity(
+                    fes_path=snakemake.input.fes_data,
+                    fes_scenario=fes_scenario,
+                    modelled_year=modelled_year,
+                    network=base_network,
+                    logger=logger
+                )
+                if fes_v2g_capacity is not None:
+                    logger.info(f"Loaded FES V2G capacity: {fes_v2g_capacity.sum():,.0f} MW total")
+            else:
+                logger.warning("V2G FES capacity requested but fes_scenario or modelled_year not provided")
+        else:
+            logger.warning("V2G FES capacity requested but FES data file not available")
+
     n, disagg_summary, summary, _ = finalize_demand_integration(
         n=base_network,
         base_profile=base_profile,
         disaggregation_config=snakemake.params.disaggregation_config,
-        flexibility_config=snakemake.params.flexibility_config,
+        flexibility_config=flexibility_config,
         component_data=component_data,
         hp_cop_profile=hp_cop_profile,
         ev_availability=ev_availability,
         ev_dsm=ev_dsm,
-        logger=logger
+        logger=logger,
+        fes_v2g_capacity=fes_v2g_capacity
     )
 
     save_network(n, snakemake.output.network, custom_logger=logger)

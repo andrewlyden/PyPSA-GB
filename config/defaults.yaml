@@ -141,7 +141,8 @@ demand_flexibility:
       morning_window: ["07:00", "09:00"]   # Morning pre-heat window
       evening_window: ["17:00", "19:00"]   # Evening pre-heat window
       max_temp_deviation_celsius: 2.0      # Max comfort deviation (±°C)
-      thermal_mass_hours: 2.0              # Hours of heating that can be pre-heated
+      thermal_mass_hours: 0.3              # Hours of heating that can be stored in building fabric
+                                           # Based on ~2.7 kWh/dwelling at ~10 kW peak thermal
     # TANK mode: Hot water tank storage
     tank:
       volume_liters: 200              # Average tank volume
@@ -151,27 +152,87 @@ demand_flexibility:
 
   # ELECTRIC VEHICLE FLEXIBILITY (independently toggleable)
   # Requires electric_vehicles in demand_disaggregation.components
+  # 
+  # EV flexibility modeling uses FES building blocks:
+  #   - Dem_BB006: EV domestic charging demand (GWh)
+  #   - Dem_BB007: EV non-domestic charging demand (GWh)
+  #   - Srg_BB005: V2G availability (MW) - used for V2G and MIXED modes
+  #   - Srg_BB007a: Smart charging availability (MW) - used for MIXED mode
+  #
+  # Without flexibility, EVs are simple Load components with evening-peak profile.
+  # With flexibility, Store + Link components enable charging optimization.
   electric_vehicles:
     enabled: false                    # Independent toggle for EV flexibility
-    tariff: "INT"                     # GO, INT, or V2G
+    tariff: "MIXED"                     # GO, INT, V2G, or MIXED (see modes below)
+    
+    # Flex share: Fraction of EV demand that participates in flexibility
+    # Controls DEMAND SPLIT: 20% → smart charging, 80% → dumb loads
+    # 1.0 = all EVs are flexible, 0.2 = only 20% of EV demand uses smart charging
+    flex_share: 0.2
+    
+    # Fleet characteristics (affect storage/charger sizing)
+    battery_capacity_kwh: 60.0        # Average EV battery size (kWh)
+    charge_efficiency: 0.90           # Grid-to-battery efficiency
+    
     # GO tariff: Octopus Go style fixed night window
+    # Simple time-of-use tariff with cheap overnight rates
+    # Charging is incentivized during window via cost differential,
+    # but charging CAN still occur outside window if needed (at higher cost)
     go:
-      window: ["00:00", "04:00"]      # Charging window (4 hours)
+      window: ["00:00", "04:00"]      # Cheap charging window (4 hours)
+      window_cost: 0.0                # Marginal cost during cheap window (£/MWh)
+      offpeak_cost: 100.0             # Marginal cost outside window (£/MWh)
+    
     # INT tariff: Intelligent/smart charging - fully optimizable
+    # Charging can be shifted across all hours when plugged in
     int:
-      min_soc: 0.20                   # Minimum state of charge (range anxiety buffer)
-      target_departure_soc: 0.80      # Target SOC at departure time
-      charger_power_kw: 7.0           # Home charger power
+      min_soc: 0.20                   # Minimum SOC (range anxiety buffer)
+      target_departure_soc: 0.80      # Target SOC at departure time (7am)
+      charger_power_kw: 7.0           # Home charger power (kW)
+    
     # V2G: Vehicle-to-grid bidirectional
+    # EVs can discharge back to grid for additional flexibility
+    # V2G capacity sources (in order of priority):
+    #   1. FES Srg_BB005 if use_fes_capacity: true (distributed by EV demand)
+    #   2. Calculated from fleet × participation_rate × charger_power
     v2g:
-      participation_rate: 0.30        # Fraction of fleet with V2G capability
-      discharge_efficiency: 0.90      # Round-trip efficiency for discharge
+      participation_rate: 0.30        # Fraction of flexible fleet with V2G (if not using FES)
+      discharge_efficiency: 0.90      # Battery-to-grid efficiency
       max_discharge_soc: 0.80         # Don't discharge below 20% SOC
       degradation_cost_per_mwh: 50.0  # Battery wear cost (£/MWh)
-    # Availability profile parameters
+      use_fes_capacity: true          # Use FES Srg_BB005 V2G capacity (17.9 GW for HT 2035)
+    
+    # MIXED mode: Split EV fleet across GO, INT, and V2G tariffs
+    # This provides a realistic mix of charging behaviors
+    # Shares are calculated from FES data or can be manually overridden
+    mixed:
+      # Share calculation mode:
+      #   "fes" - Use FES building blocks to calculate shares (recommended)
+      #   "manual" - Use the shares defined below
+      mode: "fes"
+      
+      # Manual share overrides (used if mode: "manual" or FES data unavailable)
+      # Must sum to 1.0
+      go_share: 0.30                  # 30% on Octopus Go style (fixed window)
+      int_share: 0.50                 # 50% on intelligent smart charging
+      v2g_share: 0.20                 # 20% with V2G capability
+      
+      # FES-derived share options (used if mode: "fes")
+      # V2G share is derived from FES Srg_BB005 (V2G MW) / total EV charging capacity
+      # INT share is the remaining smart charging capacity from FES Srg_BB007a
+      # GO share is the remainder (non-smart charging EVs)
+      fes_share_overrides:
+        # Optional: Override specific shares even in FES mode
+        # Uncomment to fix a share while others adjust
+        # go_share: 0.20              # Force 20% GO, rest from FES
+        # v2g_share: null             # null = use FES value
+    
+    # Availability profile parameters (from GB traffic patterns)
+    # EVs available for charging when parked (inversely related to traffic)
     availability:
-      avail_max: 0.95                 # Max fraction of time plugged in
-      avail_mean: 0.80                # Mean fraction of time plugged in
+      avail_max: 0.95                 # Max fraction plugged in (overnight)
+      avail_mean: 0.80                # Mean fraction plugged in
+      departure_hour: 7               # Morning departure time for DSM constraint
 
   # EVENT RESPONSE / DEMAND RESPONSE (independently toggleable)
   # Saving Sessions style demand response events
