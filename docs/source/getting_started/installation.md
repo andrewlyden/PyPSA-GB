@@ -88,13 +88,27 @@ snakemake -n -p
 ## Step 6: Download Weather Data
 
 For renewable generation profiles, you need ERA5 weather data "cutouts". Pre-generated cutouts for common years are available.
-
+  1. Configure the CDS API (one-time setup)
 To generate new cutouts (requires CDS API credentials):
 
 ```bash
 # Configure CDS API (one-time setup)
 # See: https://cds.climate.copernicus.eu/api-how-to
+```
+ 2. To generate weather data for a specific year, update the configuration file:
 
+```bash
+config/cutouts_config.yaml
+```
+Set the desired year in the year_to_generate field, for example:
+
+```bash
+years_to_generate:
+    - 2020
+```
+ 3. Generate the Cutouts
+ 
+```bash
 # Generate cutouts for a specific year
 snakemake -s Snakefile_cutouts -j 2 --config year=2019
 ```
