@@ -149,6 +149,20 @@ def is_v2g_with_fes_enabled(scenario):
     return tariff == "V2G" and use_fes
 
 
+def is_event_response_with_fes_enabled(scenario):
+    """Check if event response with FES capacity is enabled."""
+    if not is_event_flexibility_enabled(scenario):
+        return False
+    flex_config = get_flexibility_config(scenario)
+    event_config = flex_config.get("event_response", {})
+    return event_config.get("use_fes_capacity", False)
+
+
+def requires_fes_data_for_flexibility(scenario):
+    """Check if any flexibility component requires FES data."""
+    return is_v2g_with_fes_enabled(scenario) or is_event_response_with_fes_enabled(scenario)
+
+
 def get_final_demand_network(wildcards):
     """Return the finalized demand-side network for downstream rules."""
     scenario = wildcards.scenario
@@ -440,8 +454,8 @@ rule finalize_demand:
         cop_ashp=lambda w: f"{resources_path}/demand/cop_ashp_{w.scenario}.nc" if is_hp_flexibility_enabled(w.scenario) else [],
         ev_availability=lambda w: f"{resources_path}/demand/ev_availability_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
         ev_dsm=lambda w: f"{resources_path}/demand/ev_dsm_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
-        # FES data for V2G capacity (conditional)
-        fes_data=lambda w: get_fes_data_input(w) if is_v2g_with_fes_enabled(w.scenario) else []
+        # FES data for V2G capacity and event response DSR capacity (conditional)
+        fes_data=lambda w: get_fes_data_input(w) if requires_fes_data_for_flexibility(w.scenario) else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
         summary=f"{resources_path}/demand/{{scenario}}_demand_integration_summary.csv"

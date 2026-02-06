@@ -235,13 +235,27 @@ demand_flexibility:
       departure_hour: 7               # Morning departure time for DSM constraint
 
   # EVENT RESPONSE / DEMAND RESPONSE (independently toggleable)
-  # Saving Sessions style demand response events
+  # Saving Sessions style demand response events - DOMESTIC DSR only
+  # This represents households reducing demand during peak periods
   event_response:
     enabled: false                    # Independent toggle for event response
-    mode: "regular"                   # regular, winter, or both
-    # Regular mode: 2 events/week throughout year
-    # Winter mode: 5 events/week during Oct-Mar
-    event_window: ["17:00", "19:00"]  # Default event time window
-    participation_rate: 0.33          # Fixed participation rate (33%)
-    max_reduction_fraction: 0.10      # Max demand reduction per event (10%)
+    
+    # EVENT FREQUENCY MODES (choose one):
+    #   "regular"  - 2 events/week YEAR-ROUND (baseline flexibility, constant participation)
+    #   "winter"   - 5 events/week Oct-Mar ONLY, 0 events Apr-Sep (crisis mode, winter peaks)
+    #   "both"     - 2 events/week year-round + extra 5 events/week during Oct-Mar (realistic mix)
+    mode: "both"
+    
+    # Event Window Options (choose one, realistic alternatives):
+    #   ["17:00", "19:00"]  - Evening peak only (tight window, high utilization)
+    #   ["16:00", "20:00"]  - Extended evening (covers demand ramp-up)
+    #   ["07:00", "22:00"]  - Full day flexibility (most realistic for modern DSR)
+    event_window: ["07:00", "22:00"]  # Default: evening peak window
+    
+    dsr_capacity_mw: null             # User-defined domestic DSR capacity (MW)
+    # If dsr_capacity_mw is set: Uses that value directly
+    # If null: Calculates from participation_rate * max_reduction_fraction * demand
+    participation_rate: 0.33          # Fallback: participation rate (33%)
+    max_reduction_fraction: 0.10      # Fallback: max demand reduction per event (10%)
+    marginal_cost: 100.0              # DSR incentive payment (£/MWh) - high cost = only dispatch if needed
     winter_months: [10, 11, 12, 1, 2, 3]  # Oct-Mar for winter mode

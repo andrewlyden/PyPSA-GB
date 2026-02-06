@@ -40,6 +40,42 @@ DEFAULT_B = 0.0001
 GSP_REGIONS_FILE = "data/network/GSP/GSP_regions_4326_20250109.geojson"
 LAND_BUFFER_KM = 0.5  # Buffer distance from coastline
 
+# ─── Extra wind farm edge ratings ────────────────────────────────────────────
+# Ratings for Extra_WF_edges in GB_network.xlsx, derived from real ETYS data.
+# These replace the default s_nom=9999 (infinite capacity) to properly
+# represent the actual transmission capability of offshore connections.
+# Sources: ETYS B-2-1d (OFTO data) and B-2-1c (NGET data).
+EXTRA_WF_EDGE_RATINGS = {
+    # From OFTO data (B-2-1d) — offshore export cable ratings
+    'BOSO11': 106,    # Barrow Offshore WF
+    'BRST42': 369,    # East Anglia One
+    'ORMO11': 158,    # Ormonde Offshore WF
+    'SALL11': 178,    # Sheringham Shoal WF
+    'SALL12': 178,    # Sheringham Shoal WF (circuit 2)
+    'GUNS11': 158,    # Gunfleet Sands WF
+    'LONO4A': 360,    # London Array WF
+    'LONO4B': 360,    # London Array WF (circuit 2)
+    'BODE41': 277,    # Burbo Bank Extension WF
+    'LINO41': 492,    # Lincs WF
+    'RORE11': 103,    # Robin Rigg East WF
+    'RORW11': 103,    # Robin Rigg West WF
+    'THAW11': 155,    # Thanet WF
+    'THAW12': 155,    # Thanet WF (circuit 2)
+    'WAAO11': 192,    # Walney 1 WF
+    'WABO11': 192,    # Walney 2 WF
+    # From main ETYS data (B-2-1c) — large onshore connection stubs
+    'CREB2A': 1749,   # Creyke Beck (Dogger Bank)
+    'CREB2B': 1749,   # Creyke Beck (Dogger Bank, circuit 2)
+    'NECT41': 3326,   # Necton (Norfolk projects)
+    # Inferred from connected OFTO circuit ratings
+    'BEAT4A': 321,    # Beatrice WF (from BEAT41→BLHI4- rating)
+    'BEAT4B': 321,    # Beatrice WF (circuit 2)
+    'BLHI41': 321,    # Blackhillock WF stub (Beatrice connection)
+    'BLHI42': 321,    # Blackhillock WF stub (circuit 2)
+    'LINO42': 492,    # Lincs WF (parallel to LINO41)
+    'GANW14': 181,    # Galloper WF (from GALO→GANW rating 180.6)
+}
+
 
 def load_land_boundaries(logger: Optional[logging.Logger] = None) -> Optional[gpd.GeoDataFrame]:
     """
@@ -162,14 +198,19 @@ def move_point_to_land(lat: float, lon: float, land_boundary: gpd.GeoDataFrame,
 
 
 def ensure_buses_on_land(network: pypsa.Network, land_boundary: Optional[gpd.GeoDataFrame],
-                        logger: Optional[logging.Logger] = None) -> int:
+                        logger: Optional[logging.Logger] = None,
+                        skip_buses: Optional[set] = None) -> int:
     """
-    Ensure all buses in the network are located on land.
+    Ensure all non-offshore buses in the network are located on land.
+    
+    Offshore wind farm buses (identified via skip_buses) are legitimately
+    at sea and should NOT be moved to land.
     
     Args:
         network: PyPSA network with bus coordinates
         land_boundary: GeoDataFrame with land boundaries
         logger: Optional logger instance
+        skip_buses: Set of bus IDs to skip (e.g. offshore wind farm buses)
         
     Returns:
         Number of buses moved from sea to land
@@ -180,14 +221,26 @@ def ensure_buses_on_land(network: pypsa.Network, land_boundary: Optional[gpd.Geo
     if land_boundary is None:
         logger.warning("No land boundary data available - skipping land validation")
         return 0
+    
+    if skip_buses is None:
+        skip_buses = set()
         
     logger.info("Checking bus locations against land boundaries")
+    if skip_buses:
+        logger.info(f"Skipping {len(skip_buses)} offshore buses")
     buses_moved = 0
+    buses_skipped = 0
     
     for bus_id, bus_data in network.buses.iterrows():
         lat, lon = bus_data.lat, bus_data.lon
         
         if not check_point_on_land(lat, lon, land_boundary, logger):
+            # Check if this is an offshore bus that should stay at sea
+            if bus_id in skip_buses:
+                buses_skipped += 1
+                logger.debug(f"Keeping offshore bus {bus_id} at sea ({lat:.4f}, {lon:.4f})")
+                continue
+            
             # Bus is at sea - move to land
             new_lat, new_lon = move_point_to_land(lat, lon, land_boundary, logger)
             network.buses.loc[bus_id, 'lat'] = new_lat
@@ -198,7 +251,9 @@ def ensure_buses_on_land(network: pypsa.Network, land_boundary: Optional[gpd.Geo
     
     if buses_moved > 0:
         logger.info(f"Moved {buses_moved} buses from sea to land")
-    else:
+    if buses_skipped > 0:
+        logger.info(f"Kept {buses_skipped} offshore buses at sea")
+    if buses_moved == 0 and buses_skipped == 0:
         logger.info("All buses were already on land")
         
     return buses_moved
@@ -263,8 +318,12 @@ def sort_raw_ETYS_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     dfj = pd.read_excel(snakemake.input[1], sheet_name='Extra_WF_edges')
     dfj.loc[:, 'component'] = 'line'
     dfj.loc[:, 'carrier'] = 'AC'
-    dfj.loc[:, 'Winter Rating (MVA)'] = 9999
-    logger.info(f"Loaded {len(dfj)} extra wind farm edges")
+    # Use real OFTO-derived ratings instead of infinite capacity
+    # Ratings sourced from ETYS Appendix B-2-1d (OFTO data) and B-2-1c
+    node1_col = 'Node 1' if 'Node 1' in dfj.columns else 'Node1'
+    dfj.loc[:, 'Winter Rating (MVA)'] = dfj[node1_col].map(EXTRA_WF_EDGE_RATINGS).fillna(9999)
+    rated_count = (dfj['Winter Rating (MVA)'] != 9999).sum()
+    logger.info(f"Loaded {len(dfj)} extra wind farm edges ({rated_count} with OFTO-derived ratings)")
 
     dfk = pd.read_excel(snakemake.input[1], sheet_name='Extra_BMUs_edges')
     dfk.loc[:, 'component'] = 'line'
@@ -273,11 +332,30 @@ def sort_raw_ETYS_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     logger.info(f"Loaded {len(dfk)} extra BMU edges")
 
     logger.info("Concatenating all network components")
+    # Identify true offshore buses: buses that appear ONLY in OFTO data (B-2-1d,
+    # B-3-1d) and NOT in any main ETYS sheet (B-2-1a/b/c, B-3-1a/b/c).
+    # These are offshore wind farm platforms and their internal substations.
+    main_etys_buses = set()
+    for _df in [dfa, dfb, dfc, dfe, dff, dfg]:
+        main_etys_buses.update(_df['Node 1'].dropna().tolist())
+        main_etys_buses.update(_df['Node 2'].dropna().tolist())
+    
+    ofto_buses = set()
+    for _df in [dfd, dfh]:
+        ofto_buses.update(_df['Node 1'].dropna().tolist())
+        ofto_buses.update(_df['Node 2'].dropna().tolist())
+    
+    offshore_wf_buses = ofto_buses - main_etys_buses
+    logger.info(f"Identified {len(offshore_wf_buses)} offshore buses (in OFTO data only, not in main ETYS)")
+    
     df = pd.concat([dfa, dfb, dfc, dfd, dfe, dff, dfg, dfh, dfi, dfj, dfk], ignore_index=True)
     df.rename(columns={'Node 1': 'bus0', 'Node 2': 'bus1'}, inplace=True)
     df.index.name = 'name'
     df.reset_index(drop=True, inplace=True)
     df.rename(columns={'R (% on 100 MVA)': 'r', 'X (% on 100 MVA)': 'x', 'B (% on 100 MVA)': 'b', 'Winter Rating (MVA)': 's_nom'}, inplace=True)
+    
+    # Store offshore bus set as module-level for use in coordinate guessing
+    sort_raw_ETYS_data._offshore_wf_buses = offshore_wf_buses
     
     # Calculate total length for distance-based coordinate estimation
     if 'OHL Length (km)' in df.columns and 'Cable Length (km)' in df.columns:
@@ -445,10 +523,16 @@ def add_GSP_location_data(df_buses: pd.DataFrame, df2: pd.DataFrame, logger: Opt
 def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     """
     Improved coordinate guessing using distance-weighted estimation and graph connectivity.
-    Uses line lengths to better estimate bus positions and ensures all buses are on land.
+    Uses line lengths to better estimate bus positions and ensures all onshore buses are on land.
+    Offshore wind farm buses (identified from OFTO data) are kept at their estimated sea positions.
     """
     if logger is None:
         logger = logging.getLogger(__name__)
+
+    # Retrieve offshore bus set (stored by sort_raw_ETYS_data)
+    offshore_wf_buses = getattr(sort_raw_ETYS_data, '_offshore_wf_buses', set())
+    if offshore_wf_buses:
+        logger.info(f"Will preserve {len(offshore_wf_buses)} offshore buses at sea positions")
 
     # Load land boundaries for validation
     land_boundary = load_land_boundaries(logger)
@@ -528,53 +612,82 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
             if len(connected_info) == 1:
                 # Use simple distance estimation with land validation
                 ref = connected_info[0]
+                is_offshore = bus in offshore_wf_buses
                 
-                # Try multiple directions to find one that lands on land
-                best_coords = None
-                best_distance_to_land = float('inf')
-                
-                for attempt in range(8):  # Try 8 different directions
-                    angle = attempt * np.pi / 4  # 45-degree increments
+                if is_offshore:
+                    # Offshore bus: place at sea, away from land
+                    # Use cable length to estimate distance from onshore bus
+                    # Try directions pointing seaward (away from GB centroid ~54.5N, -2.0W)
+                    gb_centroid_lat, gb_centroid_lon = 54.5, -2.0
                     
-                    # Convert km to approximate lat/lon degrees (rough approximation for GB)
-                    lat_deg_per_km = 1 / 111.0  # Approximately 111 km per degree latitude
-                    lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))  # Adjust for latitude
+                    # Direction FROM centroid THROUGH the onshore bus, extending seaward
+                    dir_lat = ref['lat'] - gb_centroid_lat
+                    dir_lon = ref['lon'] - gb_centroid_lon
+                    length = np.sqrt(dir_lat**2 + dir_lon**2)
+                    if length > 0:
+                        dir_lat /= length
+                        dir_lon /= length
+                    else:
+                        dir_lat, dir_lon = 0, 1  # Default: eastward
                     
-                    dx = ref['length_km'] * np.cos(angle) * lon_deg_per_km
-                    dy = ref['length_km'] * np.sin(angle) * lat_deg_per_km
+                    lat_deg_per_km = 1 / 111.0
+                    lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))
                     
-                    candidate_lon = ref['lon'] + dx
-                    candidate_lat = ref['lat'] + dy
-                    
-                    # Check if this position is on land
-                    if land_boundary is not None:
-                        if check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
-                            # Found a position on land
-                            best_coords = (candidate_lat, candidate_lon)
-                            break
-                        else:
-                            # Calculate distance to land for this candidate
-                            try:
-                                point = Point(candidate_lon, candidate_lat)
-                                land_geom = land_boundary.geometry.iloc[0]
-                                distance_to_land = point.distance(land_geom)
-                                if distance_to_land < best_distance_to_land:
-                                    best_distance_to_land = distance_to_land
-                                    best_coords = (candidate_lat, candidate_lon)
-                            except:
-                                continue
-                
-                # Use the best coordinates found (prefer on-land, otherwise closest to land)
-                if best_coords:
-                    candidate_lat, candidate_lon = best_coords
-                    
-                    # If still at sea, move to land
-                    if land_boundary is not None and not check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
-                        candidate_lat, candidate_lon = move_point_to_land(candidate_lat, candidate_lon, land_boundary, logger)
+                    candidate_lat = ref['lat'] + dir_lat * ref['length_km'] * lat_deg_per_km
+                    candidate_lon = ref['lon'] + dir_lon * ref['length_km'] * lon_deg_per_km
                     
                     network.buses.loc[bus, 'lon'] = candidate_lon
                     network.buses.loc[bus, 'lat'] = candidate_lat
                     improved_count += 1
+                    logger.debug(f"Placed offshore bus {bus} at ({candidate_lat:.4f}, {candidate_lon:.4f}), "
+                                f"{ref['length_km']:.1f} km from {ref['bus']}")
+                else:
+                    # Onshore bus: original logic — try to find a position on land
+                    best_coords = None
+                    best_distance_to_land = float('inf')
+                    
+                    for attempt in range(8):  # Try 8 different directions
+                        angle = attempt * np.pi / 4  # 45-degree increments
+                        
+                        # Convert km to approximate lat/lon degrees (rough approximation for GB)
+                        lat_deg_per_km = 1 / 111.0  # Approximately 111 km per degree latitude
+                        lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))  # Adjust for latitude
+                        
+                        dx = ref['length_km'] * np.cos(angle) * lon_deg_per_km
+                        dy = ref['length_km'] * np.sin(angle) * lat_deg_per_km
+                        
+                        candidate_lon = ref['lon'] + dx
+                        candidate_lat = ref['lat'] + dy
+                        
+                        # Check if this position is on land
+                        if land_boundary is not None:
+                            if check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
+                                # Found a position on land
+                                best_coords = (candidate_lat, candidate_lon)
+                                break
+                            else:
+                                # Calculate distance to land for this candidate
+                                try:
+                                    point = Point(candidate_lon, candidate_lat)
+                                    land_geom = land_boundary.geometry.iloc[0]
+                                    distance_to_land = point.distance(land_geom)
+                                    if distance_to_land < best_distance_to_land:
+                                        best_distance_to_land = distance_to_land
+                                        best_coords = (candidate_lat, candidate_lon)
+                                except:
+                                    continue
+                    
+                    # Use the best coordinates found (prefer on-land, otherwise closest to land)
+                    if best_coords:
+                        candidate_lat, candidate_lon = best_coords
+                        
+                        # If still at sea, move to land
+                        if land_boundary is not None and not check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
+                            candidate_lat, candidate_lon = move_point_to_land(candidate_lat, candidate_lon, land_boundary, logger)
+                        
+                        network.buses.loc[bus, 'lon'] = candidate_lon
+                        network.buses.loc[bus, 'lat'] = candidate_lat
+                        improved_count += 1
                 
             # Strategy 1b: Multiple connected buses - use distance-weighted centroid
             elif len(connected_info) >= 2:
@@ -596,9 +709,10 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
                 estimated_lon = np.average(lon_coords, weights=weights)
                 estimated_lat = np.average(lat_coords, weights=weights)
                 
-                # Validate position is on land
-                if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
-                    estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
+                # Validate position is on land (skip for offshore buses)
+                if bus not in offshore_wf_buses:
+                    if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
+                        estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
                 
                 network.buses.loc[bus, 'lon'] = estimated_lon
                 network.buses.loc[bus, 'lat'] = estimated_lat
@@ -632,16 +746,17 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
                 avg_coords = known_connected[['lon', 'lat']].mean()
                 estimated_lon, estimated_lat = avg_coords['lon'], avg_coords['lat']
                 
-                # Validate position is on land
-                if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
-                    estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
+                # Validate position is on land (skip for offshore buses)
+                if bus not in offshore_wf_buses:
+                    if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
+                        estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
                 
                 network.buses.loc[bus, ['lon', 'lat']] = [estimated_lon, estimated_lat]
 
-    # Final land boundary check for all buses
+    # Final land boundary check for all buses (skip offshore WF buses)
     if land_boundary is not None:
         logger.info("Performing final land boundary validation for all buses")
-        buses_moved = ensure_buses_on_land(network, land_boundary, logger)
+        buses_moved = ensure_buses_on_land(network, land_boundary, logger, skip_buses=offshore_wf_buses)
         if buses_moved > 0:
             logger.info(f"Final land validation moved {buses_moved} additional buses to land")
 

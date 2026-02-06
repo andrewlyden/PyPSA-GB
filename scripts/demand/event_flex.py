@@ -1,20 +1,25 @@
 """
-Event-Based Demand Flexibility (Saving Sessions)
+Domestic Event-Based Demand Flexibility (Saving Sessions)
 
-This script implements event-based demand response where consumers receive
-advance notice to reduce demand during specific time windows.
+This script implements event-based demand response for residential consumers
+who receive advance notice to reduce demand during specific time windows.
 
 Based on National Grid ESO's "Demand Flexibility Service" and Octopus Energy's
-"Saving Sessions" programs.
+"Saving Sessions" programs targeting domestic customers.
 
 Event Types:
 - Regular: ~2 events per week throughout year
 - Winter: ~5 events per week during winter months (Oct-Mar)
 
 PyPSA Representation:
-- Generator with negative p (demand reduction capability)
-- p_max_pu timeseries limits when events can occur
-- Marginal cost represents incentive payment to consumers
+- Generator components representing demand reduction capability
+- p_max_pu timeseries limits when events can occur (event windows)
+- Marginal cost represents incentive payment to consumers (high = last resort)
+
+Capacity Source:
+- User-defined dsr_capacity_mw in config (domestic DSR not in FES building blocks)
+- If not specified, falls back to hardcoded calculation based on participation rate
+- Distributed proportionally to base demand at each bus
 """
 
 import logging
@@ -32,12 +37,6 @@ from scripts.utilities.logging_config import setup_logging
 # ──────────────────────────────────────────────────────────────────────────────
 # Constants
 # ──────────────────────────────────────────────────────────────────────────────
-
-# Default event parameters
-DEFAULT_EVENT_WINDOW = ['17:00', '19:00']  # Peak demand hours
-DEFAULT_PARTICIPATION_RATE = 0.33  # 33% of eligible consumers participate
-DEFAULT_MAX_REDUCTION = 0.10  # 10% demand reduction per event
-DEFAULT_WINTER_MONTHS = [10, 11, 12, 1, 2, 3]  # October to March
 
 # GB population and household data for scaling
 GB_POPULATION = 67_330_000
@@ -80,7 +79,7 @@ def generate_event_schedule(snapshots: pd.DatetimeIndex,
         Series with 1.0 during possible event times, 0.0 otherwise
     """
     if winter_months is None:
-        winter_months = DEFAULT_WINTER_MONTHS
+        winter_months = [10, 11, 12, 1, 2, 3]
 
     if logger:
         logger.info(f"Generating event schedule, mode: {mode}")
@@ -192,10 +191,20 @@ def add_event_flexibility(n: pypsa.Network,
     - p_max_pu: Time-varying availability (only during events)
     - marginal_cost: Incentive payment (high cost = last resort)
 
+    Capacity Calculation:
+    - If dsr_capacity_mw is set in config: Use that value directly
+    - Otherwise: Calculate from participation_rate * max_reduction_fraction
+
     Args:
         n: PyPSA network
-        base_demand_mw: Base demand by bus (for scaling)
-        config: Event response configuration
+        base_demand_mw: Base demand by bus (for proportional distribution)
+        config: Event response configuration containing:
+            - dsr_capacity_mw: User-defined total DSR capacity (MW)
+            - mode: Event mode ("regular", "winter", or "both")
+            - event_window: [start_time, end_time] for events
+            - participation_rate: Fallback participation rate
+            - max_reduction_fraction: Fallback max reduction
+            - winter_months: List of winter months
         logger: Logger instance
 
     Returns:
@@ -203,15 +212,17 @@ def add_event_flexibility(n: pypsa.Network,
     """
     if logger:
         logger.info("=" * 80)
-        logger.info("ADDING EVENT-BASED DEMAND FLEXIBILITY")
+        logger.info("ADDING EVENT-BASED DEMAND FLEXIBILITY (Domestic DSR)")
         logger.info("=" * 80)
 
     # Get configuration
     mode = config.get('mode', 'regular')
-    event_window = config.get('event_window', DEFAULT_EVENT_WINDOW)
-    participation_rate = config.get('participation_rate', DEFAULT_PARTICIPATION_RATE)
-    max_reduction = config.get('max_reduction_fraction', DEFAULT_MAX_REDUCTION)
-    winter_months = config.get('winter_months', DEFAULT_WINTER_MONTHS)
+    event_window = config.get('event_window', ['17:00', '19:00'])
+    participation_rate = config.get('participation_rate', 0.33)
+    max_reduction = config.get('max_reduction_fraction', 0.10)
+    marginal_cost = config.get('marginal_cost', 500.0)
+    winter_months = config.get('winter_months', [10, 11, 12, 1, 2, 3])
+    dsr_capacity_mw = config.get('dsr_capacity_mw', None)
 
     window_start = int(event_window[0].split(':')[0])
     window_end = int(event_window[1].split(':')[0])
@@ -219,8 +230,6 @@ def add_event_flexibility(n: pypsa.Network,
     if logger:
         logger.info(f"Mode: {mode}")
         logger.info(f"Event window: {window_start:02d}:00 - {window_end:02d}:00")
-        logger.info(f"Participation rate: {participation_rate*100:.0f}%")
-        logger.info(f"Max reduction: {max_reduction*100:.0f}%")
 
     # Generate event schedule
     event_schedule = generate_event_schedule(
@@ -232,20 +241,58 @@ def add_event_flexibility(n: pypsa.Network,
         logger=logger
     )
 
-    # Calculate reduction capacity
-    reduction_capacity = calculate_demand_reduction_capacity(
-        base_demand_mw=base_demand_mw,
-        participation_rate=participation_rate,
-        max_reduction_fraction=max_reduction,
-        logger=logger
-    )
-
-    # Add demand reduction generators for each bus
+    # Calculate total reduction capacity
     buses = [bus for bus in base_demand_mw.columns if bus in n.buses.index]
+
+    if dsr_capacity_mw is not None and dsr_capacity_mw > 0:
+        # ─── User-defined capacity ───
+        if logger:
+            logger.info("")
+            logger.info("📊 Using user-defined domestic DSR capacity")
+            logger.info(f"   Total DSR capacity: {dsr_capacity_mw:.1f} MW")
+
+        # Distribute capacity proportionally to peak demand at each bus
+        peak_demand = base_demand_mw[buses].max()
+        total_peak = peak_demand.sum()
+
+        if total_peak > 0:
+            bus_proportions = peak_demand / total_peak
+            bus_capacities = bus_proportions * dsr_capacity_mw
+        else:
+            # Fallback to equal distribution
+            bus_capacities = pd.Series(dsr_capacity_mw / len(buses), index=buses)
+
+        # Create DataFrame to match existing interface
+        reduction_capacity = pd.DataFrame(
+            {bus: [bus_capacities[bus]] * len(n.snapshots) for bus in buses},
+            index=n.snapshots
+        )
+
+        if logger:
+            logger.info(f"   Distributed to {len(buses)} buses proportionally to peak demand")
+
+    else:
+        # ─── Calculate from participation rate (fallback) ───
+        if logger:
+            logger.info("")
+            logger.info("📊 Calculating DSR capacity from participation rate")
+            logger.info(f"  Participation rate: {participation_rate*100:.0f}%")
+            logger.info(f"  Max reduction: {max_reduction*100:.0f}%")
+
+        reduction_capacity = calculate_demand_reduction_capacity(
+            base_demand_mw=base_demand_mw,
+            participation_rate=participation_rate,
+            max_reduction_fraction=max_reduction,
+            logger=logger
+        )
 
     # Add 'demand response' carrier if not defined
     if 'demand response' not in n.carriers.index:
         n.add("Carrier", "demand response", co2_emissions=0.0, nice_name="Demand Response")
+
+    # Add demand reduction generators for each bus
+    total_added_mw = 0
+    n_gens_added = 0
 
     for bus in buses:
         gen_name = f"{bus} demand response"
@@ -257,7 +304,6 @@ def add_event_flexibility(n: pypsa.Network,
             continue
 
         # Add generator representing demand reduction
-        # Using Generator with carrier="demand response"
         n.add("Generator",
               gen_name,
               bus=bus,
@@ -266,11 +312,17 @@ def add_event_flexibility(n: pypsa.Network,
               p_nom_extendable=False,
               p_max_pu=event_schedule,  # Only available during events
               p_min_pu=0.0,
-              marginal_cost=500.0)  # High cost = only use when needed
+              marginal_cost=marginal_cost)  # Incentive payment from config
+
+        total_added_mw += p_nom
+        n_gens_added += 1
 
     if logger:
-        n_gens = len([g for g in n.generators.index if 'demand response' in g])
-        logger.info(f"Added {n_gens} demand response generators")
+        logger.info("")
+        logger.info(f"✓ Added {n_gens_added} demand response generators")
+        logger.info(f"  Total DSR capacity: {total_added_mw:.1f} MW")
+        source = "user-defined" if dsr_capacity_mw else "calculated from participation rate"
+        logger.info(f"  Capacity source: {source}")
         logger.info("=" * 80)
         logger.info("EVENT FLEXIBILITY ADDED SUCCESSFULLY")
         logger.info("=" * 80)

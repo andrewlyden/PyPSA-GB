@@ -28,7 +28,9 @@ PROTECTED_CARRIERS = {
     'load_shedding',  # CRITICAL: Must keep VOLL cost, never overwrite
     'load shedding',
     'voll',
-    'VOLL'
+    'VOLL',
+    'demand response',  # DSR marginal cost set by event_flex.py (incentive payment)
+    'demand_response',
 }
 
 # Carbon emission factors (kg CO2/MWh_thermal)
@@ -81,7 +83,11 @@ CARBON_EMISSION_FACTORS = {
     'tidal_stream': 15,
     'shoreline_wave': 15,
     'Conventional Steam': 846,  # Assume coal-based
-    'Conventional steam': 846
+    'Conventional steam': 846,
+    'CHP': 488,             # Gas-fired CHP
+    'gas_engine': 488,      # Gas engine
+    'marine': 15,           # Tidal/wave lifecycle
+    'H2': 0,               # No direct emissions (hydrogen combustion = water)
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -312,7 +318,15 @@ def _expand_fuel_prices(base_prices: dict) -> dict:
         # Marine renewables
         'geothermal': 3.0,
         'tidal_stream': 1.0,
-        'shoreline_wave': 1.0
+        'shoreline_wave': 1.0,
+        'marine': 1.0,
+        
+        # CHP / gas engines (gas-fuelled, similar to CCGT/OCGT)
+        'CHP': gas_price,
+        'gas_engine': gas_price,
+        
+        # Hydrogen (future fuel, assumed marginal cost similar to gas)
+        'H2': gas_price * 1.5,  # Hydrogen currently ~50% more expensive than gas
     }
 
 
