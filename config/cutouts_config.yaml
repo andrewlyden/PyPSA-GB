@@ -24,7 +24,7 @@ years_config:
   
   # Manual list of years (used when method is "manual" or "all_scenarios_plus_manual")
   years_to_generate:
-    - 2009
+    - 2015
   
   # Additional years to always include regardless of method
   always_include: []  # Remove 2020 to focus on 2021 only
@@ -59,6 +59,32 @@ download:
     
     # Time resolution  
     dt: "h"   # Hourly data
+
+# ────────────────────────────────────────────────────────────
+# Zenodo Pre-built Cutout Downloads
+# ────────────────────────────────────────────────────────────
+# Pre-built cutouts hosted on Zenodo can be downloaded in minutes
+# instead of the 2-4 hours required per year via ERA5/atlite.
+#
+# Repository: https://zenodo.org/records/18325225
+# Available years: 2010-2024 (~765 MB each)
+#
+# Acquisition order:
+#   1. Check data_dir (data/atlite/cutouts/)
+#   2. Download from Zenodo (this section)
+#   3. Fall back to atlite ERA5 download
+#
+# Note: Snakemake automatically skips re-downloading if the output
+# file already exists (unless --force or dependencies change)
+zenodo:
+  # Enable/disable Zenodo downloads (set to false to always use atlite)
+  enabled: true
+  
+  # Verify MD5 checksum after download (recommended)
+  verify_checksum: true
+  
+  # Zenodo record ID (update if a new version is published)
+  record_id: "18325225"
 
 # ────────────────────────────────────────────────────────────
 # File Paths

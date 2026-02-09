@@ -60,7 +60,7 @@ MyScenario_2040:
 | Parameter | Description | Options |
 |-----------|-------------|---------|
 | `modelled_year` | Target year to model | 2010-2050 |
-| `renewables_year` | Weather data year | 2010-2023 (must have cutout) |
+| `renewables_year` | Weather data year | 2010-2024 (auto-download from Zenodo) |
 | `network_model` | Network resolution | `ETYS`, `Reduced`, `Zonal` |
 | `FES_year` | FES release year | 2021, 2022, 2023, 2024, 2025 |
 | `FES_scenario` | FES pathway name | Varies by FES release |
@@ -209,15 +209,24 @@ Run both scenarios to compare results and understand how NESO's capacity expecta
 
 ### "Cutout not found"
 
-Ensure weather data exists for your `renewables_year`:
-```bash
-ls resources/atlite/
-```
+For years 2010-2024, cutouts are **automatically downloaded from Zenodo** when needed. If you get this error:
 
-If missing, generate it:
-```bash
-snakemake -s Snakefile_cutouts resources/atlite/GB_2018.nc -j 2
-```
+1. **Check if cutout workflow was run**:
+   ```bash
+   ls resources/atlite/cutouts/
+   ```
+
+2. **Generate missing cutouts** (will auto-download from Zenodo for 2010-2024):
+   ```bash
+   # Configure the year first
+   nano config/cutouts_config.yaml
+   # Set: years_to_generate: [2018]
+   
+   # Run cutout workflow
+   snakemake -s Snakefile_cutouts --cores 1
+   ```
+
+3. **For years outside 2010-2024**, you'll need CDS API credentials (see {doc}`installation`).
 
 ### "Infeasible optimization"
 

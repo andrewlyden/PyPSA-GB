@@ -1311,10 +1311,23 @@ document.write(`
 </section>
 <section id="cutouts-workflow-snakefile-cutouts">
 <h3>Cutouts Workflow (<code class="docutils literal notranslate"><span class="pre">Snakefile_cutouts</span></code>)<a class="headerlink" href="#cutouts-workflow-snakefile-cutouts" title="Link to this heading">#</a></h3>
-<p>Downloads ERA5 weather data and generates cutouts. Run separately as it’s slow.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2019.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
+<p>Acquires weather cutouts using a <strong>tiered strategy</strong> to minimize wait times:</p>
+<ol class="arabic simple">
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">data/atlite/cutouts/</span></code> for cached files</p></li>
+<li><p>Download from Zenodo (~5-10 minutes for years 2010-2024)</p></li>
+<li><p>Generate from ERA5 via atlite (~2-4 hours per year)</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure years in config/cutouts_config.yaml, then run:</span>
+snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Automatic Zenodo download for years 2010-2024 (no CDS credentials needed)</p></li>
+<li><p>MD5 checksum verification</p></li>
+<li><p>Falls back to ERA5 API for other years or if Zenodo fails</p></li>
+</ul>
+<p>See <a class="reference internal" href="../getting_started/installation.html"><span class="doc">Installation</span></a> for detailed setup instructions.</p>
 </section>
 </section>
 <section id="rule-files">

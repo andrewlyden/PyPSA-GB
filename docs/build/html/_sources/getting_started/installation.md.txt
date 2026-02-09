@@ -87,34 +87,55 @@ snakemake -n -p
 
 ## Step 6: Download Weather Data
 
-For renewable generation profiles, you need ERA5 weather data "cutouts". Pre-generated cutouts for common years are available.
-  1. Configure the CDS API (one-time setup)
-To generate new cutouts (requires CDS API credentials):
+For renewable generation profiles, you need ERA5 weather data "cutouts". PyPSA-GB uses a **tiered acquisition strategy** to minimize download times:
+
+1. **Data directory** - Check `data/atlite/cutouts/` for cached copy (instant)
+2. **Zenodo** - Download pre-built cutouts from [Zenodo repository](https://zenodo.org/records/18325225) (~5-10 minutes per year, years 2010-2024)
+3. **ERA5 API** - Full download via atlite as fallback (~2-4 hours per year)
+
+### Quick Start (Recommended)
+
+For years 2010-2024, cutouts are automatically downloaded from Zenodo:
 
 ```bash
-# Configure CDS API (one-time setup)
-# See: https://cds.climate.copernicus.eu/api-how-to
-```
- 2. To generate weather data for a specific year, update the configuration file:
+# Edit the configuration to specify which years you need
+nano config/cutouts_config.yaml
 
-```bash
-config/cutouts_config.yaml
-```
-Set the desired year in the year_to_generate field, for example:
+# Set years_to_generate, for example:
+# years_to_generate:
+#   - 2020
+#   - 2021
 
-```bash
-years_to_generate:
-    - 2020
-```
- 3. Generate the Cutouts
-
-```bash
-# Generate cutouts for a specific year
-snakemake -s Snakefile_cutouts -j 2 --config year=2020
+# Generate cutouts (will download from Zenodo for 2010-2024)
+snakemake -s Snakefile_cutouts --cores 1
 ```
 
-```{warning}
-Cutout generation downloads large weather datasets and can take several hours.
+**No CDS API credentials required** for years 2010-2024 when using Zenodo!
+
+### Manual ERA5 Download (Advanced)
+
+For years outside 2010-2024 or if you prefer direct ERA5 download:
+
+1. **Configure CDS API** (one-time setup):
+   ```bash
+   # Register at: https://cds.climate.copernicus.eu/user/register
+   # Get your API key from: https://cds.climate.copernicus.eu/api-how-to
+   # Create ~/.cdsapirc with your credentials
+   ```
+
+2. **Disable Zenodo** (optional) in `config/cutouts_config.yaml`:
+   ```yaml
+   zenodo:
+     enabled: false  # Force ERA5 download
+   ```
+
+3. **Generate cutouts**:
+   ```bash
+   snakemake -s Snakefile_cutouts --cores 1
+   ```
+
+```{tip}
+Zenodo downloads are much faster (~minutes vs hours) and don't require API credentials. Use this method unless you need years outside 2010-2024.
 ```
 
 ## Directory Structure

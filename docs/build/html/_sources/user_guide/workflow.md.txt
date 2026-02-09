@@ -71,11 +71,23 @@ snakemake resources/network/HT35_solved.nc -j 4
 
 ### Cutouts Workflow (`Snakefile_cutouts`)
 
-Downloads ERA5 weather data and generates cutouts. Run separately as it's slow.
+Acquires weather cutouts using a **tiered strategy** to minimize wait times:
+
+1. Check `data/atlite/cutouts/` for cached files
+2. Download from Zenodo (~5-10 minutes for years 2010-2024)  
+3. Generate from ERA5 via atlite (~2-4 hours per year)
 
 ```bash
-snakemake -s Snakefile_cutouts resources/atlite/GB_2019.nc -j 2
+# Configure years in config/cutouts_config.yaml, then run:
+snakemake -s Snakefile_cutouts --cores 1
 ```
+
+**Key Features**:
+- Automatic Zenodo download for years 2010-2024 (no CDS credentials needed)
+- MD5 checksum verification
+- Falls back to ERA5 API for other years or if Zenodo fails
+
+See {doc}`../getting_started/installation` for detailed setup instructions.
 
 ## Rule Files
 

@@ -267,20 +267,33 @@ print(f"Disconnected buses: {disconnected}")
 
 **Solutions**:
 
-1. Check available cutouts:
+1. **For years 2010-2024** (automatic Zenodo download):
    ```bash
-   ls resources/atlite/
+   # Configure year in config/cutouts_config.yaml
+   # Then run cutout workflow
+   snakemake -s Snakefile_cutouts --cores 1
    ```
+   
+   Cutouts will be automatically downloaded from Zenodo (~5-10 minutes per year).
+   **No CDS API credentials required** for these years!
 
-2. Generate missing cutout:
-   ```bash
-   snakemake -s Snakefile_cutouts resources/atlite/GB_2019.nc -j 2
-   ```
+2. **For other years** (requires CDS API credentials):
+   - Register at: https://cds.climate.copernicus.eu/user/register
+   - Set up `~/.cdsapirc` with your API key
+   - Run: `snakemake -s Snakefile_cutouts --cores 1`
 
-3. Use existing weather year:
+3. **Quick fix** - Use an available year:
    ```yaml
    renewables_year: 2019  # Year with available cutout
    ```
+
+4. **Check what's available**:
+   ```bash
+   ls resources/atlite/cutouts/
+   # Should show: uk-2019.nc, uk-2020.nc, etc.
+   ```
+
+**Note**: Zenodo cutouts are automatically verified with MD5 checksums.
 
 ---
 
