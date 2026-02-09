@@ -1280,8 +1280,8 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;<
 <section id="step-2-run-a-scenario">
 <h2>Step 2: Run a Scenario<a class="headerlink" href="#step-2-run-a-scenario" title="Link to this heading">#</a></h2>
 <p>Run a single scenario using Snakemake:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the HT35 scenario (2035 Holistic Transition)</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the HT35_clustered scenario (2035 Holistic Transition, clustered network)</span>
+snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -1308,7 +1308,7 @@ snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
 
 <span class="c1"># Load the solved network</span>
-<span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;resources/network/HT35_solved.nc&quot;</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;resources/network/HT35_clustered_solved.nc&quot;</span><span class="p">)</span>
 
 <span class="c1"># Basic statistics</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Buses: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1326,10 +1326,10 @@ snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"
 <h2>Step 4: Generate Analysis Outputs<a class="headerlink" href="#step-4-generate-analysis-outputs" title="Link to this heading">#</a></h2>
 <p>Generate HTML analysis reports:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate spatial analysis map</span>
-snakemake<span class="w"> </span>resources/analysis/HT35_spatial.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/HT35_clustered_spatial.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># Generate summary dashboard</span>
-snakemake<span class="w"> </span>resources/analysis/HT35_dashboard.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/HT35_clustered_dashboard.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>Open the generated HTML files in your browser.</p>
@@ -1337,16 +1337,16 @@ snakemake<span class="w"> </span>resources/analysis/HT35_dashboard.html<span cla
 <section id="quick-commands-reference">
 <h2>Quick Commands Reference<a class="headerlink" href="#quick-commands-reference" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dry run (show what would execute)</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-n<span class="w"> </span>-p
+snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-n<span class="w"> </span>-p
 
 <span class="c1"># Force re-run of a specific rule</span>
 snakemake<span class="w"> </span>-R<span class="w"> </span>solve_network<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Run with verbose logging</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--verbose
+snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--verbose
 
 <span class="c1"># Clean all outputs for a scenario</span>
-snakemake<span class="w"> </span>clean_HT35
+snakemake<span class="w"> </span>clean_HT35_clustered
 </pre></div>
 </div>
 </section>

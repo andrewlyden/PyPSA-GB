@@ -56,9 +56,12 @@ def _get_solver_config(scenario_id=None):
             "threads": solver_config.get("threads", 4),
             "method": solver_config.get("method", 2),
             "crossover": solver_config.get("crossover", 0),
+            "BarHomogeneous": solver_config.get("BarHomogeneous", 1),
             "BarConvTol": solver_config.get("BarConvTol", 1.e-5),
-            "FeasibilityTol": solver_config.get("FeasibilityTol", 1.e-6),
-            "OptimalityTol": solver_config.get("OptimalityTol", 1.e-6),
+            "FeasibilityTol": solver_config.get("FeasibilityTol", 1.e-5),
+            "OptimalityTol": solver_config.get("OptimalityTol", 1.e-5),
+            "NumericFocus": solver_config.get("NumericFocus", 2),
+            "ScaleFlag": solver_config.get("ScaleFlag", 2),
             "DualReductions": solver_config.get("DualReductions", 0),
         }
     elif solver_name == "highs":
