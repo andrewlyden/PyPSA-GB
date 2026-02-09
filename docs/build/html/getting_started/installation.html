@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'getting_started/installation';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -948,12 +949,30 @@ snakemake<span class="w"> </span>-n<span class="w"> </span>-p
 <section id="step-6-download-weather-data">
 <h2>Step 6: Download Weather Data<a class="headerlink" href="#step-6-download-weather-data" title="Link to this heading">#</a></h2>
 <p>For renewable generation profiles, you need ERA5 weather data “cutouts”. Pre-generated cutouts for common years are available.</p>
-<p>To generate new cutouts (requires CDS API credentials):</p>
+<ol class="arabic simple">
+<li><p>Configure the CDS API (one-time setup)
+To generate new cutouts (requires CDS API credentials):</p></li>
+</ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure CDS API (one-time setup)</span>
 <span class="c1"># See: https://cds.climate.copernicus.eu/api-how-to</span>
-
-<span class="c1"># Generate cutouts for a specific year</span>
-snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">year</span><span class="o">=</span><span class="m">2019</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>To generate weather data for a specific year, update the configuration file:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>config/cutouts_config.yaml
+</pre></div>
+</div>
+<p>Set the desired year in the year_to_generate field, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>years_to_generate:
+<span class="w">    </span>-<span class="w"> </span><span class="m">2020</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Generate the Cutouts</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate cutouts for a specific year</span>
+snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">year</span><span class="o">=</span><span class="m">2020</span>
 </pre></div>
 </div>
 <div class="admonition warning">
