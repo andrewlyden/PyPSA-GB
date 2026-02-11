@@ -136,6 +136,10 @@ demand_flexibility:
     mix:
       tank_share: 0.5                 # Fraction of flexible HP demand using TANK mode
       cosy_share: 0.5                 # Fraction of flexible HP demand using COSY mode
+    # Spatial allocation
+    urban_weight: 1.5                      # Power exponent for urban-weighted allocation (>1 = more urban)
+    peak_thermal_kw_per_dwelling: 10.0     # Assumed peak thermal output per dwelling (kW)
+    link_sizing_margin: 1.5                # Margin factor for HP link capacity (1.5 = 50% headroom)
     # COSY mode: Pre-heating using building thermal mass
     cosy:
       morning_window: ["07:00", "09:00"]   # Morning pre-heat window
@@ -143,6 +147,7 @@ demand_flexibility:
       max_temp_deviation_celsius: 2.0      # Max comfort deviation (±°C)
       thermal_mass_hours: 0.3              # Hours of heating that can be stored in building fabric
                                            # Based on ~2.7 kWh/dwelling at ~10 kW peak thermal
+      standing_loss_per_hour: 0.05         # Building thermal loss rate (5%/hour, faster than tank)
     # TANK mode: Hot water tank storage
     tank:
       volume_liters: 200              # Average tank volume
@@ -169,10 +174,17 @@ demand_flexibility:
     # Controls DEMAND SPLIT: 20% → smart charging, 80% → dumb loads
     # 1.0 = all EVs are flexible, 0.2 = only 20% of EV demand uses smart charging
     flex_share: 0.2
-    
+
     # Fleet characteristics (affect storage/charger sizing)
     battery_capacity_kwh: 60.0        # Average EV battery size (kWh)
     charge_efficiency: 0.90           # Grid-to-battery efficiency
+    flexibility_participation: 0.10   # Fraction of fleet participating in smart charging
+
+    # Spatial allocation and fleet sizing
+    urban_weight: 2.0                 # Power exponent for urban-weighted allocation (>1 = more urban)
+    energy_per_vehicle_kwh_per_day: 10.0  # Assumed daily energy consumption per vehicle (kWh)
+    charging_hours_per_day: 4.0       # Assumed charging hours/day (for FES share calculation)
+    min_share_threshold: 0.001        # Minimum tariff share to create components
     
     # GO tariff: Octopus Go style fixed night window
     # Simple time-of-use tariff with cheap overnight rates
@@ -245,6 +257,8 @@ demand_flexibility:
     #   "winter"   - 5 events/week Oct-Mar ONLY, 0 events Apr-Sep (crisis mode, winter peaks)
     #   "both"     - 2 events/week year-round + extra 5 events/week during Oct-Mar (realistic mix)
     mode: "both"
+    events_per_week_regular: 2          # Events per week in regular/both modes
+    events_per_week_winter: 5           # Events per week in winter/both modes
     
     # Event Window Options (choose one, realistic alternatives):
     #   ["17:00", "19:00"]  - Evening peak only (tight window, high utilization)

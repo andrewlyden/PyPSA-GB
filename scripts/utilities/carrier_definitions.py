@@ -449,10 +449,101 @@ def get_carrier_definitions():
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
+        'heat pump': {
+            'color': '#E377C2',  # Pink - flexible heating demand
+            'nice_name': 'Heat Pump',
+            'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'heat': {
+            'color': '#FF6B6B',  # Light red - heat energy
+            'nice_name': 'Heat',
+            'co2_emissions': 0.0,  # Energy carrier, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'hot water': {
+            'color': '#FF8C8C',  # Lighter red - hot water
+            'nice_name': 'Hot Water',
+            'co2_emissions': 0.0,  # Energy carrier, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'hot water demand': {
+            'color': '#FFADAD',  # Very light red
+            'nice_name': 'Hot Water Demand',
+            'co2_emissions': 0.0,  # Demand component
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'thermal inertia': {
+            'color': '#FFC1C1',  # Pale red - thermal storage
+            'nice_name': 'Thermal Inertia',
+            'co2_emissions': 0.0,  # Thermal storage, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'thermal demand': {
+            'color': '#FFD6D6',  # Very pale red
+            'nice_name': 'Thermal Demand',
+            'co2_emissions': 0.0,  # Demand component
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'space heating': {
+            'color': '#FFEBEB',  # Nearly white red
+            'nice_name': 'Space Heating',
+            'co2_emissions': 0.0,  # Demand component
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
         'EVs': {
             'color': '#17BECF',  # Cyan - flexible transport demand
             'nice_name': 'Electric Vehicles',
             'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EV charging': {
+            'color': '#17BECF',  # Cyan - EV charging load
+            'nice_name': 'EV Charging',
+            'co2_emissions': 0.0,  # Electric load, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EV battery': {
+            'color': '#4DD0E1',  # Light cyan - EV battery storage
+            'nice_name': 'EV Battery',
+            'co2_emissions': 0.0,  # Storage component
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EV charger': {
+            'color': '#80DEEA',  # Very light cyan - EV charger
+            'nice_name': 'EV Charger',
+            'co2_emissions': 0.0,  # Charging infrastructure
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EV driving': {
+            'color': '#B2EBF2',  # Pale cyan - EV driving demand
+            'nice_name': 'EV Driving',
+            'co2_emissions': 0.0,  # Demand component
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'V2G': {
+            'color': '#00ACC1',  # Dark cyan - Vehicle-to-Grid
+            'nice_name': 'Vehicle-to-Grid',
+            'co2_emissions': 0.0,  # V2G discharge
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'electricity': {
+            'color': '#7F7F7F',  # Gray - base electricity demand
+            'nice_name': 'Electricity',
+            'co2_emissions': 0.0,  # Electric carrier
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
@@ -464,11 +555,18 @@ def get_carrier_definitions():
             'max_relative_growth': 0.0
         },
         
-        # European Imports (External Generators)
+        # European Imports/Exports (External Generators/Loads)
         'EU_import': {
             'color': '#9467BD',  # Purple - represents external/foreign source
             'nice_name': 'European Imports',
             'co2_emissions': 0.2,  # Approx. European grid average (varies by country/year)
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'EU_export': {
+            'color': '#228B22',  # Forest green - represents exports to Europe
+            'nice_name': 'European Exports',
+            'co2_emissions': 0.0,  # Export sink, not generation
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },

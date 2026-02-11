@@ -294,7 +294,7 @@ def get_generation_including_links(n):
         tuple: (gen_ts by carrier, gen_capacity by carrier)
     """
     # Standard generators
-    gen_ts = n.generators_t.p.groupby(n.generators['carrier'], axis=1).sum()
+    gen_ts = n.generators_t.p.T.groupby(n.generators['carrier']).sum().T
     gen_capacity = n.generators.groupby('carrier')['p_nom'].sum()
     
     # Add H2_turbine links (power output is |p1| which is positive to bus1)

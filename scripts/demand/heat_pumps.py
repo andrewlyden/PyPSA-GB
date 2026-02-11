@@ -135,7 +135,8 @@ def allocate_uniform(total_gwh: float, base_network: pypsa.Network, logger) -> p
     return hp_allocation
 
 
-def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logger) -> pd.Series:
+def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logger,
+                            urban_weight: float = 1.5) -> pd.Series:
     """
     Allocate heat pump demand weighted towards urban areas (high demand buses).
 
@@ -161,7 +162,6 @@ def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logge
     bus_demand = load_demand.groupby(bus_mapping).sum()
 
     # Apply power weighting (exponent > 1 favors high-demand areas)
-    urban_weight = 1.5
     weighted_demand = bus_demand ** urban_weight
 
     total_weighted = weighted_demand.sum()
@@ -526,8 +526,8 @@ def add_hp_tank_flexibility(n: pypsa.Network,
         peak_electric_mw = electric_demand.max()
 
         # Estimate number of dwellings from peak thermal demand
-        # Assuming ~10 kW peak thermal per dwelling (typical UK heat pump sizing)
-        n_dwellings = max(1, int(peak_thermal_mw * 1000 / 10))
+        peak_thermal_kw_per_dwelling = config.get('peak_thermal_kw_per_dwelling', 10.0)
+        n_dwellings = max(1, int(peak_thermal_mw * 1000 / peak_thermal_kw_per_dwelling))
         total_tank_mwh = n_dwellings * tank_capacity_kwh / 1000
 
         store_names.append(tank_name)
@@ -537,8 +537,9 @@ def add_hp_tank_flexibility(n: pypsa.Network,
         link_names.append(hp_link_name)
         link_bus0.append(bus)
         link_bus1.append(thermal_bus)
-        # Size link to meet peak demand with 50% margin for pre-heating flexibility
-        link_p_nom.append(peak_electric_mw * 1.5)
+        # Size link to meet peak demand with margin for pre-heating flexibility
+        link_sizing_margin = config.get('link_sizing_margin', 1.5)
+        link_p_nom.append(peak_electric_mw * link_sizing_margin)
         link_eff[hp_link_name] = cop_series
 
         load_names.append(hw_load_name)
@@ -632,7 +633,7 @@ def add_hp_cosy_flexibility(n: pypsa.Network,
     morning_window = cosy_config.get('morning_window', ['07:00', '09:00'])
     evening_window = cosy_config.get('evening_window', ['17:00', '19:00'])
     max_temp_deviation = cosy_config.get('max_temp_deviation_celsius', 2.0)
-    thermal_mass_hours = cosy_config.get('thermal_mass_hours', 2.0)
+    thermal_mass_hours = cosy_config.get('thermal_mass_hours', 0.3)
 
     if logger:
         logger.info(f"COSY windows: morning {morning_window}, evening {evening_window}")
@@ -725,7 +726,8 @@ def add_hp_cosy_flexibility(n: pypsa.Network,
         hp_link_names.append(hp_link_name)
         hp_link_bus0.append(bus)
         hp_link_bus1.append(thermal_bus)
-        hp_link_p_nom.append(electric_peak_mw * 1.5)
+        link_sizing_margin = config.get('link_sizing_margin', 1.5)
+        hp_link_p_nom.append(electric_peak_mw * link_sizing_margin)
         hp_eff[hp_link_name] = cop_series
         hp_pmax[hp_link_name] = 1.0 + preheat_avail * 0.5
 
@@ -758,7 +760,7 @@ def add_hp_cosy_flexibility(n: pypsa.Network,
             e_cyclic=True,
             e_min_pu=0.0,  # Cannot go negative (can't have "borrowed" heat from future)
             e_max_pu=1.0,
-            standing_loss=0.05,
+            standing_loss=cosy_config.get('standing_loss_per_hour', 0.05),
         )
 
     if hp_link_names:
@@ -1135,7 +1137,11 @@ if __name__ == "__main__":
                 allocation_method = 'proportional'
 
             allocator = ALLOCATION_METHODS[allocation_method]
-            hp_allocation = allocator(total_hp_demand_gwh, base_network, logger)
+            if allocation_method == 'urban_weighted':
+                hp_urban_weight = config.get('urban_weight', 1.5)
+                hp_allocation = allocator(total_hp_demand_gwh, base_network, logger, urban_weight=hp_urban_weight)
+            else:
+                hp_allocation = allocator(total_hp_demand_gwh, base_network, logger)
 
         if min_gwh_threshold > 0:
             below = hp_allocation < min_gwh_threshold

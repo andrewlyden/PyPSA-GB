@@ -291,8 +291,8 @@ HT35_flex:
   network_model: "ETYS"
   solve_period:
     enabled: true
-    start: "2035-01-13 00:00"
-    end: "2035-01-19 23:00"
+    start: "2035-04-25 00:00"
+    end: "2035-05-08 23:00"
   demand_disaggregation:
     enabled: true
     components:
@@ -307,8 +307,45 @@ HT35_flex:
       enabled: false
     event_response:
       enabled: true
+      event_window: ["17:00", "19:00"]  # Realistic 2-hour evening peak window
+      marginal_cost: 40.0               # Competitive with storage+interconnectors
   clustering: 
     preset: gsp_spatial
+    aggregate_components:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+
+HT30_event_response:
+  description: "FES 2025 Holistic Transition 2030 - clustered ETYS with event response flexibility"
+  modelled_year: 2030
+  FES_year: 2025
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2013           # Weather proxy year
+  demand_year: 2013               # Demand baseline (scaled to 2030)
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2030-02-21 00:00"
+    end: "2030-03-07 23:00"
+  demand_disaggregation:
+    enabled: false
+    components:
+      - name: "electric_vehicles"
+        allocation_method: "fes_gsp"
+        use_fes_fraction: true
+  demand_flexibility:
+    enabled: true
+    heat_pumps:
+      enabled: false
+    electric_vehicles:
+      enabled: false
+    event_response:
+      enabled: true
+      event_window: ["17:00", "19:00"]  # Realistic 2-hour evening peak window
+      marginal_cost: 40.0               # Competitive with storage+interconnectors
+  clustering: 
+    preset: kmeans_10
     aggregate_components:
       enabled: true
       include_storage_units: true
@@ -657,7 +694,7 @@ Test_Weather_2020:
 #   description: "FES XXXX Scenario Name YYYY"
 #   modelled_year: YYYY            # Must be > 2024
 #   FES_year: XXXX                 # 2021, 2022, 2023, 2024, or 2025 (REQUIRED)
-#   FES_scenario: "Scenario Name"  # See FES options below (REQUIRED)
+#   FES_scenario: "Scenario Name"  # See FES options (REQUIRED)
 #   renewables_year: 2020          # Historical weather for renewable profiles
 #   demand_year: 2020              # Year for ESPENI profile shape (if using ESPENI)
 #   network_model: "ETYS"          # Or "Reduced", "Zonal"

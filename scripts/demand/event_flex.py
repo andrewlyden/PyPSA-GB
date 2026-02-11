@@ -35,19 +35,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.utilities.logging_config import setup_logging
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Constants
-# ──────────────────────────────────────────────────────────────────────────────
-
-# GB population and household data for scaling
-GB_POPULATION = 67_330_000
-GB_HOUSEHOLD_OCCUPANCY = 2.36
-GB_HOUSEHOLDS = GB_POPULATION / GB_HOUSEHOLD_OCCUPANCY
-
-# Typical household demand reduction during events (kW per household)
-HOUSEHOLD_TURNDOWN_KW = 0.3  # Based on Saving Sessions data
-
-
-# ──────────────────────────────────────────────────────────────────────────────
 # Event Schedule Generation
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -220,9 +207,11 @@ def add_event_flexibility(n: pypsa.Network,
     event_window = config.get('event_window', ['17:00', '19:00'])
     participation_rate = config.get('participation_rate', 0.33)
     max_reduction = config.get('max_reduction_fraction', 0.10)
-    marginal_cost = config.get('marginal_cost', 500.0)
+    marginal_cost = config.get('marginal_cost', 100.0)
     winter_months = config.get('winter_months', [10, 11, 12, 1, 2, 3])
     dsr_capacity_mw = config.get('dsr_capacity_mw', None)
+    events_per_week_regular = config.get('events_per_week_regular', 2)
+    events_per_week_winter = config.get('events_per_week_winter', 5)
 
     window_start = int(event_window[0].split(':')[0])
     window_end = int(event_window[1].split(':')[0])
@@ -235,6 +224,8 @@ def add_event_flexibility(n: pypsa.Network,
     event_schedule = generate_event_schedule(
         snapshots=n.snapshots,
         mode=mode,
+        events_per_week_regular=events_per_week_regular,
+        events_per_week_winter=events_per_week_winter,
         winter_months=winter_months,
         event_window_start=window_start,
         event_window_end=window_end,

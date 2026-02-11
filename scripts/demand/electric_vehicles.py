@@ -74,7 +74,8 @@ def allocate_uniform(total_gwh: float, base_network: pypsa.Network, logger) -> p
     return ev_allocation
 
 
-def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logger) -> pd.Series:
+def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logger,
+                            urban_weight: float = 2.0) -> pd.Series:
     """Allocate EV demand weighted towards urban areas (high demand buses)."""
     logger.info("Allocating with urban weighting")
 
@@ -96,7 +97,6 @@ def allocate_urban_weighted(total_gwh: float, base_network: pypsa.Network, logge
     bus_demand = load_demand.groupby(bus_mapping).sum()
 
     # EVs concentrated in urban areas - use higher exponent
-    urban_weight = 2.0
     weighted_demand = bus_demand ** urban_weight
 
     total_weighted = weighted_demand.sum()
@@ -477,8 +477,7 @@ def calculate_mixed_mode_shares(
         fes_overrides = mixed_config.get('fes_share_overrides') or {}
         
         # Estimate total EV charging capacity (MW) from demand
-        # Assume EVs need to charge ~4 hours/day on average
-        charging_hours_per_day = 4.0
+        charging_hours_per_day = ev_config.get('charging_hours_per_day', 4.0)
         estimated_capacity_mw = total_ev_demand_mw * 24 / charging_hours_per_day
         
         if estimated_capacity_mw <= 0:
@@ -587,10 +586,10 @@ def add_ev_mixed_mode(n: pypsa.Network,
     window_start = int(window[0].split(':')[0])
     window_end = int(window[1].split(':')[0])
     
-    charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
+    charger_power_kw = int_config.get('charger_power_kw', 7.0)
     min_soc = int_config.get('min_soc', 0.20)
     
-    discharge_efficiency = v2g_config.get('discharge_efficiency', DEFAULT_DISCHARGE_EFFICIENCY)
+    discharge_efficiency = v2g_config.get('discharge_efficiency', 0.90)
     max_discharge_soc = v2g_config.get('max_discharge_soc', 0.80)
     degradation_cost = v2g_config.get('degradation_cost_per_mwh', 50.0)
     
@@ -630,10 +629,11 @@ def add_ev_mixed_mode(n: pypsa.Network,
             continue
         
         # Estimate fleet size
+        energy_per_vehicle = config.get('energy_per_vehicle_kwh_per_day', 10.0)
         daily_demand_mwh = ev_demand_mw[bus].sum() / 365
-        n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
+        n_vehicles = max(1, int(daily_demand_mwh * 1000 / energy_per_vehicle))
         n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
-        
+
         # Split demand across modes - ONLY flex_share fraction goes to EV battery buses
         # The remaining (1 - flex_share) is dumb load handled separately
         go_demand = ev_demand_mw[bus] * shares['go_share'] * flex_share
@@ -655,7 +655,8 @@ def add_ev_mixed_mode(n: pypsa.Network,
         e_min_pu = e_min_pu.combine(dsm, max)
         
         # ──── GO Mode Components ────
-        if shares['go_share'] > 0.001:
+        min_share = config.get('min_share_threshold', 0.001)
+        if shares['go_share'] > min_share:
             go_battery_bus = f"{bus} EV battery GO"
             go_store_name = f"{bus} EV fleet battery GO"
             go_charger_name = f"{bus} EV charger GO"
@@ -697,7 +698,7 @@ def add_ev_mixed_mode(n: pypsa.Network,
                   p_set=go_demand)
         
         # ──── INT Mode Components ────
-        if shares['int_share'] > 0.001:
+        if shares['int_share'] > min_share:
             int_battery_bus = f"{bus} EV battery INT"
             int_store_name = f"{bus} EV fleet battery INT"
             int_charger_name = f"{bus} EV charger INT"
@@ -738,7 +739,7 @@ def add_ev_mixed_mode(n: pypsa.Network,
                   p_set=int_demand)
         
         # ──── V2G Mode Components ────
-        if shares['v2g_share'] > 0.001:
+        if shares['v2g_share'] > min_share:
             v2g_battery_bus = f"{bus} EV battery V2G"
             v2g_store_name = f"{bus} EV fleet battery V2G"
             v2g_charger_name = f"{bus} EV charger V2G"
@@ -807,31 +808,22 @@ def add_ev_mixed_mode(n: pypsa.Network,
 # EV Flexibility Functions
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Default EV parameters (can be overridden in config/defaults.yaml)
-DEFAULT_BATTERY_CAPACITY_KWH = 60.0  # Average EV battery size
-DEFAULT_CHARGER_POWER_KW = 7.0       # Typical home charger
-DEFAULT_CHARGE_EFFICIENCY = 0.90     # Charging efficiency
-DEFAULT_DISCHARGE_EFFICIENCY = 0.90  # V2G discharge efficiency
-# Flexibility participation - not all EVs participate in smart charging
-# This scales down the modeled storage to represent available flexibility
-# Based on FES Srg_BB007 (EV Smart Charging participation %)
-DEFAULT_FLEXIBILITY_PARTICIPATION = 0.10  # 10% of fleet participates in flexibility
-
-
 def _get_ev_params(config: Dict[str, Any]) -> Dict[str, float]:
     """
     Extract EV parameters from config with sensible defaults.
-    
+
+    All defaults match config/defaults.yaml values.
+
     Args:
         config: EV flexibility configuration dictionary
-        
+
     Returns:
         Dictionary with EV parameters
     """
     return {
-        'battery_capacity_kwh': config.get('battery_capacity_kwh', DEFAULT_BATTERY_CAPACITY_KWH),
-        'charge_efficiency': config.get('charge_efficiency', DEFAULT_CHARGE_EFFICIENCY),
-        'flexibility_participation': config.get('flexibility_participation', DEFAULT_FLEXIBILITY_PARTICIPATION),
+        'battery_capacity_kwh': config.get('battery_capacity_kwh', 60.0),
+        'charge_efficiency': config.get('charge_efficiency', 0.90),
+        'flexibility_participation': config.get('flexibility_participation', 0.10),
     }
 
 
@@ -964,7 +956,7 @@ def add_ev_go_tariff(n: pypsa.Network,
     offpeak_cost = go_config.get('offpeak_cost', 100.0)
 
     int_config = config.get('int', {})
-    charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
+    charger_power_kw = int_config.get('charger_power_kw', 7.0)
     min_soc = int_config.get('min_soc', 0.20)
 
     if logger:
@@ -988,8 +980,9 @@ def add_ev_go_tariff(n: pypsa.Network,
         demand_name = f"{bus} EV driving demand"
 
         # Estimate fleet size from demand
+        energy_per_vehicle = config.get('energy_per_vehicle_kwh_per_day', 10.0)
         daily_demand_mwh = ev_demand_mw[bus].sum() / 365
-        n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))  # ~10 kWh/day per vehicle
+        n_vehicles = max(1, int(daily_demand_mwh * 1000 / energy_per_vehicle))
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
         n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
@@ -1082,7 +1075,7 @@ def add_ev_smart_charging(n: pypsa.Network,
     flex_share = config.get('flex_share', 1.0)
 
     int_config = config.get('int', {})
-    charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
+    charger_power_kw = int_config.get('charger_power_kw', 7.0)
     min_soc = int_config.get('min_soc', 0.20)
     target_departure_soc = int_config.get('target_departure_soc', 0.80)
 
@@ -1101,8 +1094,9 @@ def add_ev_smart_charging(n: pypsa.Network,
         demand_name = f"{bus} EV driving demand"
 
         # Estimate fleet size from demand
+        energy_per_vehicle = config.get('energy_per_vehicle_kwh_per_day', 10.0)
         daily_demand_mwh = ev_demand_mw[bus].sum() / 365
-        n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
+        n_vehicles = max(1, int(daily_demand_mwh * 1000 / energy_per_vehicle))
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
         n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
@@ -1217,13 +1211,13 @@ def add_ev_v2g(n: pypsa.Network,
 
     v2g_config = config.get('v2g', {})
     participation_rate = v2g_config.get('participation_rate', 0.30)
-    discharge_efficiency = v2g_config.get('discharge_efficiency', DEFAULT_DISCHARGE_EFFICIENCY)
+    discharge_efficiency = v2g_config.get('discharge_efficiency', 0.90)
     max_discharge_soc = v2g_config.get('max_discharge_soc', 0.80)
     degradation_cost = v2g_config.get('degradation_cost_per_mwh', 50.0)
     use_fes_capacity = v2g_config.get('use_fes_capacity', True)
 
     int_config = config.get('int', {})
-    charger_power_kw = int_config.get('charger_power_kw', DEFAULT_CHARGER_POWER_KW)
+    charger_power_kw = int_config.get('charger_power_kw', 7.0)
     min_soc = int_config.get('min_soc', 0.20)
 
     # Check if we should use FES V2G capacity
@@ -1280,8 +1274,9 @@ def add_ev_v2g(n: pypsa.Network,
         demand_name = f"{bus} EV driving demand"
 
         # Estimate fleet size from demand
+        energy_per_vehicle = config.get('energy_per_vehicle_kwh_per_day', 10.0)
         daily_demand_mwh = ev_demand_mw[bus].sum() / 365
-        n_vehicles = max(1, int(daily_demand_mwh * 1000 / 10))
+        n_vehicles = max(1, int(daily_demand_mwh * 1000 / energy_per_vehicle))
 
         # Scale by participation rate - only a fraction of fleet participates in flexibility
         n_flex_vehicles = max(1, int(n_vehicles * flex_participation))
@@ -1599,7 +1594,11 @@ if __name__ == "__main__":
                 allocation_method = 'urban_weighted'
 
             allocator = ALLOCATION_METHODS[allocation_method]
-            ev_allocation = allocator(total_ev_demand_gwh, base_network, logger)
+            if allocation_method == 'urban_weighted':
+                ev_urban_weight = config.get('urban_weight', 2.0)
+                ev_allocation = allocator(total_ev_demand_gwh, base_network, logger, urban_weight=ev_urban_weight)
+            else:
+                ev_allocation = allocator(total_ev_demand_gwh, base_network, logger)
 
         if min_gwh_threshold > 0:
             below = ev_allocation < min_gwh_threshold
