@@ -947,19 +947,57 @@ snakemake<span class="w"> </span>-n<span class="w"> </span>-p
 </section>
 <section id="step-6-download-weather-data">
 <h2>Step 6: Download Weather Data<a class="headerlink" href="#step-6-download-weather-data" title="Link to this heading">#</a></h2>
-<p>For renewable generation profiles, you need ERA5 weather data “cutouts”. Pre-generated cutouts for common years are available.</p>
-<p>To generate new cutouts (requires CDS API credentials):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure CDS API (one-time setup)</span>
-<span class="c1"># See: https://cds.climate.copernicus.eu/api-how-to</span>
+<p>For renewable generation profiles, you need ERA5 weather data “cutouts”. PyPSA-GB uses a <strong>tiered acquisition strategy</strong> to minimize download times:</p>
+<ol class="arabic simple">
+<li><p><strong>Data directory</strong> - Check <code class="docutils literal notranslate"><span class="pre">data/atlite/cutouts/</span></code> for cached copy (instant)</p></li>
+<li><p><strong>Zenodo</strong> - Download pre-built cutouts from <a class="reference external" href="https://zenodo.org/records/18325225">Zenodo repository</a> (~5-10 minutes per year, years 2010-2024)</p></li>
+<li><p><strong>ERA5 API</strong> - Full download via atlite as fallback (~2-4 hours per year)</p></li>
+</ol>
+<section id="quick-start-recommended">
+<h3>Quick Start (Recommended)<a class="headerlink" href="#quick-start-recommended" title="Link to this heading">#</a></h3>
+<p>For years 2010-2024, cutouts are automatically downloaded from Zenodo:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Edit the configuration to specify which years you need</span>
+nano<span class="w"> </span>config/cutouts_config.yaml
 
-<span class="c1"># Generate cutouts for a specific year</span>
-snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">year</span><span class="o">=</span><span class="m">2019</span>
+<span class="c1"># Set years_to_generate, for example:</span>
+<span class="c1"># years_to_generate:</span>
+<span class="c1">#   - 2020</span>
+<span class="c1">#   - 2021</span>
+
+<span class="c1"># Generate cutouts (will download from Zenodo for 2010-2024)</span>
+snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Cutout generation downloads large weather datasets and can take several hours.</p>
+<p><strong>No CDS API credentials required</strong> for years 2010-2024 when using Zenodo!</p>
+</section>
+<section id="manual-era5-download-advanced">
+<h3>Manual ERA5 Download (Advanced)<a class="headerlink" href="#manual-era5-download-advanced" title="Link to this heading">#</a></h3>
+<p>For years outside 2010-2024 or if you prefer direct ERA5 download:</p>
+<ol class="arabic">
+<li><p><strong>Configure CDS API</strong> (one-time setup):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Register at: https://cds.climate.copernicus.eu/user/register</span>
+<span class="c1"># Get your API key from: https://cds.climate.copernicus.eu/api-how-to</span>
+<span class="c1"># Create ~/.cdsapirc with your credentials</span>
+</pre></div>
 </div>
+</li>
+<li><p><strong>Disable Zenodo</strong> (optional) in <code class="docutils literal notranslate"><span class="pre">config/cutouts_config.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">zenodo</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># Force ERA5 download</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Generate cutouts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Zenodo downloads are much faster (~minutes vs hours) and don’t require API credentials. Use this method unless you need years outside 2010-2024.</p>
+</div>
+</section>
 </section>
 <section id="directory-structure">
 <h2>Directory Structure<a class="headerlink" href="#directory-structure" title="Link to this heading">#</a></h2>
@@ -1067,7 +1105,11 @@ which<span class="w"> </span>snakemake<span class="w">  </span><span class="c1">
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-verify-installation">Step 5: Verify Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-download-weather-data">Step 6: Download Weather Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-download-weather-data">Step 6: Download Weather Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start-recommended">Quick Start (Recommended)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manual-era5-download-advanced">Manual ERA5 Download (Advanced)</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#directory-structure">Directory Structure</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#common-issues">Common Issues</a></li>

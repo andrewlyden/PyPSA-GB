@@ -1,85 +1,121 @@
-import cartopy.io.shapereader as shpreader
-import geopandas as gpd
+"""
+Prepare atlite cutouts using a tiered acquisition strategy:
+
+  1. Data dir: check for a cached copy in data/atlite/cutouts/
+  2. Zenodo: download from https://zenodo.org/records/18325225 (~minutes)
+  3. Atlite/ERA5: full download from CDS API (~2-4 hours per year)
+
+Snakemake handles checking if the output file already exists and will
+skip re-running this script if the output is up to date.
+
+This avoids unnecessary multi-hour ERA5 downloads when cutouts are
+already available in data_dir or on Zenodo.
+"""
+
+import logging
 import os
-import shutil
+import sys
 
-import atlite
+# Set up logging for both standalone and snakemake usage
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# Add project root to path so we can import sibling modules
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.abspath(os.path.join(_script_dir, "..", ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+from scripts.utilities.download_cutouts import (
+    acquire_cutout,
+    query_zenodo_available_files,
+)
 
 
-def prepare_cutouts_years():
+# Default directory to check for pre-existing cutouts
+DATA_DIR = "data/atlite/cutouts"
 
-    years = list(range(2010, 2022 + 1))
-    for y in years:
-        shpfilename = shpreader.natural_earth(resolution='10m',
-                                              category='cultural',
-                                              name='admin_0_countries')
-        reader = shpreader.Reader(shpfilename)
-        UK = gpd.GeoSeries({r.attributes['NAME_EN']: r.geometry
-                            for r in reader.records()},
-                           crs={'init': 'epsg:4326'}).reindex(['United Kingdom'])
 
-        # Define the cutout; this will not yet trigger any major operations
-        path = 'UK-{}.nc'.format(y)
-        time = str(y)
-        cutout = atlite.Cutout(path=path,
-                               module="era5",
-                               bounds=UK.unary_union.bounds,
-                               time=time)
-        
-        # print(cutout.available_features)
+def prepare_cutouts(years, outputs, enable_zenodo=True, verify_checksum=True):
+    """
+    Prepare cutouts for the given years using the tiered strategy.
 
-        # This is where all the work happens
-        # (this can take some time, for 2018 it took circa 3 hours).
-        # features = ['height', 'wind', 'temperature', 'runoff']
-        cutout.prepare()
+    Parameters
+    ----------
+    years : list[int]
+        Weather years to acquire cutouts for.
+    outputs : list[str]
+        Corresponding output file paths.
+    enable_zenodo : bool
+        Whether to try Zenodo before falling back to atlite.
+    verify_checksum : bool
+        Whether to verify MD5 checksums on Zenodo downloads.
+    """
+    logger.info(f"Preparing cutouts for years: {years}")
+    logger.info(f"Zenodo download: {'enabled' if enable_zenodo else 'disabled'}")
 
-def prepare_cutout_year(y, output_path):
+    # Pre-fetch Zenodo file listing once (avoids repeated API calls)
+    zenodo_files = None
+    if enable_zenodo:
+        logger.info("Querying Zenodo for available cutout files...")
+        zenodo_files = query_zenodo_available_files()
+        if zenodo_files:
+            available = sorted(zenodo_files.keys())
+            logger.info(f"  Zenodo has {len(available)} cutout files available")
+        else:
+            logger.warning("  Could not reach Zenodo API; will use hardcoded file list")
 
-    file_path = f'data/atlite/cutouts/uk-{str(y)}.nc'
-    
-    # Check if the file exists in data dir
-    if os.path.exists(file_path):
-        print(f"Cutout for year {str(y)} exists in data dir, copying.")
-        shutil.copy(file_path, output_path)
-        return
-
-    print(f"Cutout for year {str(y)} does not exist in data dir, downloading...")
-
-    shpfilename = shpreader.natural_earth(resolution='10m',
-                                            category='cultural',
-                                            name='admin_0_countries')
-    reader = shpreader.Reader(shpfilename)
-    UK = gpd.GeoSeries({r.attributes['NAME_EN']: r.geometry
-                        for r in reader.records()},
-                        crs={'init': 'epsg:4326'}).reindex(['United Kingdom'])
-
-    # Define the cutout; this will not yet trigger any major operations
-    path = output_path
-    time = str(y)
-    print(f"Preparing cutout: {path} for year {time}")
-    cutout = atlite.Cutout(path=path,
-                            module="era5",
-                            bounds=UK.unary_union.bounds,
-                            time=time)
-
-    # This is where all the work happens
-    # (this can take some time, for 2018 it took circa 3 hours).
-    # features = ['height', 'wind', 'temperature', 'runoff']
-    print(f"Downloading and processing ERA5 data for {y}... (may take 2-4 hours)")
-    cutout.prepare()
-    print(f"Cutout for year {y} completed successfully!")
-
-if __name__ == "__main__":
-    # Get years from snakemake params
-    years = snakemake.params.years
-    outputs = snakemake.output
-    
-    print(f"Preparing cutouts for years: {years}")
-    
+    sources = {}
     for i, year in enumerate(years):
         output_path = outputs[i]
-        print(f"\n[{i+1}/{len(years)}] Generating cutout for {year}...")
-        prepare_cutout_year(year, output_path)
-    
-    print("\nAll cutouts prepared successfully!")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"[{i+1}/{len(years)}] Acquiring cutout for {year}")
+        logger.info(f"  Target: {output_path}")
+
+        source = acquire_cutout(
+            year=year,
+            output_path=output_path,
+            data_dir=DATA_DIR,
+            enable_zenodo=enable_zenodo,
+            verify_checksum=verify_checksum,
+            zenodo_files=zenodo_files,
+        )
+        sources[year] = source
+        logger.info(f"  Source: {source}")
+
+    # Summary
+    logger.info(f"\n{'='*60}")
+    logger.info("CUTOUT ACQUISITION SUMMARY")
+    logger.info(f"{'='*60}")
+    for year, source in sources.items():
+        icon = {
+            "data_dir": "[CACHED] ",
+            "zenodo": "[ZENODO] ",
+            "atlite": "[ERA5]   ",
+        }.get(source, "[?]      ")
+        logger.info(f"  {icon} uk-{year}.nc")
+    logger.info(f"{'='*60}\n")
+
+
+if __name__ == "__main__":
+    # Get parameters from snakemake
+    years = snakemake.params.years
+    outputs = snakemake.output
+
+    # Read Zenodo settings from config if available
+    snakemake_config = getattr(snakemake.params, "config", {})
+    zenodo_config = snakemake_config.get("zenodo", {})
+    enable_zenodo = zenodo_config.get("enabled", True)
+    verify_checksum = zenodo_config.get("verify_checksum", True)
+
+    prepare_cutouts(
+        years=years,
+        outputs=outputs,
+        enable_zenodo=enable_zenodo,
+        verify_checksum=verify_checksum,
+    )
 

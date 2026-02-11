@@ -275,6 +275,96 @@ def apply_transmission_relaxation(network, scenario_config, logger):
     return modifications
 
 
+def improve_numerical_conditioning(network, logger):
+    """
+    Improve numerical conditioning by removing very small components and
+    clamping extreme parameter values.
+    
+    Large LP problems with coefficient ranges exceeding ~1e6 cause Gurobi
+    to report "Numerical trouble encountered". This function:
+    1. Removes generators, storage units, and links with p_nom < 0.1 MW
+       (negligible capacity that introduces extreme coefficient ratios)
+    2. Clamps transformer reactance values that are unreasonably high
+    
+    Parameters
+    ----------
+    network : pypsa.Network
+        Network to clean up
+    logger : logging.Logger
+        Logger instance
+    """
+    logger.info("=" * 80)
+    logger.info("IMPROVING NUMERICAL CONDITIONING")
+    logger.info("=" * 80)
+    
+    min_pnom = 0.1  # MW - components below this are negligible
+    
+    # 1. Remove very small generators (excluding load_shedding)
+    non_ls_gens = network.generators[network.generators.carrier != 'load_shedding']
+    small_gens = non_ls_gens[non_ls_gens.p_nom < min_pnom]
+    if len(small_gens) > 0:
+        total_removed_cap = small_gens.p_nom.sum()
+        logger.info(f"Removing {len(small_gens)} generators with p_nom < {min_pnom} MW "
+                     f"(total: {total_removed_cap:.2f} MW - negligible)")
+        # Also remove from time-varying DataFrames
+        for attr in ['p_max_pu', 'p_min_pu', 'marginal_cost']:
+            df = getattr(network.generators_t, attr, None)
+            if df is not None and len(df) > 0:
+                cols_to_drop = [c for c in small_gens.index if c in df.columns]
+                if cols_to_drop:
+                    df.drop(columns=cols_to_drop, inplace=True)
+        network.generators.drop(small_gens.index, inplace=True)
+    
+    # 2. Remove very small storage units
+    small_storage = network.storage_units[network.storage_units.p_nom < min_pnom]
+    if len(small_storage) > 0:
+        total_removed_stor = small_storage.p_nom.sum()
+        logger.info(f"Removing {len(small_storage)} storage units with p_nom < {min_pnom} MW "
+                     f"(total: {total_removed_stor:.2f} MW - negligible)")
+        for attr in ['p_max_pu', 'p_min_pu', 'state_of_charge_set', 'inflow']:
+            df = getattr(network.storage_units_t, attr, None)
+            if df is not None and len(df) > 0:
+                cols_to_drop = [c for c in small_storage.index if c in df.columns]
+                if cols_to_drop:
+                    df.drop(columns=cols_to_drop, inplace=True)
+        network.storage_units.drop(small_storage.index, inplace=True)
+    
+    # 3. Remove very small links (but not HVDC interconnectors)
+    if len(network.links) > 0:
+        small_links = network.links[network.links.p_nom < min_pnom]
+        if len(small_links) > 0:
+            total_removed_links = small_links.p_nom.sum()
+            logger.info(f"Removing {len(small_links)} links with p_nom < {min_pnom} MW "
+                         f"(total: {total_removed_links:.2f} MW - negligible)")
+            for attr in ['p_max_pu', 'p_min_pu', 'efficiency']:
+                df = getattr(network.links_t, attr, None)
+                if df is not None and len(df) > 0:
+                    cols_to_drop = [c for c in small_links.index if c in df.columns]
+                    if cols_to_drop:
+                        df.drop(columns=cols_to_drop, inplace=True)
+            network.links.drop(small_links.index, inplace=True)
+    
+    # 4. Clamp transformer reactance to reasonable range
+    # Very high x values (>10) create extreme coefficient ratios
+    if len(network.transformers) > 0:
+        high_x = network.transformers.x > 10.0
+        n_high_x = high_x.sum()
+        if n_high_x > 0:
+            logger.info(f"Clamping {n_high_x} transformer reactance values from "
+                         f"max {network.transformers.loc[high_x, 'x'].max():.1f} to 10.0")
+            network.transformers.loc[high_x, 'x'] = 10.0
+    
+    # Report final coefficient ranges
+    gen_pnom = network.generators[network.generators.p_nom > 0]['p_nom']
+    if len(gen_pnom) > 0:
+        ratio = gen_pnom.max() / gen_pnom.min()
+        logger.info(f"Generator p_nom range: {gen_pnom.min():.2f} - {gen_pnom.max():.0f} MW (ratio: {ratio:.0f})")
+    
+    logger.info(f"Final network: {len(network.generators)} generators, "
+                 f"{len(network.storage_units)} storage, {len(network.links)} links")
+    logger.info("=" * 80)
+
+
 def export_optimization_results(network, output_dir, scenario_id, logger):
     """
     Export optimization results to CSV files.
@@ -547,6 +637,10 @@ if __name__ == "__main__":
         # Apply transmission constraint relaxation if configured
         # This helps feasibility for detailed networks (ETYS) with tight line limits
         apply_transmission_relaxation(network, scenario_config, logger)
+        
+        # Improve numerical conditioning by removing tiny components
+        # and clamping extreme parameter values (prevents "Numerical trouble" errors)
+        improve_numerical_conditioning(network, logger)
         
         # Apply solve period if configured
         solve_period_config = scenario_config.get('solve_period', {})

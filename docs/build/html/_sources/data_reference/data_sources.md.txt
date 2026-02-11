@@ -227,7 +227,8 @@ Reanalysis weather data for renewable generation profiles.
 | **Frequency** | Hourly |
 | **Coverage** | Global (subset for GB) |
 | **Granularity** | ~30km grid |
-| **Access** | CDS API (free registration) |
+| **Access** | Zenodo (2010-2024) or CDS API |
+| **Zenodo Record** | [10.5281/zenodo.18325225](https://zenodo.org/records/18325225) |
 
 ### Variables Used
 
@@ -240,31 +241,54 @@ Reanalysis weather data for renewable generation profiles.
 ### Location
 
 ```
-resources/atlite/
-├── GB_2019.nc                 # Weather cutout for 2019
-├── GB_2020.nc
+resources/atlite/cutouts/
+├── uk-2019.nc                 # Weather cutout for 2019
+├── uk-2020.nc
+├── uk-2021.nc
 └── ...
 ```
 
-### Generation
+### Acquisition Strategy
 
-Weather cutouts are generated using Atlite:
+PyPSA-GB uses a **tiered acquisition strategy** for weather cutouts:
+
+1. **Data directory** - Check `data/atlite/cutouts/` for cached files
+2. **Zenodo** - Download pre-built cutouts (~5-10 minutes per year)
+3. **ERA5 API** - Generate from scratch via atlite (~2-4 hours per year)
+
+#### Quick Start (Years 2010-2024)
+
+For years 2010-2024, cutouts are automatically downloaded from Zenodo:
 
 ```bash
-snakemake -s Snakefile_cutouts resources/atlite/GB_2019.nc -j 2
+# Configure desired years in config/cutouts_config.yaml
+snakemake -s Snakefile_cutouts --cores 1
 ```
 
----
+**No CDS API credentials required** for these years!
 
-## ESPENI Demand Data
+#### Custom Years (Outside 2010-2024)
 
-Historical electricity demand profiles.
+For other years, you'll need CDS API credentials:
 
-### Overview
+```bash
+# 1. Register at: https://cds.climate.copernicus.eu/user/register
+# 2. Set up ~/.cdsapirc with your API key
+# 3. Generate cutout
+snakemake -s Snakefile_cutouts --cores 1
+```
 
-| Attribute | Details |
-|-----------|---------|
-| **Publisher** | University of Edinburgh / ESPENI project |
+### Pre-built Cutouts (Zenodo)
+
+Pre-built cutouts for years 2010-2024 are available on Zenodo:
+
+- **Repository**: [PyPSA-GB Atlite Cutouts](https://zenodo.org/records/18325225)
+- **License**: CC-BY-4.0
+- **File size**: ~765 MB per year
+- **Download time**: 5-10 minutes per year
+- **MD5 verification**: Automatic
+
+These cutouts are automatically used by the workflow and require no manual intervention.
 | **Frequency** | Half-hourly |
 | **Coverage** | GB total demand 2009-2024 |
 | **Granularity** | National total |

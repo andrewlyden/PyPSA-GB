@@ -2,10 +2,16 @@
 PyPSA-GB: Cutout Generation Workflow
 
 ╔════════════════════════════════════════════════════════════════════════════╗
-║                    EXPENSIVE OPERATIONS ONLY                               ║
+║                    WEATHER CUTOUT ACQUISITION                              ║
 ║                                                                            ║
-║ This workflow ONLY downloads and prepares weather cutouts.                 ║
-║ Each cutout takes 2-4 hours per year and ~700MB per file.                  ║
+║ This workflow acquires weather cutouts using a tiered strategy:            ║
+║   1. Data dir: check for cached copy in data/atlite/cutouts/ (instant)    ║
+║   2. Zenodo: download pre-built cutouts (~minutes per file)                ║
+║   3. Atlite/ERA5: full download from CDS API (~2-4 hours per file)        ║
+║                                                                            ║
+║ Snakemake skips re-downloading if output file already exists.              ║
+║ Zenodo repository: https://zenodo.org/records/18325225                     ║
+║ Available years: 2010-2024 (~765 MB each)                                  ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -61,16 +67,22 @@ IMPORTANT NOTES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 TIME REQUIREMENTS:
-   • Each year takes 2-4 hours to download from ERA5
-   • Example: 4 years = 8-16 hours total
-   • Run overnight or during off-hours
+   • With Zenodo (years 2010-2024): ~5-10 minutes per year
+   • Without Zenodo / other years: 2-4 hours per year via ERA5
+   • Zenodo is tried automatically before falling back to ERA5
 
 STORAGE REQUIREMENTS:
    • ~700 MB per year uncompressed
    • Example: 10 years = ~7 GB
    • Check available disk space first
 
-ERA5 API REQUIREMENTS:
+ZENODO (FAST, NO CREDENTIALS REQUIRED):
+   • Pre-built cutouts for 2010-2024 downloaded automatically
+   • MD5 checksum verification enabled by default
+   • Disable with: zenodo.enabled: false in cutouts_config.yaml
+
+ERA5 API (FALLBACK, CREDENTIALS REQUIRED):
+   • Used only if cutout is not on Zenodo or Zenodo is disabled
    • Requires CDS (Copernicus Data Store) API credentials
    • Set up: https://cds.climate.copernicus.eu/api-how-to
    • Create ~/.cdsapirc with your API key
@@ -89,9 +101,15 @@ TROUBLESHOOTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Problem: "CDS API key not found"
-Solution: Set up ~/.cdsapirc with your API key from CDS website
+Solution: Only needed if Zenodo doesn't have the cutout year.
+          Set up ~/.cdsapirc with your API key from CDS website
 
-Problem: Download fails/times out
+Problem: Zenodo download fails
+Solution: Will automatically fall back to atlite/ERA5 download.
+          Check internet connection if Zenodo keeps failing.
+          Disable Zenodo with: zenodo.enabled: false in cutouts_config.yaml
+
+Problem: ERA5 download fails/times out  
 Solution: ERA5 servers can be overloaded. Wait 30min and retry.
           Check retry settings in cutouts_config.yaml
 

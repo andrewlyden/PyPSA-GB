@@ -1360,24 +1360,42 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
         f = str(fuel).strip()
         if not f:
             return 'unclassified'
-        # Common manual mappings
+        # Common manual mappings covering all DUKES fuel type variants (2010-2024)
         manual_map = {
+            # Gas-fired generation
             'natural gas': 'CCGT',
             'gas': 'CCGT',
             'ccgt': 'CCGT',
             'combined cycle gas turbine': 'CCGT',
+            'sour gas': 'CCGT',              # Connahs Quay - sour gas CCGT plant
             'ocgt': 'OCGT',
             'open cycle gas turbine': 'OCGT',
+            'single cycle': 'OCGT',          # DUKES 2022+ uses 'Single cycle' for OCGT
+            # Coal
             'coal': 'coal',
             'coal (steam)': 'conventional_steam',
+            'coal / oil': 'coal',            # Coal stations with oil backup/start-up
+            # Nuclear
             'nuclear': 'nuclear',
+            # Bioenergy / waste
             'biomass': 'biomass',
             'waste': 'waste_to_energy',
+            'msw': 'waste_to_energy',        # Municipal Solid Waste (DUKES 2022+)
+            'municipal solid waste': 'waste_to_energy',
+            'meat & bone meal': 'biomass',   # Animal waste bioenergy
+            'straw': 'biomass',              # Agricultural bioenergy
             'landfill gas': 'landfill_gas',
             'sewage gas': 'sewage_gas',
             'biogas': 'biogas',
+            # Oil / diesel
             'oil': 'oil',
             'diesel': 'oil',
+            'diesel/gas oil': 'oil',         # Peaking/backup diesel generators (DUKES 2022+)
+            'gas oil': 'oil',                # Peaking/backup diesel generators (DUKES 2010-2018)
+            'gas oil / kerosene': 'oil',     # Backup oil generators
+            'gas / oil': 'oil',              # Mixed fuel, primarily oil
+            'light oil': 'oil',              # Oil-fired generators
+            # Hydro
             'hydro': 'Hydro',
         }
         key = f.lower()

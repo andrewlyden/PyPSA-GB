@@ -1,6 +1,29 @@
 """
-Marginal Cost Calculations for PyPSA-GB.
-Extracts logic from legacy code and integrates into Snakemake workflow.
+Marginal Cost Calculations for PyPSA-GB - STANDALONE UTILITY
+
+⚠️  NOT USED IN MAIN WORKFLOW ⚠️
+
+This module provides standalone marginal cost calculation utilities.
+The main workflow uses apply_marginal_costs.py instead.
+
+WORKFLOW FILE (used in Snakemake pipeline):
+    scripts/generators/apply_marginal_costs.py
+
+THIS FILE (standalone utility):
+    scripts/generators/marginal_costs.py
+
+USE CASES FOR THIS FILE:
+  - Standalone analysis of marginal costs
+  - Debugging and testing calculations
+  - External scripts requiring marginal cost functions
+
+For normal workflow usage, configure marginal costs in:
+  - config/defaults.yaml (project-wide defaults)
+  - config/scenarios.yaml (scenario-specific overrides)
+
+CLI USAGE:
+    python scripts/generators/marginal_costs.py --network <path> --output <dir>
+    python scripts/generators/marginal_costs.py --network resources/network/HT35_base.nc --scenario HT35
 """
 
 import pandas as pd

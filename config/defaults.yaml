@@ -90,6 +90,37 @@ etys_upgrades:
   upgrade_year: null              # null, or specific year like 2030
 
 # ──────────────────────────────────────────────────────────────────────────────
+# MARGINAL COST DEFAULTS (for future scenarios, modelled_year > 2024)
+# ──────────────────────────────────────────────────────────────────────────────
+# Historical scenarios (≤2024) automatically use built-in historical lookup tables
+# Future scenarios (>2024) use these defaults unless overridden in scenarios.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+
+marginal_costs:
+  # Carbon price (£/tonne CO2)
+  carbon_price: 85.0
+
+  # Fuel prices (£/MWh thermal, before efficiency adjustment)
+  fuel_prices:
+    gas: 35.0          # Natural gas (CCGT/OCGT)
+    coal: 30.0         # Coal
+    oil: 75.0          # Oil
+    biomass: 45.0      # Biomass/bioenergy
+    nuclear: 8.0       # Very low marginal operating cost
+    hydro: 5.0         # Very low marginal cost
+    wind: 0.5          # Minimal variable O&M
+    solar: 0.5         # Minimal variable O&M
+    battery: 0.1       # Wear and tear cost
+
+  # Historical data: Built-in lookup tables (2010-2024) used automatically
+  # for historical scenarios. Cannot be overridden to maintain accuracy.
+  use_historical_data: true
+
+  # FES dynamic prices: For future scenarios (>2024), use FES-extracted prices if available
+  # Falls back to defaults above if FES extraction not available
+  use_fes_prices: true
+
+# ──────────────────────────────────────────────────────────────────────────────
 # LOGGING
 # ──────────────────────────────────────────────────────────────────────────────
 

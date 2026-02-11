@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/scenarios';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -763,9 +764,6 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="#fes-pathway-selection">FES Pathway Selection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#weather-year-selection">Weather Year Selection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#time-period-selection">Time Period Selection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sensitivity-analysis">Sensitivity Analysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#multi-scenario-comparison">Multi-Scenario Comparison</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scenario-checklist">Scenario Checklist</a></li>
 </ul>
 </li>
@@ -1071,106 +1069,105 @@ document.write(`
 <span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-22</span><span class="nv"> </span><span class="s">23:00&quot;</span>
 </pre></div>
 </div>
-</section>
-</section>
-<section id="sensitivity-analysis">
-<h2>Sensitivity Analysis<a class="headerlink" href="#sensitivity-analysis" title="Link to this heading">#</a></h2>
-<section id="capacity-sensitivities">
-<h3>Capacity Sensitivities<a class="headerlink" href="#capacity-sensitivities" title="Link to this heading">#</a></h3>
-<p>Create variants with modified assumptions:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_baseline</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
-<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+<!-- ## Sensitivity Analysis
 
-<span class="nt">HT35_more_wind</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
-<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
-<span class="w">  </span><span class="nt">capacity_scaling</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">wind_offshore</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.2</span><span class="w">  </span><span class="c1"># 20% more offshore wind</span>
+### Capacity Sensitivities
 
-<span class="nt">HT35_less_nuclear</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
-<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
-<span class="w">  </span><span class="nt">capacity_scaling</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">nuclear</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w">  </span><span class="c1"># 50% less nuclear</span>
-</pre></div>
-</div>
-</section>
-<section id="economic-sensitivities">
-<h3>Economic Sensitivities<a class="headerlink" href="#economic-sensitivities" title="Link to this heading">#</a></h3>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_high_gas</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">fuel_prices</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">natural_gas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">150</span><span class="w">  </span><span class="c1"># £/MWh (vs default ~80)</span>
+Create variants with modified assumptions:
 
-<span class="nt">HT35_high_carbon</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">carbon_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">  </span><span class="c1"># £/tCO2 (vs default ~100)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="multi-scenario-comparison">
-<h2>Multi-Scenario Comparison<a class="headerlink" href="#multi-scenario-comparison" title="Link to this heading">#</a></h2>
-<section id="defining-a-suite">
-<h3>Defining a Suite<a class="headerlink" href="#defining-a-suite" title="Link to this heading">#</a></h3>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/scenarios.yaml</span>
-<span class="nt">HT35_suite</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_baseline</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_wind</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_low_nuclear</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_demand</span>
-</pre></div>
-</div>
-</section>
-<section id="running-all">
-<h3>Running All<a class="headerlink" href="#running-all" title="Link to this heading">#</a></h3>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/config.yaml</span>
-<span class="nt">scenarios</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_baseline</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_high_wind</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_low_nuclear</span>
-</pre></div>
-</div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w">  </span><span class="c1"># Runs all active scenarios</span>
-</pre></div>
-</div>
-</section>
-<section id="comparing-results">
-<h3>Comparing Results<a class="headerlink" href="#comparing-results" title="Link to this heading">#</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+```yaml
+HT35_baseline:
+  modelled_year: 2035
+  FES_scenario: "Holistic Transition"
 
-<span class="n">scenarios</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HT35_baseline&#39;</span><span class="p">,</span> <span class="s1">&#39;HT35_high_wind&#39;</span><span class="p">,</span> <span class="s1">&#39;HT35_low_nuclear&#39;</span><span class="p">]</span>
-<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+HT35_more_wind:
+  modelled_year: 2035
+  FES_scenario: "Holistic Transition"
+  capacity_scaling:
+    wind_offshore: 1.2  # 20% more offshore wind
 
-<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;resources/network/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">_solved.nc&quot;</span><span class="p">)</span>
-    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s1">&#39;scenario&#39;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
-        <span class="s1">&#39;system_cost&#39;</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">objective</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span>
-        <span class="s1">&#39;curtailment&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> 
-                       <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">p_nom</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
-        <span class="s1">&#39;emissions&#39;</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;p_nom * carrier_emissions&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="p">})</span>
+HT35_less_nuclear:
+  modelled_year: 2035
+  FES_scenario: "Holistic Transition"
+  capacity_scaling:
+    nuclear: 0.5  # 50% less nuclear
+```
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</pre></div>
-</div>
+### Economic Sensitivities
+
+```yaml
+HT35_high_gas:
+  fuel_prices:
+    natural_gas: 150  # £/MWh (vs default ~80)
+
+HT35_high_carbon:
+  carbon_price: 200  # £/tCO2 (vs default ~100)
+```
+
+## Multi-Scenario Comparison
+
+### Defining a Suite
+
+```yaml
+# In config/scenarios.yaml
+HT35_suite:
+  - HT35_baseline
+  - HT35_high_wind
+  - HT35_low_nuclear
+  - HT35_high_demand
+```
+
+### Running All
+
+```yaml
+# In config/config.yaml
+scenarios:
+  - HT35_baseline
+  - HT35_high_wind
+  - HT35_low_nuclear
+```
+
+```bash
+snakemake -j 4  # Runs all active scenarios
+```
+
+### Comparing Results
+
+```python
+import pypsa
+import pandas as pd
+
+scenarios = ['HT35_baseline', 'HT35_high_wind', 'HT35_low_nuclear']
+results = []
+
+for s in scenarios:
+    n = pypsa.Network(f"resources/network/{s}_solved.nc")
+    results.append({
+        'scenario': s,
+        'system_cost': n.objective / 1e9,
+        'curtailment': (n.generators_t.p.sum().sum() / 
+                       (n.generators_t.p_max_pu * n.generators.p_nom).sum().sum()),
+        'emissions': n.generators.eval('p_nom * carrier_emissions').sum()
+    })
+
+df = pd.DataFrame(results)
+print(df)
+```
+
+## Naming Conventions
+
+Use consistent naming for clarity:
+
+```
+{FES_Pathway}{Year}_{Network}_{Variant}
+```
+
+Examples:
+- `HT35` - Holistic Transition 2035, ETYS network
+- `HT35_reduced` - Same but reduced network
+- `EE40_high_wind` - Electric Engagement 2040, high wind variant
+- `Historical_2022` - Historical validation -->
 </section>
-</section>
-<section id="naming-conventions">
-<h2>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading">#</a></h2>
-<p>Use consistent naming for clarity:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">FES_Pathway</span><span class="p">}{</span><span class="n">Year</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">Network</span><span class="p">}</span><span class="n">_</span><span class="p">{</span><span class="n">Variant</span><span class="p">}</span>
-</pre></div>
-</div>
-<p>Examples:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">HT35</span></code> - Holistic Transition 2035, ETYS network</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">HT35_reduced</span></code> - Same but reduced network</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">EE40_high_wind</span></code> - Electric Engagement 2040, high wind variant</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Historical_2022</span></code> - Historical validation</p></li>
-</ul>
 </section>
 <section id="scenario-checklist">
 <h2>Scenario Checklist<a class="headerlink" href="#scenario-checklist" title="Link to this heading">#</a></h2>
@@ -1257,18 +1254,6 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#stress-testing">Stress Testing</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sensitivity-analysis">Sensitivity Analysis</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#capacity-sensitivities">Capacity Sensitivities</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#economic-sensitivities">Economic Sensitivities</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multi-scenario-comparison">Multi-Scenario Comparison</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-a-suite">Defining a Suite</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-all">Running All</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comparing-results">Comparing Results</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#naming-conventions">Naming Conventions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-checklist">Scenario Checklist</a></li>
 </ul>
   </nav></div>

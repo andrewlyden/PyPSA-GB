@@ -937,7 +937,7 @@ document.write(`
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">renewables_year</span></code></p></td>
 <td><p>Weather data year</p></td>
-<td><p>2010-2023 (must have cutout)</p></td>
+<td><p>2010-2024 (auto-download from Zenodo)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_model</span></code></p></td>
 <td><p>Network resolution</p></td>
@@ -1098,14 +1098,25 @@ snakemake<span class="w"> </span>resources/network/MyScenario_2040_solved.nc<spa
 <h2>Common Issues<a class="headerlink" href="#common-issues" title="Link to this heading">#</a></h2>
 <section id="cutout-not-found">
 <h3>“Cutout not found”<a class="headerlink" href="#cutout-not-found" title="Link to this heading">#</a></h3>
-<p>Ensure weather data exists for your <code class="docutils literal notranslate"><span class="pre">renewables_year</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/atlite/
+<p>For years 2010-2024, cutouts are <strong>automatically downloaded from Zenodo</strong> when needed. If you get this error:</p>
+<ol class="arabic">
+<li><p><strong>Check if cutout workflow was run</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/atlite/cutouts/
 </pre></div>
 </div>
-<p>If missing, generate it:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2018.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
+</li>
+<li><p><strong>Generate missing cutouts</strong> (will auto-download from Zenodo for 2010-2024):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure the year first</span>
+nano<span class="w"> </span>config/cutouts_config.yaml
+<span class="c1"># Set: years_to_generate: [2018]</span>
+
+<span class="c1"># Run cutout workflow</span>
+snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
+</li>
+<li><p><strong>For years outside 2010-2024</strong>, you’ll need CDS API credentials (see <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a>).</p></li>
+</ol>
 </section>
 <section id="infeasible-optimization">
 <h3>“Infeasible optimization”<a class="headerlink" href="#infeasible-optimization" title="Link to this heading">#</a></h3>

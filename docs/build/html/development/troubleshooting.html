@@ -1118,22 +1118,35 @@ which<span class="w"> </span>snakemake
 <p><strong>Symptom</strong>: “Cutout not found” for renewables year</p>
 <p><strong>Solutions</strong>:</p>
 <ol class="arabic">
-<li><p>Check available cutouts:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/atlite/
+<li><p><strong>For years 2010-2024</strong> (automatic Zenodo download):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure year in config/cutouts_config.yaml</span>
+<span class="c1"># Then run cutout workflow</span>
+snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
+<p>Cutouts will be automatically downloaded from Zenodo (~5-10 minutes per year).
+<strong>No CDS API credentials required</strong> for these years!</p>
 </li>
-<li><p>Generate missing cutout:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2019.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
-</pre></div>
-</div>
+<li><p><strong>For other years</strong> (requires CDS API credentials):</p>
+<ul class="simple">
+<li><p>Register at: https://cds.climate.copernicus.eu/user/register</p></li>
+<li><p>Set up <code class="docutils literal notranslate"><span class="pre">~/.cdsapirc</span></code> with your API key</p></li>
+<li><p>Run: <code class="docutils literal notranslate"><span class="pre">snakemake</span> <span class="pre">-s</span> <span class="pre">Snakefile_cutouts</span> <span class="pre">--cores</span> <span class="pre">1</span></code></p></li>
+</ul>
 </li>
-<li><p>Use existing weather year:</p>
+<li><p><strong>Quick fix</strong> - Use an available year:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">  </span><span class="c1"># Year with available cutout</span>
 </pre></div>
 </div>
 </li>
+<li><p><strong>Check what’s available</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>resources/atlite/cutouts/
+<span class="c1"># Should show: uk-2019.nc, uk-2020.nc, etc.</span>
+</pre></div>
+</div>
+</li>
 </ol>
+<p><strong>Note</strong>: Zenodo cutouts are automatically verified with MD5 checksums.</p>
 </section>
 </section>
 <hr class="docutils" />

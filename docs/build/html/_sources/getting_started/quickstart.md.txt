@@ -38,8 +38,8 @@ Common scenarios include:
 Run a single scenario using Snakemake:
 
 ```bash
-# Run the HT35 scenario (2035 Holistic Transition)
-snakemake resources/network/HT35_solved.nc -j 4
+# Run the HT35_clustered scenario (2035 Holistic Transition, clustered network)
+snakemake resources/network/HT35_clustered_solved.nc -j 4
 ```
 
 ```{note}
@@ -69,7 +69,7 @@ Once complete, load and inspect the solved network:
 import pypsa
 
 # Load the solved network
-n = pypsa.Network("resources/network/HT35_solved.nc")
+n = pypsa.Network("resources/network/HT35_clustered_solved.nc")
 
 # Basic statistics
 print(f"Buses: {len(n.buses)}")
@@ -88,10 +88,10 @@ Generate HTML analysis reports:
 
 ```bash
 # Generate spatial analysis map
-snakemake resources/analysis/HT35_spatial.html -j 1
+snakemake resources/analysis/HT35_clustered_spatial.html -j 1
 
 # Generate summary dashboard
-snakemake resources/analysis/HT35_dashboard.html -j 1
+snakemake resources/analysis/HT35_clustered_dashboard.html -j 1
 ```
 
 Open the generated HTML files in your browser.
@@ -100,16 +100,16 @@ Open the generated HTML files in your browser.
 
 ```bash
 # Dry run (show what would execute)
-snakemake resources/network/HT35_solved.nc -n -p
+snakemake resources/network/HT35_clustered_solved.nc -n -p
 
 # Force re-run of a specific rule
 snakemake -R solve_network -j 4
 
 # Run with verbose logging
-snakemake resources/network/HT35_solved.nc -j 4 --verbose
+snakemake resources/network/HT35_clustered_solved.nc -j 4 --verbose
 
 # Clean all outputs for a scenario
-snakemake clean_HT35
+snakemake clean_HT35_clustered
 ```
 
 ## Faster Testing with Reduced Networks

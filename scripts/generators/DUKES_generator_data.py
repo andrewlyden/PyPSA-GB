@@ -904,6 +904,93 @@ def convert_bng_to_wgs84(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _refine_gas_fuel_type(df: pd.DataFrame, year: int) -> None:
+    """
+    Refine fuel_type for gas generators to distinguish CCGT from OCGT.
+    
+    DUKES changed format over the years:
+      - 2010-2018: 'Fuel' column already has granular values like 'CCGT', 'OCGT', 'Gas'
+      - 2019-2021: 'Fuel' = 'Natural Gas/gas', 'Technology' = 'CCGT' or 'OCGT'
+      - 2022-2024: 'Primary Fuel' = 'Natural Gas', 'Technology' = 'Fossil Fuel',
+                   'Type' (-> generator_type) = 'CCGT', 'Single cycle', etc.
+    
+    This function checks whether the fuel_type column has lost the CCGT/OCGT
+    distinction (i.e. all gas plants labelled as 'Natural Gas') and uses
+    the technology or generator_type columns to restore it.
+    
+    Modifies df in-place.
+    
+    Args:
+        df: Standardized DUKES DataFrame with fuel_type, technology, and
+            optionally generator_type columns
+        year: DUKES data year
+    """
+    if 'fuel_type' not in df.columns:
+        return
+    
+    fuel_lower = df['fuel_type'].str.lower().str.strip()
+    is_generic_gas = fuel_lower.isin(['natural gas', 'natural gas/gas', 'gas', 'sour gas'])
+    
+    if not is_generic_gas.any():
+        # fuel_type already has specific values (e.g. 2010-2018 format) - no refinement needed
+        logger.info(f"  DUKES {year}: fuel_type already distinguishes gas types - no refinement needed")
+        return
+    
+    gas_count = is_generic_gas.sum()
+    refined_count = 0
+    
+    # Strategy 1: Use generator_type column (2022+ has 'Type' -> 'generator_type')
+    # This contains 'CCGT', 'Single cycle', 'Conventional steam', etc.
+    if 'generator_type' in df.columns and df.loc[is_generic_gas, 'generator_type'].notna().any():
+        gen_type_lower = df['generator_type'].str.lower().str.strip()
+        
+        # Map generator_type values to refined fuel_type
+        ocgt_mask = is_generic_gas & gen_type_lower.isin(['single cycle', 'ocgt', 'open cycle gas turbine'])
+        ccgt_mask = is_generic_gas & gen_type_lower.isin(['ccgt', 'combined cycle gas turbine'])
+        
+        if ocgt_mask.any():
+            df.loc[ocgt_mask, 'fuel_type'] = 'OCGT'
+            refined_count += ocgt_mask.sum()
+            logger.info(f"  DUKES {year}: Refined {ocgt_mask.sum()} 'Natural Gas' generators to 'OCGT' "
+                       f"(from generator_type='Single cycle')")
+        if ccgt_mask.any():
+            df.loc[ccgt_mask, 'fuel_type'] = 'CCGT'
+            refined_count += ccgt_mask.sum()
+            logger.info(f"  DUKES {year}: Refined {ccgt_mask.sum()} 'Natural Gas' generators to 'CCGT' "
+                       f"(from generator_type='CCGT')")
+    
+    # Strategy 2: Use technology column (2019-2021 has 'Technology' -> 'technology')
+    # This contains 'CCGT', 'OCGT', etc. directly
+    # Re-check is_generic_gas in case strategy 1 already refined some
+    fuel_lower = df['fuel_type'].str.lower().str.strip()
+    is_still_generic = fuel_lower.isin(['natural gas', 'natural gas/gas', 'gas', 'sour gas'])
+    
+    if 'technology' in df.columns and is_still_generic.any() and df.loc[is_still_generic, 'technology'].notna().any():
+        tech_lower = df['technology'].str.lower().str.strip()
+        
+        ocgt_mask = is_still_generic & tech_lower.isin(['ocgt', 'open cycle gas turbine', 'single cycle'])
+        ccgt_mask = is_still_generic & tech_lower.isin(['ccgt', 'combined cycle gas turbine'])
+        
+        if ocgt_mask.any():
+            df.loc[ocgt_mask, 'fuel_type'] = 'OCGT'
+            refined_count += ocgt_mask.sum()
+            logger.info(f"  DUKES {year}: Refined {ocgt_mask.sum()} 'Natural Gas' generators to 'OCGT' "
+                       f"(from technology column)")
+        if ccgt_mask.any():
+            df.loc[ccgt_mask, 'fuel_type'] = 'CCGT'
+            refined_count += ccgt_mask.sum()
+            logger.info(f"  DUKES {year}: Refined {ccgt_mask.sum()} 'Natural Gas' generators to 'CCGT' "
+                       f"(from technology column)")
+    
+    # Log summary
+    remaining_generic = df['fuel_type'].str.lower().str.strip().isin(['natural gas', 'natural gas/gas', 'gas', 'sour gas']).sum()
+    if remaining_generic > 0:
+        logger.warning(f"  DUKES {year}: {remaining_generic} gas generators still have generic fuel_type "
+                      f"(no type info available) - will default to CCGT in carrier mapping")
+    if refined_count > 0:
+        logger.info(f"  DUKES {year}: Refined {refined_count}/{gas_count} gas generators (CCGT/OCGT distinction)")
+
+
 def standardize_dukes_data(df: pd.DataFrame, year: int) -> pd.DataFrame:
     """
     Convert raw DUKES data to standardized format matching FES structure.
@@ -937,7 +1024,8 @@ def standardize_dukes_data(df: pd.DataFrame, year: int) -> pd.DataFrame:
         'station_name': ['Site Name', 'Station Name', 'Power Station', 'Name'],
         'fuel_type': ['Primary Fuel', 'Fuel Type', 'Fuel'],
         'capacity_mw': ['InstalledCapacity (MW)', 'Installed Capacity\n(MW)', 'Capacity (MW)', 'Installed Capacity (MW)', 'Capacity MW', 'Capacity'],
-        'technology': ['Technology', 'Generator Type', 'Type'],
+        'technology': ['Technology', 'Generator Type'],
+        'generator_type': ['Type'],  # 2022+ has separate 'Type' column (CCGT, Single cycle, etc.)
         'location': ['Region', 'Location\nScotland, Wales, Northern Ireland or English region', 'Location', 'Area', 'Country'],
         'postcode': ['Postcode', 'Post Code', 'Postal Code'],  # Added for postcode geocoding
         'x_coord': ['X-Coordinate', 'X', 'Longitude', 'Long', 'Easting'],
@@ -963,6 +1051,15 @@ def standardize_dukes_data(df: pd.DataFrame, year: int) -> pd.DataFrame:
             logger.warning(f"  Could not find column for '{std_name}' (tried: {possible_cols})")
             standardized[std_name] = None
     
+    # === REFINE fuel_type FOR GAS GENERATORS (CCGT vs OCGT) ===
+    # DUKES changed format over the years:
+    #   2010-2018: 'Fuel' column is granular (CCGT, OCGT, Gas, etc.) - already correct
+    #   2019-2021: 'Fuel' = 'Natural Gas/gas', 'Technology' = 'CCGT' or 'OCGT'
+    #   2022-2024: 'Primary Fuel' = 'Natural Gas', 'Type' = 'CCGT' or 'Single cycle'
+    # We need to use the technology/generator_type columns to distinguish CCGT from OCGT
+    # when fuel_type is just 'Natural Gas' or 'Natural gas'
+    _refine_gas_fuel_type(standardized, year)
+
     # Add metadata columns
     standardized['data_source'] = 'DUKES'
     standardized['data_year'] = year
