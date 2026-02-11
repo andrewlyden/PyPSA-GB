@@ -17,6 +17,7 @@ flowchart TB
     subgraph Network["Network Assembly"]
         BASE["Build Base Network"]
         DEMAND["Add Demand"]
+        FLEX["Add Demand Flexibility"]
         RENEW["Add Renewables"]
         THERMAL["Add Thermal Generators"]
         STORAGE["Add Storage"]
@@ -43,7 +44,8 @@ flowchart TB
     REPD --> RENEW
     
     BASE --> DEMAND
-    DEMAND --> RENEW
+    DEMAND --> FLEX
+    FLEX --> RENEW
     RENEW --> THERMAL
     THERMAL --> STORAGE
     STORAGE --> HYDRO
@@ -96,7 +98,7 @@ Rules are organized by function in `rules/`:
 | File | Purpose |
 |------|---------|
 | `network_build.smk` | Base network construction (ETYS/Reduced/Zonal) |
-| `demand.smk` | Demand extraction, profiles, and flexibility options |
+| `demand.smk` | Demand extraction, profiles, disaggregation, and demand-side flexibility integration |
 | `renewables.smk` | Renewable generation profiles (wind/solar profiles from ERA5) |
 | `generators.smk` | Thermal generator integration (DUKES historical + FES future) |
 | `storage.smk` | Storage unit integration (battery, pumped hydro, LAES) |

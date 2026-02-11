@@ -1,0 +1,814 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tutorials &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/index';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Historical Baseload" href="1-historical-baseload-2015.html" />
+    <link rel="prev" title="Data Maintenance" href="../data_reference/maintenance.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Scenario Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Component Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-hydrogen.html">Hydrogen Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Tutorials</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">#</a></h1>
+<p>Interactive Jupyter notebook tutorials demonstrating PyPSA-GB’s network-constrained optimal power flow (LOPF) capabilities across historical and future scenarios.</p>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Scenario Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Component Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-hydrogen.html">Hydrogen Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+</ul>
+</div>
+<section id="tutorial-overview">
+<h2>Tutorial Overview<a class="headerlink" href="#tutorial-overview" title="Link to this heading">#</a></h2>
+<p>These tutorials demonstrate PyPSA-GB’s core capability: <strong>network-constrained optimal power flow (LOPF)</strong> modeling across different time periods and network resolutions.</p>
+<section id="scenario-tutorials-1-4">
+<h3>Scenario Tutorials (1-4)<a class="headerlink" href="#scenario-tutorials-1-4" title="Link to this heading">#</a></h3>
+<p>Complete scenario walkthroughs from network building to results analysis:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>#</p></th>
+<th class="head"><p>Notebook</p></th>
+<th class="head"><p>Year</p></th>
+<th class="head"><p>Network</p></th>
+<th class="head"><p>Solve Time</p></th>
+<th class="head"><p>Focus</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>1</strong></p></td>
+<td><p>Historical Baseload (2015)</p></td>
+<td><p>2015</p></td>
+<td><p>Reduced (32 buses)</p></td>
+<td><p>5-10 min</p></td>
+<td><p>Traditional dispatch, coal/nuclear dominance</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>2</strong></p></td>
+<td><p>Historical Renewables (2023)</p></td>
+<td><p>2023</p></td>
+<td><p>Full ETYS (~2000 buses)</p></td>
+<td><p>30-60 min</p></td>
+<td><p>High renewable penetration, network detail</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>3</strong></p></td>
+<td><p>Future Near-Term (2035)</p></td>
+<td><p>2035</p></td>
+<td><p>ETYS clustered (100 buses)</p></td>
+<td><p>10-15 min</p></td>
+<td><p>Renewable dominance, storage, network upgrades</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>4</strong></p></td>
+<td><p>Future Long-Term (2050)</p></td>
+<td><p>2050</p></td>
+<td><p>ETYS clustered (100 buses)</p></td>
+<td><p>10-15 min</p></td>
+<td><p>Near-100% renewables, stress test, adequacy</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="component-tutorials-5-12">
+<h3>Component Tutorials (5-12)<a class="headerlink" href="#component-tutorials-5-12" title="Link to this heading">#</a></h3>
+<p>Deep dives into specific aspects of power system modeling:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>#</p></th>
+<th class="head"><p>Notebook</p></th>
+<th class="head"><p>Topic</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>5</strong></p></td>
+<td><p>Networks</p></td>
+<td><p>Topology &amp; Power Flow</p></td>
+<td><p>Buses, lines, transformers, coordinate systems</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>6</strong></p></td>
+<td><p>Demand</p></td>
+<td><p>Load Modeling</p></td>
+<td><p>ESPENI/eload profiles, temporal patterns, spatial distribution</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>7</strong></p></td>
+<td><p>Generators</p></td>
+<td><p>Dispatch Optimization</p></td>
+<td><p>Thermal/renewable generators, merit order, capacity factors</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>8</strong></p></td>
+<td><p>Marginal Prices</p></td>
+<td><p>Price Formation</p></td>
+<td><p>LMPs, congestion pricing, generator revenues</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>9</strong></p></td>
+<td><p>Renewables</p></td>
+<td><p>Variable Generation</p></td>
+<td><p>Wind/solar profiles, curtailment, capacity factors</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>10</strong></p></td>
+<td><p>Storage</p></td>
+<td><p>Flexibility Resources</p></td>
+<td><p>Batteries, pumped hydro, state of charge, arbitrage</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>11</strong></p></td>
+<td><p>Interconnectors</p></td>
+<td><p>Cross-border Trade</p></td>
+<td><p>HVDC links, import/export flows, utilization</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>12</strong></p></td>
+<td><p>Hydrogen</p></td>
+<td><p>Sector Coupling</p></td>
+<td><p>Electrolysis, H2 storage, hydrogen-to-power</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>13</strong></p></td>
+<td><p>Heat Flexibility</p></td>
+<td><p>Heat Pump Demand</p></td>
+<td><p>TANK/COSY modes, COP, thermal storage, demand shifting</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>14</strong></p></td>
+<td><p>EV Flexibility</p></td>
+<td><p>EV Smart Charging</p></td>
+<td><p>GO/INT/V2G tariffs, battery storage, Vehicle-to-Grid</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>15</strong></p></td>
+<td><p>Demand-Side Response</p></td>
+<td><p>Event Response</p></td>
+<td><p>Saving Sessions, demand reduction events, DSR capacity</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="running-tutorials">
+<h2>Running Tutorials<a class="headerlink" href="#running-tutorials" title="Link to this heading">#</a></h2>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>Complete the <a class="reference internal" href="../getting_started/installation.html"><span class="doc">Installation</span></a></p></li>
+<li><p>Activate the environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+</pre></div>
+</div>
+</li>
+<li><p>Generate the required scenario networks (see below)</p></li>
+</ol>
+</section>
+<section id="generate-scenario-networks">
+<h3>Generate Scenario Networks<a class="headerlink" href="#generate-scenario-networks" title="Link to this heading">#</a></h3>
+<p>Before running the tutorials, build the required networks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Notebook 1: Historical 2015 (Reduced network)</span>
+snakemake<span class="w"> </span>resources/network/Historical_2015_reduced_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Notebook 2: Historical 2023 (Full ETYS - takes longer)</span>
+snakemake<span class="w"> </span>resources/network/Historical_2023_etys_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Notebook 3: Future 2035 (Clustered ETYS)</span>
+snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Notebook 4: Future 2050 (Clustered ETYS)</span>
+snakemake<span class="w"> </span>resources/network/EE50_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</section>
+<section id="launch-jupyter">
+<h3>Launch Jupyter<a class="headerlink" href="#launch-jupyter" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Navigate to tutorials directory</span>
+<span class="nb">cd</span><span class="w"> </span>docs/source/tutorials
+
+<span class="c1"># Start Jupyter</span>
+jupyter<span class="w"> </span>notebook
+</pre></div>
+</div>
+</section>
+<section id="first-time-setup">
+<h3>First-Time Setup<a class="headerlink" href="#first-time-setup" title="Link to this heading">#</a></h3>
+<p>Install the kernel if needed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>ipykernel<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>--name<span class="o">=</span>pypsa-gb
+</pre></div>
+</div>
+<p>Then select the <code class="docutils literal notranslate"><span class="pre">pypsa-gb</span></code> kernel in Jupyter.</p>
+</section>
+</section>
+<section id="tutorial-requirements">
+<h2>Tutorial Requirements<a class="headerlink" href="#tutorial-requirements" title="Link to this heading">#</a></h2>
+<section id="system-requirements">
+<h3>System Requirements<a class="headerlink" href="#system-requirements" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Notebook</p></th>
+<th class="head"><p>RAM</p></th>
+<th class="head"><p>Solve Time</p></th>
+<th class="head"><p>Disk Space</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1 - Historical 2015</p></td>
+<td><p>4 GB</p></td>
+<td><p>5-10 min</p></td>
+<td><p>~500 MB</p></td>
+</tr>
+<tr class="row-odd"><td><p>2 - Historical 2023</p></td>
+<td><p>16 GB</p></td>
+<td><p>30-60 min</p></td>
+<td><p>~2 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>3 - Future 2035</p></td>
+<td><p>8 GB</p></td>
+<td><p>10-15 min</p></td>
+<td><p>~1 GB</p></td>
+</tr>
+<tr class="row-odd"><td><p>4 - Future 2050</p></td>
+<td><p>8 GB</p></td>
+<td><p>10-15 min</p></td>
+<td><p>~1 GB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="solver-requirements">
+<h3>Solver Requirements<a class="headerlink" href="#solver-requirements" title="Link to this heading">#</a></h3>
+<p>Tutorials require <strong>Gurobi</strong> solver (free academic license available) or <strong>HiGHS</strong> (open-source).</p>
+<p>See <a class="reference internal" href="../getting_started/installation.html"><span class="doc">Installation</span></a> for solver setup.</p>
+</section>
+</section>
+<section id="contributing-tutorials">
+<h2>Contributing Tutorials<a class="headerlink" href="#contributing-tutorials" title="Link to this heading">#</a></h2>
+<p>We welcome new tutorial contributions:</p>
+<ol class="arabic simple">
+<li><p>Create a notebook in <code class="docutils literal notranslate"><span class="pre">docs/source/tutorials/</span></code></p></li>
+<li><p>Add to the toctree in this index (in appropriate section)</p></li>
+<li><p>Test that it builds correctly</p></li>
+</ol>
+<p>See <a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> for guidelines.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../data_reference/maintenance.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Data Maintenance</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="1-historical-baseload-2015.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Historical Baseload</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorial-overview">Tutorial Overview</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-tutorials-1-4">Scenario Tutorials (1-4)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#component-tutorials-5-12">Component Tutorials (5-12)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-tutorials">Running Tutorials</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generate-scenario-networks">Generate Scenario Networks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launch-jupyter">Launch Jupyter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#first-time-setup">First-Time Setup</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorial-requirements">Tutorial Requirements</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#system-requirements">System Requirements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-requirements">Solver Requirements</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributing-tutorials">Contributing Tutorials</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

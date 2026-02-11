@@ -88,8 +88,3 @@ Data sources depend on the modelled year:
 | Demand | ESPENI profiles | FES totals + profile shape |
 | Network | ETYS current | ETYS + planned upgrades |
 
-## Quick Links
-
-- {doc}`data_sources` - Detailed documentation of each data source
-- {doc}`network_data` - Network topology and parameters
-- {doc}`maintenance` - How to update data files

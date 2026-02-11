@@ -190,14 +190,12 @@ html_theme_options = {
     "navbar_start": ["navbar-logo"],
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["navbar-icon-links", "theme-switcher"],
-    "show_nav_level": 0,  # Only top-level sections in navbar
+    "show_nav_level": 1,  # Show current section + children in sidebar
+    "navigation_depth": 2,  # Expand 2 levels in sidebar
     "header_links_before_dropdown": 4,  # Move to dropdown after 4 items
     "footer_center": ["copyright"],
     "secondary_sidebar_items": ["page-toc"],
     "use_edit_page_button": True,
-    # Wider content area - reduce sidebar widths
-    "sidebar_width": "240px",
-    "article_width": "auto",
     # "announcement": "PyPSA-GB: Great Britain Power System Model",
 }
 
@@ -207,14 +205,7 @@ html_css_files = ['custom.css']
 # Gurubase "Ask AI" widget
 html_js_files = ['gurubase-widget.js']
 
-# Custom sidebar
-html_sidebars = {
-    '**': [
-        'globaltoc.html',
-        'relations.html',
-        'searchbox.html',
-    ]
-}
+# Use pydata theme's built-in sidebar navigation (no override needed)
 
 # Logo and favicon (if you have them)
 # html_logo = '_static/logo.png'

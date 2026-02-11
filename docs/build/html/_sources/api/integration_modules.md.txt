@@ -371,6 +371,267 @@ print(wind_farms[['name', 'bus', 'capacity_mw']])
 
 ---
 
+## add_demand_flexibility
+
+Orchestrates all three demand-side flexibility types into the PyPSA network.
+
+### Main Functions
+
+#### `integrate_demand_flexibility()`
+
+```python
+def integrate_demand_flexibility(
+    n: pypsa.Network,
+    flex_config: dict,
+    hp_demand_mw: pd.DataFrame = None,
+    hp_cop_profile: pd.DataFrame = None,
+    ev_demand_mw: pd.DataFrame = None,
+    ev_availability: pd.DataFrame = None,
+    ev_dsm: pd.DataFrame = None,
+    base_demand_mw: pd.DataFrame = None,
+    fes_v2g_capacity: pd.Series = None,
+    fes_path: str = None,
+    fes_scenario: str = None,
+    modelled_year: int = None,
+    add_load_shedding: bool = True,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Add demand-side flexibility components to network.
+
+    Conditionally integrates heat pump, EV, and event response
+    flexibility based on configuration flags.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to modify
+    flex_config : dict
+        demand_flexibility config section
+    hp_demand_mw : pd.DataFrame, optional
+        Heat pump electrical demand (MW) per bus
+    hp_cop_profile : pd.DataFrame, optional
+        COP time series per bus
+    ev_demand_mw : pd.DataFrame, optional
+        EV charging demand (MW) per bus
+    ev_availability : pd.DataFrame, optional
+        EV plugged-in availability (0-1) per bus
+    ev_dsm : pd.DataFrame, optional
+        EV minimum SOC requirements (0-1)
+    base_demand_mw : pd.DataFrame, optional
+        Base load for event response scaling
+    fes_v2g_capacity : pd.Series, optional
+        FES V2G capacity (MW) by bus
+    fes_path : str, optional
+        Path to FES data file
+    fes_scenario : str, optional
+        FES scenario name
+    modelled_year : int, optional
+        Target year
+    add_load_shedding : bool
+        Add load shedding to flexibility buses
+    logger : logging.Logger
+        Logger
+
+    Returns
+    -------
+    pypsa.Network
+        Network with flexibility components added
+    """
+```
+
+---
+
+## heat_pumps
+
+Heat pump demand disaggregation and flexibility modelling.
+
+### Main Functions
+
+#### `add_heat_pump_flexibility()`
+
+```python
+def add_heat_pump_flexibility(
+    n: pypsa.Network,
+    hp_config: dict,
+    hp_demand_mw: pd.DataFrame,
+    hp_cop_profile: pd.DataFrame,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Add heat pump flexibility to network.
+
+    Supports TANK (hot water cylinder), COSY (building thermal
+    inertia), or MIXED mode.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to modify
+    hp_config : dict
+        heat_pumps config section
+    hp_demand_mw : pd.DataFrame
+        Heat pump electrical demand (MW) per bus
+    hp_cop_profile : pd.DataFrame
+        COP time series per bus
+    logger : logging.Logger
+        Logger
+
+    Returns
+    -------
+    pypsa.Network
+        Network with HP flexibility components
+    """
+```
+
+### Carrier Mapping
+
+| Component | Carrier |
+|-----------|---------|
+| Thermal bus (TANK) | `heat` / `hot water` |
+| Thermal bus (COSY) | `thermal inertia` |
+| Heat pump link | `heat pump` |
+| Hot water demand | `hot water demand` |
+| Space heating demand | `space heating` |
+
+---
+
+## electric_vehicles
+
+EV demand disaggregation and smart charging flexibility.
+
+### Main Functions
+
+#### `add_ev_flexibility()`
+
+```python
+def add_ev_flexibility(
+    n: pypsa.Network,
+    ev_config: dict,
+    ev_demand_mw: pd.DataFrame,
+    ev_availability: pd.DataFrame = None,
+    ev_dsm: pd.DataFrame = None,
+    fes_v2g_capacity: pd.Series = None,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Add EV flexibility to network.
+
+    Supports GO (fixed window), INT (smart charging), V2G
+    (bidirectional), or MIXED mode.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to modify
+    ev_config : dict
+        electric_vehicles config section
+    ev_demand_mw : pd.DataFrame
+        EV charging demand (MW) per bus
+    ev_availability : pd.DataFrame, optional
+        Plugged-in availability (0-1) per bus
+    ev_dsm : pd.DataFrame, optional
+        Minimum SOC requirements
+    fes_v2g_capacity : pd.Series, optional
+        FES V2G capacity by bus
+    logger : logging.Logger
+        Logger
+
+    Returns
+    -------
+    pypsa.Network
+        Network with EV flexibility components
+    """
+```
+
+### Carrier Mapping
+
+| Component | Carrier |
+|-----------|---------|
+| EV battery bus | `EV battery` |
+| Charger link | `EV charger` |
+| Driving demand | `EV driving demand` |
+| V2G discharge link | `V2G` |
+
+---
+
+## event_flex
+
+Event-based demand response (Saving Sessions style).
+
+### Main Functions
+
+#### `add_event_flexibility()`
+
+```python
+def add_event_flexibility(
+    n: pypsa.Network,
+    event_config: dict,
+    base_demand_mw: pd.DataFrame,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Add event response generators to network.
+
+    Creates demand response generators that can reduce load
+    during scheduled event windows.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to modify
+    event_config : dict
+        event_response config section
+    base_demand_mw : pd.DataFrame
+        Base demand for capacity scaling
+    logger : logging.Logger
+        Logger
+
+    Returns
+    -------
+    pypsa.Network
+        Network with demand response generators
+    """
+```
+
+#### `generate_event_schedule()`
+
+```python
+def generate_event_schedule(
+    snapshots: pd.DatetimeIndex,
+    mode: str = "both",
+    events_per_week_regular: int = 2,
+    events_per_week_winter: int = 5,
+    event_window: list = ["07:00", "22:00"],
+    winter_months: list = [10, 11, 12, 1, 2, 3]
+) -> pd.Series:
+    """
+    Generate binary event schedule (0/1) for demand response.
+
+    Parameters
+    ----------
+    snapshots : pd.DatetimeIndex
+        Network time steps
+    mode : str
+        "regular", "winter", or "both"
+    events_per_week_regular : int
+        Events per week year-round
+    events_per_week_winter : int
+        Extra events per week in winter
+    event_window : list
+        [start, end] hours for events
+    winter_months : list
+        Month numbers considered winter
+
+    Returns
+    -------
+    pd.Series
+        Binary availability (0/1) indexed by snapshots
+    """
+```
+
+---
+
 ## add_interconnectors
 
 Adds cross-border interconnector links.

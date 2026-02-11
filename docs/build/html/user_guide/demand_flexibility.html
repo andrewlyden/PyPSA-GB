@@ -1,0 +1,1345 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Demand-Side Flexibility &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+const defaultStyle = document.createElement('style');
+defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+`;
+document.head.appendChild(defaultStyle);
+
+const fullscreenStyle = document.createElement('style');
+fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+document.head.appendChild(fullscreenStyle);
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness < 128;
+    }
+    return false;
+};
+
+const load = async () => {
+    await mermaid.run();
+
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(load, 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(load, 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(load, 200);
+        return;
+    }
+
+    const darkTheme = isDarkTheme();
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    const modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    let previousScrollOffset = [window.scrollX, window.scrollY];
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    const allButtons = [];
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        container.appendChild(fullscreenBtn);
+        allButtons.push(fullscreenBtn);
+    });
+
+    // Update theme classes when theme changes
+    const updateTheme = () => {
+        const dark = isDarkTheme();
+        allButtons.forEach(btn => {
+            if (dark) {
+                btn.classList.add('dark-theme');
+            } else {
+                btn.classList.remove('dark-theme');
+            }
+        });
+        if (dark) {
+            modal.classList.add('dark-theme');
+            modalContent.classList.add('dark-theme');
+            closeBtn.classList.add('dark-theme');
+        } else {
+            modal.classList.remove('dark-theme');
+            modalContent.classList.remove('dark-theme');
+            closeBtn.classList.remove('dark-theme');
+        }
+    };
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+};
+
+window.addEventListener("load", load);
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/demand_flexibility';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Reference" href="../data_reference/index.html" />
+    <link rel="prev" title="Network Clustering" href="clustering.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Demand-Side Flexibility</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Demand-Side...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="demand-side-flexibility">
+<h1>Demand-Side Flexibility<a class="headerlink" href="#demand-side-flexibility" title="Link to this heading">#</a></h1>
+<p>PyPSA-GB supports three integrated demand-side flexibility mechanisms that allow demand to shift in time or reduce during peak periods. These are modelled using PyPSA’s native components (stores, links, generators) and can be enabled independently or together.</p>
+<p>The methodology is built upon this work:</p>
+<blockquote>
+<div><p>Franken, L., Hackett, A., Lizana, J., Riepin, I., Jenkinson, R., Lyden, A., Yu, L. and Friedrich, D., 2025. Power system benefits of simultaneous domestic transport and heating demand flexibility in Great Britain’s energy transition. <em>Applied Energy</em>, 377, p.124522. <a class="reference external" href="https://doi.org/10.1016/j.apenergy.2024.124522">doi:10.1016/j.apenergy.2024.124522</a></p>
+</div></blockquote>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Flexibility Type</p></th>
+<th class="head"><p>Mechanism</p></th>
+<th class="head"><p>PyPSA Model</p></th>
+<th class="head"><p>Duration</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Heat Pumps</strong></p></td>
+<td><p>Pre-heat water tanks or building fabric</p></td>
+<td><p>Store + Link + Load</p></td>
+<td><p>Hours</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Electric Vehicles</strong></p></td>
+<td><p>Smart charging and Vehicle-to-Grid</p></td>
+<td><p>Store + Link + Load</p></td>
+<td><p>Hours</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Event Response</strong></p></td>
+<td><p>Saving Sessions style load reduction</p></td>
+<td><p>Generator (negative load)</p></td>
+<td><p>Minutes-hours</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All three are controlled via the <code class="docutils literal notranslate"><span class="pre">demand_flexibility</span></code> section of the configuration and orchestrated through the <code class="docutils literal notranslate"><span class="pre">finalize_demand</span></code> Snakemake rule.</p>
+</section>
+<section id="how-it-works">
+<h2>How It Works<a class="headerlink" href="#how-it-works" title="Link to this heading">#</a></h2>
+<pre  class="mermaid">
+        flowchart TB
+    subgraph Disaggregation[&quot;Demand Disaggregation&quot;]
+        HP_DIS[&quot;Disaggregate Heat Pumps&quot;]
+        EV_DIS[&quot;Disaggregate EVs&quot;]
+    end
+
+    subgraph Profiles[&quot;Flexibility Profiles&quot;]
+        COP[&quot;COP Profiles (Atlite)&quot;]
+        EV_AVAIL[&quot;EV Availability&quot;]
+    end
+
+    subgraph Integration[&quot;Flexibility Integration&quot;]
+        HP_FLEX[&quot;Heat Pump Flexibility&quot;]
+        EV_FLEX[&quot;EV Flexibility&quot;]
+        EVENT[&quot;Event Response&quot;]
+    end
+
+    BASE[&quot;Base Demand&quot;] --&gt; HP_DIS
+    BASE --&gt; EV_DIS
+    HP_DIS --&gt; HP_FLEX
+    COP --&gt; HP_FLEX
+    EV_DIS --&gt; EV_FLEX
+    EV_AVAIL --&gt; EV_FLEX
+    BASE --&gt; EVENT
+
+    HP_FLEX --&gt; FINAL[&quot;Finalized Network&quot;]
+    EV_FLEX --&gt; FINAL
+    EVENT --&gt; FINAL
+    </pre><section id="flex-share">
+<h3>Flex Share<a class="headerlink" href="#flex-share" title="Link to this heading">#</a></h3>
+<p>Each flexibility type has a <code class="docutils literal notranslate"><span class="pre">flex_share</span></code> parameter (0-1) controlling what fraction of disaggregated demand participates in flexibility:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flex_share:</span> <span class="pre">0.2</span></code> means 20% uses smart flexibility (optimisable stores/links), 80% remains as rigid loads</p></li>
+<li><p>This prevents double-counting when disaggregation also models the same demand</p></li>
+</ul>
+</section>
+</section>
+<section id="heat-pump-flexibility">
+<h2>Heat Pump Flexibility<a class="headerlink" href="#heat-pump-flexibility" title="Link to this heading">#</a></h2>
+<p>Heat pump flexibility exploits thermal storage to shift electrical demand. Two modes are available:</p>
+<section id="tank-mode-hot-water-cylinder">
+<h3>TANK Mode (Hot Water Cylinder)<a class="headerlink" href="#tank-mode-hot-water-cylinder" title="Link to this heading">#</a></h3>
+<p>Pre-heats a hot water tank (~200L, 50-65 C) during low-price periods and draws from it during peaks.</p>
+<p><strong>PyPSA components per bus:</strong></p>
+<ul class="simple">
+<li><p>1 Bus (thermal carrier)</p></li>
+<li><p>1 Store (hot water tank)</p></li>
+<li><p>1 Link (heat pump: electricity to heat at COP efficiency)</p></li>
+<li><p>1 Load (hot water demand)</p></li>
+</ul>
+<p><strong>Key parameters:</strong></p>
+<ul class="simple">
+<li><p>Storage capacity: determined by tank volume and temperature range</p></li>
+<li><p>Standing loss: ~1% per hour (well-insulated cylinder)</p></li>
+<li><p>Efficiency: COP (temperature-dependent, typically 2-5)</p></li>
+</ul>
+</section>
+<section id="cosy-mode-building-thermal-inertia">
+<h3>COSY Mode (Building Thermal Inertia)<a class="headerlink" href="#cosy-mode-building-thermal-inertia" title="Link to this heading">#</a></h3>
+<p>Pre-heats building fabric during morning (07:00-09:00) and evening (17:00-19:00) windows, then allows temperature to drift down during peak demand.</p>
+<p><strong>PyPSA components per bus:</strong></p>
+<ul class="simple">
+<li><p>1 Bus (thermal inertia carrier)</p></li>
+<li><p>1 Store (building thermal mass, state = temperature deviation)</p></li>
+<li><p>1 Link (charging: pre-heating with efficiency boost during windows)</p></li>
+<li><p>1 Link (discharging: using stored thermal energy)</p></li>
+<li><p>1 Load (space heating demand)</p></li>
+</ul>
+<p><strong>Key parameters:</strong></p>
+<ul class="simple">
+<li><p>Maximum temperature deviation: 2 C from setpoint</p></li>
+<li><p>Standing loss: ~5% per hour (building envelope losses)</p></li>
+<li><p>Pre-heat window boost: 50% extra capacity during morning/evening windows</p></li>
+</ul>
+</section>
+<section id="mixed-mode">
+<h3>MIXED Mode<a class="headerlink" href="#mixed-mode" title="Link to this heading">#</a></h3>
+<p>Splits heat pump demand between TANK and COSY using configurable shares (default 50/50).</p>
+</section>
+<section id="spatial-allocation">
+<h3>Spatial Allocation<a class="headerlink" href="#spatial-allocation" title="Link to this heading">#</a></h3>
+<p>Heat pump demand is distributed across buses using one of four methods:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">proportional</span></code></p></td>
+<td><p>Allocate by existing base demand</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">uniform</span></code></p></td>
+<td><p>Equal across all buses</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">urban_weighted</span></code></p></td>
+<td><p>Weighted toward high-demand areas</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fes_gsp</span></code></p></td>
+<td><p>Use FES GSP-level distribution</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="electric-vehicle-flexibility">
+<h2>Electric Vehicle Flexibility<a class="headerlink" href="#electric-vehicle-flexibility" title="Link to this heading">#</a></h2>
+<p>EV flexibility models smart charging across three tariff types:</p>
+<section id="go-tariff-fixed-window">
+<h3>GO Tariff (Fixed Window)<a class="headerlink" href="#go-tariff-fixed-window" title="Link to this heading">#</a></h3>
+<p>Incentivises charging during a cheap 4-hour night window (00:00-04:00) using marginal cost signals. Charging outside the window is possible but expensive.</p>
+<p><strong>PyPSA components per bus:</strong></p>
+<ul class="simple">
+<li><p>1 Bus (EV battery carrier)</p></li>
+<li><p>1 Store (fleet battery)</p></li>
+<li><p>1 Link (charger with cost incentive)</p></li>
+<li><p>1 Load (driving demand)</p></li>
+</ul>
+</section>
+<section id="int-tariff-intelligent-smart-charging">
+<h3>INT Tariff (Intelligent Smart Charging)<a class="headerlink" href="#int-tariff-intelligent-smart-charging" title="Link to this heading">#</a></h3>
+<p>Fully optimisable charging whenever vehicles are plugged in. The optimiser shifts charging to minimise system cost while meeting driving demand and minimum state-of-charge constraints.</p>
+<p><strong>PyPSA components per bus:</strong></p>
+<ul class="simple">
+<li><p>1 Bus (EV battery carrier)</p></li>
+<li><p>1 Store (battery with time-varying e_min_pu)</p></li>
+<li><p>1 Link (charger with availability profile p_max_pu)</p></li>
+<li><p>1 Load (driving demand)</p></li>
+</ul>
+</section>
+<section id="v2g-tariff-vehicle-to-grid">
+<h3>V2G Tariff (Vehicle-to-Grid)<a class="headerlink" href="#v2g-tariff-vehicle-to-grid" title="Link to this heading">#</a></h3>
+<p>Bidirectional charging allows EVs to discharge back to the grid during peak demand. Includes a degradation cost to account for battery wear.</p>
+<p><strong>PyPSA components per bus:</strong></p>
+<ul class="simple">
+<li><p>1 Bus (EV battery carrier)</p></li>
+<li><p>1 Store (battery with minimum SOC constraint)</p></li>
+<li><p>1 Link (charger: grid to battery)</p></li>
+<li><p>1 Link (V2G discharge: battery to grid, with degradation cost)</p></li>
+<li><p>1 Load (driving demand)</p></li>
+</ul>
+<p><strong>V2G capacity sources (priority order):</strong></p>
+<ol class="arabic simple">
+<li><p>FES Srg_BB005 (V2G MW availability) if <code class="docutils literal notranslate"><span class="pre">use_fes_capacity:</span> <span class="pre">true</span></code></p></li>
+<li><p>Calculated from fleet size and charger power</p></li>
+</ol>
+</section>
+<section id="id1">
+<h3>MIXED Mode<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<p>Splits the EV fleet across GO, INT, and V2G tariffs. Shares can be calculated from FES data (<code class="docutils literal notranslate"><span class="pre">mode:</span> <span class="pre">&quot;fes&quot;</span></code>) or set manually.</p>
+<p><strong>FES mode share calculation:</strong></p>
+<ul class="simple">
+<li><p>V2G share = FES V2G capacity / total EV capacity</p></li>
+<li><p>INT share = FES smart charging capacity - V2G share</p></li>
+<li><p>GO share = remainder</p></li>
+</ul>
+</section>
+</section>
+<section id="event-response-demand-side-response">
+<h2>Event Response (Demand-Side Response)<a class="headerlink" href="#event-response-demand-side-response" title="Link to this heading">#</a></h2>
+<p>Models Saving Sessions style demand response events where households reduce load during specific windows.</p>
+<section id="event-schedule">
+<h3>Event Schedule<a class="headerlink" href="#event-schedule" title="Link to this heading">#</a></h3>
+<p>Events are generated based on the configured mode:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">regular</span></code></p></td>
+<td><p>2 events/week year-round</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">winter</span></code></p></td>
+<td><p>5 events/week Oct-Mar only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">both</span></code></p></td>
+<td><p>2/week year-round + 5/week extra in winter</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Events only occur during the configured window (default 07:00-22:00) on weekdays.</p>
+</section>
+<section id="capacity-calculation">
+<h3>Capacity Calculation<a class="headerlink" href="#capacity-calculation" title="Link to this heading">#</a></h3>
+<p>Two methods:</p>
+<ol class="arabic simple">
+<li><p><strong>User-defined</strong>: Set <code class="docutils literal notranslate"><span class="pre">dsr_capacity_mw</span></code> directly (e.g., 5000 MW), distributed proportionally to peak demand</p></li>
+<li><p><strong>Calculated</strong> (fallback): <code class="docutils literal notranslate"><span class="pre">base_demand</span> <span class="pre">x</span> <span class="pre">participation_rate</span> <span class="pre">x</span> <span class="pre">max_reduction_fraction</span></code></p></li>
+</ol>
+</section>
+<section id="pypsa-representation">
+<h3>PyPSA Representation<a class="headerlink" href="#pypsa-representation" title="Link to this heading">#</a></h3>
+<p>Demand response is modelled as <strong>generators</strong> (negative loads):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">p_nom</span></code>: maximum load reduction (MW)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_max_pu</span></code>: event schedule (0/1 time series)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">marginal_cost</span></code>: incentive payment (dispatched only when cost-effective)</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration-reference">
+<h2>Configuration Reference<a class="headerlink" href="#configuration-reference" title="Link to this heading">#</a></h2>
+<p>All demand flexibility settings live under <code class="docutils literal notranslate"><span class="pre">demand_flexibility</span></code> in <code class="docutils literal notranslate"><span class="pre">config/defaults.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">demand_flexibility</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                       </span><span class="c1"># Master switch</span>
+
+<span class="w">  </span><span class="nt">heat_pumps</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MIXED&quot;</span><span class="w">                     </span><span class="c1"># TANK, COSY, or MIXED</span>
+<span class="w">    </span><span class="nt">flex_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span><span class="w">                   </span><span class="c1"># Fraction using smart flexibility</span>
+<span class="w">    </span><span class="nt">mix</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">tank_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<span class="w">      </span><span class="nt">cosy_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<span class="w">    </span><span class="nt">peak_thermal_kw_per_dwelling</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<span class="w">    </span><span class="nt">link_sizing_margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
+<span class="w">    </span><span class="nt">cosy</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">morning_window</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;07:00&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;09:00&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">evening_window</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;17:00&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;19:00&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">max_temp_deviation_celsius</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">      </span><span class="nt">thermal_mass_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span>
+<span class="w">      </span><span class="nt">standing_loss_per_hour</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
+<span class="w">    </span><span class="nt">tank</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">volume_liters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">      </span><span class="nt">temp_range</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">65</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">standing_loss_per_hour</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<span class="w">      </span><span class="nt">heater_power_kw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
+
+<span class="w">  </span><span class="nt">electric_vehicles</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">tariff</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MIXED&quot;</span><span class="w">                   </span><span class="c1"># GO, INT, V2G, or MIXED</span>
+<span class="w">    </span><span class="nt">flex_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
+<span class="w">    </span><span class="nt">battery_capacity_kwh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60.0</span>
+<span class="w">    </span><span class="nt">charge_efficiency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.90</span>
+<span class="w">    </span><span class="nt">flexibility_participation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.10</span>
+<span class="w">    </span><span class="nt">urban_weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">    </span><span class="nt">energy_per_vehicle_kwh_per_day</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<span class="w">    </span><span class="nt">charging_hours_per_day</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4.0</span>
+<span class="w">    </span><span class="nt">go</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">window</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;00:00&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;04:00&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">window_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">      </span><span class="nt">offpeak_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span>
+<span class="w">    </span><span class="nt">int</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">min_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.20</span>
+<span class="w">      </span><span class="nt">target_departure_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+<span class="w">      </span><span class="nt">charger_power_kw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7.0</span>
+<span class="w">    </span><span class="nt">v2g</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">participation_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.30</span>
+<span class="w">      </span><span class="nt">discharge_efficiency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.90</span>
+<span class="w">      </span><span class="nt">max_discharge_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+<span class="w">      </span><span class="nt">degradation_cost_per_mwh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<span class="w">      </span><span class="nt">use_fes_capacity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">mixed</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fes&quot;</span><span class="w">                     </span><span class="c1"># &quot;fes&quot; or &quot;manual&quot;</span>
+<span class="w">      </span><span class="nt">go_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.30</span>
+<span class="w">      </span><span class="nt">int_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.50</span>
+<span class="w">      </span><span class="nt">v2g_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.20</span>
+
+<span class="w">  </span><span class="nt">event_response</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;both&quot;</span><span class="w">                      </span><span class="c1"># &quot;regular&quot;, &quot;winter&quot;, or &quot;both&quot;</span>
+<span class="w">    </span><span class="nt">events_per_week_regular</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="nt">events_per_week_winter</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">event_window</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;07:00&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;22:00&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">dsr_capacity_mw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># Set directly or leave null for calculated</span>
+<span class="w">    </span><span class="nt">participation_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.33</span>
+<span class="w">    </span><span class="nt">max_reduction_fraction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.10</span>
+<span class="w">    </span><span class="nt">marginal_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span>
+<span class="w">    </span><span class="nt">winter_months</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">10</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">11</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+<section id="pypsa-component-summary">
+<h2>PyPSA Component Summary<a class="headerlink" href="#pypsa-component-summary" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Flexibility Type</p></th>
+<th class="head"><p>Buses</p></th>
+<th class="head"><p>Stores</p></th>
+<th class="head"><p>Links</p></th>
+<th class="head"><p>Loads</p></th>
+<th class="head"><p>Generators</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>HP TANK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{bus}</span> <span class="pre">heat</span></code></p></td>
+<td><p>Hot water tank</p></td>
+<td><p>Heat pump (elec to heat)</p></td>
+<td><p>Hot water demand</p></td>
+<td><p>-</p></td>
+</tr>
+<tr class="row-odd"><td><p>HP COSY</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{bus}</span> <span class="pre">thermal</span> <span class="pre">inertia</span></code></p></td>
+<td><p>Building thermal mass</p></td>
+<td><p>Charge link + Discharge link</p></td>
+<td><p>Space heating</p></td>
+<td><p>-</p></td>
+</tr>
+<tr class="row-even"><td><p>EV GO</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{bus}</span> <span class="pre">EV</span> <span class="pre">battery</span></code></p></td>
+<td><p>Fleet battery</p></td>
+<td><p>Charger (with cost)</p></td>
+<td><p>Driving demand</p></td>
+<td><p>-</p></td>
+</tr>
+<tr class="row-odd"><td><p>EV INT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{bus}</span> <span class="pre">EV</span> <span class="pre">battery</span></code></p></td>
+<td><p>Battery (with DSM)</p></td>
+<td><p>Charger (with availability)</p></td>
+<td><p>Driving demand</p></td>
+<td><p>-</p></td>
+</tr>
+<tr class="row-even"><td><p>EV V2G</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{bus}</span> <span class="pre">EV</span> <span class="pre">battery</span></code></p></td>
+<td><p>Battery (with min SOC)</p></td>
+<td><p>Charger + V2G discharge</p></td>
+<td><p>Driving demand</p></td>
+<td><p>-</p></td>
+</tr>
+<tr class="row-odd"><td><p>Event Response</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>Demand response generator</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="carriers">
+<h2>Carriers<a class="headerlink" href="#carriers" title="Link to this heading">#</a></h2>
+<p>The following carriers are automatically added to the network:</p>
+<p><strong>Heat-related:</strong> <code class="docutils literal notranslate"><span class="pre">heat</span></code>, <code class="docutils literal notranslate"><span class="pre">hot</span> <span class="pre">water</span></code>, <code class="docutils literal notranslate"><span class="pre">hot</span> <span class="pre">water</span> <span class="pre">demand</span></code>, <code class="docutils literal notranslate"><span class="pre">heat</span> <span class="pre">pump</span></code>, <code class="docutils literal notranslate"><span class="pre">thermal</span> <span class="pre">inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">space</span> <span class="pre">heating</span></code>, <code class="docutils literal notranslate"><span class="pre">thermal</span> <span class="pre">demand</span></code></p>
+<p><strong>EV-related:</strong> <code class="docutils literal notranslate"><span class="pre">EV</span> <span class="pre">battery</span></code>, <code class="docutils literal notranslate"><span class="pre">EV</span> <span class="pre">charger</span></code>, <code class="docutils literal notranslate"><span class="pre">EV</span> <span class="pre">driving</span></code>, <code class="docutils literal notranslate"><span class="pre">EV</span> <span class="pre">driving</span> <span class="pre">demand</span></code>, <code class="docutils literal notranslate"><span class="pre">V2G</span></code></p>
+<p><strong>Demand response:</strong> <code class="docutils literal notranslate"><span class="pre">demand</span> <span class="pre">response</span></code></p>
+</section>
+<section id="example-scenario">
+<h2>Example Scenario<a class="headerlink" href="#example-scenario" title="Link to this heading">#</a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/scenarios.yaml</span>
+<span class="nt">HT30_flex</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2030</span><span class="nv"> </span><span class="s">Holistic</span><span class="nv"> </span><span class="s">Transition</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">demand</span><span class="nv"> </span><span class="s">flexibility&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2030</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+
+<span class="w">  </span><span class="nt">demand_flexibility</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">heat_pumps</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MIXED&quot;</span>
+<span class="w">      </span><span class="nt">flex_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
+<span class="w">    </span><span class="nt">electric_vehicles</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">tariff</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MIXED&quot;</span>
+<span class="w">      </span><span class="nt">flex_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
+<span class="w">    </span><span class="nt">event_response</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;both&quot;</span>
+<span class="w">      </span><span class="nt">dsr_capacity_mw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span>
+</pre></div>
+</div>
+</section>
+<section id="tutorials">
+<h2>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">#</a></h2>
+<p>For hands-on examples, see the tutorial notebooks:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../tutorials/13-heat-flexibility.html"><span class="doc">Heat Pump Flexibility</span></a> - Heat pump flexibility (TANK/COSY modes, COP, thermal storage)</p></li>
+<li><p><a class="reference internal" href="../tutorials/14-ev-flexibility.html"><span class="doc">Electric Vehicle Flexibility</span></a> - EV flexibility (GO/INT/V2G tariffs, smart charging)</p></li>
+<li><p><a class="reference internal" href="../tutorials/15-demand-side-response.html"><span class="doc">Demand Side Response</span></a> - Event response (Saving Sessions, demand reduction)</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="clustering.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Network Clustering</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../data_reference/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Data Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-it-works">How It Works</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#flex-share">Flex Share</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#heat-pump-flexibility">Heat Pump Flexibility</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tank-mode-hot-water-cylinder">TANK Mode (Hot Water Cylinder)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cosy-mode-building-thermal-inertia">COSY Mode (Building Thermal Inertia)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mixed-mode">MIXED Mode</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spatial-allocation">Spatial Allocation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#electric-vehicle-flexibility">Electric Vehicle Flexibility</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#go-tariff-fixed-window">GO Tariff (Fixed Window)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#int-tariff-intelligent-smart-charging">INT Tariff (Intelligent Smart Charging)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#v2g-tariff-vehicle-to-grid">V2G Tariff (Vehicle-to-Grid)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">MIXED Mode</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#event-response-demand-side-response">Event Response (Demand-Side Response)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#event-schedule">Event Schedule</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#capacity-calculation">Capacity Calculation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pypsa-representation">PyPSA Representation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-reference">Configuration Reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pypsa-component-summary">PyPSA Component Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#carriers">Carriers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-scenario">Example Scenario</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorials">Tutorials</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

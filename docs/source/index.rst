@@ -25,7 +25,7 @@ PyPSA-GB is a comprehensive model of the Great Britain electricity system built 
 
 ----
 
-.. grid:: 2
+.. grid:: 3
    :gutter: 4
 
    .. grid-item-card:: 🚀 Getting Started
@@ -56,6 +56,20 @@ PyPSA-GB is a comprehensive model of the Great Britain electricity system built 
 
       **Learn by example.** Jupyter notebooks exploring historical and future scenario analysis.
 
+   .. grid-item-card:: 🔧 API Reference
+      :link: api/index
+      :link-type: doc
+      :class-card: sd-shadow-md
+
+      **Technical documentation.** Module and function reference for PyPSA-GB's core and integration scripts.
+
+   .. grid-item-card:: 🛠️ Development
+      :link: development/index
+      :link-type: doc
+      :class-card: sd-shadow-md
+
+      **Contribute to PyPSA-GB.** Architecture overview, contributing guidelines, and release notes.
+
 ----
 
 Key Features
@@ -64,6 +78,7 @@ Key Features
 - **Multiple Network Models**: Full ETYS (2000+ buses), Reduced (32 buses), or Zonal (17 zones)
 - **Historical & Future Scenarios**: Model years 2010-2024 (historical) or 2025-2050 (FES projections)
 - **NESO Future Energy Scenarios**: Holistic Transition, Electric Engagement, and other pathways
+- **Demand-Side Flexibility**: Heat pump pre-heating, EV smart charging & V2G, and event-based demand response
 - **High Resolution**: Half-hourly or hourly timesteps with full network constraints
 - **Open Source**: MIT license, transparent assumptions, community contributions welcome
 
@@ -94,74 +109,14 @@ Run a 2035 Holistic Transition scenario:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started
    :hidden:
 
    getting_started/index
-   getting_started/installation
-   getting_started/quickstart
-   getting_started/first_scenario
-
-.. toctree::
-   :maxdepth: 2
-   :caption: User Guide
-   :hidden:
-
    user_guide/index
-   user_guide/workflow
-   user_guide/configuration
-   user_guide/scenarios
-   user_guide/network_models
-   user_guide/clustering
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Data Reference
-   :hidden:
-
    data_reference/index
-   data_reference/data_sources
-   data_reference/network_data
-   data_reference/maintenance
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Tutorials
-   :hidden:
-
    tutorials/index
-   tutorials/1-historical-baseload-2015
-   tutorials/2-historical-renewables-2023
-   tutorials/3-future-holistic-transition-2035
-   tutorials/4-future-electric-engagement-2050
-   tutorials/5-networks
-   tutorials/6-demand
-   tutorials/7-generators
-   tutorials/8-marginal-costs
-   tutorials/9-renewables
-   tutorials/10-storage
-   tutorials/11-interconnectors
-   tutorials/12-hydrogen
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-   :hidden:
-
    api/index
-   api/core_modules
-   api/integration_modules
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Development
-   :hidden:
-
-   development/contributing
-   development/architecture
-   development/release_notes
-   development/troubleshooting
+   development/index
 
 
 Contributors
@@ -184,8 +139,8 @@ If you use PyPSA-GB in your research, please cite:
    *Energy Strategy Reviews*, 53, p.101375.
 
 
-Papers Using PyPSA-GB
-=====================
+Papers
+======
 
 - **Dergunova, T. and Lyden, A., 2024.** Great Britain's hydrogen infrastructure development—Investment priorities and locational flexibility. *Applied Energy*, 375, p.124017.
 

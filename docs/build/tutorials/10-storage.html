@@ -1,0 +1,1430 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Storage Systems &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/10-storage';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Interconnectors" href="11-interconnectors.html" />
+    <link rel="prev" title="Renewable Generation" href="9-renewables.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Scenario Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Component Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-hydrogen.html">Hydrogen Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Storage Systems</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+    /* Hide code cells by default, show on click */
+    div.nbinput.container {
+        display: none;
+    }
+    div.nbinput.container.show {
+        display: block;
+    }
+    /* Add toggle button styling */
+    .toggle-button {
+        background-color: #7ba591;
+        color: white;
+        padding: 6px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 10px 0;
+        font-size: 0.9em;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(123, 165, 145, 0.2);
+    }
+    .toggle-button:hover {
+        background-color: #93c4ab;
+        box-shadow: 0 3px 6px rgba(123, 165, 145, 0.3);
+        transform: translateY(-1px);
+    }
+    /* Hide "Data type cannot be displayed" messages */
+    .nboutput p:has-text("Data type cannot be displayed") {
+        display: none;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add toggle buttons for code cells
+        var codeCells = document.querySelectorAll('div.nbinput.container');
+        codeCells.forEach(function(cell, index) {
+            var button = document.createElement('button');
+            button.className = 'toggle-button';
+            button.textContent = 'Show Code';
+            button.onclick = function() {
+                if (cell.classList.contains('show')) {
+                    cell.classList.remove('show');
+                    button.textContent = 'Show Code';
+                } else {
+                    cell.classList.add('show');
+                    button.textContent = 'Hide Code';
+                }
+            };
+            cell.parentNode.insertBefore(button, cell);
+        });
+
+        // Hide "Data type cannot be displayed" messages
+        var outputs = document.querySelectorAll('.nboutput p');
+        outputs.forEach(function(p) {
+            if (p.textContent.includes('Data type cannot be displayed')) {
+                p.style.display = 'none';
+            }
+        });
+    });
+</script><section id="Storage-Systems">
+<h1>Storage Systems<a class="headerlink" href="#Storage-Systems" title="Link to this heading">#</a></h1>
+<p>This tutorial covers electricity storage modeling in PyPSA-GB, including batteries and pumped hydro.</p>
+<section id="What-You'll-Learn">
+<h2>What You’ll Learn<a class="headerlink" href="#What-You'll-Learn" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Storage capacity and parameters</p></li>
+<li><p>State of charge dynamics</p></li>
+<li><p>Charging and discharging patterns</p></li>
+<li><p>Storage arbitrage and value</p></li>
+<li><p>Comparing storage technologies</p></li>
+</ul>
+</section>
+<section id="1.-Setup">
+<h2>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">folium</span>
+<span class="kn">from</span> <span class="nn">pyproj</span> <span class="kn">import</span> <span class="n">Transformer</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-v0_8-whitegrid&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="n">colors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;battery&#39;</span><span class="p">:</span> <span class="s1">&#39;#9C27B0&#39;</span><span class="p">,</span> <span class="s1">&#39;pumped_hydro&#39;</span><span class="p">:</span> <span class="s1">&#39;#3F51B5&#39;</span><span class="p">,</span> <span class="s1">&#39;storage&#39;</span><span class="p">:</span> <span class="s1">&#39;#673AB7&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;charging&#39;</span><span class="p">:</span> <span class="s1">&#39;#E91E63&#39;</span><span class="p">,</span> <span class="s1">&#39;discharging&#39;</span><span class="p">:</span> <span class="s1">&#39;#4CAF50&#39;</span>
+<span class="p">}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PyPSA version: </span><span class="si">{</span><span class="n">pypsa</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+PyPSA version: 1.0.7
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Load-Network">
+<h2>2. Load Network<a class="headerlink" href="#2.-Load-Network" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load a network with storage</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;../../../resources/network/HT35_clustered_solved.nc&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Network loaded&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Snapshots: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Storage Units: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.network.io:Imported network &#39;HT35_clustered (Clustered)&#39; has buses, carriers, generators, lines, links, loads, storage_units, stores, sub_networks
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Network loaded
+  Snapshots: 168
+  Storage Units: 784
+</pre></div></div>
+</div>
+</section>
+<section id="3.-Storage-Capacity-Overview">
+<h2>3. Storage Capacity Overview<a class="headerlink" href="#3.-Storage-Capacity-Overview" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Storage capacity summary</span>
+<span class="n">storage</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total storage units: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Capacity by carrier</span>
+<span class="n">capacity</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;carrier&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
+    <span class="s1">&#39;p_nom&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>       <span class="c1"># Power capacity (MW)</span>
+    <span class="s1">&#39;max_hours&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span>   <span class="c1"># Average duration (hours)</span>
+<span class="p">})</span>
+
+<span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;p_nom_GW&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+<span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;energy_GWh&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;p_nom_GW&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;max_hours&#39;</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Storage Capacity:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">capacity</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Power: </span><span class="si">{</span><span class="n">capacity</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;p_nom_GW&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GW&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Duration: </span><span class="si">{</span><span class="n">capacity</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;max_hours&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> hours&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Energy: </span><span class="si">{</span><span class="n">capacity</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;energy_GWh&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GWh&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Total storage units: 784
+
+Storage Capacity:
+
+Battery:
+  Power: 26.77 GW
+  Duration: 2.0 hours
+  Energy: 53.54 GWh
+
+Domestic Battery:
+  Power: 1.99 GW
+  Duration: 2.0 hours
+  Energy: 3.98 GWh
+
+LAES:
+  Power: 3.85 GW
+  Duration: 6.0 hours
+  Energy: 23.11 GWh
+
+Pumped Storage Hydroelectricity:
+  Power: 6.49 GW
+  Duration: 8.0 hours
+  Energy: 51.88 GWh
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Capacity bar chart</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="c1"># Power capacity</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">bar_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">capacity</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+<span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;p_nom_GW&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">bar_colors</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Power Capacity (GW)&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Storage Type&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage Power Capacity&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+
+<span class="c1"># Energy capacity</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">capacity</span><span class="p">[</span><span class="s1">&#39;energy_GWh&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">bar_colors</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Energy Capacity (GWh)&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Storage Type&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage Energy Capacity&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_7_0.png" src="../_images/tutorials_10-storage_7_0.png" />
+</div>
+</div>
+</section>
+<section id="4.-Storage-Parameters">
+<h2>4. Storage Parameters<a class="headerlink" href="#4.-Storage-Parameters" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Key storage parameters</span>
+<span class="n">params</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;carrier&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
+    <span class="s1">&#39;efficiency_store&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>     <span class="c1"># Charging efficiency</span>
+    <span class="s1">&#39;efficiency_dispatch&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>  <span class="c1"># Discharging efficiency</span>
+    <span class="s1">&#39;standing_loss&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>        <span class="c1"># Self-discharge rate</span>
+    <span class="s1">&#39;marginal_cost&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>        <span class="c1"># Dispatch cost</span>
+    <span class="s1">&#39;cyclic_state_of_charge&#39;</span><span class="p">:</span> <span class="s1">&#39;first&#39;</span>  <span class="c1"># Cyclic constraint</span>
+<span class="p">})</span>
+
+<span class="n">params</span><span class="p">[</span><span class="s1">&#39;round_trip_efficiency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;efficiency_store&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;efficiency_dispatch&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Storage Parameters:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Charging Efficiency: </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;efficiency_store&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Discharging Efficiency: </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;efficiency_dispatch&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Round-Trip Efficiency: </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;round_trip_efficiency&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Standing Loss: </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;standing_loss&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">%/hour&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Storage Parameters:
+
+Battery:
+  Charging Efficiency: 92.0%
+  Discharging Efficiency: 92.0%
+  Round-Trip Efficiency: 84.6%
+  Standing Loss: 0.100%/hour
+
+Domestic Battery:
+  Charging Efficiency: 92.0%
+  Discharging Efficiency: 92.0%
+  Round-Trip Efficiency: 84.6%
+  Standing Loss: 0.100%/hour
+
+LAES:
+  Charging Efficiency: 60.0%
+  Discharging Efficiency: 60.0%
+  Round-Trip Efficiency: 36.0%
+  Standing Loss: 0.100%/hour
+
+Pumped Storage Hydroelectricity:
+  Charging Efficiency: 87.0%
+  Discharging Efficiency: 87.0%
+  Round-Trip Efficiency: 75.7%
+  Standing Loss: 0.100%/hour
+</pre></div></div>
+</div>
+</section>
+<section id="5.-State-of-Charge-Analysis">
+<h2>5. State of Charge Analysis<a class="headerlink" href="#5.-State-of-Charge-Analysis" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># State of charge time series</span>
+<span class="n">soc</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">state_of_charge</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;State of Charge data shape: </span><span class="si">{</span><span class="n">soc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Aggregate by carrier</span>
+<span class="n">soc_by_carrier</span> <span class="o">=</span> <span class="n">soc</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GWh</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">State of Charge Statistics (GWh):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">soc_by_carrier</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+State of Charge data shape: (168, 784)
+
+State of Charge Statistics (GWh):
+carrier  Battery  Domestic Battery    LAES  Pumped Storage Hydroelectricity
+count     168.00            168.00  168.00                           168.00
+mean       23.24              2.11   10.02                            16.64
+std        16.46              1.01    8.75                            13.92
+min         1.44              0.02    0.06                             0.48
+25%         8.67              1.37    2.39                             3.45
+50%        16.40              1.99    5.53                            13.75
+75%        41.05              3.06   20.57                            26.64
+max        50.22              3.93   22.91                            48.46
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># State of charge time series plot</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">soc_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">soc_by_carrier</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">soc_by_carrier</span><span class="p">[</span><span class="n">col</span><span class="p">],</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;State of Charge (GWh)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage State of Charge Over Time&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_12_0.png" src="../_images/tutorials_10-storage_12_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># SOC percentage (normalized)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">soc_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">carrier_storage</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span>
+    <span class="n">max_energy</span> <span class="o">=</span> <span class="p">(</span><span class="n">carrier_storage</span><span class="p">[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">carrier_storage</span><span class="p">[</span><span class="s1">&#39;max_hours&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
+    <span class="n">soc_pct</span> <span class="o">=</span> <span class="n">soc_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span> <span class="o">/</span> <span class="n">max_energy</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">soc_pct</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">soc_pct</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">carrier</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">carrier</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;State of Charge (%)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage State of Charge (</span><span class="si">% o</span><span class="s1">f max)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_13_0.png" src="../_images/tutorials_10-storage_13_0.png" />
+</div>
+</div>
+</section>
+<section id="6.-Charging-and-Discharging-Patterns">
+<h2>6. Charging and Discharging Patterns<a class="headerlink" href="#6.-Charging-and-Discharging-Patterns" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Power dispatch (positive = discharge, negative = charge)</span>
+<span class="n">power</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">p</span>
+
+<span class="c1"># Aggregate by carrier</span>
+<span class="n">power_by_carrier</span> <span class="o">=</span> <span class="n">power</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GW</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Storage Power Statistics (GW):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Storage Power Statistics (GW):
+carrier  Battery  Domestic Battery    LAES  Pumped Storage Hydroelectricity
+count     168.00            168.00  168.00                           168.00
+mean       -0.31             -0.03   -0.28                            -0.18
+std         3.79              0.33    1.06                             1.51
+min       -13.70             -0.87   -3.70                            -3.75
+25%        -0.99             -0.15   -0.21                            -0.34
+50%        -0.34             -0.06   -0.03                            -0.13
+75%         0.47              0.17    0.00                             0.08
+max        12.13              0.84    2.39                             4.42
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Power dispatch plot</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">power_by_carrier</span><span class="p">[</span><span class="n">col</span><span class="p">],</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+               <span class="n">where</span><span class="o">=</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharging&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+               <span class="n">where</span><span class="o">=</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charging&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Power (GW)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage Charging/Discharging (positive = discharge)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_16_0.png" src="../_images/tutorials_10-storage_16_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Daily pattern</span>
+<span class="n">power_hourly</span> <span class="o">=</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">power_by_carrier</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">power_hourly</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">power_hourly</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">power_hourly</span><span class="p">[</span><span class="n">col</span><span class="p">],</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Hour of Day&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Average Power (GW)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Average Daily Storage Pattern&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_17_0.png" src="../_images/tutorials_10-storage_17_0.png" />
+</div>
+</div>
+</section>
+<section id="7.-Storage-Utilization">
+<h2>7. Storage Utilization<a class="headerlink" href="#7.-Storage-Utilization" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calculate utilization metrics</span>
+<span class="n">utilization</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">carrier_storage</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span>
+    <span class="n">total_capacity</span> <span class="o">=</span> <span class="n">carrier_storage</span><span class="p">[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GW</span>
+
+    <span class="k">if</span> <span class="n">total_capacity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Total energy discharged</span>
+        <span class="n">discharged</span> <span class="o">=</span> <span class="n">power_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">][</span><span class="n">power_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># GWh</span>
+        <span class="n">charged</span> <span class="o">=</span> <span class="o">-</span><span class="n">power_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">][</span><span class="n">power_by_carrier</span><span class="p">[</span><span class="n">carrier</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># GWh</span>
+
+        <span class="c1"># Capacity factor based on discharge</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span>
+        <span class="n">cf</span> <span class="o">=</span> <span class="n">discharged</span> <span class="o">/</span> <span class="p">(</span><span class="n">total_capacity</span> <span class="o">*</span> <span class="n">hours</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+
+        <span class="c1"># Cycles (discharge energy / energy capacity)</span>
+        <span class="n">energy_capacity</span> <span class="o">=</span> <span class="p">(</span><span class="n">carrier_storage</span><span class="p">[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">carrier_storage</span><span class="p">[</span><span class="s1">&#39;max_hours&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="n">discharged</span> <span class="o">/</span> <span class="n">energy_capacity</span> <span class="k">if</span> <span class="n">energy_capacity</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="n">utilization</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;Carrier&#39;</span><span class="p">:</span> <span class="n">carrier</span><span class="p">,</span>
+            <span class="s1">&#39;Power (GW)&#39;</span><span class="p">:</span> <span class="n">total_capacity</span><span class="p">,</span>
+            <span class="s1">&#39;Discharged (GWh)&#39;</span><span class="p">:</span> <span class="n">discharged</span><span class="p">,</span>
+            <span class="s1">&#39;Charged (GWh)&#39;</span><span class="p">:</span> <span class="n">charged</span><span class="p">,</span>
+            <span class="s1">&#39;Capacity Factor (%)&#39;</span><span class="p">:</span> <span class="n">cf</span><span class="p">,</span>
+            <span class="s1">&#39;Cycles&#39;</span><span class="p">:</span> <span class="n">cycles</span>
+        <span class="p">})</span>
+
+<span class="n">util_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">utilization</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Carrier&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Storage Utilization:&quot;</span><span class="p">)</span>
+<span class="n">util_df</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Storage Utilization:
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Power (GW)</th>
+      <th>Discharged (GWh)</th>
+      <th>Charged (GWh)</th>
+      <th>Capacity Factor (%)</th>
+      <th>Cycles</th>
+    </tr>
+    <tr>
+      <th>Carrier</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Battery</th>
+      <td>26.77</td>
+      <td>165.88</td>
+      <td>218.67</td>
+      <td>3.69</td>
+      <td>3.10</td>
+    </tr>
+    <tr>
+      <th>Domestic Battery</th>
+      <td>1.99</td>
+      <td>17.40</td>
+      <td>23.21</td>
+      <td>5.20</td>
+      <td>4.37</td>
+    </tr>
+    <tr>
+      <th>LAES</th>
+      <td>3.85</td>
+      <td>23.68</td>
+      <td>70.98</td>
+      <td>3.66</td>
+      <td>1.02</td>
+    </tr>
+    <tr>
+      <th>Pumped Storage Hydroelectricity</th>
+      <td>6.49</td>
+      <td>66.38</td>
+      <td>96.71</td>
+      <td>6.09</td>
+      <td>1.28</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+<section id="8.-Arbitrage-Value">
+<h2>8. Arbitrage Value<a class="headerlink" href="#8.-Arbitrage-Value" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calculate arbitrage value using marginal prices</span>
+<span class="k">if</span> <span class="s1">&#39;marginal_price&#39;</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">buses_t</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">lmps</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span>
+
+    <span class="c1"># Revenue from arbitrage = discharge × price - charge × price</span>
+    <span class="n">arbitrage</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">carrier_storage</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span>
+
+        <span class="n">total_revenue</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_cost</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">carrier_storage</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">power</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">bus</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bus</span> <span class="ow">in</span> <span class="n">lmps</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">power</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
+                    <span class="n">price</span> <span class="o">=</span> <span class="n">lmps</span><span class="p">[</span><span class="n">bus</span><span class="p">]</span>
+
+                    <span class="c1"># Discharge revenue</span>
+                    <span class="n">discharge</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="n">revenue</span> <span class="o">=</span> <span class="p">(</span><span class="n">discharge</span> <span class="o">*</span> <span class="n">price</span><span class="p">[</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+                    <span class="c1"># Charge cost</span>
+                    <span class="n">charge</span> <span class="o">=</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="n">cost</span> <span class="o">=</span> <span class="p">(</span><span class="n">charge</span> <span class="o">*</span> <span class="n">price</span><span class="p">[</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+                    <span class="n">total_revenue</span> <span class="o">+=</span> <span class="n">revenue</span>
+                    <span class="n">total_cost</span> <span class="o">+=</span> <span class="n">cost</span>
+
+        <span class="n">arbitrage</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;Carrier&#39;</span><span class="p">:</span> <span class="n">carrier</span><span class="p">,</span>
+            <span class="s1">&#39;Revenue (£M)&#39;</span><span class="p">:</span> <span class="n">total_revenue</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span>
+            <span class="s1">&#39;Cost (£M)&#39;</span><span class="p">:</span> <span class="n">total_cost</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span>
+            <span class="s1">&#39;Profit (£M)&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">total_revenue</span> <span class="o">-</span> <span class="n">total_cost</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="p">})</span>
+
+    <span class="n">arb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">arbitrage</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Carrier&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Storage Arbitrage Value:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">arb_df</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Marginal prices not available - re-solve with keep_shadowprices=True&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Storage Arbitrage Value:
+                                 Revenue (£M)  Cost (£M)  Profit (£M)
+Carrier
+Battery                                  3.90       1.64         2.26
+Domestic Battery                         0.39       0.21         0.18
+LAES                                     0.65       0.20         0.44
+Pumped Storage Hydroelectricity          1.11       0.28         0.83
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Average charge/discharge prices</span>
+<span class="k">if</span> <span class="s1">&#39;marginal_price&#39;</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">buses_t</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">avg_prices</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">power_by_carrier</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">carrier_storage</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span>
+
+        <span class="n">all_discharge_prices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_charge_prices</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">carrier_storage</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">power</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">bus</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bus</span> <span class="ow">in</span> <span class="n">lmps</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">power</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
+                    <span class="n">price</span> <span class="o">=</span> <span class="n">lmps</span><span class="p">[</span><span class="n">bus</span><span class="p">]</span>
+
+                    <span class="n">all_discharge_prices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">price</span><span class="p">[</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+                    <span class="n">all_charge_prices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">price</span><span class="p">[</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="n">avg_prices</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;Carrier&#39;</span><span class="p">:</span> <span class="n">carrier</span><span class="p">,</span>
+            <span class="s1">&#39;Avg Discharge Price (£/MWh)&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">all_discharge_prices</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_discharge_prices</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;Avg Charge Price (£/MWh)&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">all_charge_prices</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_charge_prices</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;Spread (£/MWh)&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">all_discharge_prices</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">all_charge_prices</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_discharge_prices</span> <span class="ow">and</span> <span class="n">all_charge_prices</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">})</span>
+
+    <span class="n">price_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">avg_prices</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Carrier&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Average Charge/Discharge Prices:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">price_df</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Average Charge/Discharge Prices:
+                                 Avg Discharge Price (£/MWh)  \
+Carrier
+Battery                                                17.02
+Domestic Battery                                       15.67
+LAES                                                   21.56
+Pumped Storage Hydroelectricity                        18.77
+
+                                 Avg Charge Price (£/MWh)  Spread (£/MWh)
+Carrier
+Battery                                              6.49           10.54
+Domestic Battery                                     5.17           10.50
+LAES                                                 6.08           15.47
+Pumped Storage Hydroelectricity                      6.40           12.37
+</pre></div></div>
+</div>
+</section>
+<section id="9.-Comparing-Storage-Technologies">
+<h2>9. Comparing Storage Technologies<a class="headerlink" href="#9.-Comparing-Storage-Technologies" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Duration distribution</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">storage</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+    <span class="n">carrier_data</span> <span class="o">=</span> <span class="n">storage</span><span class="p">[</span><span class="n">storage</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">][</span><span class="s1">&#39;max_hours&#39;</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">carrier_data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+           <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">carrier</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Duration (hours)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Number of Units&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage Duration Distribution&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_24_0.png" src="../_images/tutorials_10-storage_24_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Power vs Energy capacity scatter</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">storage</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+    <span class="n">carrier_data</span> <span class="o">=</span> <span class="n">storage</span><span class="p">[</span><span class="n">storage</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span>
+    <span class="n">power_gw</span> <span class="o">=</span> <span class="n">carrier_data</span><span class="p">[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+    <span class="n">energy_gwh</span> <span class="o">=</span> <span class="n">power_gw</span> <span class="o">*</span> <span class="n">carrier_data</span><span class="p">[</span><span class="s1">&#39;max_hours&#39;</span><span class="p">]</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">power_gw</span><span class="p">,</span> <span class="n">energy_gwh</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+              <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">carrier</span><span class="p">,</span> <span class="s1">&#39;#888888&#39;</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+
+<span class="c1"># Reference lines for duration</span>
+<span class="k">for</span> <span class="n">hours</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">24</span><span class="p">]:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">power_gw</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">*</span> <span class="n">hours</span><span class="p">,</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s1">h&#39;</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">hours</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Power Capacity (GW)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Energy Capacity (GWh)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage: Power vs Energy Capacity&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_25_0.png" src="../_images/tutorials_10-storage_25_0.png" />
+</div>
+</div>
+</section>
+<section id="10.-Geographic-Distribution">
+<h2>10. Geographic Distribution<a class="headerlink" href="#10.-Geographic-Distribution" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Storage capacity by bus</span>
+<span class="n">storage_by_bus</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;bus&#39;</span><span class="p">)[</span><span class="s1">&#39;p_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GW</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+
+<span class="c1"># Get bus coordinates</span>
+<span class="n">bus_x</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">storage_by_bus</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">]</span>
+<span class="n">bus_y</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">storage_by_bus</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]</span>
+
+<span class="c1"># Size proportional to capacity</span>
+<span class="n">sizes</span> <span class="o">=</span> <span class="n">storage_by_bus</span> <span class="o">*</span> <span class="mi">200</span>  <span class="c1"># Scale for visibility</span>
+
+<span class="n">scatter</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">bus_x</span><span class="p">,</span> <span class="n">bus_y</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">sizes</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">storage_by_bus</span><span class="p">,</span>
+                    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Purples&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># Plot lines for context</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">bus0</span><span class="p">,</span> <span class="n">bus1</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">line</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;bus0&#39;</span><span class="p">,</span> <span class="s1">&#39;bus1&#39;</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="n">bus0</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="n">bus1</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bus0</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bus1</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">]],</span>
+               <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bus0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bus1</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]],</span>
+               <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">scatter</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Storage Capacity (GW)&#39;</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;X (m)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Y (m)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Storage Capacity Distribution&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_10-storage_27_0.png" src="../_images/tutorials_10-storage_27_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="9-renewables.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Renewable Generation</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="11-interconnectors.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Interconnectors</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What-You'll-Learn">What You’ll Learn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Load-Network">2. Load Network</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Storage-Capacity-Overview">3. Storage Capacity Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Storage-Parameters">4. Storage Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-State-of-Charge-Analysis">5. State of Charge Analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Charging-and-Discharging-Patterns">6. Charging and Discharging Patterns</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Storage-Utilization">7. Storage Utilization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Arbitrage-Value">8. Arbitrage Value</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-Comparing-Storage-Technologies">9. Comparing Storage Technologies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10.-Geographic-Distribution">10. Geographic Distribution</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

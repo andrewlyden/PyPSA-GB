@@ -125,6 +125,22 @@ clustering:
     enabled: false
     include_storage_units: false
     include_stores: false
+
+# Demand flexibility defaults (disabled unless scenario opts in)
+demand_flexibility:
+  enabled: false
+  heat_pumps:
+    enabled: false
+    mode: "MIXED"
+    flex_share: 0.2
+  electric_vehicles:
+    enabled: false
+    tariff: "MIXED"
+    flex_share: 0.2
+  event_response:
+    enabled: false
+    mode: "both"
+    dsr_capacity_mw: 5000
 ```
 
 ## Key Parameters
@@ -233,6 +249,29 @@ HT35_clustered:
       include_storage_units: true   # merge identical StorageUnits
       include_stores: false         # merge Stores (rarely used)
 ```
+
+## Demand Flexibility
+
+Configure demand-side flexibility under `demand_flexibility`:
+
+```yaml
+demand_flexibility:
+  enabled: true                  # Master switch
+  heat_pumps:
+    enabled: true
+    mode: "MIXED"                # TANK, COSY, or MIXED
+    flex_share: 0.2
+  electric_vehicles:
+    enabled: true
+    tariff: "MIXED"              # GO, INT, V2G, or MIXED
+    flex_share: 0.2
+  event_response:
+    enabled: true
+    mode: "both"                 # regular, winter, or both
+    dsr_capacity_mw: 5000
+```
+
+Each flexibility type has its own `enabled` flag and can be configured independently. For the full parameter reference, see {doc}`demand_flexibility`.
 
 ## Environment Variables
 

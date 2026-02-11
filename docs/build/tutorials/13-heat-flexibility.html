@@ -1,0 +1,1455 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Heat Pump Flexibility &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/13-heat-flexibility';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Electric Vehicle Flexibility" href="14-ev-flexibility.html" />
+    <link rel="prev" title="Hydrogen Systems" href="12-hydrogen.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Scenario Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1-historical-baseload-2015.html">Historical Baseload</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2-historical-renewables-2023.html">Historical Renewables Era</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-future-holistic-transition-2035.html">Future Scenario: Holistic Transition (2035)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4-future-electric-engagement-2050.html">Future Scenario: Electric Engagement (2050)</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Component Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="5-networks.html">Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6-demand.html">Demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="7-generators.html">Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="8-marginal-costs.html">Marginal Costs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="9-renewables.html">Renewable Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-storage.html">Storage Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-interconnectors.html">Interconnectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-hydrogen.html">Hydrogen Systems</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Heat Pump Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Heat Pump...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+    /* Hide code cells by default, show on click */
+    div.nbinput.container {
+        display: none;
+    }
+    div.nbinput.container.show {
+        display: block;
+    }
+    /* Add toggle button styling */
+    .toggle-button {
+        background-color: #7ba591;
+        color: white;
+        padding: 6px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 10px 0;
+        font-size: 0.9em;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(123, 165, 145, 0.2);
+    }
+    .toggle-button:hover {
+        background-color: #93c4ab;
+        box-shadow: 0 3px 6px rgba(123, 165, 145, 0.3);
+        transform: translateY(-1px);
+    }
+    /* Hide "Data type cannot be displayed" messages */
+    .nboutput p:has-text("Data type cannot be displayed") {
+        display: none;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add toggle buttons for code cells
+        var codeCells = document.querySelectorAll('div.nbinput.container');
+        codeCells.forEach(function(cell, index) {
+            var button = document.createElement('button');
+            button.className = 'toggle-button';
+            button.textContent = 'Show Code';
+            button.onclick = function() {
+                if (cell.classList.contains('show')) {
+                    cell.classList.remove('show');
+                    button.textContent = 'Show Code';
+                } else {
+                    cell.classList.add('show');
+                    button.textContent = 'Hide Code';
+                }
+            };
+            cell.parentNode.insertBefore(button, cell);
+        });
+
+        // Hide "Data type cannot be displayed" messages
+        var outputs = document.querySelectorAll('.nboutput p');
+        outputs.forEach(function(p) {
+            if (p.textContent.includes('Data type cannot be displayed')) {
+                p.style.display = 'none';
+            }
+        });
+    });
+</script><section id="Heat-Pump-Flexibility">
+<h1>Heat Pump Flexibility<a class="headerlink" href="#Heat-Pump-Flexibility" title="Link to this heading">#</a></h1>
+<p>This tutorial covers heat pump modeling and flexibility mechanisms in PyPSA-GB, including demand disaggregation, thermal storage, and demand shifting.</p>
+<section id="What-You'll-Learn">
+<h2>What You’ll Learn<a class="headerlink" href="#What-You'll-Learn" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>How heat pump electricity demand is calculated from FES data</p></li>
+<li><p>The two space heating flexibility mechanisms: TANK and COSY</p></li>
+<li><p>How COP (Coefficient of Performance) varies with temperature</p></li>
+<li><p>How to analyze heat pump flexibility results</p></li>
+<li><p>PyPSA components created for heat flexibility</p></li>
+</ul>
+</section>
+<section id="1.-Setup">
+<h2>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pypsa</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-v0_8-whitegrid&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PyPSA version: </span><span class="si">{</span><span class="n">pypsa</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+PyPSA version: 1.0.7
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Understanding-Heat-Pump-Flexibility">
+<h2>2. Understanding Heat Pump Flexibility<a class="headerlink" href="#2.-Understanding-Heat-Pump-Flexibility" title="Link to this heading">#</a></h2>
+<section id="2.1-Why-Heat-Pump-Flexibility-Matters">
+<h3>2.1 Why Heat Pump Flexibility Matters<a class="headerlink" href="#2.1-Why-Heat-Pump-Flexibility-Matters" title="Link to this heading">#</a></h3>
+<p>Heat pumps are a key technology for decarbonizing heating in Great Britain. They convert electricity into heat at high efficiency (COP 2-5 depending on temperature), but they add significant new electricity demand. By 2035, FES projects that heat pumps could add 20-40 TWh of electricity demand.</p>
+<p><strong>Flexibility</strong> allows this demand to be shifted in time, helping to:</p>
+<ul class="simple">
+<li><p>Reduce peak demand on the electricity grid</p></li>
+<li><p>Better utilize renewable generation when it’s available</p></li>
+<li><p>Reduce consumer energy costs by heating at off-peak times</p></li>
+</ul>
+</section>
+<section id="2.2-Two-Space-Heating-Flexibility-Mechanisms">
+<h3>2.2 Two Space Heating Flexibility Mechanisms<a class="headerlink" href="#2.2-Two-Space-Heating-Flexibility-Mechanisms" title="Link to this heading">#</a></h3>
+<p>PyPSA-GB models two complementary flexibility mechanisms. <strong>Both are for space heating</strong>, but use different physical storage:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mechanism</p></th>
+<th class="head"><p>Physical Storage</p></th>
+<th class="head"><p>PyPSA Load Carrier</p></th>
+<th class="head"><p>How It Works</p></th>
+<th class="head"><p>Typical Capacity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>TANK</strong></p></td>
+<td><p>Hot water cylinder</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">hot</span> <span class="pre">water</span> <span class="pre">demand</span></code></p></td>
+<td><p>Pre-heats water in tank, releases heat when needed</p></td>
+<td><p>10-50 kWh thermal</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>COSY</strong></p></td>
+<td><p>Building thermal mass</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">space</span> <span class="pre">heating</span></code></p></td>
+<td><p>Pre-heats building fabric (walls, floors), slowly releases heat</p></td>
+<td><p>2-10 kWh/100m²</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="TANK-Mode-(Hot-Water-Tank-Storage)">
+<h4>TANK Mode (Hot Water Tank Storage)<a class="headerlink" href="#TANK-Mode-(Hot-Water-Tank-Storage)" title="Link to this heading">#</a></h4>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>                    COP
+Electricity ──▶ [Heat Pump] ──▶ [Hot Water Tank] ──▶ Space Heating
+    (MW)         (Link)           (Store)              (Load)
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Heat pump converts electricity to heat at COP efficiency</p></li>
+<li><p>Heat stored in insulated hot water tank (can be charged/discharged)</p></li>
+<li><p>Tank releases heat to space heating system when needed</p></li>
+<li><p>Heat loss: ~1-3% per hour depending on insulation</p></li>
+</ul>
+</section>
+<section id="COSY-Mode-(Building-Thermal-Inertia)">
+<h4>COSY Mode (Building Thermal Inertia)<a class="headerlink" href="#COSY-Mode-(Building-Thermal-Inertia)" title="Link to this heading">#</a></h4>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>                    COP
+Electricity ──▶ [Heat Pump] ──▶ [Building Mass] ──▶ Space Heating
+    (MW)         (Link)           (Store)             (Load)
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Heat pump converts electricity to heat at COP efficiency</p></li>
+<li><p>Heat absorbed by building fabric (concrete, brick, furniture)</p></li>
+<li><p>Building slowly releases stored heat, maintaining comfort</p></li>
+<li><p>Heat loss depends on building insulation (EPC rating)</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="3.-Load-a-Network-with-Heat-Pump-Flexibility">
+<h2>3. Load a Network with Heat Pump Flexibility<a class="headerlink" href="#3.-Load-a-Network-with-Heat-Pump-Flexibility" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load a solved network with heat pump flexibility enabled</span>
+<span class="c1"># HT35_flex is a future scenario (2035, Holistic Transition) with heat flexibility</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="s2">&quot;../../../resources/network/HT35_flex_solved.nc&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Network loaded&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Buses: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Loads: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Links: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Stores: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Snapshots: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Period: </span><span class="si">{</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:pypsa.network.io:Imported network &#39;HT35_flex (Clustered)&#39; has buses, carriers, generators, lines, links, loads, storage_units, stores, sub_networks
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Network loaded
+  Buses: 924
+  Loads: 877
+  Links: 1221
+  Stores: 627
+  Snapshots: 168
+  Period: 2035-01-13 00:00:00 to 2035-01-19 23:00:00
+</pre></div></div>
+</div>
+</section>
+<section id="4.-Heat-Pump-Components-in-the-Network">
+<h2>4. Heat Pump Components in the Network<a class="headerlink" href="#4.-Heat-Pump-Components-in-the-Network" title="Link to this heading">#</a></h2>
+<section id="4.1-Identifying-Heat-Pump-Loads">
+<h3>4.1 Identifying Heat Pump Loads<a class="headerlink" href="#4.1-Identifying-Heat-Pump-Loads" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Heat pump loads are identified by their carrier, not by naming convention</span>
+<span class="c1"># TANK mode (hot water demand)</span>
+<span class="n">tank_loads</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hot water demand&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TANK mode loads (hot water demand): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tank_loads</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># COSY mode (space heating)</span>
+<span class="n">cosy_loads</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;space heating&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COSY mode loads (space heating): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cosy_loads</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Base electricity loads (non-flexible)</span>
+<span class="n">base_loads</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Base electricity loads (non-flexible): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">base_loads</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Total heat pump loads</span>
+<span class="n">total_hp_loads</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_loads</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_loads</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total heat pump loads: </span><span class="si">{</span><span class="n">total_hp_loads</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show sample loads from each type</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_loads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sample TANK loads (hot water demand):&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">tank_loads</span><span class="p">[[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_loads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sample COSY loads (space heating):&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cosy_loads</span><span class="p">[[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TANK mode loads (hot water demand): 313
+COSY mode loads (space heating): 313
+Base electricity loads (non-flexible): 0
+
+Total heat pump loads: 626
+
+Sample TANK loads (hot water demand):
+                                           bus           carrier
+name
+ABHA11 hot water demand tank  heat_ABHA11 heat  hot water demand
+ABNE3- hot water demand tank  heat_ABNE3- heat  hot water demand
+ABTH11 hot water demand tank  heat_ABTH11 heat  hot water demand
+ALNE3J hot water demand tank  heat_ALNE3J heat  hot water demand
+ALST31 hot water demand tank  heat_ALST31 heat  hot water demand
+
+Sample COSY loads (space heating):
+                                                         bus        carrier
+name
+ABHA11 space heating  thermal inertia_ABHA11 thermal inertia  space heating
+ABNE3- space heating  thermal inertia_ABNE3- thermal inertia  space heating
+ABTH11 space heating  thermal inertia_ABTH11 thermal inertia  space heating
+ALNE3J space heating  thermal inertia_ALNE3J thermal inertia  space heating
+ALST31 space heating  thermal inertia_ALST31 thermal inertia  space heating
+</pre></div></div>
+</div>
+</section>
+<section id="4.2-Heat-Pump-Links-(Electric-→-Thermal-Conversion)">
+<h3>4.2 Heat Pump Links (Electric → Thermal Conversion)<a class="headerlink" href="#4.2-Heat-Pump-Links-(Electric-→-Thermal-Conversion)" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First, let&#39;s see what links actually exist in the network</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Link Carriers in Network:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sample Link Names (first 20):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Links containing &#39;hp&#39; in name:&quot;</span><span class="p">)</span>
+<span class="n">hp_related</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="s1">&#39;hp&#39;</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hp_related</span><span class="p">)</span><span class="si">}</span><span class="s2"> links with &#39;hp&#39; in name&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">hp_related</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">hp_related</span><span class="p">[:</span><span class="mi">20</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Links with &#39;heat pump&#39; in name:&quot;</span><span class="p">)</span>
+<span class="n">heat_pump_links</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="s1">&#39;heat pump&#39;</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">heat_pump_links</span><span class="p">)</span><span class="si">}</span><span class="s2"> links with &#39;heat pump&#39; in name&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">heat_pump_links</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">heat_pump_links</span><span class="p">[:</span><span class="mi">20</span><span class="p">])</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Link Carriers in Network:
+carrier
+heat pump         626
+thermal demand    313
+H2_turbine        242
+electrolysis       24
+DC                 13
+AC                  3
+Name: count, dtype: int64
+
+============================================================
+
+Sample Link Names (first 20):
+[&#39;2954&#39;, &#39;2955&#39;, &#39;2956&#39;, &#39;CLAC1Q heat pump tank&#39;, &#39;CRAR1R heat pump tank&#39;, &#39;DUNO1Q heat pump tank&#39;, &#39;DUNO1R heat pump tank&#39;, &#39;KEIT3- heat pump tank&#39;, &#39;QUOI1- heat pump tank&#39;, &#39;RANN1Q heat pump tank&#39;, &#39;RANN1R heat pump tank&#39;, &#39;SFEG1S heat pump tank&#39;, &#39;CURR1A heat pump tank&#39;, &#39;CURR1B heat pump tank&#39;, &#39;HUCS4- heat pump tank&#39;, &#39;HUER1- heat pump tank&#39;, &#39;REDH1- heat pump tank&#39;, &#39;IROA11 heat pump tank&#39;, &#39;STEN11 heat pump tank&#39;, &#39;USKM11 heat pump tank&#39;]
+
+============================================================
+
+Links containing &#39;hp&#39; in name:
+Found 0 links with &#39;hp&#39; in name
+
+============================================================
+
+Links with &#39;heat pump&#39; in name:
+Found 626 links with &#39;heat pump&#39; in name
+[&#39;CLAC1Q heat pump tank&#39;, &#39;CRAR1R heat pump tank&#39;, &#39;DUNO1Q heat pump tank&#39;, &#39;DUNO1R heat pump tank&#39;, &#39;KEIT3- heat pump tank&#39;, &#39;QUOI1- heat pump tank&#39;, &#39;RANN1Q heat pump tank&#39;, &#39;RANN1R heat pump tank&#39;, &#39;SFEG1S heat pump tank&#39;, &#39;CURR1A heat pump tank&#39;, &#39;CURR1B heat pump tank&#39;, &#39;HUCS4- heat pump tank&#39;, &#39;HUER1- heat pump tank&#39;, &#39;REDH1- heat pump tank&#39;, &#39;IROA11 heat pump tank&#39;, &#39;STEN11 heat pump tank&#39;, &#39;USKM11 heat pump tank&#39;, &#39;CEAN1Q heat pump tank&#39;, &#39;PEHE1- heat pump tank&#39;, &#39;SLOY1L heat pump tank&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Links that convert electricity to heat</span>
+<span class="c1"># TANK mode: &#39;heat pump&#39; links that charge hot water tanks</span>
+<span class="n">tank_hp_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;heat pump&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;tank&#39;</span><span class="p">))]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TANK heat pump links: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># COSY mode: &#39;thermal demand&#39; links that deliver heat from building mass</span>
+<span class="n">cosy_thermal_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thermal demand&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COSY thermal demand links: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Total HP links</span>
+<span class="n">total_hp_links</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total heat pump/thermal links: </span><span class="si">{</span><span class="n">total_hp_links</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show structure - bus0 is electrical, bus1 is thermal</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sample TANK heat pump links:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">[[</span><span class="s1">&#39;bus0&#39;</span><span class="p">,</span> <span class="s1">&#39;bus1&#39;</span><span class="p">,</span> <span class="s1">&#39;p_nom&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sample COSY thermal demand links:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">[[</span><span class="s1">&#39;bus0&#39;</span><span class="p">,</span> <span class="s1">&#39;bus1&#39;</span><span class="p">,</span> <span class="s1">&#39;p_nom&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TANK heat pump links: 313
+COSY thermal demand links: 313
+
+Total heat pump/thermal links: 626
+
+Sample TANK heat pump links:
+                                                     bus0              bus1  \
+name
+CLAC1Q heat pump tank                       ARDK_P|CLAC_P  heat_CLAC1Q heat
+CRAR1R heat pump tank                              DUNO_P  heat_CRAR1R heat
+DUNO1Q heat pump tank                              DUNO_P  heat_DUNO1Q heat
+DUNO1R heat pump tank                              DUNO_P  heat_DUNO1R heat
+KEIT3- heat pump tank  BERB_P|CAIF_P|DALL_P|GLEF_P|KEIT_P  heat_KEIT3- heat
+
+                          p_nom    carrier
+name
+CLAC1Q heat pump tank  0.166714  heat pump
+CRAR1R heat pump tank  0.729680  heat pump
+DUNO1Q heat pump tank  0.174619  heat pump
+DUNO1R heat pump tank  0.174619  heat pump
+KEIT3- heat pump tank  1.251625  heat pump
+
+Sample COSY thermal demand links:
+                                                         bus0  \
+name
+CLAC1Q thermal demand  thermal inertia_CLAC1Q thermal inertia
+CRAR1R thermal demand  thermal inertia_CRAR1R thermal inertia
+DUNO1Q thermal demand  thermal inertia_DUNO1Q thermal inertia
+DUNO1R thermal demand  thermal inertia_DUNO1R thermal inertia
+KEIT3- thermal demand  thermal inertia_KEIT3- thermal inertia
+
+                                                     bus1     p_nom  \
+name
+CLAC1Q thermal demand                       ARDK_P|CLAC_P  0.407378
+CRAR1R thermal demand                              DUNO_P  1.783023
+DUNO1Q thermal demand                              DUNO_P  0.426693
+DUNO1R thermal demand                              DUNO_P  0.426693
+KEIT3- thermal demand  BERB_P|CAIF_P|DALL_P|GLEF_P|KEIT_P  3.058429
+
+                              carrier
+name
+CLAC1Q thermal demand  thermal demand
+CRAR1R thermal demand  thermal demand
+DUNO1Q thermal demand  thermal demand
+DUNO1R thermal demand  thermal demand
+KEIT3- thermal demand  thermal demand
+</pre></div></div>
+</div>
+</section>
+<section id="4.3-Thermal-Storage-(Stores)">
+<h3>4.3 Thermal Storage (Stores)<a class="headerlink" href="#4.3-Thermal-Storage-(Stores)" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Identify thermal buses and stores</span>
+<span class="n">thermal_buses</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;heat&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Thermal buses (for heat): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thermal_buses</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># TANK stores (hot water tanks)</span>
+<span class="n">tank_stores</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hot water&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TANK stores (hot water tanks): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tank_stores</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># COSY stores (building thermal mass)</span>
+<span class="n">cosy_stores</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thermal inertia&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COSY stores (building thermal mass): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cosy_stores</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_stores</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total TANK storage capacity: </span><span class="si">{</span><span class="n">tank_stores</span><span class="p">[</span><span class="s1">&#39;e_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> MWh&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean per location: </span><span class="si">{</span><span class="n">tank_stores</span><span class="p">[</span><span class="s1">&#39;e_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MWh&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sample TANK stores:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">tank_stores</span><span class="p">[[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">,</span> <span class="s1">&#39;e_nom&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_stores</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total COSY storage capacity: </span><span class="si">{</span><span class="n">cosy_stores</span><span class="p">[</span><span class="s1">&#39;e_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> MWh&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean per location: </span><span class="si">{</span><span class="n">cosy_stores</span><span class="p">[</span><span class="s1">&#39;e_nom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MWh&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sample COSY stores:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cosy_stores</span><span class="p">[[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">,</span> <span class="s1">&#39;e_nom&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Thermal buses (for heat): 313
+TANK stores (hot water tanks): 313
+COSY stores (building thermal mass): 313
+
+Total TANK storage capacity: 1041.1 MWh
+  Mean per location: 3.33 MWh
+  Sample TANK stores:
+                                         bus    carrier     e_nom
+name
+CLAC1Q hot water tank tank  heat_CLAC1Q heat  hot water  0.139533
+CRAR1R hot water tank tank  heat_CRAR1R heat  hot water  0.620923
+DUNO1Q hot water tank tank  heat_DUNO1Q heat  hot water  0.146510
+DUNO1R hot water tank tank  heat_DUNO1R heat  hot water  0.146510
+KEIT3- hot water tank tank  heat_KEIT3- heat  hot water  1.063942
+
+Total COSY storage capacity: 895.8 MWh
+  Mean per location: 2.86 MWh
+  Sample COSY stores:
+                                                                 bus  \
+name
+CLAC1Q building thermal mass  thermal inertia_CLAC1Q thermal inertia
+CRAR1R building thermal mass  thermal inertia_CRAR1R thermal inertia
+DUNO1Q building thermal mass  thermal inertia_DUNO1Q thermal inertia
+DUNO1R building thermal mass  thermal inertia_DUNO1R thermal inertia
+KEIT3- building thermal mass  thermal inertia_KEIT3- thermal inertia
+
+                                      carrier     e_nom
+name
+CLAC1Q building thermal mass  thermal inertia  0.122213
+CRAR1R building thermal mass  thermal inertia  0.534907
+DUNO1Q building thermal mass  thermal inertia  0.128008
+DUNO1R building thermal mass  thermal inertia  0.128008
+KEIT3- building thermal mass  thermal inertia  0.917529
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="5.-Coefficient-of-Performance-(COP)">
+<h2>5. Coefficient of Performance (COP)<a class="headerlink" href="#5.-Coefficient-of-Performance-(COP)" title="Link to this heading">#</a></h2>
+<section id="5.1-Understanding-COP">
+<h3>5.1 Understanding COP<a class="headerlink" href="#5.1-Understanding-COP" title="Link to this heading">#</a></h3>
+<p>The Coefficient of Performance (COP) determines how efficiently a heat pump converts electricity to heat:</p>
+<div class="math notranslate nohighlight">
+\[\text{Thermal Output (kW)} = \text{Electrical Input (kW)} \times \text{COP}\]</div>
+<p>COP varies with temperature:</p>
+<ul class="simple">
+<li><p><strong>Milder weather</strong> (10°C): COP ~4-5 (very efficient)</p></li>
+<li><p><strong>Cold weather</strong> (0°C): COP ~2-3 (less efficient)</p></li>
+<li><p><strong>Very cold</strong> (-5°C): COP ~1.5-2 (least efficient)</p></li>
+</ul>
+<p>This is why PyPSA-GB uses time-varying COP based on weather data.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if COP time series exists (stored as link efficiency)</span>
+<span class="c1"># COP is on the TANK heat pump links</span>
+<span class="n">tank_hp_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;heat pump&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;tank&#39;</span><span class="p">))]</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="c1"># Get COP for one heat pump link</span>
+    <span class="n">sample_link</span> <span class="o">=</span> <span class="n">tank_hp_links</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">sample_link</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">efficiency</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">cop_series</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">efficiency</span><span class="p">[</span><span class="n">sample_link</span><span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COP Statistics for </span><span class="si">{</span><span class="n">sample_link</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean: </span><span class="si">{</span><span class="n">cop_series</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Min: </span><span class="si">{</span><span class="n">cop_series</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Max: </span><span class="si">{</span><span class="n">cop_series</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Std: </span><span class="si">{</span><span class="n">cop_series</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot COP over time</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cop_series</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">cop_series</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">cop_series</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                   <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mean COP: </span><span class="si">{</span><span class="n">cop_series</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;COP&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Heat Pump Coefficient of Performance Over Time&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Note: COP may be stored as static efficiency in links DataFrame&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Static efficiency values: </span><span class="si">{</span><span class="n">tank_hp_links</span><span class="p">[</span><span class="s1">&#39;efficiency&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+COP Statistics for CLAC1Q heat pump tank:
+  Mean: 3.94
+  Min: 3.80
+  Max: 4.07
+  Std: 0.07
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_13-heat-flexibility_17_1.png" src="../_images/tutorials_13-heat-flexibility_17_1.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="6.-Analyzing-Flexibility-Behavior">
+<h2>6. Analyzing Flexibility Behavior<a class="headerlink" href="#6.-Analyzing-Flexibility-Behavior" title="Link to this heading">#</a></h2>
+<section id="6.1-Heat-Pump-Power-Consumption">
+<h3>6.1 Heat Pump Power Consumption<a class="headerlink" href="#6.1-Heat-Pump-Power-Consumption" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get heat pump link power flows (electricity consumption)</span>
+<span class="c1"># Include both TANK heat pump links and COSY thermal demand links</span>
+<span class="n">tank_hp_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;heat pump&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;tank&#39;</span><span class="p">))]</span>
+<span class="n">cosy_thermal_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thermal demand&#39;</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="n">tank_link_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tank_hp_links</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">cosy_link_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cosy_thermal_links</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">hp_link_cols</span> <span class="o">=</span> <span class="n">tank_link_cols</span> <span class="o">+</span> <span class="n">cosy_link_cols</span>
+
+    <span class="k">if</span> <span class="n">hp_link_cols</span><span class="p">:</span>
+        <span class="c1"># p0 is positive when power flows from bus0 (electrical) to bus1 (thermal)</span>
+        <span class="n">hp_power</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="p">[</span><span class="n">hp_link_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Total HP electricity consumption</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Heat Pump Electricity Consumption (MW):&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean: </span><span class="si">{</span><span class="n">hp_power</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Peak: </span><span class="si">{</span><span class="n">hp_power</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Min: </span><span class="si">{</span><span class="n">hp_power</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Total energy</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span>
+        <span class="n">energy_gwh</span> <span class="o">=</span> <span class="n">hp_power</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total HP Energy: </span><span class="si">{</span><span class="n">energy_gwh</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GWh over </span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2"> hours&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hp_power</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">hp_power</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">hp_power</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">hp_power</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">hp_power</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                   <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mean: </span><span class="si">{</span><span class="n">hp_power</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">/</span><span class="mi">1000</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> GW&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Heat Pump Electricity (GW)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Total Heat Pump Electricity Consumption&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Heat Pump Electricity Consumption (MW):
+  Mean: 3274.3
+  Peak: 3622.0
+  Min: 2747.9
+
+Total HP Energy: 550.1 GWh over 168 hours
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_13-heat-flexibility_20_1.png" src="../_images/tutorials_13-heat-flexibility_20_1.png" />
+</div>
+</div>
+</section>
+<section id="6.2-Thermal-Storage-Behavior">
+<h3>6.2 Thermal Storage Behavior<a class="headerlink" href="#6.2-Thermal-Storage-Behavior" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check store state of charge (energy stored over time)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">stores_t</span><span class="o">.</span><span class="n">e</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">tank_store_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">stores_t</span><span class="o">.</span><span class="n">e</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hot water&#39;</span><span class="p">]</span>
+    <span class="n">cosy_store_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">stores_t</span><span class="o">.</span><span class="n">e</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">stores</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thermal inertia&#39;</span><span class="p">]</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tank_store_cols</span><span class="p">:</span>
+        <span class="n">tank_soc</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">stores_t</span><span class="o">.</span><span class="n">e</span><span class="p">[</span><span class="n">tank_store_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GWh</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tank_soc</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">tank_soc</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">tank_soc</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">tank_soc</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Energy Stored (GWh)&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;TANK Mode: Hot Water Tank Storage&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">tank_soc</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mean: </span><span class="si">{</span><span class="n">tank_soc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> GWh&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">cosy_store_cols</span><span class="p">:</span>
+        <span class="n">cosy_soc</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">stores_t</span><span class="o">.</span><span class="n">e</span><span class="p">[</span><span class="n">cosy_store_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># GWh</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cosy_soc</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">cosy_soc</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">cosy_soc</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">cosy_soc</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Energy Stored (GWh)&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;COSY Mode: Building Thermal Mass Storage&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">cosy_soc</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mean: </span><span class="si">{</span><span class="n">cosy_soc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> GWh&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No store time series data found - check if network was solved with store tracking&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_13-heat-flexibility_22_0.png" src="../_images/tutorials_13-heat-flexibility_22_0.png" />
+</div>
+</div>
+</section>
+<section id="6.3-Heat-Demand-vs-Electricity-Consumption">
+<h3>6.3 Heat Demand vs Electricity Consumption<a class="headerlink" href="#6.3-Heat-Demand-vs-Electricity-Consumption" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compare thermal demand with electrical consumption</span>
+<span class="c1"># Thermal demand = heat delivered to space heating</span>
+<span class="c1"># Electrical consumption = power drawn from grid</span>
+<span class="c1"># Ratio should approximate mean COP</span>
+
+<span class="c1"># Identify loads and links</span>
+<span class="n">tank_loads</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hot water demand&#39;</span><span class="p">]</span>
+<span class="n">cosy_loads</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;space heating&#39;</span><span class="p">]</span>
+<span class="n">tank_hp_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;heat pump&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">&#39;tank&#39;</span><span class="p">))]</span>
+<span class="n">cosy_thermal_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="s1">&#39;carrier&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thermal demand&#39;</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tank_hp_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosy_thermal_links</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="c1"># Get thermal demand from both TANK and COSY loads</span>
+    <span class="n">tank_load_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tank_loads</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">cosy_load_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cosy_loads</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tank_load_cols</span> <span class="ow">or</span> <span class="n">cosy_load_cols</span><span class="p">:</span>
+        <span class="n">thermal_demand</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="p">[</span><span class="n">tank_load_cols</span> <span class="o">+</span> <span class="n">cosy_load_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Get electrical consumption from HP links (TANK + COSY)</span>
+        <span class="n">tank_link_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tank_hp_links</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">cosy_link_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cosy_thermal_links</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">hp_link_cols</span> <span class="o">=</span> <span class="n">tank_link_cols</span> <span class="o">+</span> <span class="n">cosy_link_cols</span>
+
+        <span class="k">if</span> <span class="n">hp_link_cols</span><span class="p">:</span>
+            <span class="n">elec_consumption</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links_t</span><span class="o">.</span><span class="n">p0</span><span class="p">[</span><span class="n">hp_link_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Calculate effective COP</span>
+            <span class="n">effective_cop</span> <span class="o">=</span> <span class="n">thermal_demand</span> <span class="o">/</span> <span class="n">elec_consumption</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Thermal Demand: </span><span class="si">{</span><span class="n">thermal_demand</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GWh&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Electrical Consumption: </span><span class="si">{</span><span class="n">elec_consumption</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GWh&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Effective System COP: </span><span class="si">{</span><span class="n">effective_cop</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Plot comparison</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">thermal_demand</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">thermal_demand</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Thermal Demand&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">elec_consumption</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">elec_consumption</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Electrical Consumption&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Power (GW)&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Heat Pump Energy Balance&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">effective_cop</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">effective_cop</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">effective_cop</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mean COP: </span><span class="si">{</span><span class="n">effective_cop</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Effective COP&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Effective Coefficient of Performance&#39;</span><span class="p">)</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No heat pump links found&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No thermal loads found&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Load or link time series not available&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Thermal Demand: 718.9 GWh
+Electrical Consumption: 550.1 GWh
+Effective System COP: 1.32
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_13-heat-flexibility_24_1.png" src="../_images/tutorials_13-heat-flexibility_24_1.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="7.-Configuration-Options">
+<h2>7. Configuration Options<a class="headerlink" href="#7.-Configuration-Options" title="Link to this heading">#</a></h2>
+<p>Heat pump flexibility is configured in <code class="docutils literal notranslate"><span class="pre">config/defaults.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">heat_pumps</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">flexibility</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">tank_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w">    </span><span class="c1"># 50% of HP demand uses TANK mechanism</span>
+<span class="w">    </span><span class="nt">cosy_share</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w">    </span><span class="c1"># 50% of HP demand uses COSY mechanism</span>
+<span class="w">    </span><span class="nt">tank_storage_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4.0</span><span class="w">  </span><span class="c1"># Hours of storage at rated capacity</span>
+<span class="w">    </span><span class="nt">cosy_storage_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span><span class="w">  </span><span class="c1"># Hours of thermal inertia</span>
+<span class="w">    </span><span class="nt">tank_standing_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span><span class="w">  </span><span class="c1"># 1% per hour heat loss</span>
+<span class="w">    </span><span class="nt">cosy_standing_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span><span class="w">  </span><span class="c1"># 5% per hour (less insulated)</span>
+</pre></div>
+</div>
+<section id="Key-Parameters:">
+<h3>Key Parameters:<a class="headerlink" href="#Key-Parameters:" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Typical Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tank_share</span></code></p></td>
+<td><p>Fraction of HP demand with hot water tank flexibility</p></td>
+<td><p>0.3-0.5</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cosy_share</span></code></p></td>
+<td><p>Fraction of HP demand with building thermal inertia</p></td>
+<td><p>0.3-0.5</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tank_storage_hours</span></code></p></td>
+<td><p>Tank storage duration at rated power</p></td>
+<td><p>2-6 hours</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cosy_storage_hours</span></code></p></td>
+<td><p>Building thermal storage duration</p></td>
+<td><p>1-3 hours</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tank_standing_loss</span></code></p></td>
+<td><p>Hourly heat loss from tank</p></td>
+<td><p>0.5-3%</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cosy_standing_loss</span></code></p></td>
+<td><p>Hourly heat loss from building</p></td>
+<td><p>3-10%</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="8.-Summary">
+<h2>8. Summary<a class="headerlink" href="#8.-Summary" title="Link to this heading">#</a></h2>
+<section id="Key-Takeaways:">
+<h3>Key Takeaways:<a class="headerlink" href="#Key-Takeaways:" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Both TANK and COSY are space heating mechanisms</strong> - they differ in where heat is stored:</p>
+<ul class="simple">
+<li><p>TANK: Hot water cylinder (more storage, less loss)</p></li>
+<li><p>COSY: Building fabric (less storage, more loss)</p></li>
+</ul>
+</li>
+<li><p><strong>COP is crucial</strong> - Heat pumps produce 2-5x more thermal energy than electrical input</p>
+<ul class="simple">
+<li><p>Higher COP in mild weather, lower in cold weather</p></li>
+<li><p>Time-varying COP from weather data</p></li>
+</ul>
+</li>
+<li><p><strong>Flexibility helps the grid</strong> by:</p>
+<ul class="simple">
+<li><p>Shifting demand away from peak hours</p></li>
+<li><p>Better utilizing renewable generation</p></li>
+<li><p>Reducing need for expensive peaking plants</p></li>
+</ul>
+</li>
+<li><p><strong>PyPSA components</strong>:</p>
+<ul class="simple">
+<li><p>Links (heat pumps): Electricity → Thermal conversion at COP efficiency</p></li>
+<li><p>Stores (tanks/buildings): Thermal energy storage</p></li>
+<li><p>Loads (space heating): Final thermal demand</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="12-hydrogen.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Hydrogen Systems</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="14-ev-flexibility.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Electric Vehicle Flexibility</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What-You'll-Learn">What You’ll Learn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Understanding-Heat-Pump-Flexibility">2. Understanding Heat Pump Flexibility</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.1-Why-Heat-Pump-Flexibility-Matters">2.1 Why Heat Pump Flexibility Matters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.2-Two-Space-Heating-Flexibility-Mechanisms">2.2 Two Space Heating Flexibility Mechanisms</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#TANK-Mode-(Hot-Water-Tank-Storage)">TANK Mode (Hot Water Tank Storage)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#COSY-Mode-(Building-Thermal-Inertia)">COSY Mode (Building Thermal Inertia)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Load-a-Network-with-Heat-Pump-Flexibility">3. Load a Network with Heat Pump Flexibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Heat-Pump-Components-in-the-Network">4. Heat Pump Components in the Network</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#4.1-Identifying-Heat-Pump-Loads">4.1 Identifying Heat Pump Loads</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#4.2-Heat-Pump-Links-(Electric-→-Thermal-Conversion)">4.2 Heat Pump Links (Electric → Thermal Conversion)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#4.3-Thermal-Storage-(Stores)">4.3 Thermal Storage (Stores)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Coefficient-of-Performance-(COP)">5. Coefficient of Performance (COP)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#5.1-Understanding-COP">5.1 Understanding COP</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Analyzing-Flexibility-Behavior">6. Analyzing Flexibility Behavior</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#6.1-Heat-Pump-Power-Consumption">6.1 Heat Pump Power Consumption</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#6.2-Thermal-Storage-Behavior">6.2 Thermal Storage Behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#6.3-Heat-Demand-vs-Electricity-Consumption">6.3 Heat Demand vs Electricity Consumption</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Configuration-Options">7. Configuration Options</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-Parameters:">Key Parameters:</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Summary">8. Summary</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-Takeaways:">Key Takeaways:</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

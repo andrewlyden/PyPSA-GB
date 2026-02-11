@@ -31,6 +31,10 @@ PyPSA-GB is organized into modular scripts:
 | `integrate_renewable_generators.py` | Renewable generator integration |
 | `add_storage.py` | Storage unit integration |
 | `spatial_utils.py` | Geographic mapping utilities |
+| `add_demand_flexibility.py` | Demand-side flexibility orchestration |
+| `heat_pumps.py` | Heat pump disaggregation and flexibility |
+| `electric_vehicles.py` | EV smart charging and V2G |
+| `event_flex.py` | Event-based demand response |
 
 ### Utility Modules
 
@@ -64,13 +68,6 @@ network = build_base_network(
     year=2035
 )
 ```
-
-## Function Documentation
-
-Detailed documentation is available in the subpages:
-
-- {doc}`core_modules` - Core functionality
-- {doc}`integration_modules` - Data integration modules
 
 ## Type Hints
 

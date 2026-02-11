@@ -10,14 +10,6 @@ quickstart
 first_scenario
 ```
 
-## Overview
-
-PyPSA-GB uses a **Snakemake workflow** to orchestrate the model. The basic process is:
-
-1. **Configure** your scenario in YAML files
-2. **Run** the Snakemake workflow
-3. **Analyze** the results
-
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -28,16 +20,12 @@ Before you begin, ensure you have:
 - ~10GB disk space for data and results
 - Gurobi solver (free academic license) or HiGHS (open-source)
 
-## Quick Links
+## Workflow
 
-- {doc}`installation` - Full setup instructions
-- {doc}`quickstart` - Run your first model in 5 minutes
-- {doc}`first_scenario` - Create and analyze a custom scenario
+PyPSA-GB uses a **Snakemake workflow** to orchestrate the model:
 
-## Support
+1. **Configure** your scenario in YAML files
+2. **Run** the Snakemake workflow
+3. **Analyse** the results
 
-If you encounter issues:
-
-1. Check the {doc}`../development/troubleshooting` guide
-2. Search existing [GitHub Issues](https://github.com/andrewlyden/PyPSA-GB/issues)
-3. Open a new issue with your error message and configuration
+If you encounter issues, check the {doc}`../development/troubleshooting` guide or open a [GitHub Issue](https://github.com/andrewlyden/PyPSA-GB/issues).
