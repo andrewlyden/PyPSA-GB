@@ -576,7 +576,7 @@ def add_ev_mixed_mode(n: pypsa.Network,
     battery_capacity_kwh = ev_params['battery_capacity_kwh']
     charge_efficiency = ev_params['charge_efficiency']
     flex_participation = ev_params['flexibility_participation']
-    flex_share = config.get('flex_share', 1.0)
+    flex_share = config.get('flex_share', 0.2)
     
     go_config = config.get('go', {})
     int_config = config.get('int', {})
@@ -1072,7 +1072,7 @@ def add_ev_smart_charging(n: pypsa.Network,
     flex_participation = ev_params['flexibility_participation']
     
     # Get flex_share - fraction of total EV demand that participates in flexibility
-    flex_share = config.get('flex_share', 1.0)
+    flex_share = config.get('flex_share', 0.2)
 
     int_config = config.get('int', {})
     charger_power_kw = int_config.get('charger_power_kw', 7.0)
@@ -1207,7 +1207,7 @@ def add_ev_v2g(n: pypsa.Network,
     flex_participation = ev_params['flexibility_participation']
     
     # Get flex_share - fraction of total EV demand that participates in flexibility
-    flex_share = config.get('flex_share', 1.0)
+    flex_share = config.get('flex_share', 0.2)
 
     v2g_config = config.get('v2g', {})
     participation_rate = v2g_config.get('participation_rate', 0.30)

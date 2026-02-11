@@ -540,6 +540,13 @@ def get_carrier_definitions():
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
+        'demand response': {
+            'color': '#FF7F0E',  # Orange - demand-side response events
+            'nice_name': 'Demand Response',
+            'co2_emissions': 0.0,  # Demand shifting, not generation
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
         'electricity': {
             'color': '#7F7F7F',  # Gray - base electricity demand
             'nice_name': 'Electricity',
