@@ -197,7 +197,7 @@ class TestFutureNetworkBuilding:
     
     def test_network_scripts_exist(self, project_root):
         """Test that network building scripts exist."""
-        build_network_path = project_root / "scripts" / "build_network.py"
+        build_network_path = project_root / "scripts" / "network_build" / "build_network.py"
         
         assert build_network_path.exists(), \
             f"Network building script not found at {build_network_path}"
@@ -243,8 +243,8 @@ class TestFutureRenewableProfiles:
         """Test that renewable integration script exists."""
         scripts_dir = project_root / "scripts"
         renewable_scripts = [
-            "renewable_integration.py",
-            "integrate_renewable_generators.py"
+            "renewables" / Path("renewable_integration.py"),
+            "generators" / Path("integrate_renewable_generators.py"),
         ]
         
         found = any((scripts_dir / script).exists() for script in renewable_scripts)
@@ -328,7 +328,7 @@ class TestFESIntegration:
     
     def test_fes_data_script_exists(self, project_root):
         """Test that FES data processing script exists."""
-        fes_script_path = project_root / "scripts" / "FES_data.py"
+        fes_script_path = project_root / "scripts" / "FES" / "FES_data.py"
         
         assert fes_script_path.exists(), \
             f"FES data script not found at {fes_script_path}"
@@ -366,8 +366,8 @@ class TestFutureGeneratorIntegration:
         """Test that generator integration script exists."""
         scripts_dir = project_root / "scripts"
         gen_scripts = [
-            "integrate_thermal_generators.py",
-            "integrate_renewable_generators.py"
+            "generators" / Path("integrate_thermal_generators.py"),
+            "generators" / Path("integrate_renewable_generators.py"),
         ]
         
         found = any((scripts_dir / script).exists() for script in gen_scripts)

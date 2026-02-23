@@ -325,7 +325,7 @@ class TestHistoricalNetworkBuilding:
     
     def test_network_building_script_exists(self, project_root):
         """Test that network building script exists."""
-        script_path = project_root / "scripts" / "build_network.py"
+        script_path = project_root / "scripts" / "network_build" / "build_network.py"
         
         assert script_path.exists(), \
             f"Network building script not found at {script_path}"
@@ -367,9 +367,9 @@ class TestHistoricalRenewableProfiles:
         scripts_dir = project_root / "scripts"
         
         renewable_scripts = [
-            "renewable_integration.py",
-            "integrate_renewable_generators.py",
-            "prepare_renewable_site_data.py"
+            "renewables" / Path("renewable_integration.py"),
+            "generators" / Path("integrate_renewable_generators.py"),
+            "renewables" / Path("prepare_renewable_site_data.py"),
         ]
         
         found = any((scripts_dir / script).exists() for script in renewable_scripts)
@@ -408,7 +408,7 @@ class TestHistoricalDemandProcessing:
     
     def test_demand_script_exists(self, project_root):
         """Test that demand processing script exists."""
-        script_path = project_root / "scripts" / "load.py"
+        script_path = project_root / "scripts" / "demand" / "load.py"
         
         assert script_path.exists(), \
             f"Demand processing script not found at {script_path}"
@@ -501,7 +501,7 @@ class TestHistoricalPipelineIntegration:
         with open(snakefile_path, encoding='utf-8') as f:
             content = f.read()
             
-        assert 'from scenario_detection import' in content, \
+        assert 'scenario_detection import' in content, \
             "scenario_detection not imported in Snakefile"
         assert 'is_historical_scenario' in content, \
             "is_historical_scenario not referenced in Snakefile"

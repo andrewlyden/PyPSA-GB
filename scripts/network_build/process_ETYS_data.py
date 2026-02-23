@@ -36,42 +36,8 @@ sys.path.insert(0, str(project_root))
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info
 from scripts.network_build.etys_file_registry import (
     VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, ETYS_BASE_SHEETS,
+    EXTRA_WF_EDGE_RATINGS, DEFAULT_WF_RATING,
 )
-
-# Ratings for Extra_WF_edges in GB_network.xlsx, derived from real ETYS data.
-# These replace the default s_nom=9999 (infinite capacity) to properly
-# represent the actual transmission capability of offshore connections.
-# Sources: ETYS B-2-1d (OFTO data) and B-2-1c (NGET data).
-EXTRA_WF_EDGE_RATINGS = {
-    # From OFTO data (B-2-1d) - offshore export cable ratings
-    'BOSO11': 106,    # Barrow Offshore WF
-    'BRST42': 369,    # East Anglia One
-    'ORMO11': 158,    # Ormonde Offshore WF
-    'SALL11': 178,    # Sheringham Shoal WF
-    'SALL12': 178,    # Sheringham Shoal WF (circuit 2)
-    'GUNS11': 158,    # Gunfleet Sands WF
-    'LONO4A': 360,    # London Array WF
-    'LONO4B': 360,    # London Array WF (circuit 2)
-    'BODE41': 277,    # Burbo Bank Extension WF
-    'LINO41': 492,    # Lincs WF
-    'RORE11': 103,    # Robin Rigg East WF
-    'RORW11': 103,    # Robin Rigg West WF
-    'THAW11': 155,    # Thanet WF
-    'THAW12': 155,    # Thanet WF (circuit 2)
-    'WAAO11': 192,    # Walney 1 WF
-    'WABO11': 192,    # Walney 2 WF
-    # From main ETYS data (B-2-1c) - large onshore connection stubs
-    'CREB2A': 1749,   # Creyke Beck (Dogger Bank)
-    'CREB2B': 1749,   # Creyke Beck (Dogger Bank, circuit 2)
-    'NECT41': 3326,   # Necton (Norfolk projects)
-    # Inferred from connected OFTO circuit ratings
-    'BEAT4A': 321,    # Beatrice WF (from BEAT41->BLHI4- rating)
-    'BEAT4B': 321,    # Beatrice WF (circuit 2)
-    'BLHI41': 321,    # Blackhillock WF stub (Beatrice connection)
-    'BLHI42': 321,    # Blackhillock WF stub (circuit 2)
-    'LINO42': 492,    # Lincs WF (parallel to LINO41)
-    'GANW14': 181,    # Galloper WF (from GALO->GANW rating 180.6)
-}
 
 
 def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
@@ -142,7 +108,6 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
     dfj = pd.read_excel(gb_network_file, sheet_name='Extra_WF_edges')
     dfj.loc[:, 'component'] = 'line'
     dfj.loc[:, 'carrier'] = 'AC'
-    DEFAULT_WF_RATING = 200   # MVA, conservative default for unmapped WF connections
     DEFAULT_BMU_RATING = 500  # MVA, conservative default for BMU connections
 
     node1_col = 'Node 1' if 'Node 1' in dfj.columns else 'Node1'

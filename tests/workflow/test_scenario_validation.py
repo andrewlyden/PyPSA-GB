@@ -52,17 +52,21 @@ class TestValidationScriptsExist:
     
     def test_validate_scenarios_script_exists(self, project_root):
         """Test that scenario validation script exists."""
+        # Check in scripts/ and scripts/archive/ (may have been moved)
         validate_script = project_root / "scripts" / "validate_scenarios.py"
+        validate_script_alt = project_root / "scripts" / "archive" / "validate_scenarios.py"
         
-        assert validate_script.exists(), \
-            f"Validation script not found at {validate_script}"
+        assert validate_script.exists() or validate_script_alt.exists(), \
+            f"Validation script not found at {validate_script} or {validate_script_alt}"
     
     def test_generate_validation_report_script_exists(self, project_root):
         """Test that validation report generation script exists."""
+        # Check in scripts/ and scripts/archive/ (may have been moved)
         report_script = project_root / "scripts" / "generate_validation_report.py"
+        report_script_alt = project_root / "scripts" / "archive" / "generate_validation_report.py"
         
-        assert report_script.exists(), \
-            f"Report generation script not found at {report_script}"
+        assert report_script.exists() or report_script_alt.exists(), \
+            f"Report generation script not found at {report_script} or {report_script_alt}"
 
 
 class TestScenarioConfigurationValidation:

@@ -19,7 +19,8 @@ import pypsa
 import logging
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple
-import warnings
+
+from scripts.network_build.etys_file_registry import VOLTAGE_LEVELS
 
 
 def load_etys_upgrade_data(etys_file: str, logger: Optional[logging.Logger] = None) -> Dict[str, pd.DataFrame]:
@@ -208,15 +209,10 @@ def filter_upgrades_by_year(upgrades_data: Dict[str, pd.DataFrame],
     return categorized
 
 
-# Voltage level mapping from node name suffix to kV
-VOLTAGE_MAP = {
-    '1': 132,  # 132kV
-    '2': 275,  # 275kV
-    '4': 400,  # 400kV
-    '3': 33,   # 33kV (GSP/distribution)
-    '5': 500,  # 500kV HVDC
-    '6': 600,  # 600kV
-}
+# Voltage level mapping from node name suffix to kV.
+# Uses the canonical VOLTAGE_LEVELS from the file registry, extended with
+# HVDC-specific voltages that only appear in upgrade data.
+VOLTAGE_MAP = {**VOLTAGE_LEVELS, '5': 500, '6': 600}  # 500/600 kV for HVDC buses
 
 
 def add_missing_buses_from_upgrades(network: pypsa.Network,
@@ -813,7 +809,7 @@ def apply_transformer_removals(network: pypsa.Network,
                 continue
             
             # Remove the transformer
-            for xfmr_id in matching_xfmrs.index:
+            for xfmr_id in matching.index:
                 network.transformers.drop(xfmr_id, inplace=True)
                 successful += 1
                 
@@ -1018,11 +1014,6 @@ def apply_etys_network_upgrades(network: pypsa.Network,
         summary['transformers_failed'] += failed
         all_failures['transformers'].extend(failures)
         logger.info(f"Removed {removed} transformers ({failed} failed)")
-    
-    # STEP 3: Remove orphan buses
-    logger.info("Step 3: Cleaning up orphan buses...")
-    buses_removed = remove_orphan_buses(network, logger)
-    summary['buses_removed'] = buses_removed
     
     # STEP 3: Remove orphan buses
     logger.info("Step 3: Cleaning up orphan buses...")

@@ -21,60 +21,26 @@ warnings.filterwarnings('ignore', message='The network has not been optimized ye
 # Add logging import
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary
 
-# Constants
-VOLTAGE_LEVELS = {
-    '1': 132, '2': 275, '3': 33, '4': 400, 
-    '5': 11, '6': 66, '7': 20.5
-}
+# Import shared constants from the ETYS file registry (single source of truth)
+from scripts.network_build.etys_file_registry import (
+    VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, EXTRA_WF_EDGE_RATINGS,
+    DEFAULT_WF_RATING, GSP_REGIONS_FILE,
+)
 
 # Coordinate conversion constants for GB (approximate)
 LAT_DEGREES_PER_KM = 1 / 111.0
 LON_DEGREES_PER_KM_BASE = 1 / 111.0
 
 # Default electrical parameters to avoid zero values
-DEFAULT_R = 0.0001
-DEFAULT_X = 0.0001  
-DEFAULT_B = 0.0001
+DEFAULT_R = ELECTRICAL_DEFAULTS['line']['r']
+DEFAULT_X = ELECTRICAL_DEFAULTS['line']['x']
+DEFAULT_B = ELECTRICAL_DEFAULTS['line']['b']
 
 # Land boundary checking constants
-GSP_REGIONS_FILE = "data/network/GSP/GSP_regions_4326_20250109.geojson"
 LAND_BUFFER_KM = 0.5  # Buffer distance from coastline
 
 # ─── Extra wind farm edge ratings ────────────────────────────────────────────
-# Ratings for Extra_WF_edges in GB_network.xlsx, derived from real ETYS data.
-# These replace the default s_nom=9999 (infinite capacity) to properly
-# represent the actual transmission capability of offshore connections.
-# Sources: ETYS B-2-1d (OFTO data) and B-2-1c (NGET data).
-EXTRA_WF_EDGE_RATINGS = {
-    # From OFTO data (B-2-1d) — offshore export cable ratings
-    'BOSO11': 106,    # Barrow Offshore WF
-    'BRST42': 369,    # East Anglia One
-    'ORMO11': 158,    # Ormonde Offshore WF
-    'SALL11': 178,    # Sheringham Shoal WF
-    'SALL12': 178,    # Sheringham Shoal WF (circuit 2)
-    'GUNS11': 158,    # Gunfleet Sands WF
-    'LONO4A': 360,    # London Array WF
-    'LONO4B': 360,    # London Array WF (circuit 2)
-    'BODE41': 277,    # Burbo Bank Extension WF
-    'LINO41': 492,    # Lincs WF
-    'RORE11': 103,    # Robin Rigg East WF
-    'RORW11': 103,    # Robin Rigg West WF
-    'THAW11': 155,    # Thanet WF
-    'THAW12': 155,    # Thanet WF (circuit 2)
-    'WAAO11': 192,    # Walney 1 WF
-    'WABO11': 192,    # Walney 2 WF
-    # From main ETYS data (B-2-1c) — large onshore connection stubs
-    'CREB2A': 1749,   # Creyke Beck (Dogger Bank)
-    'CREB2B': 1749,   # Creyke Beck (Dogger Bank, circuit 2)
-    'NECT41': 3326,   # Necton (Norfolk projects)
-    # Inferred from connected OFTO circuit ratings
-    'BEAT4A': 321,    # Beatrice WF (from BEAT41→BLHI4- rating)
-    'BEAT4B': 321,    # Beatrice WF (circuit 2)
-    'BLHI41': 321,    # Blackhillock WF stub (Beatrice connection)
-    'BLHI42': 321,    # Blackhillock WF stub (circuit 2)
-    'LINO42': 492,    # Lincs WF (parallel to LINO41)
-    'GANW14': 181,    # Galloper WF (from GALO→GANW rating 180.6)
-}
+# Imported from etys_file_registry — see EXTRA_WF_EDGE_RATINGS above.
 
 
 def load_land_boundaries(logger: Optional[logging.Logger] = None) -> Optional[gpd.GeoDataFrame]:
@@ -321,14 +287,14 @@ def sort_raw_ETYS_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     # Use real OFTO-derived ratings instead of infinite capacity
     # Ratings sourced from ETYS Appendix B-2-1d (OFTO data) and B-2-1c
     node1_col = 'Node 1' if 'Node 1' in dfj.columns else 'Node1'
-    dfj.loc[:, 'Winter Rating (MVA)'] = dfj[node1_col].map(EXTRA_WF_EDGE_RATINGS).fillna(9999)
-    rated_count = (dfj['Winter Rating (MVA)'] != 9999).sum()
+    dfj.loc[:, 'Winter Rating (MVA)'] = dfj[node1_col].map(EXTRA_WF_EDGE_RATINGS).fillna(DEFAULT_WF_RATING)
+    rated_count = (dfj['Winter Rating (MVA)'] != DEFAULT_WF_RATING).sum()
     logger.info(f"Loaded {len(dfj)} extra wind farm edges ({rated_count} with OFTO-derived ratings)")
 
     dfk = pd.read_excel(snakemake.input[1], sheet_name='Extra_BMUs_edges')
     dfk.loc[:, 'component'] = 'line'
     dfk.loc[:, 'carrier'] = 'AC'
-    dfk.loc[:, 'Winter Rating (MVA)'] = 9999
+    dfk.loc[:, 'Winter Rating (MVA)'] = DEFAULT_WF_RATING
     logger.info(f"Loaded {len(dfk)} extra BMU edges")
 
     logger.info("Concatenating all network components")
