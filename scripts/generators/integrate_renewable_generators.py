@@ -574,6 +574,13 @@ def add_renewable_generators(
         except Exception as e:
             logger.error(f"Failed to add time series profiles: {e}")
     logger.info(f"Added {generators_added} renewable generators to network")
+
+    # Standardize coordinates: ensure all generators have WGS84 lon/lat
+    from scripts.utilities.spatial_utils import standardize_component_coordinates
+    coord_result = standardize_component_coordinates(network, components=['Generator'])
+    if coord_result.get('Generator', 0) > 0:
+        logger.info(f"Standardized WGS84 coordinates for {coord_result['Generator']} generators")
+
     return network
 
 # Initialize logging

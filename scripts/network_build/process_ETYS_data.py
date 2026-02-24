@@ -97,10 +97,10 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
         df.loc[:, 'carrier'] = 'AC'
 
     hvdc_sheet = ETYS_BASE_SHEETS['hvdc']
-    logger.info(f"Processing interconnector data ({hvdc_sheet})")
+    logger.info(f"Processing internal HVDC link data ({hvdc_sheet})")
     dfi = sheets[hvdc_sheet]
     dfi = dfi.loc[dfi['Existing'] == 'Yes'].copy()
-    logger.info(f"Found {len(dfi)} existing interconnectors")
+    logger.info(f"Found {len(dfi)} existing internal HVDC links")
     dfi.loc[:, 'component'] = 'link'
     dfi.loc[:, 'carrier'] = 'DC'
 

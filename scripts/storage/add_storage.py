@@ -509,11 +509,35 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
         else:
             storage_name = f"storage_{row['technology'].replace(' ', '_')}_{idx}"
         
-        # Get coordinates from assigned bus (most reliable source)
+        # Get WGS84 coordinates from assigned bus (most reliable source)
+        # Prefer bus lon/lat (WGS84) over x/y (OSGB36) for consistency
         bus_name = row['bus']
         if bus_name in network.buses.index:
-            bus_lon = network.buses.loc[bus_name, 'x'] if 'x' in network.buses.columns else row.get('lon', None)
-            bus_lat = network.buses.loc[bus_name, 'y'] if 'y' in network.buses.columns else row.get('lat', None)
+            if 'lon' in network.buses.columns and 'lat' in network.buses.columns:
+                bus_lon = network.buses.loc[bus_name, 'lon']
+                bus_lat = network.buses.loc[bus_name, 'lat']
+                # Validate they look like WGS84
+                if pd.notna(bus_lon) and pd.notna(bus_lat) and (abs(bus_lon) > 20 or abs(bus_lat) > 90):
+                    # Mislabeled OSGB36 — convert
+                    from scripts.utilities.spatial_utils import osgb36_to_wgs84
+                    bus_lon, bus_lat = osgb36_to_wgs84(float(bus_lon), float(bus_lat))
+            elif 'x' in network.buses.columns and 'y' in network.buses.columns:
+                # Fall back to x/y and convert OSGB36 → WGS84
+                from scripts.utilities.spatial_utils import osgb36_to_wgs84, detect_coordinate_system
+                bus_crs = detect_coordinate_system(
+                    network.buses['x'].values, network.buses['y'].values
+                )
+                if bus_crs == 'OSGB36':
+                    bus_lon, bus_lat = osgb36_to_wgs84(
+                        float(network.buses.loc[bus_name, 'x']),
+                        float(network.buses.loc[bus_name, 'y'])
+                    )
+                else:
+                    bus_lon = network.buses.loc[bus_name, 'x']
+                    bus_lat = network.buses.loc[bus_name, 'y']
+            else:
+                bus_lon = row.get('lon', None)
+                bus_lat = row.get('lat', None)
         else:
             bus_lon = row.get('lon', None)
             bus_lat = row.get('lat', None)
@@ -531,13 +555,11 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
             'marginal_cost': row.get('marginal_cost', 0),
         }
         
-        # Add coordinates if available
-        # Note: Don't use 'x'/'y' for StorageUnit as PyPSA warns these are standard attributes
-        # for other components. Coordinates are inherited from the bus anyway.
-        # If needed for visualization, use custom attributes like 'longitude'/'latitude'
+        # Add WGS84 coordinates for visualization
+        # Use 'lon'/'lat' for consistency with generators (WGS84 degrees)
         if bus_lon is not None and bus_lat is not None:
-            storage_params['longitude'] = bus_lon
-            storage_params['latitude'] = bus_lat
+            storage_params['lon'] = bus_lon
+            storage_params['lat'] = bus_lat
         
         # Add cyclic state of charge if available
         if 'cyclic_state_of_charge' not in storage_params:
@@ -573,6 +595,12 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
         logger.info(f"    Power: {stats['power']:.1f} MW")
         logger.info(f"    Energy: {stats['energy']:.1f} MWh")
         logger.info(f"    Avg duration: {stats['energy']/stats['power']:.1f} hours")
+    
+    # Standardize coordinates: ensure all storage units have WGS84 lon/lat
+    from scripts.utilities.spatial_utils import standardize_component_coordinates
+    coord_result = standardize_component_coordinates(network, components=['StorageUnit'])
+    if coord_result.get('StorageUnit', 0) > 0:
+        logger.info(f"Standardized WGS84 coordinates for {coord_result['StorageUnit']} storage units")
     
     return network
 

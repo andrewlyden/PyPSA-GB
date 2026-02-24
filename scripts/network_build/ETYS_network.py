@@ -273,10 +273,10 @@ def sort_raw_ETYS_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
         df.loc[:, 'component'] = 'transformer'
         df.loc[:, 'carrier'] = 'AC'
 
-    logger.info("Processing interconnector data (B-5-1)")
+    logger.info("Processing internal HVDC link data (B-5-1)")
     dfi = sheets['B-5-1']
     dfi = dfi.loc[dfi['Existing'] == 'Yes'].copy()
-    logger.info(f"Found {len(dfi)} existing interconnectors")
+    logger.info(f"Found {len(dfi)} existing internal HVDC links")
     dfi.loc[:, 'component'] = 'link'
     dfi.loc[:, 'carrier'] = 'DC'
 
@@ -813,10 +813,11 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     logger.info(f"Adding {len(df_link)} links to network (bidirectional HVDC)")
     network2.add("Link", df_link.index, **df_link)
 
-    # set links to AC using loc
-    network2.links.loc[:, 'carrier'] = 'AC'
-
-    # network2.import_components_from_dataframe(df_load, "Load")
+    # Keep internal HVDC links as carrier='DC' (from B-5-1 sheet).
+    # These are internal GB HVDC corridors (Western HVDC Link, Caithness-Moray, etc.),
+    # NOT cross-border interconnectors. Cross-border interconnectors are added later
+    # by add_to_network.py and also use carrier='DC'.
+    # Previously this line set all links to 'AC', which was incorrect.
 
     logger.info("Setting network metadata and performing final setup")
     network2.buses['country'] = 'GB'

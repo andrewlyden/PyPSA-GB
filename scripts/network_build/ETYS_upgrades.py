@@ -249,7 +249,8 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
     node_connections = {}  # Map: node -> list of (connected_node, length_km)
     
     # Invalid node name patterns to skip
-    invalid_patterns = ['converter station', 'offshore', 'onshore', 'nan', 'tbc', 'n/a']
+    invalid_patterns = ['converter station', 'offshore', 'onshore', 'substation',
+                        't-point', 'platform', 'hub', 'nan', 'tbc', 'n/a']
     
     def is_valid_node(node_name):
         """Check if node name is valid (not a placeholder or invalid pattern)."""
@@ -314,6 +315,26 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
                 node_connections[node2] = []
             if is_valid_node(node1):
                 node_connections[node2].append((node1, 0.0))
+    
+    # From HVDC additions (note: HVDC uses 'Node 1'/'Node 2' column names with spaces)
+    for record in categorized_upgrades.get('hvdc', {}).get('additions', []):
+        node1 = str(record.get('Node 1', '')).strip()
+        node2 = str(record.get('Node 2', '')).strip()
+        length = safe_float(record.get('Length(km)', 0))
+        
+        if is_valid_node(node1):
+            nodes_needed.add(node1)
+            if node1 not in node_connections:
+                node_connections[node1] = []
+            if is_valid_node(node2):
+                node_connections[node1].append((node2, length))
+                
+        if is_valid_node(node2):
+            nodes_needed.add(node2)
+            if node2 not in node_connections:
+                node_connections[node2] = []
+            if is_valid_node(node1):
+                node_connections[node2].append((node1, length))
     
     # Remove empty strings
     nodes_needed.discard('')
@@ -821,6 +842,172 @@ def apply_transformer_removals(network: pypsa.Network,
     return successful, failed, failure_details
 
 
+def _resolve_hvdc_bus(network: pypsa.Network, node_name: str,
+                     logger: Optional[logging.Logger] = None) -> Optional[str]:
+    """
+    Resolve an HVDC node name to an existing network bus.
+
+    ETYS B-5-1 uses generic node references like 'PEHE4-' (Peterhead 400kV)
+    or 'WALP4-' (Walpole 400kV) that don't correspond exactly to the bus names
+    in the ETYS network (which use suffixes like '41', '4J', '4K', etc.).
+
+    Resolution strategy:
+    1. Exact match — return immediately
+    2. Prefix match — find buses at the same site with the same voltage digit
+       (e.g. PEHE4- → PEHE41, PEHE4J, ...)
+    3. Site match at any voltage — last resort, find any bus at the same 4-char site
+
+    Args:
+        network: PyPSA network
+        node_name: Node name from ETYS B-5-1 (e.g. 'DRAX41', 'PEHE4-')
+        logger: Optional logger
+
+    Returns:
+        Resolved bus name, or None if unresolvable
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    node_name = str(node_name).strip()
+    if not node_name or node_name.lower() in ('nan', '', 'tbc', 'n/a'):
+        return None
+
+    # 1. Exact match
+    if node_name in network.buses.index:
+        return node_name
+
+    # 2. Prefix match: same site + same voltage digit
+    #    ETYS convention: first 4 chars = site code, 5th char = voltage digit
+    if len(node_name) >= 5:
+        site = node_name[:4]
+        voltage_digit = node_name[4]  # e.g. '4' for 400kV, '2' for 275kV
+        candidates = [b for b in network.buses.index
+                      if b.startswith(site) and len(b) > 4 and b[4] == voltage_digit]
+        if candidates:
+            # Prefer the simplest name (e.g. 'PEHE41' over 'PEHE4J')
+            candidates.sort(key=len)
+            resolved = candidates[0]
+            logger.debug(f"  Resolved HVDC bus '{node_name}' → '{resolved}' (prefix match)")
+            return resolved
+
+    # 3. Site match at any voltage (fallback)
+    site = node_name[:4] if len(node_name) >= 4 else node_name
+    site_buses = [b for b in network.buses.index if b.startswith(site)]
+    if site_buses:
+        # Prefer 400kV buses
+        v400 = [b for b in site_buses if len(b) > 4 and b[4] == '4']
+        if v400:
+            resolved = sorted(v400, key=len)[0]
+            logger.debug(f"  Resolved HVDC bus '{node_name}' → '{resolved}' (site 400kV fallback)")
+            return resolved
+        resolved = sorted(site_buses, key=len)[0]
+        logger.debug(f"  Resolved HVDC bus '{node_name}' → '{resolved}' (site any-voltage fallback)")
+        return resolved
+
+    return None
+
+
+def apply_hvdc_additions(network: pypsa.Network,
+                        additions: List[Dict],
+                        logger: Optional[logging.Logger] = None) -> Tuple[int, int, List[Dict]]:
+    """
+    Add new internal HVDC links to the network.
+
+    HVDC links are added as PyPSA Links with carrier='DC' and bidirectional
+    capability (p_min_pu=-1).  Node names from the ETYS B-5-1 sheet are
+    resolved to existing network buses using :func:`_resolve_hvdc_bus`.
+
+    Args:
+        network: PyPSA network object
+        additions: List of HVDC addition records from ETYS B-5-1
+        logger: Optional logger instance
+
+    Returns:
+        Tuple of (successful_additions, failed_additions, failure_details)
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    successful, failed = 0, 0
+    failure_details = []
+
+    # Invalid node name patterns to skip (offshore platforms, TBC, etc.)
+    invalid_patterns = ['converter station', 'offshore', 'onshore', 'substation',
+                        't-point', 'platform', 'nan', 'tbc', 'n/a', 'hub']
+
+    for record in additions:
+        try:
+            name = str(record.get('Interconnector Name', 'Unknown')).strip()
+            node1_raw = str(record.get('Node 1', '')).strip()
+            node2_raw = str(record.get('Node 2', '')).strip()
+            year = record.get('Planned from year', 'N/A')
+            rating = record.get('Winter Rating (MVA)', 2000)
+
+            # Skip records with invalid/generic node names
+            if (any(p in node1_raw.lower() for p in invalid_patterns) or
+                    any(p in node2_raw.lower() for p in invalid_patterns)):
+                failure_details.append({
+                    'type': 'hvdc_addition', 'reason': 'invalid_node_name',
+                    'node1': node1_raw, 'node2': node2_raw, 'year': year,
+                    'name': name
+                })
+                logger.debug(f"  Skipping HVDC '{name}': invalid node name(s) "
+                             f"'{node1_raw}'/'{node2_raw}'")
+                failed += 1
+                continue
+
+            # Resolve node names to actual network buses
+            bus0 = _resolve_hvdc_bus(network, node1_raw, logger)
+            bus1 = _resolve_hvdc_bus(network, node2_raw, logger)
+
+            if bus0 is None or bus1 is None:
+                missing = [n for n, b in [(node1_raw, bus0), (node2_raw, bus1)] if b is None]
+                failure_details.append({
+                    'type': 'hvdc_addition', 'reason': 'bus_not_found',
+                    'node1': node1_raw, 'node2': node2_raw, 'year': year,
+                    'name': name, 'missing_buses': missing
+                })
+                logger.warning(f"  HVDC '{name}' ({node1_raw}→{node2_raw}): "
+                               f"could not resolve bus(es) {missing}")
+                failed += 1
+                continue
+
+            # Build unique link ID
+            year_str = str(int(year)) if pd.notna(year) else 'XXXX'
+            link_id = f"{bus0}_{bus1}_HVDC_{year_str}"
+            if link_id in network.links.index:
+                logger.debug(f"  HVDC link {link_id} already exists, skipping")
+                continue
+
+            p_nom = float(rating) if pd.notna(rating) else 2000.0
+
+            network.add('Link', link_id,
+                        bus0=bus0,
+                        bus1=bus1,
+                        p_nom=p_nom,
+                        p_min_pu=-1.0,   # Bidirectional
+                        p_max_pu=1.0,
+                        carrier='DC',
+                        under_construction=False)
+
+            logger.info(f"  Added HVDC '{name}': {bus0}→{bus1}, "
+                        f"{p_nom:.0f} MW ({year_str})")
+            successful += 1
+
+        except Exception as e:
+            failure_details.append({
+                'type': 'hvdc_addition', 'reason': 'exception',
+                'node1': record.get('Node 1', 'N/A'),
+                'node2': record.get('Node 2', 'N/A'),
+                'year': record.get('Planned from year', 'N/A'),
+                'error': str(e)
+            })
+            logger.debug(f"  Failed to add HVDC link: {e}")
+            failed += 1
+
+    return successful, failed, failure_details
+
+
 def remove_orphan_buses(network: pypsa.Network, logger: Optional[logging.Logger] = None) -> int:
     """
     Remove buses that have no attached components (orphan buses).
@@ -927,7 +1114,7 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     2. Removing circuits decommissioned by modelled_year
     3. Modifying circuit ratings
     4. Adding new transformers
-    5. (Future) Adding new HVDC interconnectors
+    5. Adding new internal HVDC links (from B-5-1)
     
     Args:
         network: PyPSA network object (ETYS network expected)
@@ -966,7 +1153,8 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     # Track failure details for logging
     all_failures = {
         'circuits': [],
-        'transformers': []
+        'transformers': [],
+        'hvdc': []
     }
     
     # STEP 1: Add missing buses that are referenced in the upgrade data
@@ -1015,8 +1203,15 @@ def apply_etys_network_upgrades(network: pypsa.Network,
         all_failures['transformers'].extend(failures)
         logger.info(f"Removed {removed} transformers ({failed} failed)")
     
-    # STEP 3: Remove orphan buses
-    logger.info("Step 3: Cleaning up orphan buses...")
+    # STEP 3: Apply HVDC link additions
+    if categorized['hvdc']['additions']:
+        added, failed, failures = apply_hvdc_additions(network, categorized['hvdc']['additions'], logger)
+        summary['hvdc_added'] = added
+        all_failures['hvdc'].extend(failures)
+        logger.info(f"Added {added} HVDC links ({failed} failed)")
+
+    # STEP 4: Remove orphan buses
+    logger.info("Step 4: Cleaning up orphan buses...")
     buses_removed = remove_orphan_buses(network, logger)
     summary['buses_removed'] = buses_removed
     
@@ -1036,6 +1231,7 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     logger.info(f"  Transformers Added:   {summary['transformers_added']:4d}")
     logger.info(f"  Transformers Removed: {summary['transformers_removed']:4d}")
     logger.info(f"  Transformers Failed:  {summary['transformers_failed']:4d}")
+    logger.info(f"  HVDC Links Added:     {summary['hvdc_added']:4d}")
     logger.info(f"\nNetwork Summary:")
     logger.info(f"  Buses: {len(network.buses)}")
     logger.info(f"  Lines: {len(network.lines)}")

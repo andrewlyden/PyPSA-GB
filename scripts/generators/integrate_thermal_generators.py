@@ -149,13 +149,18 @@ def _get_buses_in_region(network: pypsa.Network, region: str) -> list:
     """
     Get list of bus names within a transmission region based on latitude.
 
-    Uses approximate latitude bands matching the transmission network boundaries:
-    - SHETL: Northern Scotland (y > 57.0)
-    - SPTL: Southern Scotland (55.5 < y <= 57.0)
-    - NGET: England & Wales (y <= 55.5)
+    Uses approximate WGS84 latitude bands matching the transmission network
+    boundaries:
+    - SHETL: Northern Scotland (lat > 57.0)
+    - SPTL: Southern Scotland (55.5 < lat <= 57.0)
+    - NGET: England & Wales (lat <= 55.5)
+
+    Handles both coordinate systems:
+    - If buses have 'lat' column (WGS84 degrees): use directly
+    - If buses only have 'y' in OSGB36 meters: convert to WGS84 first
 
     Args:
-        network: PyPSA Network with buses having 'y' coordinate (latitude)
+        network: PyPSA Network with buses
         region: Region code ('SHETL', 'SPTL', or 'NGET')
 
     Returns:
@@ -163,12 +168,43 @@ def _get_buses_in_region(network: pypsa.Network, region: str) -> list:
     """
     buses = network.buses
 
+    # Determine which latitude values to use
+    if 'lat' in buses.columns and buses['lat'].notna().any():
+        # Buses have WGS84 lat — check it's actually WGS84 (not OSGB36)
+        lat_max = buses['lat'].max()
+        if lat_max < 90:  # Definitely WGS84 degrees
+            lat_series = buses['lat']
+        else:
+            # 'lat' column contains OSGB36-scale values; fall back to conversion
+            from scripts.utilities.spatial_utils import osgb36_to_wgs84
+            lat_series = buses['y'].apply(
+                lambda y: osgb36_to_wgs84(buses.loc[buses['y'] == y, 'x'].iloc[0], y)[1]
+                if pd.notna(y) else np.nan
+            )
+    elif 'y' in buses.columns:
+        y_max = buses['y'].max()
+        if y_max < 90:  # y is already WGS84-scale
+            lat_series = buses['y']
+        else:
+            # y is OSGB36 meters — convert to WGS84 latitude
+            from scripts.utilities.spatial_utils import osgb36_to_wgs84
+            lat_series = pd.Series(index=buses.index, dtype=float)
+            for bus_name in buses.index:
+                x_val = buses.at[bus_name, 'x']
+                y_val = buses.at[bus_name, 'y']
+                if pd.notna(x_val) and pd.notna(y_val):
+                    _, lat_wgs = osgb36_to_wgs84(float(x_val), float(y_val))
+                    lat_series[bus_name] = lat_wgs
+    else:
+        logger.warning("Buses have no 'lat' or 'y' column; returning all buses for region")
+        return buses.index.tolist()
+
     if region == 'SHETL':
-        region_buses = buses[buses['y'] > 57.0]
+        region_buses = buses[lat_series > 57.0]
     elif region == 'SPTL':
-        region_buses = buses[(buses['y'] > 55.5) & (buses['y'] <= 57.0)]
+        region_buses = buses[(lat_series > 55.5) & (lat_series <= 57.0)]
     else:  # NGET
-        region_buses = buses[buses['y'] <= 55.5]
+        region_buses = buses[lat_series <= 55.5]
 
     return region_buses.index.tolist()
 
@@ -1460,7 +1496,16 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
                     # Find nearest bus by coordinates
                     lat, lon = float(row['lat']), float(row['lon'])
                     if 'x' in network.buses.columns and 'y' in network.buses.columns:
-                        distances = ((network.buses['x'] - lon)**2 + (network.buses['y'] - lat)**2)**0.5
+                        # Convert generator WGS84 lon/lat to OSGB36 to match bus x/y
+                        from scripts.utilities.spatial_utils import wgs84_to_osgb36, detect_coordinate_system
+                        bus_crs = detect_coordinate_system(
+                            network.buses['x'].values, network.buses['y'].values
+                        )
+                        if bus_crs == 'OSGB36':
+                            gen_x, gen_y = wgs84_to_osgb36(lon, lat)
+                            distances = ((network.buses['x'] - gen_x)**2 + (network.buses['y'] - gen_y)**2)**0.5
+                        else:
+                            distances = ((network.buses['x'] - lon)**2 + (network.buses['y'] - lat)**2)**0.5
                         bus = distances.idxmin()
                         logger.debug(f"Bus '{row.get('bus', 'unknown')}' not found, mapped {gen_name} to nearest bus {bus}")
                 else:
@@ -1549,6 +1594,13 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
             continue
     
     logger.info(f"Added {generators_added} thermal generators to network")
+
+    # Standardize coordinates: ensure all generators have WGS84 lon/lat
+    from scripts.utilities.spatial_utils import standardize_component_coordinates
+    coord_result = standardize_component_coordinates(network, components=['Generator'])
+    if coord_result.get('Generator', 0) > 0:
+        logger.info(f"Standardized WGS84 coordinates for {coord_result['Generator']} generators")
+
     return network
 
 

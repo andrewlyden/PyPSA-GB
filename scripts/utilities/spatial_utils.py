@@ -218,6 +218,160 @@ def ensure_osgb36_coordinates(network: pypsa.Network) -> int:
     return validation['fixed']
 
 
+def standardize_component_coordinates(network: pypsa.Network, components: list = None) -> Dict:
+    """
+    Ensure all network components have consistent WGS84 lon/lat coordinates.
+    
+    This is the **core coordinate standardization function** that should be called
+    after generators, storage, or other components are added to the network.
+    
+    It ensures every component has ``lon`` and ``lat`` columns in WGS84 degrees
+    so that spatial plots work uniformly. The logic for each component:
+    
+    1. If the component already has ``lon``/``lat`` and the values look like WGS84 → keep.
+    2. If it has ``lon``/``lat`` but values look like OSGB36 meters → convert to WGS84.
+    3. If it has ``longitude``/``latitude`` → normalize to ``lon``/``lat`` (converting
+       from OSGB36 if needed).
+    4. If it has no coordinates → derive from its assigned bus (prefer bus ``lon``/``lat``,
+       fall back to converting bus ``x``/``y`` from OSGB36).
+    
+    Args:
+        network: PyPSA network whose components should be standardized.
+        components: List of component names to process.  Defaults to
+                    ``['Generator', 'StorageUnit']``.
+    
+    Returns:
+        Dict mapping component name → number of rows that were updated.
+    """
+    if components is None:
+        components = ['Generator', 'StorageUnit']
+    
+    result = {}
+    
+    # Pre-compute bus lon/lat lookup (prefer existing WGS84 lon/lat on buses,
+    # otherwise convert bus x/y from OSGB36)
+    bus_lonlat = _get_bus_lonlat_lookup(network)
+    
+    for comp_name in components:
+        df = network.df(comp_name)
+        if df.empty:
+            result[comp_name] = 0
+            continue
+        
+        updated = 0
+        
+        # --- Detect existing coordinate columns ---------------------------------
+        has_lon_lat = 'lon' in df.columns and 'lat' in df.columns
+        has_longitude_latitude = 'longitude' in df.columns and 'latitude' in df.columns
+        
+        # Ensure lon/lat columns exist
+        if not has_lon_lat:
+            df['lon'] = np.nan
+            df['lat'] = np.nan
+        
+        for idx in df.index:
+            lon_val = df.at[idx, 'lon'] if has_lon_lat else np.nan
+            lat_val = df.at[idx, 'lat'] if has_lon_lat else np.nan
+            
+            # Check if lon/lat are already valid WGS84
+            if _is_valid_wgs84(lon_val, lat_val):
+                continue  # already good
+            
+            # Try longitude/latitude columns (may be mislabeled OSGB36)
+            if has_longitude_latitude:
+                lng_val = df.at[idx, 'longitude']
+                lt_val = df.at[idx, 'latitude']
+                if pd.notna(lng_val) and pd.notna(lt_val):
+                    if _is_valid_wgs84(lng_val, lt_val):
+                        df.at[idx, 'lon'] = float(lng_val)
+                        df.at[idx, 'lat'] = float(lt_val)
+                        updated += 1
+                        continue
+                    elif _looks_like_osgb36(lng_val, lt_val):
+                        conv_lon, conv_lat = osgb36_to_wgs84(float(lng_val), float(lt_val))
+                        if _is_valid_wgs84(conv_lon, conv_lat):
+                            df.at[idx, 'lon'] = conv_lon
+                            df.at[idx, 'lat'] = conv_lat
+                            updated += 1
+                            continue
+            
+            # Check if lon/lat look like OSGB36 (mislabeled meters)
+            if pd.notna(lon_val) and pd.notna(lat_val) and _looks_like_osgb36(lon_val, lat_val):
+                conv_lon, conv_lat = osgb36_to_wgs84(float(lon_val), float(lat_val))
+                if _is_valid_wgs84(conv_lon, conv_lat):
+                    df.at[idx, 'lon'] = conv_lon
+                    df.at[idx, 'lat'] = conv_lat
+                    updated += 1
+                    continue
+            
+            # Fall back to bus coordinates
+            bus_name = df.at[idx, 'bus'] if 'bus' in df.columns else None
+            if bus_name and bus_name in bus_lonlat:
+                b_lon, b_lat = bus_lonlat[bus_name]
+                if _is_valid_wgs84(b_lon, b_lat):
+                    df.at[idx, 'lon'] = b_lon
+                    df.at[idx, 'lat'] = b_lat
+                    updated += 1
+        
+        result[comp_name] = updated
+        if updated > 0:
+            logger.info(f"Standardized coordinates for {updated}/{len(df)} {comp_name} entries")
+    
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers for coordinate classification
+# ---------------------------------------------------------------------------
+
+def _is_valid_wgs84(lon, lat) -> bool:
+    """Return True if lon/lat look like valid WGS84 for GB."""
+    if pd.isna(lon) or pd.isna(lat):
+        return False
+    return -12 < float(lon) < 5 and 49 < float(lat) < 62
+
+
+def _looks_like_osgb36(x, y) -> bool:
+    """Return True if x/y values are plausible OSGB36 meters."""
+    if pd.isna(x) or pd.isna(y):
+        return False
+    return float(x) > 1000 and float(y) > 1000
+
+
+def _get_bus_lonlat_lookup(network: pypsa.Network) -> Dict[str, Tuple[float, float]]:
+    """
+    Build a {bus_name: (lon_wgs84, lat_wgs84)} lookup from the network buses.
+    
+    Prefers bus ``lon``/``lat`` columns (WGS84).  Falls back to converting
+    bus ``x``/``y`` from OSGB36 when ``lon``/``lat`` are missing.
+    """
+    lookup: Dict[str, Tuple[float, float]] = {}
+    buses = network.buses
+    
+    has_lonlat = 'lon' in buses.columns and 'lat' in buses.columns
+    has_xy = 'x' in buses.columns and 'y' in buses.columns
+    
+    for bus_name in buses.index:
+        # Try lon/lat first
+        if has_lonlat:
+            lon_val = buses.at[bus_name, 'lon']
+            lat_val = buses.at[bus_name, 'lat']
+            if _is_valid_wgs84(lon_val, lat_val):
+                lookup[bus_name] = (float(lon_val), float(lat_val))
+                continue
+        
+        # Fall back to x/y → OSGB36 conversion
+        if has_xy:
+            x_val = buses.at[bus_name, 'x']
+            y_val = buses.at[bus_name, 'y']
+            if _looks_like_osgb36(x_val, y_val):
+                conv_lon, conv_lat = osgb36_to_wgs84(float(x_val), float(y_val))
+                if _is_valid_wgs84(conv_lon, conv_lat):
+                    lookup[bus_name] = (conv_lon, conv_lat)
+    
+    return lookup
+
+
 def get_bus_coordinates_for_external(lon: float, lat: float, network: pypsa.Network) -> Tuple[float, float]:
     """
     Get coordinates for an external bus that are consistent with the network's coordinate system.
