@@ -843,6 +843,13 @@ def map_sites_to_buses(
                     if idx_in_coords < len(indices):
                         bus_idx = indices[idx_in_coords, 0] if indices.ndim > 1 else indices[idx_in_coords]
                         dist_km = distances_km[idx_in_coords] if distances_km.ndim == 1 else distances_km[idx_in_coords, 0]
+                    else:
+                        continue
+                
+                # Actually assign the bus and distance to the DataFrame
+                bus_name = network.buses.index[bus_idx]
+                sites_df.iloc[sites_df.index.get_loc(i), sites_df.columns.get_loc('bus')] = bus_name
+                sites_df.iloc[sites_df.index.get_loc(i), sites_df.columns.get_loc('distance_km')] = dist_km
             
             final_matched = sites_df['bus'].notna().sum()
             logger.info(f"Final mapping: {final_matched}/{len(sites_df)} sites mapped to buses")

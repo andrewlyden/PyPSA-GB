@@ -193,8 +193,8 @@ def load_fuel_prices(scenario_config: dict) -> dict:
     Load fuel prices with automatic source selection.
 
     Priority order:
-    1. Scenario-specific override in scenarios.yaml (marginal_costs.fuel_prices)
-    2. Historical lookup table (for modelled_year ≤ 2024)
+    1. Historical lookup table (for modelled_year ≤ 2024)
+    2. Scenario-specific override in scenarios.yaml (marginal_costs.fuel_prices)
     3. FES dynamic prices (if FES_year specified, use_fes_prices=true, and CSV exists)
     4. Configuration defaults from defaults.yaml (marginal_costs.fuel_prices)
     5. Fallback hardcoded values (for backward compatibility)
@@ -212,15 +212,9 @@ def load_fuel_prices(scenario_config: dict) -> dict:
     # Load marginal cost configuration
     mc_config = load_marginal_cost_config(scenario_config)
 
-    # 1. Check if scenario explicitly provides fuel prices (highest priority override)
-    if 'marginal_costs' in scenario_config and 'fuel_prices' in scenario_config['marginal_costs']:
-        explicit_prices = scenario_config['marginal_costs']['fuel_prices']
-        logger.info(f"Using scenario-specific fuel prices (explicit override):")
-        for fuel, price in explicit_prices.items():
-            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-        return _expand_fuel_prices(explicit_prices)
-
-    # 2. Check if this is a historical scenario
+    # 1. Check if this is a historical scenario (highest priority for historical years)
+    #    Historical scenarios should always use historical fuel prices unless the user
+    #    explicitly set fuel_prices in the scenario definition (not inherited from defaults).
     modelled_year = scenario_config.get('modelled_year')
 
     if modelled_year and modelled_year <= 2024:
@@ -230,6 +224,14 @@ def load_fuel_prices(scenario_config: dict) -> dict:
         for fuel, price in historical_prices.items():
             logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
         return _expand_fuel_prices(historical_prices)
+
+    # 2. Check if scenario explicitly provides fuel prices (override for future scenarios)
+    if 'marginal_costs' in scenario_config and 'fuel_prices' in scenario_config['marginal_costs']:
+        explicit_prices = scenario_config['marginal_costs']['fuel_prices']
+        logger.info(f"Using scenario-specific fuel prices (explicit override):")
+        for fuel, price in explicit_prices.items():
+            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
+        return _expand_fuel_prices(explicit_prices)
 
     # 3. Try FES dynamic prices for future scenarios
     if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:
@@ -537,8 +539,8 @@ def get_carbon_price(scenario_config: dict) -> float:
     Get carbon price with automatic source selection.
 
     Priority order:
-    1. Scenario-specific override in scenarios.yaml (marginal_costs.carbon_price)
-    2. Historical lookup table (for modelled_year ≤ 2024)
+    1. Historical lookup table (for modelled_year ≤ 2024)
+    2. Scenario-specific override in scenarios.yaml (marginal_costs.carbon_price)
     3. FES dynamic price (if FES_year specified, use_fes_prices=true, and CSV exists)
     4. Configuration default from defaults.yaml (marginal_costs.carbon_price)
     5. Fallback hardcoded value (for backward compatibility)
@@ -556,13 +558,9 @@ def get_carbon_price(scenario_config: dict) -> float:
     # Load marginal cost configuration
     mc_config = load_marginal_cost_config(scenario_config)
 
-    # 1. Check if scenario explicitly provides carbon price (highest priority override)
-    if 'marginal_costs' in scenario_config and 'carbon_price' in scenario_config['marginal_costs']:
-        carbon_price = scenario_config['marginal_costs']['carbon_price']
-        logger.info(f"Using scenario carbon price (explicit override): £{carbon_price:.2f}/tonne CO2")
-        return carbon_price
-
-    # 2. Check if this is a historical scenario
+    # 1. Check if this is a historical scenario (highest priority for historical years)
+    #    Historical scenarios should always use historical carbon prices unless the user
+    #    explicitly set carbon_price in the scenario definition (not inherited from defaults).
     modelled_year = scenario_config.get('modelled_year')
 
     if modelled_year and modelled_year <= 2024:
@@ -570,6 +568,12 @@ def get_carbon_price(scenario_config: dict) -> float:
         historical_carbon = get_historical_carbon_price(modelled_year)
         logger.info(f"Using HISTORICAL carbon price for {modelled_year}: £{historical_carbon:.2f}/tonne CO2")
         return historical_carbon
+
+    # 2. Check if scenario explicitly provides carbon price (override for future scenarios)
+    if 'marginal_costs' in scenario_config and 'carbon_price' in scenario_config['marginal_costs']:
+        carbon_price = scenario_config['marginal_costs']['carbon_price']
+        logger.info(f"Using scenario carbon price (explicit override): £{carbon_price:.2f}/tonne CO2")
+        return carbon_price
 
     # 3. Try FES dynamic carbon price for future scenarios
     if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:

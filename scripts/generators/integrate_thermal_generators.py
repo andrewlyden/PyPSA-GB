@@ -769,6 +769,104 @@ def get_solve_mode() -> str:
     return 'LP'
 
 
+def apply_plant_phase_out_filtering(df: pd.DataFrame, modelled_year: int) -> pd.DataFrame:
+    """
+    Remove generators that have been decommissioned before the modelled year.
+
+    Uses coal_phase_out_dates.csv and nuclear_phase_out_dates.csv from data/generators/
+    to filter out plants that closed before the modelled year. Also applies known
+    capacity reductions for plants operating at reduced capacity in their final years.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Generator DataFrame with 'station_name' and 'capacity_mw' columns
+    modelled_year : int
+        The scenario's modelled year
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame with closed plants removed and capacities adjusted
+    """
+    if len(df) == 0 or modelled_year is None:
+        return df
+
+    initial_count = len(df)
+    initial_capacity = df['capacity_mw'].sum()
+    removed_plants = []
+
+    # Load phase-out date files
+    phase_out_files = [
+        Path("data/generators/coal_phase_out_dates.csv"),
+        Path("data/generators/nuclear_phase_out_dates.csv"),
+    ]
+
+    for phase_out_file in phase_out_files:
+        if not phase_out_file.exists():
+            logger.debug(f"Phase-out file not found: {phase_out_file}")
+            continue
+
+        phase_out_df = pd.read_csv(phase_out_file)
+        phase_out_df['date'] = pd.to_datetime(phase_out_df['date'], dayfirst=True)
+        phase_out_df['closure_year'] = phase_out_df['date'].dt.year
+
+        for _, row in phase_out_df.iterrows():
+            plant_name = row['name']
+            closure_year = row['closure_year']
+
+            if closure_year > modelled_year:
+                continue  # Plant still operational in modelled year
+
+            # Match by partial name (e.g. "Ratcliffe" matches "Ratcliffe (Steam)")
+            mask = df['station_name'].str.contains(plant_name, case=False, na=False)
+            if mask.any():
+                matched = df[mask]
+                for _, gen in matched.iterrows():
+                    removed_plants.append(f"{gen['station_name']} ({gen['capacity_mw']:.0f} MW, closed {closure_year})")
+                df = df[~mask]
+
+    if removed_plants:
+        logger.info(f"Removed {len(removed_plants)} generators closed before {modelled_year}:")
+        for plant in removed_plants:
+            logger.info(f"  - {plant}")
+        logger.info(f"  Capacity: {initial_capacity:.0f} MW -> {df['capacity_mw'].sum():.0f} MW")
+
+    # Apply known capacity reductions for plants running at reduced capacity
+    # Ratcliffe-on-Soar: 4 x ~500 MW units. By 2022-2024, only 1-2 units operational.
+    # Source: Ofgem/National Grid ESO data on available coal capacity
+    coal_capacity_reductions = {
+        # plant_name_pattern: {year: available_mw}
+        'Ratcliffe': {
+            2022: 1000,  # 2 units operational
+            2023: 500,   # 1 unit operational most of the time
+            2024: 500,   # Final year before closure (Sept 2024)
+        },
+    }
+
+    for plant_pattern, year_capacities in coal_capacity_reductions.items():
+        if modelled_year not in year_capacities:
+            continue
+
+        mask = df['station_name'].str.contains(plant_pattern, case=False, na=False)
+        if mask.any():
+            reduced_cap = year_capacities[modelled_year]
+            for idx in df.index[mask]:
+                old_cap = df.loc[idx, 'capacity_mw']
+                if old_cap > reduced_cap:
+                    df.loc[idx, 'capacity_mw'] = reduced_cap
+                    logger.info(f"Reduced {df.loc[idx, 'station_name']} capacity: "
+                               f"{old_cap:.0f} MW -> {reduced_cap:.0f} MW "
+                               f"(reduced operations in {modelled_year})")
+
+    final_count = len(df)
+    if final_count < initial_count:
+        logger.info(f"Phase-out filtering: {initial_count} -> {final_count} generators "
+                    f"({initial_capacity:.0f} -> {df['capacity_mw'].sum():.0f} MW)")
+
+    return df
+
+
 def load_dukes_generators(dukes_path: str) -> pd.DataFrame:
     """
     Load DUKES generator data (historical fossil/nuclear thermal capacity).
@@ -1634,6 +1732,10 @@ def main():
         if hasattr(snk.input, 'dukes_data'):
             logger.info("Historical scenario detected - loading DUKES data")
             dukes_df = load_dukes_generators(snk.input.dukes_data)
+            # Apply phase-out filtering to remove closed/decommissioned plants
+            # and adjust capacity for plants running at reduced output
+            if len(dukes_df) > 0:
+                dukes_df = apply_plant_phase_out_filtering(dukes_df, modelled_year)
         else:
             logger.info("Future scenario - DUKES data not applicable")
         

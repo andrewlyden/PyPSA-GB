@@ -723,7 +723,7 @@ def main():
             network_input = snakemake.input.network
             storage_file = snakemake.input.storage_data
             network_output = snakemake.output.network
-            max_distance_km = snakemake.params.get('max_distance_km', 50.0)
+            max_distance_km = snakemake.params.get('max_distance_km', 200.0)
             standing_loss = snakemake.params.get('standing_loss', 0.001)
             modelled_year = snakemake.params.get('modelled_year', None)
             is_historical = snakemake.params.get('is_historical', False)
@@ -738,7 +738,7 @@ def main():
             network_input = sys.argv[1]
             storage_file = sys.argv[2]
             network_output = sys.argv[3]
-            max_distance_km = 50.0
+            max_distance_km = 200.0
             standing_loss = 0.001
             modelled_year = None
             is_historical = False
