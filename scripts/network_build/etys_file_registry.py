@@ -97,8 +97,19 @@ DEFAULT_RATINGS = {
     'hvdc': 1000,         # MW, conservative for HVDC link
 }
 
-# Substation coordinates file (relative to ETYS data directory)
-SUBSTATION_COORDS_FILE = "substation_coordinates.csv"
+# ─── HVDC place-name aliases ─────────────────────────────────────────────────
+# ETYS B-5-1 sometimes uses descriptive place names instead of ETYS bus codes
+# for planned HVDC converter stations.  This lookup maps those names to the
+# nearest existing ETYS bus so the link can still be created.
+#
+# Entries are case-insensitive (lowered at lookup time).  Values are ETYS bus
+# codes that will be resolved via _resolve_hvdc_bus (so partial codes like
+# 'KILS4' are fine — they'll match KILS4T via prefix matching).
+HVDC_PLACE_NAME_ALIASES = {
+    'ballantrae':       'AUCH2-',   # Planned converter station near Ballantrae → Auchencrosh 275kV (3.7 km)
+    'kilmarnock south': 'KILS4T',   # Planned converter station → Kilmarnock South 400kV (3.0 km)
+    'shetland hub':     'KERG1J',   # Planned Shetland aggregation hub → Kergord 132kV (existing HVDC terminal)
+}
 
 # GSP regions boundary file for land validation
 GSP_REGIONS_FILE = "data/network/GSP/GSP_regions_4326_20250109.geojson"

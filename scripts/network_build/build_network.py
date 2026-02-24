@@ -162,26 +162,10 @@ def build_zonal_network(logger=None):
     
     return network
 
-def build_ETYS_network(logger=None):
-    """
-    Build network using the ETYS network model.
-    For ETYS, we import the network directly since it's already built.
-    """
-    start_time = time.time()
-    
-    if logger is None:
-        logger = logging.getLogger(__name__)
-    
-    logger.info("Building ETYS network model")
-    logger.info("For ETYS networks, the network should be built by the ETYS_network.py script directly")
-    logger.info("This function is a placeholder - ETYS network building handled by rule build_ETYS_network")
-    
-    # This shouldn't be reached in normal operation
-    raise NotImplementedError("ETYS network building should use the dedicated ETYS_network.py script")
-
 # Registry of network builders
+# NOTE: ETYS networks are built by the dedicated ETYS_network.py script
+# via the build_ETYS_base_network Snakemake rule — not through this registry.
 NETWORK_BUILDERS = {
-    'ETYS': build_ETYS_network,
     'Reduced': build_reduced_network,
     'Zonal': build_zonal_network
 }

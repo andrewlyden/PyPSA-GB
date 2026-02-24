@@ -41,10 +41,6 @@ warnings.filterwarnings('ignore', message='The network has not been optimized ye
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary
 from scripts.network_build.etys_file_registry import VOLTAGE_LEVELS, GSP_REGIONS_FILE
 
-# Coordinate conversion constants for GB (approximate)
-LAT_DEGREES_PER_KM = 1 / 111.0
-LON_DEGREES_PER_KM_BASE = 1 / 111.0
-
 # Land boundary checking constants
 LAND_BUFFER_KM = 0.5  # Buffer distance from coastline
 
@@ -788,7 +784,7 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     # NOT from lat/lon guessing, so they bypass land boundary checks.
     # If this order changes, ensure offshore upgrade buses are in the skip set.
     if etys_upgrades_enabled:
-        from ETYS_upgrades import apply_etys_network_upgrades
+        from scripts.network_build.ETYS_upgrades import apply_etys_network_upgrades
 
         # Get upgrade year (use modelled_year if upgrade_year not specified)
         modelled_year = getattr(snakemake.params, 'modelled_year', 2020)

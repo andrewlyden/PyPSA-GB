@@ -1,16 +1,18 @@
 """
 ETYS Network Upgrades Application Module
 
-This module applies network upgrades from ETYS Appendix B 2023 to PyPSA networks.
+This module applies network upgrades from ETYS Appendix B to PyPSA networks.
+Supports ETYS 2022, 2023 and 2024 data via the etys_file_registry.
 
 Upgrades include:
-- Circuit additions, removals, and modifications (2024-2031)
-- Transformer additions, removals, and modifications (2024-2031)
-- New HVDC interconnectors (2024-2031)
+- Circuit additions, removals, and modifications
+- Transformer additions, removals, and modifications
+- New HVDC links (internal GB interconnectors)
 
 Usage:
-    from scripts.ETYS_upgrades import apply_etys_network_upgrades
-    network = apply_etys_network_upgrades(network, modelled_year=2035)
+    from scripts.network_build.ETYS_upgrades import apply_etys_network_upgrades
+    network = apply_etys_network_upgrades(network, modelled_year=2035,
+                                          etys_file='data/network/ETYS/...')
 """
 
 import pandas as pd
@@ -20,7 +22,6 @@ import logging
 import sys
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple
-import warnings
 
 # Add project root to path for imports
 _project_root = Path(__file__).resolve().parents[2]
@@ -29,7 +30,7 @@ if str(_project_root) not in sys.path:
 
 from scripts.network_build.etys_file_registry import (
     VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, ETYS_UPGRADE_SHEETS,
-    INVALID_NODE_PATTERNS, DEFAULT_RATINGS,
+    INVALID_NODE_PATTERNS, DEFAULT_RATINGS, HVDC_PLACE_NAME_ALIASES,
 )
 
 
@@ -268,8 +269,6 @@ def filter_upgrades_by_year(upgrades_data: Dict[str, pd.DataFrame],
 
 
 # VOLTAGE_LEVELS imported from etys_file_registry (shared constant)
-# Alias for backward compatibility within this module
-VOLTAGE_MAP = VOLTAGE_LEVELS
 
 
 def add_missing_buses_from_upgrades(network: pypsa.Network,
@@ -453,7 +452,7 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
             # Extract site code and voltage
             site_code = node[:4] if len(node) >= 4 else node
             voltage_suffix = node[4] if len(node) > 4 else '4'
-            v_nom = VOLTAGE_MAP.get(voltage_suffix, 400)
+            v_nom = VOLTAGE_LEVELS.get(voltage_suffix, 400)
             
             x, y = None, None
             coord_source = None
@@ -517,7 +516,7 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
     for node in remaining:
         site_code = node[:4] if len(node) >= 4 else node
         voltage_suffix = node[4] if len(node) > 4 else '4'
-        v_nom = VOLTAGE_MAP.get(voltage_suffix, 400)
+        v_nom = VOLTAGE_LEVELS.get(voltage_suffix, 400)
         
         try:
             network.add('Bus', node,
@@ -1095,6 +1094,7 @@ def _resolve_hvdc_bus(network: pypsa.Network, node_name: str,
     in the ETYS network (which use suffixes like '41', '4J', '4K', etc.).
 
     Resolution strategy:
+    0. Place-name alias — lookup in HVDC_PLACE_NAME_ALIASES (e.g. 'Ballantrae' → 'AUCH2-')
     1. Exact match — return immediately
     2. Prefix match — find buses at the same site with the same voltage digit
        (e.g. PEHE4- → PEHE41, PEHE4J, ...)
@@ -1102,7 +1102,7 @@ def _resolve_hvdc_bus(network: pypsa.Network, node_name: str,
 
     Args:
         network: PyPSA network
-        node_name: Node name from ETYS B-5-1 (e.g. 'DRAX41', 'PEHE4-')
+        node_name: Node name from ETYS B-5-1 (e.g. 'DRAX41', 'PEHE4-', 'Ballantrae')
         logger: Optional logger
 
     Returns:
@@ -1114,6 +1114,13 @@ def _resolve_hvdc_bus(network: pypsa.Network, node_name: str,
     node_name = str(node_name).strip()
     if not node_name or node_name.lower() in ('nan', '', 'tbc', 'n/a'):
         return None
+
+    # 0. Place-name alias lookup (e.g. 'Ballantrae' → 'AUCH2-')
+    alias = HVDC_PLACE_NAME_ALIASES.get(node_name.lower())
+    if alias:
+        # Resolve the alias through the normal strategies below
+        logger.debug(f"  HVDC alias: '{node_name}' → '{alias}'")
+        node_name = alias
 
     # 1. Exact match
     if node_name in network.buses.index:
@@ -1355,11 +1362,11 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     Apply ETYS network upgrades from Appendix B to the network.
 
     This function modifies the network topology by:
-    1. Adding new circuits commissioned by modelled_year
-    2. Removing circuits decommissioned by modelled_year
-    3. Modifying circuit ratings
-    4. Adding new transformers
-    5. (Future) Adding new HVDC interconnectors
+    1. Adding missing buses referenced in upgrade data
+    2. Adding/removing/modifying circuits commissioned by modelled_year
+    3. Adding/removing/modifying transformers
+    4. Adding new HVDC links (from B-5-1)
+    5. Removing orphan buses (no attached components)
 
     Args:
         network: PyPSA network object (ETYS network expected)
@@ -1533,6 +1540,10 @@ if __name__ == "__main__":
     
     # Load a network and apply upgrades
     network = pypsa.Network("resources/network/HT35_network.nc")
-    network_upgraded = apply_etys_network_upgrades(network, 2035, logger=logger)
+    network_upgraded = apply_etys_network_upgrades(
+        network, 2035,
+        etys_file="data/network/ETYS/ETYS 2024 Appendix-B V1.xlsx",
+        logger=logger,
+    )
     network_upgraded.export_to_netcdf("resources/network/HT35_network_upgraded.nc")
 
