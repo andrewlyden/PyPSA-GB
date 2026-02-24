@@ -24,32 +24,6 @@ import pypsa
 from scripts.utilities.logging_config import setup_logging, log_network_info, log_execution_summary
 
 
-# Initialize timing
-start_time = time.time()
-
-# Use centralized logging: log to Snakemake log file if available, else default
-log_path = snakemake.log[0] if hasattr(snakemake, 'log') and snakemake.log else "validate_network"
-logger = setup_logging(log_path)
-
-net_path = Path(snakemake.input.network)
-# Use the correct output path specified by Snakemake
-out_html = Path(snakemake.output.validation_report)
-out_html.parent.mkdir(parents=True, exist_ok=True)
-
-# Load network
-try:
-    n = pypsa.Network(net_path)
-    load_status = "[OK] Loaded successfully"
-    logger.info(f"Loaded network from {net_path}")
-    log_network_info(n, logger)
-except Exception as e:
-    logger.error(f"Failed to load network: {e}")
-    load_status = f"[ERROR] Failed to load: {e}"
-    # Write minimal error report and exit
-    out_html.write_text(f"<html><body><h1>Network Validation Report</h1><p>[ERROR] Failed to load network: {html.escape(str(e))}</p></body></html>")
-    logger.error(f"Wrote error report to {out_html}")
-    sys.exit(1)
-
 # Coordinate preparation helpers
 def _series_within_bounds(series: pd.Series, bound: float) -> bool:
     """Check whether all finite values in a series fall within ±bound."""
@@ -251,7 +225,7 @@ def fill_missing_bus_coordinates(network: pypsa.Network, logger: logging.Logger)
             valid_connected = [
                 (buses.loc[b, 'x'], buses.loc[b, 'y'])
                 for b in connected_buses
-                if b in buses.index and buses.loc[b, 'x'] not in (np.nan, None) and buses.loc[b, 'y'] not in (np.nan, None)
+                if b in buses.index and pd.notna(buses.loc[b, 'x']) and pd.notna(buses.loc[b, 'y'])
             ]
             
             if valid_connected:
@@ -382,248 +356,276 @@ def harmonize_geographic_coordinates(network: pypsa.Network, logger: logging.Log
     return status
 
 
-# Consistency check
-try:
-   
-    # Capture consistency check output
-    f = io.StringIO()
-    
-    # Suppress PyPSA warnings about zero x values (these are fixed by scripts but logged during check)
-    pypsa_logger = logging.getLogger('pypsa.consistency')
-    original_level = pypsa_logger.level
-    pypsa_logger.setLevel(logging.ERROR)
-    
+def main():
+    """Main entry point for network validation report generation."""
+    # Initialize timing
+    start_time = time.time()
+
+    # Use centralized logging: log to Snakemake log file if available, else default
+    log_path = snakemake.log[0] if hasattr(snakemake, 'log') and snakemake.log else "validate_network"
+    logger = setup_logging(log_path)
+
+    net_path = Path(snakemake.input.network)
+    # Use the correct output path specified by Snakemake
+    out_html = Path(snakemake.output.validation_report)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load network
     try:
-        with contextlib.redirect_stdout(f):
-            consistent = n.consistency_check()
-    finally:
-        pypsa_logger.setLevel(original_level)
-    
-    consistency_output = f.getvalue()
-    
-    if consistency_output.strip() == "":
-        consistency_status = "[OK] Network passes all consistency checks"
-        logger.info(f"Consistency check: {consistency_status}")
-    else:
-        consistency_status = "[WARNING] Network has consistency issues"
-        logger.warning(f"Consistency check: {consistency_status}\nDetails:\n{consistency_output}")
+        n = pypsa.Network(net_path)
+        load_status = "[OK] Loaded successfully"
+        logger.info(f"Loaded network from {net_path}")
+        log_network_info(n, logger)
+    except Exception as e:
+        logger.error(f"Failed to load network: {e}")
+        load_status = f"[ERROR] Failed to load: {e}"
+        # Write minimal error report and exit
+        out_html.write_text(f"<html><body><h1>Network Validation Report</h1><p>[ERROR] Failed to load network: {html.escape(str(e))}</p></body></html>")
+        logger.error(f"Wrote error report to {out_html}")
+        sys.exit(1)
 
-except Exception as e:
-    logger.warning(f"Failed to run consistency check: {e}")
-    consistency_status = f"[ERROR] Consistency check failed: {e}"
-    consistency_output = ""
+    # Consistency check
+    try:
+        # Capture consistency check output
+        f = io.StringIO()
 
-# Harmonize coordinates for plotting
-coordinate_status = harmonize_geographic_coordinates(n, logger)
+        # Suppress PyPSA warnings about zero x values (these are fixed by scripts but logged during check)
+        pypsa_logger = logging.getLogger('pypsa.consistency')
+        original_level = pypsa_logger.level
+        pypsa_logger.setLevel(logging.ERROR)
 
-# Fill missing bus coordinates to prevent warnings in interactive plotting
-try:
-    buses_filled, num_imputed, impute_msg = fill_missing_bus_coordinates(n, logger)
-    n.buses = buses_filled
-    logger.info(f"Coordinate imputation: {impute_msg}")
-    coordinate_status += f" | {impute_msg}"
-except Exception as e:
-    logger.warning(f"Failed to impute missing bus coordinates: {e}")
-    coordinate_status += f" | Coordinate imputation failed: {e}"
-
-# Gather network statistics
-stats = {}
-try:
-    stats['buses'] = len(n.buses)
-    stats['lines'] = len(n.lines)
-    stats['generators'] = len(n.generators)
-    stats['loads'] = len(n.loads)
-    stats['links'] = len(n.links) if hasattr(n, 'links') else 0
-    stats['storage'] = len(n.storage_units) if hasattr(n, 'storage_units') else 0
-    stats['snapshots'] = len(n.snapshots)
-    
-    logger.info(f"Network stats: {stats}")
-    
-except Exception as e:
-    logger.error(f"Failed to gather network stats: {e}")
-    stats = {'error': str(e)}
-
-# Generate plots (static + interactive) if dependencies are available
-plot_dir = out_html.parent / "figures"
-static_plot_path = None
-interactive_plot_path = None
-plot_messages = [coordinate_status]
-
-# Static Matplotlib plot (using PyPSA n.plot())
-try:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    
-    plot_dir.mkdir(parents=True, exist_ok=True)
-    static_plot_path = plot_dir / f"{net_path.stem}_topology.png"
-    
-    # Verify we have valid coordinates before plotting
-    has_valid_coords = (
-        'x' in n.buses.columns and n.buses['x'].notna().any() and
-        'y' in n.buses.columns and n.buses['y'].notna().any()
-    )
-    
-    if not has_valid_coords:
-        logger.warning("Cannot create static plot: no valid bus coordinates found.")
-        plot_messages.append("[SKIP] Static topology plot (no valid coordinates).")
-        static_plot_path = None
-    else:
         try:
-            # Try to use cartopy projection for better geographic visualization
-            import cartopy.crs as ccrs
-            fig, ax = plt.subplots(figsize=(16, 14), subplot_kw={"projection": ccrs.PlateCarree()})
-            ax.coastlines(resolution='10m', linewidths=0.5)
-            ax.gridlines(draw_labels=False, alpha=0.3)
-            
-            # Use smaller bus sizes for clarity
-            n.plot(ax=ax, geomap=False, bus_size=5, line_width=0.5, title=f"Network Topology: {net_path.stem}")
-            
-            # Set extent to GB approximate bounds for zoomed view
-            ax.set_extent([-8.5, 2.5, 49.5, 60.5], crs=ccrs.PlateCarree())
-            logger.info("Static plot created with cartopy geographic projection.")
-        except ImportError:
-            # Fallback: simple matplotlib without geographic projection
-            logger.debug("Cartopy not available, using simple matplotlib plot.")
-            fig, ax = plt.subplots(figsize=(14, 12))
-            # Smaller bus and line sizes for cleaner plot
-            n.plot(ax=ax, bus_size=5, line_width=0.5, title=f"Network Topology: {net_path.stem}")
-        
-        fig.tight_layout()
-        fig.savefig(static_plot_path, dpi=150, bbox_inches='tight')
-        plt.close(fig)
-        logger.info("Static network topology plot written to %s", static_plot_path)
-        plot_messages.append("[OK] Static topology plot generated.")
+            with contextlib.redirect_stdout(f):
+                consistent = n.consistency_check()
+        finally:
+            pypsa_logger.setLevel(original_level)
 
-except ImportError as exc:
-    logger.warning("Matplotlib not available for plotting: %s", exc)
-    plot_messages.append("[SKIP] Static topology plot (matplotlib missing).")
+        consistency_output = f.getvalue()
+
+        if consistency_output.strip() == "":
+            consistency_status = "[OK] Network passes all consistency checks"
+            logger.info(f"Consistency check: {consistency_status}")
+        else:
+            consistency_status = "[WARNING] Network has consistency issues"
+            logger.warning(f"Consistency check: {consistency_status}\nDetails:\n{consistency_output}")
+
+    except Exception as e:
+        logger.warning(f"Failed to run consistency check: {e}")
+        consistency_status = f"[ERROR] Consistency check failed: {e}"
+        consistency_output = ""
+
+    # Harmonize coordinates for plotting
+    coordinate_status = harmonize_geographic_coordinates(n, logger)
+
+    # Fill missing bus coordinates to prevent warnings in interactive plotting
+    try:
+        buses_filled, num_imputed, impute_msg = fill_missing_bus_coordinates(n, logger)
+        n.buses = buses_filled
+        logger.info(f"Coordinate imputation: {impute_msg}")
+        coordinate_status += f" | {impute_msg}"
+    except Exception as e:
+        logger.warning(f"Failed to impute missing bus coordinates: {e}")
+        coordinate_status += f" | Coordinate imputation failed: {e}"
+
+    # Gather network statistics
+    stats = {}
+    try:
+        stats['buses'] = len(n.buses)
+        stats['lines'] = len(n.lines)
+        stats['generators'] = len(n.generators)
+        stats['loads'] = len(n.loads)
+        stats['links'] = len(n.links) if hasattr(n, 'links') else 0
+        stats['storage'] = len(n.storage_units) if hasattr(n, 'storage_units') else 0
+        stats['snapshots'] = len(n.snapshots)
+
+        logger.info(f"Network stats: {stats}")
+
+    except Exception as e:
+        logger.error(f"Failed to gather network stats: {e}")
+        stats = {'error': str(e)}
+
+    # Generate plots (static + interactive) if dependencies are available
+    plot_dir = out_html.parent / "figures"
     static_plot_path = None
-except Exception as exc:
-    logger.error("Failed to create static topology plot: %s", exc)
-    plot_messages.append(f"[ERROR] Static topology plot failed: {exc}")
-    static_plot_path = None
-
-# Interactive Pydeck plot via PyPSA n.explore()
-try:
-    has_valid_coords = (
-        'lon' in n.buses.columns and n.buses['lon'].notna().any() and
-        'lat' in n.buses.columns and n.buses['lat'].notna().any()
-    )
-    
-    if not has_valid_coords:
-        logger.warning("Cannot create interactive plot: no valid lon/lat coordinates.")
-        plot_messages.append("[SKIP] Interactive explore map (no valid coordinates).")
-    elif hasattr(n, "explore"):
-        try:
-            import pydeck  # noqa: F401
-
-            interactive_plot_path = out_html.parent / f"{net_path.stem}_explore.html"
-            
-            # Use modern n.explore() API with visible bus markers and proper basemap
-            deck = n.explore(
-                bus_size=200,               # Large enough to be visible at zoom 5.5
-                line_width=2,
-                link_width=2,
-                transformer_width=1,
-                bus_alpha=0.9,
-                line_alpha=0.7,
-                link_alpha=0.7,
-                transformer_alpha=0.6,
-                tooltip=True,
-                geomap=True,                # Use proper basemap for geographic context
-                map_style="light",
-            )
-            
-            deck.to_html(str(interactive_plot_path), notebook_display=False, open_browser=False)
-            logger.info("Interactive explore map written to %s", interactive_plot_path)
-            plot_messages.append("[OK] Interactive explore map generated.")
-        except Exception as explore_e:
-            logger.error("Interactive plot generation failed: %s", explore_e)
-            plot_messages.append(f"[ERROR] Interactive explore map failed: {explore_e}")
-            interactive_plot_path = None
-    else:
-        plot_messages.append("[SKIP] Interactive explore map (PyPSA explore API unavailable).")
-except ImportError as exc:
-    logger.warning("pydeck not available for interactive plotting: %s", exc)
-    plot_messages.append("[SKIP] Interactive explore map (pydeck missing).")
-except Exception as exc:
-    logger.error("Unexpected error in interactive plotting: %s", exc)
-    plot_messages.append(f"[ERROR] Interactive explore map failed: {exc}")
     interactive_plot_path = None
+    plot_messages = [coordinate_status]
 
-
-# Create HTML report
-html_report = [
-    "<html>",
-    "<head><title>PyPSA Network Validation Report</title></head>",
-    "<body>",
-    "<h1>PyPSA Network Validation Report</h1>",
-    f"<p><strong>Network file:</strong> {net_path}</p>",
-    f"<p><strong>Load status:</strong> {load_status}</p>",
-    f"<p><strong>Consistency check:</strong> {consistency_status}</p>",
-    "",
-    "<h2>Network Statistics</h2>",
-    "<table border='1'>",
-    "<tr><th>Component</th><th>Count</th></tr>",
-]
-
-# Add stats to table
-for component, count in stats.items():
-    html_report.append(f"<tr><td>{component.title()}</td><td>{count}</td></tr>")
-
-html_report.extend([
-    "</table>",
-    "",
-    "<h2>Plotting Summary</h2>",
-    "<ul>",
-])
-
-for message in plot_messages:
-    html_report.append(f"<li>{html.escape(message)}</li>")
-
-html_report.extend([
-    "</ul>",
-])
-
-if static_plot_path and static_plot_path.exists():
+    # Static Matplotlib plot (using PyPSA n.plot())
     try:
-        static_rel = static_plot_path.relative_to(out_html.parent)
-    except ValueError:
-        static_rel = static_plot_path.name
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        plot_dir.mkdir(parents=True, exist_ok=True)
+        static_plot_path = plot_dir / f"{net_path.stem}_topology.png"
+
+        # Verify we have valid coordinates before plotting
+        has_valid_coords = (
+            'x' in n.buses.columns and n.buses['x'].notna().any() and
+            'y' in n.buses.columns and n.buses['y'].notna().any()
+        )
+
+        if not has_valid_coords:
+            logger.warning("Cannot create static plot: no valid bus coordinates found.")
+            plot_messages.append("[SKIP] Static topology plot (no valid coordinates).")
+            static_plot_path = None
+        else:
+            try:
+                # Try to use cartopy projection for better geographic visualization
+                import cartopy.crs as ccrs
+                fig, ax = plt.subplots(figsize=(16, 14), subplot_kw={"projection": ccrs.PlateCarree()})
+                ax.coastlines(resolution='10m', linewidths=0.5)
+                ax.gridlines(draw_labels=False, alpha=0.3)
+
+                # Use smaller bus sizes for clarity
+                n.plot(ax=ax, geomap=False, bus_size=5, line_width=0.5, title=f"Network Topology: {net_path.stem}")
+
+                # Set extent to GB approximate bounds for zoomed view
+                ax.set_extent([-8.5, 2.5, 49.5, 60.5], crs=ccrs.PlateCarree())
+                logger.info("Static plot created with cartopy geographic projection.")
+            except ImportError:
+                # Fallback: simple matplotlib without geographic projection
+                logger.debug("Cartopy not available, using simple matplotlib plot.")
+                fig, ax = plt.subplots(figsize=(14, 12))
+                # Smaller bus and line sizes for cleaner plot
+                n.plot(ax=ax, bus_size=5, line_width=0.5, title=f"Network Topology: {net_path.stem}")
+
+            fig.tight_layout()
+            fig.savefig(static_plot_path, dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            logger.info("Static network topology plot written to %s", static_plot_path)
+            plot_messages.append("[OK] Static topology plot generated.")
+
+    except ImportError as exc:
+        logger.warning("Matplotlib not available for plotting: %s", exc)
+        plot_messages.append("[SKIP] Static topology plot (matplotlib missing).")
+        static_plot_path = None
+    except Exception as exc:
+        logger.error("Failed to create static topology plot: %s", exc)
+        plot_messages.append(f"[ERROR] Static topology plot failed: {exc}")
+        static_plot_path = None
+
+    # Interactive Pydeck plot via PyPSA n.explore()
+    try:
+        has_valid_coords = (
+            'lon' in n.buses.columns and n.buses['lon'].notna().any() and
+            'lat' in n.buses.columns and n.buses['lat'].notna().any()
+        )
+
+        if not has_valid_coords:
+            logger.warning("Cannot create interactive plot: no valid lon/lat coordinates.")
+            plot_messages.append("[SKIP] Interactive explore map (no valid coordinates).")
+        elif hasattr(n, "explore"):
+            try:
+                import pydeck  # noqa: F401
+
+                interactive_plot_path = out_html.parent / f"{net_path.stem}_explore.html"
+
+                # Use modern n.explore() API with visible bus markers and proper basemap
+                deck = n.explore(
+                    bus_size=200,               # Large enough to be visible at zoom 5.5
+                    line_width=2,
+                    link_width=2,
+                    transformer_width=1,
+                    bus_alpha=0.9,
+                    line_alpha=0.7,
+                    link_alpha=0.7,
+                    transformer_alpha=0.6,
+                    tooltip=True,
+                    geomap=True,                # Use proper basemap for geographic context
+                    map_style="light",
+                )
+
+                deck.to_html(str(interactive_plot_path), notebook_display=False, open_browser=False)
+                logger.info("Interactive explore map written to %s", interactive_plot_path)
+                plot_messages.append("[OK] Interactive explore map generated.")
+            except Exception as explore_e:
+                logger.error("Interactive plot generation failed: %s", explore_e)
+                plot_messages.append(f"[ERROR] Interactive explore map failed: {explore_e}")
+                interactive_plot_path = None
+        else:
+            plot_messages.append("[SKIP] Interactive explore map (PyPSA explore API unavailable).")
+    except ImportError as exc:
+        logger.warning("pydeck not available for interactive plotting: %s", exc)
+        plot_messages.append("[SKIP] Interactive explore map (pydeck missing).")
+    except Exception as exc:
+        logger.error("Unexpected error in interactive plotting: %s", exc)
+        plot_messages.append(f"[ERROR] Interactive explore map failed: {exc}")
+        interactive_plot_path = None
+
+    # Create HTML report
+    html_report = [
+        "<html>",
+        "<head><title>PyPSA Network Validation Report</title></head>",
+        "<body>",
+        "<h1>PyPSA Network Validation Report</h1>",
+        f"<p><strong>Network file:</strong> {net_path}</p>",
+        f"<p><strong>Load status:</strong> {load_status}</p>",
+        f"<p><strong>Consistency check:</strong> {consistency_status}</p>",
+        "",
+        "<h2>Network Statistics</h2>",
+        "<table border='1'>",
+        "<tr><th>Component</th><th>Count</th></tr>",
+    ]
+
+    # Add stats to table
+    for component, count in stats.items():
+        html_report.append(f"<tr><td>{component.title()}</td><td>{count}</td></tr>")
+
     html_report.extend([
-        "<h2>Static Network Map</h2>",
-        f"<img src=\"{static_rel.as_posix()}\" alt=\"Network topology plot\" style=\"max-width:100%; height:auto;\"/>",
+        "</table>",
+        "",
+        "<h2>Plotting Summary</h2>",
+        "<ul>",
     ])
 
-if interactive_plot_path and interactive_plot_path.exists():
-    try:
-        interactive_rel = interactive_plot_path.relative_to(out_html.parent)
-    except ValueError:
-        interactive_rel = interactive_plot_path.name
+    for message in plot_messages:
+        html_report.append(f"<li>{html.escape(message)}</li>")
+
     html_report.extend([
-        "<h2>Interactive Network Explorer</h2>",
-        "<p>Explore buses, lines, and components interactively using the map below.</p>",
-        f"<iframe src=\"{interactive_rel.as_posix()}\" title=\"Interactive network explorer\" "
-        "style=\"width:100%; height:600px; border:1px solid #ccc;\"></iframe>",
+        "</ul>",
     ])
 
-html_report.extend([
-    "<h2>Consistency Check Details</h2>",
-    f"<pre>{html.escape(consistency_output)}</pre>",
-    "",
-    "</body>",
-    "</html>"
-])
+    if static_plot_path and static_plot_path.exists():
+        try:
+            static_rel = static_plot_path.relative_to(out_html.parent)
+        except ValueError:
+            static_rel = static_plot_path.name
+        html_report.extend([
+            "<h2>Static Network Map</h2>",
+            f"<img src=\"{static_rel.as_posix()}\" alt=\"Network topology plot\" style=\"max-width:100%; height:auto;\"/>",
+        ])
 
-# Write report
-out_html.write_text("\n".join(html_report), encoding="utf-8")
-logger.info(f"Network validation report written to {out_html}")
+    if interactive_plot_path and interactive_plot_path.exists():
+        try:
+            interactive_rel = interactive_plot_path.relative_to(out_html.parent)
+        except ValueError:
+            interactive_rel = interactive_plot_path.name
+        html_report.extend([
+            "<h2>Interactive Network Explorer</h2>",
+            "<p>Explore buses, lines, and components interactively using the map below.</p>",
+            f"<iframe src=\"{interactive_rel.as_posix()}\" title=\"Interactive network explorer\" "
+            "style=\"width:100%; height:600px; border:1px solid #ccc;\"></iframe>",
+        ])
 
-# Log execution summary
-log_execution_summary(
-    logger, "Network Validation", start_time,
-    inputs=[str(net_path)],
-    outputs=[str(out_html)]
-)
+    html_report.extend([
+        "<h2>Consistency Check Details</h2>",
+        f"<pre>{html.escape(consistency_output)}</pre>",
+        "",
+        "</body>",
+        "</html>"
+    ])
 
+    # Write report
+    out_html.write_text("\n".join(html_report), encoding="utf-8")
+    logger.info(f"Network validation report written to {out_html}")
+
+    # Log execution summary
+    log_execution_summary(
+        logger, "Network Validation", start_time,
+        inputs=[str(net_path)],
+        outputs=[str(out_html)]
+    )
+
+
+main()

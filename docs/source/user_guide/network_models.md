@@ -24,6 +24,30 @@ network_model: "ETYS"
 - All substations and switching points
 - Detailed transformer ratings
 - Planned reinforcements available
+- **Multi-year support**: Select ETYS publication year (2022, 2023, or 2024) via `etys.year`
+
+### Two-Stage Build Pipeline
+
+The ETYS network is built in two stages:
+
+1. **Data extraction** (`process_ETYS_data`): Parses the raw ETYS Appendix B Excel file into intermediate CSVs for circuits, transformers, HVDC, and buses. Also processes offshore wind farm connections from `GB_network.xlsx`.
+
+2. **Network assembly** (`build_ETYS_base_network`): Assembles the CSVs into a PyPSA network with coordinate resolution, land boundary validation, and optional upgrade application.
+
+### Coordinate Resolution
+
+Many ETYS buses lack explicit coordinates. A multi-tier strategy resolves missing locations:
+
+1. **GSP mapping**: Explicit node-to-GSP mapping from the `Dem_per_node` sheet of `GB_network.xlsx`
+2. **Substation coordinates**: Lookup from `substation_coordinates.csv` (WGS84 → OSGB36 conversion)
+3. **Prefix fallback**: Match the 4-character location prefix to other buses at the same site
+4. **Distance-weighted guessing**: Iterative estimation from connected buses using circuit lengths
+
+All guessed coordinates are validated against GB land boundaries (GSP region GeoJSON). Points that fall in the sea are moved to the nearest land point.
+
+### Offshore Bus Identification
+
+Buses serving offshore wind farm connections are identified via OFTO data and flagged with `is_offshore = True`. These are excluded from land boundary validation.
 
 ### Use Cases
 
@@ -34,11 +58,12 @@ network_model: "ETYS"
 
 ### Data Source
 
-Based on ETYS Appendix B data, including:
-- Circuit parameters (R, X, B, rating)
-- Transformer impedances and tap positions
-- Bus coordinates (OSGB36)
-- Planned upgrades timeline
+Based on ETYS Appendix B data (selected via `etys.year`), including:
+- Circuit parameters (R, X, B, rating) from sheets B-2-1a/b/c/d (SHE-T/SPT/NGET/OFTO)
+- Transformer impedances and tap positions from sheets B-3-1a/b/c/d
+- HVDC data from sheet B-5-1
+- Bus coordinates from substation data and supplementary sources
+- Planned upgrades timeline from sheets B-2-2a/b/c/d and B-3-2a/b/c/d
 
 ## Reduced Network
 
@@ -204,15 +229,35 @@ HT35_with_upgrades:
   network_model: "ETYS"
   etys_upgrades:
     enabled: true
+    upgrade_year: null   # null = use modelled_year
 ```
 
-This includes:
-- Eastern HVDC link
-- Scottish reinforcements
-- New transformers
-- Circuit upratings
+Upgrades are read from the same ETYS Appendix B file selected by `etys.year`. All upgrades with a commissioning year up to `upgrade_year` (or `modelled_year` if null) are applied.
 
-See the ETYS Appendix B documentation for details.
+### Supported Upgrade Types
+
+- **Circuit additions**: New transmission lines (with auto bus placement)
+- **Circuit removals**: Decommissioned lines
+- **Circuit modifications**: Uprated or re-routed circuits
+- **Transformer additions**: New inter-voltage transformers
+- **Transformer removals**: Decommissioned transformers
+- **Transformer modifications**: Re-rated transformers
+- **HVDC additions**: New DC links (e.g., Eastern HVDC)
+
+### New Bus Placement
+
+When upgrades reference buses not in the base network, coordinates are resolved via a multi-pass strategy:
+
+| Strategy | Method |
+|----------|--------|
+| 0 | Explicit lookup in `substation_coordinates.csv` (WGS84 → OSGB36) |
+| 1 | Copy coordinates from a same-site bus already in the network |
+| 2 | Copy from a bus added earlier in the same upgrade batch |
+| 3 | Estimate from a connected bus using circuit length as directional offset |
+
+After applying all upgrades, `remove_orphan_buses()` cleans up any buses that became disconnected.
+
+See the ETYS Appendix B documentation for the full upgrade timeline.
 
 ## Visualizing Networks
 

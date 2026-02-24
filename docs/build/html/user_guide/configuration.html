@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/configuration';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -532,6 +533,21 @@ document.write(`
 <span class="w">    </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">    </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 
+<span class="c1"># Transmission constraint settings (ETYS network only)</span>
+<span class="nt">transmission</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">min_line_s_nom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">             </span><span class="c1"># 0 = use actual ratings</span>
+<span class="w">  </span><span class="nt">min_transformer_s_nom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">      </span><span class="c1"># 0 = use actual ratings</span>
+<span class="w">  </span><span class="nt">capacity_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span><span class="w">           </span><span class="c1"># 1.0 = no scaling</span>
+
+<span class="c1"># ETYS data source (ETYS network only)</span>
+<span class="nt">etys</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span><span class="w">                    </span><span class="c1"># ETYS publication year (2022, 2023, 2024)</span>
+
+<span class="c1"># ETYS network upgrades (ETYS network only)</span>
+<span class="nt">etys_upgrades</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                 </span><span class="c1"># Apply planned upgrades</span>
+<span class="w">  </span><span class="nt">upgrade_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">            </span><span class="c1"># null = use modelled_year</span>
+
 <span class="c1"># Demand flexibility defaults (disabled unless scenario opts in)</span>
 <span class="nt">demand_flexibility</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
@@ -561,6 +577,37 @@ document.write(`
 <li><p><strong>Historical</strong> (≤2024): Uses DUKES for thermal, REPD for renewables, ESPENI for demand</p></li>
 <li><p><strong>Future</strong> (&gt;2024): Uses FES projections for capacity, requires <code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code></p></li>
 </ul>
+</section>
+<section id="etys-configuration">
+<h3>ETYS Configuration<a class="headerlink" href="#etys-configuration" title="Link to this heading">#</a></h3>
+<p>These settings apply only when <code class="docutils literal notranslate"><span class="pre">network_model:</span> <span class="pre">&quot;ETYS&quot;</span></code>.</p>
+<section id="etys-publication-year">
+<h4>ETYS Publication Year<a class="headerlink" href="#etys-publication-year" title="Link to this heading">#</a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">etys</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span><span class="w">  </span><span class="c1"># Available: 2022, 2023, 2024</span>
+</pre></div>
+</div>
+<p>Selects which ETYS data edition to use for the base network topology. Each publication year maps to a specific Appendix B Excel file — the mapping is managed by <code class="docutils literal notranslate"><span class="pre">scripts/network_build/etys_file_registry.py</span></code>.</p>
+</section>
+<section id="etys-network-upgrades">
+<h4>ETYS Network Upgrades<a class="headerlink" href="#etys-network-upgrades" title="Link to this heading">#</a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">etys_upgrades</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># Apply planned network reinforcements</span>
+<span class="w">  </span><span class="nt">upgrade_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># null = use modelled_year, or specify e.g. 2030</span>
+</pre></div>
+</div>
+<p>When enabled, applies circuit additions/removals, transformer changes, and HVDC additions from the ETYS upgrade sheets. The <code class="docutils literal notranslate"><span class="pre">upgrade_year</span></code> controls how far into the future to apply upgrades — set to <code class="docutils literal notranslate"><span class="pre">null</span></code> to apply all upgrades through the scenario’s <code class="docutils literal notranslate"><span class="pre">modelled_year</span></code>.</p>
+</section>
+<section id="transmission-constraints">
+<h4>Transmission Constraints<a class="headerlink" href="#transmission-constraints" title="Link to this heading">#</a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">transmission</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">min_line_s_nom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">         </span><span class="c1"># Minimum line capacity floor (MVA), 0 = use actual</span>
+<span class="w">  </span><span class="nt">min_transformer_s_nom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">  </span><span class="c1"># Minimum transformer capacity floor (MVA)</span>
+<span class="w">  </span><span class="nt">capacity_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span><span class="w">       </span><span class="c1"># Global scaling factor for all line/transformer capacities</span>
+</pre></div>
+</div>
+<p>These settings can relax transmission constraints for feasibility or sensitivity analysis. For example, <code class="docutils literal notranslate"><span class="pre">capacity_scale:</span> <span class="pre">1.5</span></code> increases all ratings by 50%.</p>
+</section>
 </section>
 <section id="network-model">
 <h3>Network Model<a class="headerlink" href="#network-model" title="Link to this heading">#</a></h3>
@@ -821,6 +868,12 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defaults-yaml">defaults.yaml</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-parameters">Key Parameters</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modelled-year">Modelled Year</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-configuration">ETYS Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-publication-year">ETYS Publication Year</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-network-upgrades">ETYS Network Upgrades</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#transmission-constraints">Transmission Constraints</a></li>
+</ul>
+</li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-model">Network Model</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-scenario">FES Scenario</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-period">Solve Period</a></li>

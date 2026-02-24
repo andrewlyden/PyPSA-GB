@@ -37,6 +37,88 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
+# SPATIAL MAPPING DEFAULTS
+# Override at runtime by calling configure_spatial_mapping(snakemake.config).
+# Values here match config/defaults.yaml → spatial_mapping section.
+# =============================================================================
+_OSGB36_MIN_VALUE: float = 1000.0      # x or y > this → OSGB36 (metres)
+_WGS84_MAX_ABSOLUTE: float = 100.0     # x and y < this → WGS84 (degrees)
+_SHETL_LAT_MIN: float = 57.0           # Northern Scotland boundary (°N)
+_SPTL_LAT_MIN: float = 55.5            # Southern Scotland boundary (°N)
+_DIST_SITE_TO_BUS_KM: float = 200.0    # General site → nearest bus
+_DIST_GSP_TO_BUS_KM: float = 100.0     # GSP coordinate → nearest bus
+_DIST_THERMAL_KM: float = 150.0        # Thermal gen → nearest bus
+_FUZZY_THRESHOLD: float = 0.8          # Fuzzy string match score (0–1)
+_FALLBACK_MAJOR_BUS_COUNT: int = 10    # Top-N buses used as fallback
+_GEN_MIN_CHECK_MW: float = 50.0        # Skip bus check below this MW
+_GEN_VERY_LARGE_MW: float = 300.0      # Must connect at ≥ _GEN_MIN_PREFERRED_KV
+_GEN_LARGE_LOW_V_MW: float = 200.0     # Must NOT connect at ≤ _GEN_LOW_KV
+_GEN_MEDIUM_MW: float = 100.0          # Needs transformer capacity check
+_GEN_MAX_XFMR_RATIO: float = 0.8       # Max generator / transformer s_nom ratio
+_GEN_MIN_PREFERRED_KV: float = 275.0   # Preferred minimum voltage (kV)
+_GEN_HIGH_KV: float = 400.0            # 400 kV-only search threshold (kV)
+_GEN_LOW_KV: float = 33.0              # Low-voltage threshold (kV)
+_EARTH_RADIUS_KM: float = 6371.0       # Earth radius for haversine distance
+
+
+def configure_spatial_mapping(cfg: dict) -> None:
+    """
+    Update spatial mapping constants from a Snakemake config dictionary.
+
+    Call once at script startup:  ``configure_spatial_mapping(snakemake.config)``
+
+    Reads the ``spatial_mapping`` top-level key and updates all module-level
+    constants.  Unknown keys are silently ignored; missing keys keep defaults.
+    """
+    global \
+        _OSGB36_MIN_VALUE, _WGS84_MAX_ABSOLUTE, \
+        _SHETL_LAT_MIN, _SPTL_LAT_MIN, \
+        _DIST_SITE_TO_BUS_KM, _DIST_GSP_TO_BUS_KM, _DIST_THERMAL_KM, \
+        _FUZZY_THRESHOLD, _FALLBACK_MAJOR_BUS_COUNT, \
+        _GEN_MIN_CHECK_MW, _GEN_VERY_LARGE_MW, _GEN_LARGE_LOW_V_MW, \
+        _GEN_MEDIUM_MW, _GEN_MAX_XFMR_RATIO, \
+        _GEN_MIN_PREFERRED_KV, _GEN_HIGH_KV, _GEN_LOW_KV, \
+        _EARTH_RADIUS_KM
+    sm = cfg.get('spatial_mapping', {})
+    if not sm:
+        return
+
+    coord = sm.get('coordinate_detection', {})
+    _OSGB36_MIN_VALUE = float(coord.get('osgb36_min_value', _OSGB36_MIN_VALUE))
+    _WGS84_MAX_ABSOLUTE = float(coord.get('wgs84_max_absolute', _WGS84_MAX_ABSOLUTE))
+
+    tr = sm.get('transmission_regions', {})
+    _SHETL_LAT_MIN = float(tr.get('shetl_lat_min', _SHETL_LAT_MIN))
+    _SPTL_LAT_MIN = float(tr.get('sptl_lat_min', _SPTL_LAT_MIN))
+
+    dist = sm.get('distance_km', {})
+    _DIST_SITE_TO_BUS_KM = float(dist.get('site_to_bus', _DIST_SITE_TO_BUS_KM))
+    _DIST_GSP_TO_BUS_KM = float(dist.get('gsp_to_bus', _DIST_GSP_TO_BUS_KM))
+    _DIST_THERMAL_KM = float(dist.get('thermal_generator', _DIST_THERMAL_KM))
+
+    _FUZZY_THRESHOLD = float(sm.get('fuzzy_threshold', _FUZZY_THRESHOLD))
+    _FALLBACK_MAJOR_BUS_COUNT = int(sm.get('fallback_major_bus_count', _FALLBACK_MAJOR_BUS_COUNT))
+
+    gv = sm.get('generator_voltage', {})
+    _GEN_MIN_CHECK_MW = float(gv.get('min_check_mw', _GEN_MIN_CHECK_MW))
+    _GEN_VERY_LARGE_MW = float(gv.get('very_large_mw', _GEN_VERY_LARGE_MW))
+    _GEN_LARGE_LOW_V_MW = float(gv.get('large_low_voltage_mw', _GEN_LARGE_LOW_V_MW))
+    _GEN_MEDIUM_MW = float(gv.get('medium_mw', _GEN_MEDIUM_MW))
+    _GEN_MAX_XFMR_RATIO = float(gv.get('max_transformer_ratio', _GEN_MAX_XFMR_RATIO))
+    _GEN_MIN_PREFERRED_KV = float(gv.get('min_preferred_kv', _GEN_MIN_PREFERRED_KV))
+    _GEN_HIGH_KV = float(gv.get('high_voltage_kv', _GEN_HIGH_KV))
+    _GEN_LOW_KV = float(gv.get('low_voltage_kv', _GEN_LOW_KV))
+
+    _EARTH_RADIUS_KM = float(sm.get('earth_radius_km', _EARTH_RADIUS_KM))
+
+    logger.debug(
+        f"Spatial mapping configured: dist_site={_DIST_SITE_TO_BUS_KM}km, "
+        f"dist_gsp={_DIST_GSP_TO_BUS_KM}km, dist_thermal={_DIST_THERMAL_KM}km, "
+        f"fuzzy={_FUZZY_THRESHOLD}, gen_check≥{_GEN_MIN_CHECK_MW}MW"
+    )
+
+
+# =============================================================================
 # COORDINATE SYSTEM UTILITIES
 # =============================================================================
 # CRITICAL: The ETYS network uses OSGB36 (British National Grid) coordinates
@@ -69,12 +151,12 @@ def detect_coordinate_system(x_values: np.ndarray, y_values: np.ndarray) -> Lite
     y_min, y_max = np.nanmin(y_values), np.nanmax(y_values)
     
     # OSGB36 detection: values in meters (large numbers)
-    is_osgb36 = (x_max > 1000 and y_max > 1000)
-    
+    is_osgb36 = (x_max > _OSGB36_MIN_VALUE and y_max > _OSGB36_MIN_VALUE)
+
     # WGS84 detection: values in degrees (small numbers, UK range)
-    is_wgs84 = (abs(x_min) < 180 and abs(x_max) < 180 and 
+    is_wgs84 = (abs(x_min) < 180 and abs(x_max) < 180 and
                 abs(y_min) < 90 and abs(y_max) < 90 and
-                x_max < 100 and y_max < 100)
+                x_max < _WGS84_MAX_ABSOLUTE and y_max < _WGS84_MAX_ABSOLUTE)
     
     if is_osgb36 and not is_wgs84:
         return 'OSGB36'
@@ -412,7 +494,7 @@ def get_bus_coordinates_for_external(lon: float, lat: float, network: pypsa.Netw
 _BUS_SPATIAL_INDEX_CACHE: Dict[str, Tuple] = {}
 
 
-def fuzzy_match_string(query: str, candidates: list, threshold: float = 0.8) -> Tuple[Optional[str], float]:
+def fuzzy_match_string(query: str, candidates: list, threshold: float = _FUZZY_THRESHOLD) -> Tuple[Optional[str], float]:
     """
     Find best fuzzy match for a query string in a list of candidates.
     
@@ -446,7 +528,7 @@ def map_sites_to_buses(
     bus_key: str = 'name',
     lat_col: str = 'lat',
     lon_col: str = 'lon',
-    max_distance_km: float = 200.0
+    max_distance_km: float = _DIST_SITE_TO_BUS_KM
 ) -> pd.DataFrame:
     """
     Map sites to network buses using robust geographic distance calculation.
@@ -573,7 +655,7 @@ def map_sites_to_buses(
             site_coords_radians = np.deg2rad(site_coords_lonlat[:, [1, 0]])  # Convert (lon, lat) to (lat, lon)
             
             # Calculate haversine distances (result is in radians)
-            earth_radius_km = 6371.0
+            earth_radius_km = _EARTH_RADIUS_KM
             distances_radians = haversine_distances(site_coords_radians, bus_coords_radians)
             distances_km = distances_radians * earth_radius_km
             
@@ -626,10 +708,10 @@ def map_sites_to_buses(
                     # Create transformed coordinate array for valid sites only
                     site_coords_osgb36 = np.column_stack([site_x, site_y])
                     
-                    # Build spatial index for buses
-                    network_id = id(network.buses)
-                    bus_hash = hashlib.md5(f"{len(network.buses)}_{network.buses.index[0] if len(network.buses) > 0 else ''}".encode()).hexdigest()[:8]
-                    cache_key = f"{network_id}_{bus_hash}"
+                    # Build spatial index for buses (content-based cache key
+                    # to avoid stale data from reused memory addresses)
+                    bus_hash = hashlib.md5(bus_coords_xy.tobytes()).hexdigest()[:16]
+                    cache_key = f"bus_spatial_{bus_hash}"
                     
                     if cache_key in _BUS_SPATIAL_INDEX_CACHE:
                         logger.debug("Using cached bus spatial index")
@@ -782,8 +864,8 @@ def map_sites_to_buses(
             if pre_assigned_mask.loc[idx]:
                 continue
             if pd.notna(site[region_col]):
-                match, score = fuzzy_match_string(str(site[region_col]).lower(), [name.lower() for name in bus_names], threshold=0.8)
-                if match and score > 0.8:
+                match, score = fuzzy_match_string(str(site[region_col]).lower(), [name.lower() for name in bus_names], threshold=_FUZZY_THRESHOLD)
+                if match and score > _FUZZY_THRESHOLD:
                     matched_bus = [name for name in bus_names if name.lower() == match][0]
                     sites_df.at[idx, 'bus'] = matched_bus
                     sites_df.at[idx, 'distance_km'] = 0.0
@@ -887,7 +969,8 @@ def apply_etys_bmu_mapping(
         'longannet': 'LONG',
         'killingholme': 'KILL',
         'little barford': 'LITB',
-        'connah': 'CONN',
+        # 'connah': 'CONN' REMOVED — CONN is Conon Bridge (Scotland), not Connah's Quay (Wales)
+        # Connah's Quay is near BODE (Bodelwyddan) — nearest-neighbor handles this correctly
         'carrington': 'CARR',
         'rocksavage': 'ROCK',
         'immingham': 'IMMM',
@@ -921,6 +1004,9 @@ def apply_etys_bmu_mapping(
         'barrow': 'BARR',
         'gunfleet': 'GUNF',
         'kentish flats': 'KENT',
+        'seagreen': 'SGRW',
+        'neart na gaoithe': 'COCK',  # Connects near Cockenzie
+        'dogger bank': 'CREB',       # Connects at Creyke Beck
         # Pumped storage stations
         'cruachan': 'CRUA',
         'foyers': 'FOYE',
@@ -973,8 +1059,8 @@ def apply_etys_bmu_mapping(
         # Get generator name for matching
         gen_name = str(row.get('station_name', row.get('name', row.get('Site Name', '')))).lower()
         
-        # Only check generators > 50 MW (lowered threshold to catch more issues)
-        if capacity_mw < 50:
+        # Only check generators above minimum threshold
+        if capacity_mw < _GEN_MIN_CHECK_MW:
             continue
         
         # Check transformer capacity from this bus (only real transformers, not links)
@@ -991,17 +1077,17 @@ def apply_etys_bmu_mapping(
         # Flag for voltage-based concern - large generators at low voltage are problematic
         needs_voltage_upgrade = False
         
-        # Hard rule: Very large generators (>300MW) should ALWAYS be at 275kV+
-        if capacity_mw >= 300 and v_nom < 275:
+        # Hard rule: Very large generators should ALWAYS be at min_preferred_kv+
+        if capacity_mw >= _GEN_VERY_LARGE_MW and v_nom < _GEN_MIN_PREFERRED_KV:
             needs_voltage_upgrade = True
-        # Hard rule: Generators >200MW at 33kV need to move (no valid connection)
-        elif capacity_mw >= 200 and v_nom <= 33:
+        # Hard rule: Large generators at low voltage need to move
+        elif capacity_mw >= _GEN_LARGE_LOW_V_MW and v_nom <= _GEN_LOW_KV:
             needs_voltage_upgrade = True
-        # Soft rule: Generator exceeds 80% of export transformer capacity
-        elif effective_export_capacity > 0 and capacity_mw / effective_export_capacity > 0.8:
+        # Soft rule: Generator exceeds max_transformer_ratio of export transformer capacity
+        elif effective_export_capacity > 0 and capacity_mw / effective_export_capacity > _GEN_MAX_XFMR_RATIO:
             needs_voltage_upgrade = True
-        # Soft rule: Generator >100MW with no transformer capacity at 33kV/132kV
-        elif capacity_mw >= 100 and v_nom < 275 and effective_export_capacity == 0:
+        # Soft rule: Medium generator with no transformer capacity at low voltage
+        elif capacity_mw >= _GEN_MEDIUM_MW and v_nom < _GEN_MIN_PREFERRED_KV and effective_export_capacity == 0:
             needs_voltage_upgrade = True
         
         if not needs_voltage_upgrade:
@@ -1017,17 +1103,17 @@ def apply_etys_bmu_mapping(
                 if bmu_prefix in bmu_mapping:
                     candidate_bus = bmu_mapping[bmu_prefix]
                     if candidate_bus in network.buses.index and candidate_bus != bus:
-                        # Accept station-matched buses that are 275kV or higher (not just 400kV)
+                        # Accept station-matched buses at or above preferred voltage
                         candidate_v = bus_v_nom.get(candidate_bus, 0)
-                        if candidate_v >= 275:
+                        if candidate_v >= _GEN_MIN_PREFERRED_KV:
                             new_bus = candidate_bus
                             match_method = 'station_name'
                             break
                 else:
                     # Fallback: look for any 275kV+ bus with this prefix (prefer 400kV)
                     potential_buses = [
-                        b for b in network.buses.index 
-                        if b.startswith(bmu_prefix) and bus_v_nom.get(b, 0) >= 275
+                        b for b in network.buses.index
+                        if b.startswith(bmu_prefix) and bus_v_nom.get(b, 0) >= _GEN_MIN_PREFERRED_KV
                     ]
                     if potential_buses:
                         # Sort by voltage (prefer higher voltage)
@@ -1037,51 +1123,20 @@ def apply_etys_bmu_mapping(
                         break
         
         # Method 2: Try same prefix as current bus but at 400kV
-        if new_bus is None and v_nom < 400:
+        if new_bus is None and v_nom < _GEN_HIGH_KV:
             site_prefix = bus[:4]
             potential_400kv_buses = [
-                b for b in network.buses.index 
-                if b.startswith(site_prefix) and bus_v_nom.get(b, 0) == 400
+                b for b in network.buses.index
+                if b.startswith(site_prefix) and bus_v_nom.get(b, 0) == _GEN_HIGH_KV
             ]
             if potential_400kv_buses:
                 new_bus = potential_400kv_buses[0]
                 match_method = 'prefix_heuristic'
         
-        # Method 3: Find nearest 400kV bus with sufficient line capacity
-        # For generators that still have no suitable bus after prefix matching
-        if new_bus is None and capacity_mw >= 100 and v_nom < 400:
-            # Get coordinates of current bus
-            try:
-                bus_x = network.buses.loc[bus, 'x']
-                bus_y = network.buses.loc[bus, 'y']
-                
-                if pd.notna(bus_x) and pd.notna(bus_y):
-                    # Find all 400kV buses with sufficient line capacity
-                    candidate_buses = []
-                    for b in network.buses.index:
-                        if bus_v_nom.get(b, 0) >= 400:
-                            # Calculate line capacity at this 400kV bus
-                            lines_at_b = network.lines[
-                                (network.lines['bus0'] == b) | 
-                                (network.lines['bus1'] == b)
-                            ]
-                            b_line_cap = lines_at_b['s_nom'].sum()
-                            
-                            # Must have at least 1.5x the generator capacity in line capacity
-                            if b_line_cap >= capacity_mw * 1.5:
-                                b_x = network.buses.loc[b, 'x']
-                                b_y = network.buses.loc[b, 'y']
-                                if pd.notna(b_x) and pd.notna(b_y):
-                                    dist = ((bus_x - b_x)**2 + (bus_y - b_y)**2)**0.5
-                                    candidate_buses.append((b, dist, b_line_cap))
-                    
-                    # Sort by distance and pick the nearest
-                    if candidate_buses:
-                        candidate_buses.sort(key=lambda x: x[1])
-                        new_bus = candidate_buses[0][0]
-                        match_method = f'nearest_400kV_{candidate_buses[0][1]/1000:.0f}km'
-            except Exception as e:
-                logger.debug(f"Could not find nearest 400kV bus for {gen_name}: {e}")
+        # Note: Method 3 (nearest 400kV bus search) was removed because it moved
+        # generators too far from their correct locations (e.g., Seagreen 75km to KINT4J).
+        # Methods 1 and 2 handle the important cases; remaining generators stay at
+        # their nearest-neighbor bus which is geographically correct.
         
         # Apply correction if we found a better bus
         if new_bus and new_bus != bus:

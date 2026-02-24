@@ -18,10 +18,19 @@ PyPSA-GB is organized into modular scripts:
 | Module | Purpose |
 |--------|---------|
 | `solve_network.py` | Network optimization |
-| `build_network.py` | Base network construction |
 | `scenario_detection.py` | Historical/future routing |
 | `carrier_definitions.py` | Technology definitions |
 | `logging_config.py` | Logging setup |
+
+### Network Build Modules (`scripts/network_build/`)
+
+| Module | Purpose |
+|--------|--------|
+| `ETYS_network.py` | ETYS network assembly from preprocessed data |
+| `process_ETYS_data.py` | Raw ETYS Excel → intermediate CSVs |
+| `ETYS_upgrades.py` | Network upgrade application (circuits, transformers, HVDC) |
+| `etys_file_registry.py` | ETYS file/sheet name mapping and constants |
+| `build_network.py` | Reduced/Zonal network builders |
 
 ### Integration Modules
 
@@ -59,14 +68,13 @@ from scripts.spatial_utils import map_sites_to_buses
 Scripts are typically invoked via Snakemake rules, but can also be run standalone:
 
 ```python
-# Example: Run network building manually
+# Example: Build an ETYS network manually
 import pypsa
-from scripts.build_network import build_base_network
+from scripts.network_build.ETYS_network import create_network
+from scripts.network_build.ETYS_upgrades import apply_etys_network_upgrades
 
-network = build_base_network(
-    network_model="ETYS",
-    year=2035
-)
+# Or use the Snakemake rules (recommended):
+# snakemake resources/network/ETYS_2024_base_network.nc -j 1
 ```
 
 ## Type Hints

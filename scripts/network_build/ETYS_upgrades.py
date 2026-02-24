@@ -17,10 +17,61 @@ import pandas as pd
 import numpy as np
 import pypsa
 import logging
+import sys
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple
+import warnings
 
-from scripts.network_build.etys_file_registry import VOLTAGE_LEVELS
+# Add project root to path for imports
+_project_root = Path(__file__).resolve().parents[2]
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+from scripts.network_build.etys_file_registry import (
+    VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, ETYS_UPGRADE_SHEETS,
+    INVALID_NODE_PATTERNS, DEFAULT_RATINGS,
+)
+
+
+# Realistic per-unit parameter ranges for validation (on 100 MVA base)
+PARAM_RANGES = {
+    'line': {
+        'r': (0.0001, 0.05),    # pu resistance
+        'x': (0.0001, 0.10),    # pu reactance
+        'b': (0.0, 5.0),        # pu susceptance
+        's_nom': (50, 5000),    # MVA
+    },
+    'transformer': {
+        'r': (0.0001, 0.02),    # pu resistance
+        'x': (0.02, 0.20),      # pu reactance
+        'b': (0.0, 0.10),       # pu susceptance
+        's_nom': (50, 2000),    # MVA
+    },
+}
+
+
+def validate_electrical_params(component_type, r, x, b, s_nom, component_id,
+                                logger=None):
+    """
+    Warn if electrical parameters are outside realistic ranges.
+    Does NOT modify values -- only logs warnings.
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    ranges = PARAM_RANGES.get(component_type)
+    if ranges is None:
+        return
+
+    for param_name, value in [('r', r), ('x', x), ('b', b), ('s_nom', s_nom)]:
+        if value is None:
+            continue
+        lo, hi = ranges[param_name]
+        if value < lo or value > hi:
+            logger.warning(
+                f"  {component_type} {component_id}: {param_name}={value:.6f} "
+                f"outside expected range [{lo}, {hi}]"
+            )
 
 
 def load_etys_upgrade_data(etys_file: str, logger: Optional[logging.Logger] = None) -> Dict[str, pd.DataFrame]:
@@ -42,26 +93,24 @@ def load_etys_upgrade_data(etys_file: str, logger: Optional[logging.Logger] = No
     
     logger.info(f"Loading ETYS upgrade data from {etys_file}")
     
-    # Map sheet names to operators
-    circuit_sheets = {
-        'B-2-2a': 'SHE',
-        'B-2-2b': 'SPT',
-        'B-2-2c': 'NGET',
-        'B-2-2d': 'OFTO'
-    }
-    
-    transformer_sheets = {
-        'B-3-2a': 'SHE',
-        'B-3-2b': 'SPT',
-        'B-3-2c': 'NGET',
-        'B-3-2d': 'OFTO'
-    }
+    # Sheet-to-operator mappings from central registry
+    circuit_sheets = ETYS_UPGRADE_SHEETS['circuits']
+    transformer_sheets = ETYS_UPGRADE_SHEETS['transformers']
     
     # Load circuit data
     circuits = []
     for sheet_name, operator in circuit_sheets.items():
         try:
             df = pd.read_excel(etys_file, sheet_name=sheet_name, skiprows=1)
+            # Normalize column names to handle ETYS year-to-year naming differences
+            df.rename(columns={
+                'Node 1': 'Node1', 'Node 2': 'Node2',
+                'R (% on 100MVA)': 'R (% on 100 MVA)',
+                'X (% on 100MVA)': 'X (% on 100 MVA)',
+                'B (% on 100MVA)': 'B (% on 100 MVA)',
+                'OHL Length(km)': 'OHL Length (km)',
+                'Cable Length(km)': 'Cable Length (km)',
+            }, inplace=True)
             df['operator'] = operator
             circuits.append(df)
             logger.info(f"  Loaded {sheet_name} ({operator}): {len(df)} records")
@@ -75,6 +124,14 @@ def load_etys_upgrade_data(etys_file: str, logger: Optional[logging.Logger] = No
     for sheet_name, operator in transformer_sheets.items():
         try:
             df = pd.read_excel(etys_file, sheet_name=sheet_name, skiprows=1)
+            # Normalize column names to handle ETYS year-to-year naming differences
+            df.rename(columns={
+                'Node 1': 'Node1', 'Node 2': 'Node2',
+                'R (% on 100MVA)': 'R (% on 100 MVA)',
+                'X (% on 100MVA)': 'X (% on 100 MVA)',
+                'B (% on 100MVA)': 'B (% on 100 MVA)',
+                'Rating (MVA)': 'Winter Rating (MVA)',
+            }, inplace=True)
             df['operator'] = operator
             transformers.append(df)
             logger.info(f"  Loaded {sheet_name} ({operator}): {len(df)} records")
@@ -84,9 +141,10 @@ def load_etys_upgrade_data(etys_file: str, logger: Optional[logging.Logger] = No
     transformers_df = pd.concat(transformers, ignore_index=True) if transformers else pd.DataFrame()
     
     # Load HVDC data
+    hvdc_sheet = ETYS_UPGRADE_SHEETS['hvdc']
     try:
-        hvdc_df = pd.read_excel(etys_file, sheet_name='B-5-1', skiprows=1)
-        logger.info(f"  Loaded B-5-1 (HVDC): {len(hvdc_df)} records")
+        hvdc_df = pd.read_excel(etys_file, sheet_name=hvdc_sheet, skiprows=1)
+        logger.info(f"  Loaded {hvdc_sheet} (HVDC): {len(hvdc_df)} records")
     except Exception as e:
         logger.warning(f"  Failed to load HVDC data: {e}")
         hvdc_df = pd.DataFrame()
@@ -209,22 +267,23 @@ def filter_upgrades_by_year(upgrades_data: Dict[str, pd.DataFrame],
     return categorized
 
 
-# Voltage level mapping from node name suffix to kV.
-# Uses the canonical VOLTAGE_LEVELS from the file registry, extended with
-# HVDC-specific voltages that only appear in upgrade data.
-VOLTAGE_MAP = {**VOLTAGE_LEVELS, '5': 500, '6': 600}  # 500/600 kV for HVDC buses
+# VOLTAGE_LEVELS imported from etys_file_registry (shared constant)
+# Alias for backward compatibility within this module
+VOLTAGE_MAP = VOLTAGE_LEVELS
 
 
 def add_missing_buses_from_upgrades(network: pypsa.Network,
                                     categorized_upgrades: Dict,
+                                    substation_coords: Optional[Dict[str, Tuple[float, float]]] = None,
                                     logger: Optional[logging.Logger] = None) -> int:
     """
     Add missing buses to the network that are referenced in upgrade data.
-    
+
     When ETYS upgrades reference new nodes (e.g., BLYT22 for a new 275kV bus at Blyth),
     these buses need to be added to the network before circuits can be created.
-    
+
     The function uses a multi-pass approach:
+    0. Strategy 0: Exact site lookup in substation_coords dict (lat/lon → OSGB36)
     1. Collects all node names and their connections from circuit/transformer additions
     2. Identifies which nodes don't exist in the network
     3. Infers voltage level from node name (e.g., '2' suffix = 275kV)
@@ -232,12 +291,14 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
     5. Second pass: Uses coordinates from connected buses in the upgrade data
     6. Third pass: Uses line length to estimate position from known connected bus
     7. Final fallback: Network centroid (should rarely be needed)
-    
+
     Args:
         network: PyPSA network object
         categorized_upgrades: Dictionary with 'circuits' and 'transformers' additions
+        substation_coords: Optional dict mapping 4-char site code → (lat, lon) in WGS84.
+            When provided, used as highest-priority coordinate source (Strategy 0).
         logger: Optional logger instance
-        
+
     Returns:
         Number of buses added
     """
@@ -248,16 +309,12 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
     nodes_needed = set()
     node_connections = {}  # Map: node -> list of (connected_node, length_km)
     
-    # Invalid node name patterns to skip
-    invalid_patterns = ['converter station', 'offshore', 'onshore', 'substation',
-                        't-point', 'platform', 'hub', 'nan', 'tbc', 'n/a']
-    
     def is_valid_node(node_name):
         """Check if node name is valid (not a placeholder or invalid pattern)."""
         if not node_name or pd.isna(node_name):
             return False
         node_str = str(node_name).strip().lower()
-        return node_str and not any(p in node_str for p in invalid_patterns)
+        return node_str and not any(p in node_str for p in INVALID_NODE_PATTERNS)
     
     def safe_float(val, default=0.0):
         """Safely convert a value to float, handling 'TBC', NaN, etc."""
@@ -316,26 +373,6 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
             if is_valid_node(node1):
                 node_connections[node2].append((node1, 0.0))
     
-    # From HVDC additions (note: HVDC uses 'Node 1'/'Node 2' column names with spaces)
-    for record in categorized_upgrades.get('hvdc', {}).get('additions', []):
-        node1 = str(record.get('Node 1', '')).strip()
-        node2 = str(record.get('Node 2', '')).strip()
-        length = safe_float(record.get('Length(km)', 0))
-        
-        if is_valid_node(node1):
-            nodes_needed.add(node1)
-            if node1 not in node_connections:
-                node_connections[node1] = []
-            if is_valid_node(node2):
-                node_connections[node1].append((node2, length))
-                
-        if is_valid_node(node2):
-            nodes_needed.add(node2)
-            if node2 not in node_connections:
-                node_connections[node2] = []
-            if is_valid_node(node1):
-                node_connections[node2].append((node1, length))
-    
     # Remove empty strings
     nodes_needed.discard('')
     
@@ -352,7 +389,16 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
     # Calculate network centroid for final fallback
     centroid_x = network.buses['x'].median()
     centroid_y = network.buses['y'].median()
-    
+
+    # Build WGS84 → OSGB36 transformer once (if substation_coords provided)
+    wgs_to_osgb = None
+    if substation_coords:
+        try:
+            from pyproj import Transformer as ProjTransformer
+            wgs_to_osgb = ProjTransformer.from_crs("EPSG:4326", "EPSG:27700", always_xy=True)
+        except ImportError:
+            logger.warning("  pyproj not available — Strategy 0 (substation_coords) disabled")
+
     # Track which buses were added and their coordinates
     added_buses = {}  # node -> (x, y)
     buses_at_centroid = []  # Track buses that ended up at centroid
@@ -411,7 +457,15 @@ def add_missing_buses_from_upgrades(network: pypsa.Network,
             
             x, y = None, None
             coord_source = None
-            
+
+            # Strategy 0: Explicit substation_coords lookup (highest priority)
+            if x is None and substation_coords and wgs_to_osgb:
+                if site_code in substation_coords:
+                    lat, lon = substation_coords[site_code]
+                    osgb_x, osgb_y = wgs_to_osgb.transform(lon, lat)
+                    x, y = osgb_x, osgb_y
+                    coord_source = f"substation_coords ({lat:.4f}, {lon:.4f})"
+
             # Strategy 1: Same-site bus with valid coordinates (not at centroid)
             site_buses = network.buses[network.buses.index.str.startswith(site_code)]
             for _, site_bus in site_buses.iterrows():
@@ -516,11 +570,27 @@ def apply_circuit_additions(network: pypsa.Network,
             year = int(record['Year']) if pd.notna(record.get('Year')) else 2024
             
             # Skip invalid nodes (generic names, NaN, etc.)
-            invalid_patterns = ['converter station', 'offshore', 'onshore', 'nan']
-            if any(p in node1.lower() for p in invalid_patterns) or any(p in node2.lower() for p in invalid_patterns):
+            if any(p in node1.lower() for p in INVALID_NODE_PATTERNS) or any(p in node2.lower() for p in INVALID_NODE_PATTERNS):
                 failure_details.append({'type': 'addition', 'reason': 'invalid_node_name', 'node1': node1, 'node2': node2, 'year': year})
                 logger.debug(f"Skipping circuit with generic node name: {node1}-{node2}")
                 failed += 1
+                continue
+            
+            # Skip self-loops (bus-section switches, series compensators, etc.)
+            # These are "Zero Length" or "SC" circuit types in ETYS that connect
+            # a bus to itself.  They cannot be modelled as AC lines (zero
+            # impedance → singular susceptance matrix → SVD failure).
+            if node1 == node2:
+                circuit_type = str(record.get('Circuit Type', '')).strip()
+                logger.debug(
+                    f"Skipping self-loop circuit {node1}-{node2} "
+                    f"(type={circuit_type}): bus-section switch / SC"
+                )
+                failed += 1
+                failure_details.append({
+                    'type': 'addition', 'reason': 'self_loop',
+                    'node1': node1, 'node2': node2, 'year': year,
+                })
                 continue
             
             # Check if buses exist
@@ -544,21 +614,56 @@ def apply_circuit_additions(network: pypsa.Network,
             if line_id in network.lines.index:
                 logger.debug(f"Line {line_id} already exists, skipping")
                 continue
-            
-            # Extract electrical parameters (use realistic defaults if missing)
-            # Typical values for 400kV lines: R ~ 0.001-0.005 pu, X ~ 0.01-0.05 pu, B ~ 0.5-2.0 pu
-            # Values should be consistent with existing network lines
-            default_r = 0.002   # Typical line resistance per unit
-            default_x = 0.02    # Typical line reactance per unit
-            default_b = 0.5     # Typical line susceptance (charging) per unit
-            
-            r = float(record.get('R (% on 100 MVA)', default_r)) if pd.notna(record.get('R (% on 100 MVA)')) else default_r
-            x = float(record.get('X (% on 100 MVA)', default_x)) if pd.notna(record.get('X (% on 100 MVA)')) else default_x
-            b = float(record.get('B (% on 100 MVA)', default_b)) if pd.notna(record.get('B (% on 100 MVA)')) else default_b
+
+            # Check for existing parallel circuits (info/warning for visibility)
+            existing_parallels = network.lines[
+                ((network.lines['bus0'] == node1) & (network.lines['bus1'] == node2)) |
+                ((network.lines['bus0'] == node2) & (network.lines['bus1'] == node1))
+            ]
+            if not existing_parallels.empty:
+                n_existing = len(existing_parallels)
+                ratings = existing_parallels['s_nom'].tolist()
+                logger.info(
+                    f"  Adding parallel circuit {node1}–{node2}: "
+                    f"{n_existing} circuit(s) already exist (ratings: {ratings} MVA)"
+                )
+                if n_existing >= 4:
+                    logger.warning(
+                        f"  High parallel circuit count for {node1}–{node2}: "
+                        f"{n_existing} existing + 1 new = {n_existing + 1} total"
+                    )
+
+            # Extract electrical parameters (use shared defaults from registry)
+            line_defaults = ELECTRICAL_DEFAULTS['line']
+
+            # Convert from "% on 100 MVA" to per-unit (divide by 100)
+            # Must match conversion in process_ETYS_data.py
+            raw_r = record.get('R (% on 100 MVA)')
+            r = float(raw_r) / 100.0 if pd.notna(raw_r) else line_defaults['r']
+
+            raw_x = record.get('X (% on 100 MVA)')
+            x = float(raw_x) / 100.0 if pd.notna(raw_x) else line_defaults['x']
+
+            raw_b = record.get('B (% on 100 MVA)')
+            b = float(raw_b) / 100.0 if pd.notna(raw_b) else line_defaults['b']
+
+            # ETYS data often has zero impedance for planned circuits where
+            # detailed parameters are not yet available.  Zero reactance causes
+            # a singular susceptance matrix (B = 1/x → Inf) which makes the
+            # post-solve SVD computation of voltage angles fail.
+            # Substitute sensible defaults when values are zero.
+            if x == 0.0:
+                logger.warning(
+                    f"  Circuit {line_id}: X=0 in ETYS data (placeholder); "
+                    f"using default x={line_defaults['x']}"
+                )
+                x = line_defaults['x']
+            if r == 0.0:
+                r = line_defaults['r']
             
             # Use winter rating as conservative estimate
-            s_nom = float(record.get('Winter Rating (MVA)', 1000)) if pd.notna(record.get('Winter Rating (MVA)')) else 1000
-            
+            s_nom = float(record.get('Winter Rating (MVA)', DEFAULT_RATINGS['line'])) if pd.notna(record.get('Winter Rating (MVA)')) else DEFAULT_RATINGS['line']
+
             # Extract circuit type if available
             circuit_type = str(record.get('Circuit Type', 'AC')).strip() if pd.notna(record.get('Circuit Type')) else 'AC'
             
@@ -566,6 +671,9 @@ def apply_circuit_additions(network: pypsa.Network,
             ohl_length = float(record.get('OHL Length (km)', 0)) if pd.notna(record.get('OHL Length (km)')) else 0
             cable_length = float(record.get('Cable Length (km)', 0)) if pd.notna(record.get('Cable Length (km)')) else 0
             
+            # Validate electrical parameters
+            validate_electrical_params('line', r, x, b, s_nom, line_id, logger)
+
             # Add line to network
             network.add('Line', line_id,
                        bus0=node1,
@@ -623,17 +731,27 @@ def apply_circuit_removals(network: pypsa.Network,
                 logger.debug(f"No line found for removal: {node1}-{node2}")
                 failed += 1
                 continue
-            
-            # Remove the line
-            for line_id in matching_lines.index:
-                network.lines.drop(line_id, inplace=True)
-                successful += 1
-                
+
+            # Remove ONE line per removal record (not all parallel circuits).
+            # If the removal record specifies a rating, prefer the closest match.
+            if len(matching_lines) > 1 and pd.notna(record.get('Winter Rating (MVA)')):
+                target_rating = float(record['Winter Rating (MVA)'])
+                rating_diff = (matching_lines['s_nom'] - target_rating).abs()
+                line_id = rating_diff.idxmin()
+            else:
+                line_id = matching_lines.index[0]
+
+            network.lines.drop(line_id, inplace=True)
+            successful += 1
+            if len(matching_lines) > 1:
+                logger.debug(f"Removed 1 of {len(matching_lines)} parallel circuits "
+                             f"between {node1}-{node2} (line {line_id})")
+
         except Exception as e:
             failure_details.append({'type': 'removal', 'reason': 'exception', 'node1': node1, 'node2': node2, 'error': str(e)})
             logger.debug(f"Failed to remove circuit {node1}-{node2}: {e}")
             failed += 1
-    
+
     return successful, failed, failure_details
 
 
@@ -674,16 +792,27 @@ def apply_circuit_changes(network: pypsa.Network,
                 failed += 1
                 continue
             
-            # Update parameters
+            # Update parameters (convert % on 100 MVA to per-unit, matching process_ETYS_data.py)
+            # ETYS change records sometimes have zero impedance as a placeholder.
+            # Do NOT overwrite existing (non-zero) values with zeros — that would
+            # create a singular susceptance matrix and crash post-solve SVD.
             for line_id in matching_lines.index:
                 if pd.notna(record.get('Winter Rating (MVA)')):
                     network.lines.at[line_id, 's_nom'] = float(record['Winter Rating (MVA)'])
                 if pd.notna(record.get('R (% on 100 MVA)')):
-                    network.lines.at[line_id, 'r'] = float(record['R (% on 100 MVA)'])
+                    new_r = float(record['R (% on 100 MVA)']) / 100.0
+                    if new_r != 0.0:
+                        network.lines.at[line_id, 'r'] = new_r
+                    else:
+                        logger.debug(f"  Skipping zero R for line {line_id} (keeping existing value)")
                 if pd.notna(record.get('X (% on 100 MVA)')):
-                    network.lines.at[line_id, 'x'] = float(record['X (% on 100 MVA)'])
+                    new_x = float(record['X (% on 100 MVA)']) / 100.0
+                    if new_x != 0.0:
+                        network.lines.at[line_id, 'x'] = new_x
+                    else:
+                        logger.warning(f"  Skipping zero X for line {line_id} (keeping existing value)")
                 if pd.notna(record.get('B (% on 100 MVA)')):
-                    network.lines.at[line_id, 'b'] = float(record['B (% on 100 MVA)'])
+                    network.lines.at[line_id, 'b'] = float(record['B (% on 100 MVA)']) / 100.0
                 
                 successful += 1
                 
@@ -724,10 +853,9 @@ def apply_transformer_additions(network: pypsa.Network,
             node2 = str(record['Node2']).strip()
             
             # Skip invalid nodes (NaN, empty, generic names)
-            invalid_patterns = ['converter station', 'offshore', 'onshore', 'nan']
             if (node1.lower() == 'nan' or node2.lower() == 'nan' or not node1 or not node2 or
-                any(p in node1.lower() for p in invalid_patterns) or 
-                any(p in node2.lower() for p in invalid_patterns)):
+                any(p in node1.lower() for p in INVALID_NODE_PATTERNS) or
+                any(p in node2.lower() for p in INVALID_NODE_PATTERNS)):
                 year = int(record['Year']) if pd.notna(record.get('Year')) else 2024
                 failure_details.append({'type': 'addition', 'reason': 'invalid_node_name', 'node1': node1, 'node2': node2, 'year': year})
                 logger.debug(f"Skipping transformer with invalid nodes: {node1}-{node2}")
@@ -757,19 +885,53 @@ def apply_transformer_additions(network: pypsa.Network,
             if xfmr_id in network.transformers.index:
                 logger.debug(f"Transformer {xfmr_id} already exists, skipping")
                 continue
-            
-            # Extract electrical parameters
-            # Use typical transformer values if not specified (not 0.0001 which creates power flow issues)
-            # Typical values: R ~ 0.001-0.01 pu, X ~ 0.05-0.15 pu for grid transformers
-            default_r = 0.002  # Typical transformer resistance
-            default_x = 0.08   # Typical transformer reactance (similar to existing network values)
-            default_b = 0.0    # Shunt susceptance (usually small for transformers)
-            
-            r = float(record.get('R (% on 100 MVA)', default_r)) if pd.notna(record.get('R (% on 100 MVA)')) else default_r
-            x = float(record.get('X (% on 100 MVA)', default_x)) if pd.notna(record.get('X (% on 100 MVA)')) else default_x
-            b = float(record.get('B (% on 100 MVA)', default_b)) if pd.notna(record.get('B (% on 100 MVA)')) else default_b
-            s_nom = float(record.get('Rating (MVA)', 500)) if pd.notna(record.get('Rating (MVA)')) else 500
-            
+
+            # Check for existing parallel transformers (info/warning for visibility)
+            existing_parallels = network.transformers[
+                ((network.transformers['bus0'] == node1) & (network.transformers['bus1'] == node2)) |
+                ((network.transformers['bus0'] == node2) & (network.transformers['bus1'] == node1))
+            ]
+            if not existing_parallels.empty:
+                n_existing = len(existing_parallels)
+                ratings = existing_parallels['s_nom'].tolist()
+                logger.info(
+                    f"  Adding parallel transformer {node1}–{node2}: "
+                    f"{n_existing} transformer(s) already exist (ratings: {ratings} MVA)"
+                )
+                if n_existing >= 4:
+                    logger.warning(
+                        f"  High parallel transformer count for {node1}–{node2}: "
+                        f"{n_existing} existing + 1 new = {n_existing + 1} total"
+                    )
+
+            # Extract electrical parameters (use shared defaults from registry)
+            xfmr_defaults = ELECTRICAL_DEFAULTS['transformer']
+
+            # Convert from "% on 100 MVA" to per-unit (divide by 100)
+            # Must match conversion in process_ETYS_data.py
+            raw_r = record.get('R (% on 100 MVA)')
+            r = float(raw_r) / 100.0 if pd.notna(raw_r) else xfmr_defaults['r']
+
+            raw_x = record.get('X (% on 100 MVA)')
+            x = float(raw_x) / 100.0 if pd.notna(raw_x) else xfmr_defaults['x']
+
+            raw_b = record.get('B (% on 100 MVA)')
+            b = float(raw_b) / 100.0 if pd.notna(raw_b) else xfmr_defaults['b']
+
+            # Substitute defaults for zero impedance (same issue as circuits)
+            if x == 0.0:
+                logger.warning(
+                    f"  Transformer {xfmr_id}: X=0 in ETYS data (placeholder); "
+                    f"using default x={xfmr_defaults['x']}"
+                )
+                x = xfmr_defaults['x']
+            if r == 0.0:
+                r = xfmr_defaults['r']
+            s_nom = float(record.get('Winter Rating (MVA)', DEFAULT_RATINGS['transformer'])) if pd.notna(record.get('Winter Rating (MVA)')) else DEFAULT_RATINGS['transformer']
+
+            # Validate electrical parameters
+            validate_electrical_params('transformer', r, x, b, s_nom, xfmr_id, logger)
+
             # Add transformer (without v_nom_0/v_nom_1 which cause PyPSA warnings)
             # PyPSA infers voltage levels from the connected buses automatically
             network.add('Transformer', xfmr_id,
@@ -828,17 +990,98 @@ def apply_transformer_removals(network: pypsa.Network,
                 logger.debug(f"No transformer found for removal: {node1}-{node2}")
                 failed += 1
                 continue
-            
-            # Remove the transformer
-            for xfmr_id in matching.index:
-                network.transformers.drop(xfmr_id, inplace=True)
-                successful += 1
+
+            # Remove ONE transformer per removal record (not all parallel transformers).
+            # If the removal record specifies a rating, prefer the closest match.
+            if len(matching) > 1 and pd.notna(record.get('Winter Rating (MVA)')):
+                target_rating = float(record['Winter Rating (MVA)'])
+                rating_diff = (matching['s_nom'] - target_rating).abs()
+                xfmr_id = rating_diff.idxmin()
+            else:
+                xfmr_id = matching.index[0]
+
+            network.transformers.drop(xfmr_id, inplace=True)
+            successful += 1
+            if len(matching) > 1:
+                logger.debug(f"Removed 1 of {len(matching)} parallel transformers "
+                             f"between {node1}-{node2} (transformer {xfmr_id})")
                 
         except Exception as e:
             failure_details.append({'type': 'removal', 'reason': 'exception', 'node1': node1, 'node2': node2, 'error': str(e)})
             logger.debug(f"Failed to remove transformer {node1}-{node2}: {e}")
             failed += 1
     
+    return successful, failed, failure_details
+
+
+def apply_transformer_changes(network: pypsa.Network,
+                              changes: List[Dict],
+                              logger: Optional[logging.Logger] = None) -> Tuple[int, int, List[Dict]]:
+    """
+    Modify existing transformer parameters (rating, impedance).
+
+    Mirrors apply_circuit_changes() but operates on network.transformers.
+
+    Args:
+        network: PyPSA network object
+        changes: List of transformer modification records from ETYS
+        logger: Optional logger instance
+
+    Returns:
+        Tuple of (successful_modifications, failed_modifications, failure_details)
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    successful, failed = 0, 0
+    failure_details = []
+
+    for record in changes:
+        try:
+            node1 = str(record['Node1']).strip()
+            node2 = str(record['Node2']).strip()
+
+            # Find transformer connecting these nodes (check both directions)
+            matching = network.transformers[
+                ((network.transformers['bus0'] == node1) & (network.transformers['bus1'] == node2)) |
+                ((network.transformers['bus0'] == node2) & (network.transformers['bus1'] == node1))
+            ]
+
+            if len(matching) == 0:
+                failure_details.append({'type': 'change', 'reason': 'transformer_not_found',
+                                       'node1': node1, 'node2': node2})
+                logger.debug(f"No transformer found for modification: {node1}-{node2}")
+                failed += 1
+                continue
+
+            # Update parameters (convert % on 100 MVA to per-unit)
+            # Do NOT overwrite existing impedance with zeros (see circuit changes).
+            for xfmr_id in matching.index:
+                if pd.notna(record.get('Winter Rating (MVA)')):
+                    network.transformers.at[xfmr_id, 's_nom'] = float(record['Winter Rating (MVA)'])
+                if pd.notna(record.get('R (% on 100 MVA)')):
+                    new_r = float(record['R (% on 100 MVA)']) / 100.0
+                    if new_r != 0.0:
+                        network.transformers.at[xfmr_id, 'r'] = new_r
+                    else:
+                        logger.debug(f"  Skipping zero R for transformer {xfmr_id} (keeping existing value)")
+                if pd.notna(record.get('X (% on 100 MVA)')):
+                    new_x = float(record['X (% on 100 MVA)']) / 100.0
+                    if new_x != 0.0:
+                        network.transformers.at[xfmr_id, 'x'] = new_x
+                    else:
+                        logger.warning(f"  Skipping zero X for transformer {xfmr_id} (keeping existing value)")
+                if pd.notna(record.get('B (% on 100 MVA)')):
+                    network.transformers.at[xfmr_id, 'b'] = float(record['B (% on 100 MVA)']) / 100.0
+
+                successful += 1
+
+        except Exception as e:
+            failure_details.append({'type': 'change', 'reason': 'exception',
+                                   'node1': node1, 'node2': node2, 'error': str(e)})
+            logger.debug(f"Failed to modify transformer {node1}-{node2}: {e}")
+            failed += 1
+
     return successful, failed, failure_details
 
 
@@ -908,14 +1151,13 @@ def _resolve_hvdc_bus(network: pypsa.Network, node_name: str,
 
 
 def apply_hvdc_additions(network: pypsa.Network,
-                        additions: List[Dict],
-                        logger: Optional[logging.Logger] = None) -> Tuple[int, int, List[Dict]]:
+                         additions: List[Dict],
+                         logger: Optional[logging.Logger] = None) -> Tuple[int, int, List[Dict]]:
     """
-    Add new internal HVDC links to the network.
+    Add new HVDC interconnectors/links to the network.
 
-    HVDC links are added as PyPSA Links with carrier='DC' and bidirectional
-    capability (p_min_pu=-1).  Node names from the ETYS B-5-1 sheet are
-    resolved to existing network buses using :func:`_resolve_hvdc_bus`.
+    These come from B-5-1 rows where Existing='No' and Planned from year <= modelled_year.
+    Uses the same column conventions as process_ETYS_data.py for the base HVDC links.
 
     Args:
         network: PyPSA network object
@@ -931,78 +1173,80 @@ def apply_hvdc_additions(network: pypsa.Network,
     successful, failed = 0, 0
     failure_details = []
 
-    # Invalid node name patterns to skip (offshore platforms, TBC, etc.)
-    invalid_patterns = ['converter station', 'offshore', 'onshore', 'substation',
-                        't-point', 'platform', 'nan', 'tbc', 'n/a', 'hub']
+    # Track link IDs to make parallel links unique
+    link_id_counter = {}
 
     for record in additions:
         try:
-            name = str(record.get('Interconnector Name', 'Unknown')).strip()
-            node1_raw = str(record.get('Node 1', '')).strip()
-            node2_raw = str(record.get('Node 2', '')).strip()
-            year = record.get('Planned from year', 'N/A')
-            rating = record.get('Winter Rating (MVA)', 2000)
+            # B-5-1 uses 'Node 1'/'Node 2' (may have been normalized to 'Node1'/'Node2')
+            node1 = str(record.get('Node 1', record.get('Node1', ''))).strip()
+            node2 = str(record.get('Node 2', record.get('Node2', ''))).strip()
 
-            # Skip records with invalid/generic node names
-            if (any(p in node1_raw.lower() for p in invalid_patterns) or
-                    any(p in node2_raw.lower() for p in invalid_patterns)):
-                failure_details.append({
-                    'type': 'hvdc_addition', 'reason': 'invalid_node_name',
-                    'node1': node1_raw, 'node2': node2_raw, 'year': year,
-                    'name': name
-                })
-                logger.debug(f"  Skipping HVDC '{name}': invalid node name(s) "
-                             f"'{node1_raw}'/'{node2_raw}'")
+            if not node1 or not node2 or node1.lower() == 'nan' or node2.lower() == 'nan':
+                failure_details.append({'type': 'hvdc_addition', 'reason': 'invalid_node_name',
+                                       'node1': node1, 'node2': node2})
                 failed += 1
                 continue
 
-            # Resolve node names to actual network buses
-            bus0 = _resolve_hvdc_bus(network, node1_raw, logger)
-            bus1 = _resolve_hvdc_bus(network, node2_raw, logger)
+            # Skip records with invalid/generic node names (offshore platforms, etc.)
+            if (any(p in node1.lower() for p in INVALID_NODE_PATTERNS) or
+                    any(p in node2.lower() for p in INVALID_NODE_PATTERNS)):
+                failure_details.append({'type': 'hvdc_addition', 'reason': 'invalid_node_name',
+                                       'node1': node1, 'node2': node2,
+                                       'name': record.get('Interconnector Name', 'Unknown')})
+                failed += 1
+                continue
+
+            # Resolve node names to actual network buses (handles PEHE4- → PEHE4J etc.)
+            bus0 = _resolve_hvdc_bus(network, node1, logger)
+            bus1 = _resolve_hvdc_bus(network, node2, logger)
 
             if bus0 is None or bus1 is None:
-                missing = [n for n, b in [(node1_raw, bus0), (node2_raw, bus1)] if b is None]
-                failure_details.append({
-                    'type': 'hvdc_addition', 'reason': 'bus_not_found',
-                    'node1': node1_raw, 'node2': node2_raw, 'year': year,
-                    'name': name, 'missing_buses': missing
-                })
-                logger.warning(f"  HVDC '{name}' ({node1_raw}→{node2_raw}): "
-                               f"could not resolve bus(es) {missing}")
+                missing = [n for n, b in [(node1, bus0), (node2, bus1)] if b is None]
+                failure_details.append({'type': 'hvdc_addition', 'reason': 'bus_not_found',
+                                       'node1': node1, 'node2': node2, 'missing_buses': missing})
                 failed += 1
                 continue
 
-            # Build unique link ID
-            year_str = str(int(year)) if pd.notna(year) else 'XXXX'
-            link_id = f"{bus0}_{bus1}_HVDC_{year_str}"
+            # Use resolved bus names
+            node1, node2 = bus0, bus1
+
+            year = record.get('Planned from year', 2025)
+            if pd.notna(year):
+                year = int(year)
+
+            # Create unique ID
+            base_link_id = f"{node1}_{node2}_HVDC_{year}"
+            if base_link_id in link_id_counter:
+                link_id_counter[base_link_id] += 1
+                link_id = f"{base_link_id}_{link_id_counter[base_link_id]}"
+            else:
+                link_id_counter[base_link_id] = 0
+                link_id = base_link_id
+
             if link_id in network.links.index:
-                logger.debug(f"  HVDC link {link_id} already exists, skipping")
+                logger.debug(f"HVDC link {link_id} already exists, skipping")
                 continue
 
-            p_nom = float(rating) if pd.notna(rating) else 2000.0
+            # Extract capacity — B-5-1 uses 'Winter Rating (MVA)' for power capacity
+            p_nom_raw = record.get('Winter Rating (MVA)', record.get('Rating (MVA)', DEFAULT_RATINGS['hvdc']))
+            p_nom = float(p_nom_raw) if pd.notna(p_nom_raw) else DEFAULT_RATINGS['hvdc']
 
             network.add('Link', link_id,
-                        bus0=bus0,
-                        bus1=bus1,
-                        p_nom=p_nom,
-                        p_min_pu=-1.0,   # Bidirectional
-                        p_max_pu=1.0,
-                        carrier='DC',
-                        under_construction=False)
+                       bus0=node1,
+                       bus1=node2,
+                       p_nom=p_nom,
+                       p_min_pu=-1.0,  # Bidirectional
+                       p_max_pu=1.0,
+                       carrier='DC',
+                       under_construction=False)
 
-            logger.info(f"  Added HVDC '{name}': {bus0}→{bus1}, "
-                        f"{p_nom:.0f} MW ({year_str})")
             successful += 1
+            logger.debug(f"Added HVDC link {link_id}: {node1}-{node2}, {p_nom:.0f} MW")
 
         except Exception as e:
-            failure_details.append({
-                'type': 'hvdc_addition', 'reason': 'exception',
-                'node1': record.get('Node 1', 'N/A'),
-                'node2': record.get('Node 2', 'N/A'),
-                'year': record.get('Planned from year', 'N/A'),
-                'error': str(e)
-            })
-            logger.debug(f"  Failed to add HVDC link: {e}")
+            failure_details.append({'type': 'hvdc_addition', 'reason': 'exception',
+                                   'node1': node1, 'node2': node2, 'error': str(e)})
             failed += 1
 
     return successful, failed, failure_details
@@ -1026,20 +1270,20 @@ def remove_orphan_buses(network: pypsa.Network, logger: Optional[logging.Logger]
     if logger is None:
         logger = logging.getLogger(__name__)
     
-    # Find buses with no attached components
-    orphan_buses = []
-    
-    for bus_id in network.buses.index:
-        # Check if bus has any attached components
-        has_generator = any(network.generators.bus == bus_id)
-        has_load = any(network.loads.bus == bus_id)
-        has_storage = any(network.storage_units.bus == bus_id)
-        has_line = any((network.lines.bus0 == bus_id) | (network.lines.bus1 == bus_id))
-        has_transformer = any((network.transformers.bus0 == bus_id) | (network.transformers.bus1 == bus_id))
-        has_link = any((network.links.bus0 == bus_id) | (network.links.bus1 == bus_id))
-        
-        if not (has_generator or has_load or has_storage or has_line or has_transformer or has_link):
-            orphan_buses.append(bus_id)
+    # Find buses with no attached components — pre-compute connected bus sets
+    # for O(1) membership lookup instead of O(B × C) per-bus Series scans
+    connected_buses = set()
+    for comp_df in [network.generators, network.loads, network.storage_units]:
+        if len(comp_df) > 0 and 'bus' in comp_df.columns:
+            connected_buses.update(comp_df['bus'].dropna())
+    for comp_df in [network.lines, network.transformers, network.links]:
+        if len(comp_df) > 0:
+            if 'bus0' in comp_df.columns:
+                connected_buses.update(comp_df['bus0'].dropna())
+            if 'bus1' in comp_df.columns:
+                connected_buses.update(comp_df['bus1'].dropna())
+
+    orphan_buses = [b for b in network.buses.index if b not in connected_buses]
     
     if orphan_buses:
         logger.info(f"  Removing {len(orphan_buses)} orphan buses (no attached components)")
@@ -1104,35 +1348,59 @@ def log_failure_summary(failures_by_type: Dict[str, List[Dict]], logger: logging
 
 def apply_etys_network_upgrades(network: pypsa.Network,
                                modelled_year: int,
-                               etys_file: str = "data/network/ETYS/ETYS Appendix B 2023.xlsx",
+                               etys_file: str = None,
+                               substation_coords_file: Optional[str] = None,
                                logger: Optional[logging.Logger] = None) -> pypsa.Network:
     """
-    Apply ETYS network upgrades from Appendix B 2023 to the network.
-    
+    Apply ETYS network upgrades from Appendix B to the network.
+
     This function modifies the network topology by:
     1. Adding new circuits commissioned by modelled_year
     2. Removing circuits decommissioned by modelled_year
     3. Modifying circuit ratings
     4. Adding new transformers
-    5. Adding new internal HVDC links (from B-5-1)
-    
+    5. (Future) Adding new HVDC interconnectors
+
     Args:
         network: PyPSA network object (ETYS network expected)
         modelled_year: Target year for upgrades (e.g., 2030, 2035)
-        etys_file: Path to ETYS Appendix B 2023 Excel file
+        etys_file: Path to ETYS Appendix B Excel file (required)
+        substation_coords_file: Optional path to substation_coordinates.csv.
+            When provided, used as the highest-priority coordinate source for
+            upgrade buses that have no anchor in the base network (e.g. new
+            island substations like KERG, GREM, SYEL).
         logger: Optional logger instance
-        
+
     Returns:
         Modified PyPSA network object
     """
+    if etys_file is None:
+        raise ValueError(
+            "etys_file must be provided. Pass the ETYS Appendix B file path "
+            "from the Snakemake rule input (snakemake.input.etys_file)."
+        )
     if logger is None:
         logger = logging.getLogger(__name__)
-    
+
     logger.info(f"Applying ETYS network upgrades for year {modelled_year}")
-    
+
+    # Load substation coordinates (Strategy 0 lookup for upgrade buses)
+    substation_coords: Optional[Dict[str, Tuple[float, float]]] = None
+    if substation_coords_file:
+        try:
+            coords_df = pd.read_csv(substation_coords_file)
+            substation_coords = {
+                row['site_code']: (float(row['lat']), float(row['lon']))
+                for _, row in coords_df.iterrows()
+                if pd.notna(row.get('lat')) and pd.notna(row.get('lon'))
+            }
+            logger.info(f"  Loaded {len(substation_coords)} substation coordinates from {substation_coords_file}")
+        except Exception as e:
+            logger.warning(f"  Failed to load substation_coords_file '{substation_coords_file}': {e}")
+
     # Load upgrade data
     upgrades_data = load_etys_upgrade_data(etys_file, logger)
-    
+
     # Filter by year and categorize
     categorized = filter_upgrades_by_year(upgrades_data, modelled_year, logger)
     
@@ -1144,8 +1412,10 @@ def apply_etys_network_upgrades(network: pypsa.Network,
         'circuits_failed': 0,
         'transformers_added': 0,
         'transformers_removed': 0,
+        'transformers_modified': 0,
         'transformers_failed': 0,
         'hvdc_added': 0,
+        'hvdc_failed': 0,
         'buses_added': 0,
         'buses_removed': 0,
     }
@@ -1154,13 +1424,13 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     all_failures = {
         'circuits': [],
         'transformers': [],
-        'hvdc': []
+        'hvdc': [],
     }
     
     # STEP 1: Add missing buses that are referenced in the upgrade data
     # This is critical - many upgrades reference new nodes that don't exist in the base network
     logger.info("Step 1: Adding missing buses from upgrade data...")
-    buses_added = add_missing_buses_from_upgrades(network, categorized, logger)
+    buses_added = add_missing_buses_from_upgrades(network, categorized, substation_coords, logger)
     summary['buses_added'] = buses_added
     
     # STEP 2: Apply circuit additions
@@ -1202,16 +1472,26 @@ def apply_etys_network_upgrades(network: pypsa.Network,
         summary['transformers_failed'] += failed
         all_failures['transformers'].extend(failures)
         logger.info(f"Removed {removed} transformers ({failed} failed)")
-    
-    # STEP 3: Apply HVDC link additions
+
+    # Apply transformer modifications
+    if categorized['transformers']['changes']:
+        modified, failed, failures = apply_transformer_changes(
+            network, categorized['transformers']['changes'], logger)
+        summary['transformers_modified'] = modified
+        summary['transformers_failed'] += failed
+        all_failures['transformers'].extend(failures)
+        logger.info(f"Modified {modified} transformers ({failed} failed)")
+
+    # Apply HVDC additions (new interconnectors)
     if categorized['hvdc']['additions']:
         added, failed, failures = apply_hvdc_additions(network, categorized['hvdc']['additions'], logger)
         summary['hvdc_added'] = added
+        summary['hvdc_failed'] += failed
         all_failures['hvdc'].extend(failures)
         logger.info(f"Added {added} HVDC links ({failed} failed)")
 
-    # STEP 4: Remove orphan buses
-    logger.info("Step 4: Cleaning up orphan buses...")
+    # STEP 3: Remove orphan buses
+    logger.info("Step 3: Cleaning up orphan buses...")
     buses_removed = remove_orphan_buses(network, logger)
     summary['buses_removed'] = buses_removed
     
@@ -1230,8 +1510,10 @@ def apply_etys_network_upgrades(network: pypsa.Network,
     logger.info(f"  Circuits Failed:      {summary['circuits_failed']:4d}")
     logger.info(f"  Transformers Added:   {summary['transformers_added']:4d}")
     logger.info(f"  Transformers Removed: {summary['transformers_removed']:4d}")
+    logger.info(f"  Transformers Modified:{summary['transformers_modified']:4d}")
     logger.info(f"  Transformers Failed:  {summary['transformers_failed']:4d}")
     logger.info(f"  HVDC Links Added:     {summary['hvdc_added']:4d}")
+    logger.info(f"  HVDC Links Failed:    {summary['hvdc_failed']:4d}")
     logger.info(f"\nNetwork Summary:")
     logger.info(f"  Buses: {len(network.buses)}")
     logger.info(f"  Lines: {len(network.lines)}")

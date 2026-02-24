@@ -115,8 +115,26 @@ Rules are organized by function in `rules/`:
 
 Creates the base PyPSA network from ETYS/Reduced/Zonal topology.
 
+For the **ETYS** network model, this is a **two-stage pipeline**:
+
+1. **`process_ETYS_data`** — Parses the raw ETYS Appendix B Excel file into standardized intermediate CSVs:
+   - `resources/network/ETYS/ETYS_{year}_components.csv` (circuits, transformers, HVDC)
+   - `resources/network/ETYS/ETYS_{year}_buses.csv` (bus names, coordinates, voltage levels)
+   - Uses `GB_network.xlsx` for offshore wind farm edges and demand node mappings
+   - Uses `substation_coordinates.csv` for bus coordinate lookups
+   - Script: `scripts/network_build/process_ETYS_data.py`
+
+2. **`build_ETYS_base_network`** — Assembles the intermediate CSVs into a PyPSA network:
+   - Resolves missing bus coordinates using a multi-tier strategy (GSP mapping → substation lookup → prefix fallback → distance-weighted guessing)
+   - Validates bus locations against GB land boundaries (GSP region GeoJSON)
+   - Identifies offshore buses (OFTO wind farm connection nodes)
+   - Applies ETYS network upgrades if `etys_upgrades.enabled: true`
+   - Script: `scripts/network_build/ETYS_network.py`
+
+For **Reduced** and **Zonal** networks, a single rule reads the CSV files directly.
+
 **Input**: Network topology files in `data/network/`  
-**Output**: `resources/network/{scenario}_network.nc`
+**Output**: `resources/network/{model}_base_network.nc` (then copied to `{scenario}_network.nc`)
 
 ### `integrate_renewable_generators`
 
@@ -179,8 +197,12 @@ The workflow generates intermediate files that can be inspected. Files use `.pkl
 
 ```
 resources/network/
-├── HT35_network.nc                                    # Base network
-├── HT35_network_demand.pkl                            # + demand
+├── ETYS/
+│   ├── ETYS_2024_components.csv                    # Stage 1: parsed circuits/transformers/HVDC
+│   └── ETYS_2024_buses.csv                        # Stage 1: bus names and coordinates
+├── ETYS_2024_base_network.nc                       # Stage 2: assembled PyPSA network
+├── HT35_network.nc                                 # Base network (scenario copy)
+├── HT35_network_demand.pkl                         # + demand
 ├── HT35_network_demand_renewables.pkl                 # + renewables
 ├── HT35_network_demand_renewables_thermal_generators.pkl  # + thermal
 ├── HT35_network_demand_renewables_thermal_generators_storage.pkl  # + storage

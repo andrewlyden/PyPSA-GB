@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
@@ -915,8 +916,30 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <section id="build-network">
 <h3><code class="docutils literal notranslate"><span class="pre">build_network</span></code><a class="headerlink" href="#build-network" title="Link to this heading">#</a></h3>
 <p>Creates the base PyPSA network from ETYS/Reduced/Zonal topology.</p>
+<p>For the <strong>ETYS</strong> network model, this is a <strong>two-stage pipeline</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">process_ETYS_data</span></code></strong> — Parses the raw ETYS Appendix B Excel file into standardized intermediate CSVs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">resources/network/ETYS/ETYS_{year}_components.csv</span></code> (circuits, transformers, HVDC)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resources/network/ETYS/ETYS_{year}_buses.csv</span></code> (bus names, coordinates, voltage levels)</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">GB_network.xlsx</span></code> for offshore wind farm edges and demand node mappings</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">substation_coordinates.csv</span></code> for bus coordinate lookups</p></li>
+<li><p>Script: <code class="docutils literal notranslate"><span class="pre">scripts/network_build/process_ETYS_data.py</span></code></p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">build_ETYS_base_network</span></code></strong> — Assembles the intermediate CSVs into a PyPSA network:</p>
+<ul class="simple">
+<li><p>Resolves missing bus coordinates using a multi-tier strategy (GSP mapping → substation lookup → prefix fallback → distance-weighted guessing)</p></li>
+<li><p>Validates bus locations against GB land boundaries (GSP region GeoJSON)</p></li>
+<li><p>Identifies offshore buses (OFTO wind farm connection nodes)</p></li>
+<li><p>Applies ETYS network upgrades if <code class="docutils literal notranslate"><span class="pre">etys_upgrades.enabled:</span> <span class="pre">true</span></code></p></li>
+<li><p>Script: <code class="docutils literal notranslate"><span class="pre">scripts/network_build/ETYS_network.py</span></code></p></li>
+</ul>
+</li>
+</ol>
+<p>For <strong>Reduced</strong> and <strong>Zonal</strong> networks, a single rule reads the CSV files directly.</p>
 <p><strong>Input</strong>: Network topology files in <code class="docutils literal notranslate"><span class="pre">data/network/</span></code><br />
-<strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">resources/network/{scenario}_network.nc</span></code></p>
+<strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">resources/network/{model}_base_network.nc</span></code> (then copied to <code class="docutils literal notranslate"><span class="pre">{scenario}_network.nc</span></code>)</p>
 </section>
 <section id="integrate-renewable-generators">
 <h3><code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators</span></code><a class="headerlink" href="#integrate-renewable-generators" title="Link to this heading">#</a></h3>
@@ -975,8 +998,12 @@ snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j
 <h2>Intermediate Files<a class="headerlink" href="#intermediate-files" title="Link to this heading">#</a></h2>
 <p>The workflow generates intermediate files that can be inspected. Files use <code class="docutils literal notranslate"><span class="pre">.pkl</span></code> format for fast I/O during development, switching to <code class="docutils literal notranslate"><span class="pre">.nc</span></code> at final assembly:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>resources/network/
-├── HT35_network.nc                                    # Base network
-├── HT35_network_demand.pkl                            # + demand
+├── ETYS/
+│   ├── ETYS_2024_components.csv                    # Stage 1: parsed circuits/transformers/HVDC
+│   └── ETYS_2024_buses.csv                        # Stage 1: bus names and coordinates
+├── ETYS_2024_base_network.nc                       # Stage 2: assembled PyPSA network
+├── HT35_network.nc                                 # Base network (scenario copy)
+├── HT35_network_demand.pkl                         # + demand
 ├── HT35_network_demand_renewables.pkl                 # + renewables
 ├── HT35_network_demand_renewables_thermal_generators.pkl  # + thermal
 ├── HT35_network_demand_renewables_thermal_generators_storage.pkl  # + storage

@@ -126,6 +126,21 @@ clustering:
     include_storage_units: false
     include_stores: false
 
+# Transmission constraint settings (ETYS network only)
+transmission:
+  min_line_s_nom: 0             # 0 = use actual ratings
+  min_transformer_s_nom: 0      # 0 = use actual ratings
+  capacity_scale: 1.0           # 1.0 = no scaling
+
+# ETYS data source (ETYS network only)
+etys:
+  year: 2024                    # ETYS publication year (2022, 2023, 2024)
+
+# ETYS network upgrades (ETYS network only)
+etys_upgrades:
+  enabled: true                 # Apply planned upgrades
+  upgrade_year: null            # null = use modelled_year
+
 # Demand flexibility defaults (disabled unless scenario opts in)
 demand_flexibility:
   enabled: false
@@ -153,6 +168,40 @@ modelled_year: 2035
 
 - **Historical** (≤2024): Uses DUKES for thermal, REPD for renewables, ESPENI for demand
 - **Future** (>2024): Uses FES projections for capacity, requires `FES_scenario`
+
+### ETYS Configuration
+
+These settings apply only when `network_model: "ETYS"`.
+
+#### ETYS Publication Year
+
+```yaml
+etys:
+  year: 2024  # Available: 2022, 2023, 2024
+```
+
+Selects which ETYS data edition to use for the base network topology. Each publication year maps to a specific Appendix B Excel file — the mapping is managed by `scripts/network_build/etys_file_registry.py`.
+
+#### ETYS Network Upgrades
+
+```yaml
+etys_upgrades:
+  enabled: true       # Apply planned network reinforcements
+  upgrade_year: null   # null = use modelled_year, or specify e.g. 2030
+```
+
+When enabled, applies circuit additions/removals, transformer changes, and HVDC additions from the ETYS upgrade sheets. The `upgrade_year` controls how far into the future to apply upgrades — set to `null` to apply all upgrades through the scenario's `modelled_year`.
+
+#### Transmission Constraints
+
+```yaml
+transmission:
+  min_line_s_nom: 0         # Minimum line capacity floor (MVA), 0 = use actual
+  min_transformer_s_nom: 0  # Minimum transformer capacity floor (MVA)
+  capacity_scale: 1.0       # Global scaling factor for all line/transformer capacities
+```
+
+These settings can relax transmission constraints for feasibility or sensitivity analysis. For example, `capacity_scale: 1.5` increases all ratings by 50%.
 
 ### Network Model
 

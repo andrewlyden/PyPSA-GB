@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/scenarios';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -456,8 +457,14 @@ document.write(`
 <ul class="simple">
 <li><p>Thermal/Renewables/Storage: FES projections</p></li>
 <li><p>Demand: FES annual totals with historical profiles</p></li>
-<li><p>Network: ETYS planned upgrades (optional)</p></li>
+<li><p>Network: ETYS base topology with planned upgrades (optional)</p></li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>ETYS network upgrades are controlled by <code class="docutils literal notranslate"><span class="pre">etys_upgrades.enabled</span></code> and <code class="docutils literal notranslate"><span class="pre">etys_upgrades.upgrade_year</span></code>.
+The ETYS publication year is set via <code class="docutils literal notranslate"><span class="pre">etys.year</span></code> (supports 2022, 2023, 2024).
+See <a class="reference internal" href="configuration.html"><span class="doc">Configuration Reference</span></a> for details.</p>
+</div>
 </section>
 </section>
 <section id="fes-pathway-selection">

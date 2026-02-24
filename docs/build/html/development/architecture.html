@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
@@ -840,8 +841,20 @@ document.write(`
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">build_network.py</span></code></p></td>
-<td><p>Create base network</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_build/ETYS_network.py</span></code></p></td>
+<td><p>Assemble ETYS network from preprocessed data</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">network_build/process_ETYS_data.py</span></code></p></td>
+<td><p>Parse raw ETYS Excel to CSVs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_build/ETYS_upgrades.py</span></code></p></td>
+<td><p>Apply planned network reinforcements</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">network_build/etys_file_registry.py</span></code></p></td>
+<td><p>Map ETYS publication years to files</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_build/build_network.py</span></code></p></td>
+<td><p>Create Reduced/Zonal networks</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">integrate_thermal_generators.py</span></code></p></td>
 <td><p>Add thermal capacity</p></td>
@@ -907,9 +920,15 @@ document.write(`
 <section id="script-organization">
 <h3>Script Organization<a class="headerlink" href="#script-organization" title="Link to this heading">#</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>scripts/
+├── Network Build Package
+│   ├── network_build/
+│   │   ├── ETYS_network.py          # ETYS network assembly (stage 2)
+│   │   ├── process_ETYS_data.py     # Raw Excel → CSV preprocessing (stage 1)
+│   │   ├── ETYS_upgrades.py         # Network upgrade application
+│   │   ├── etys_file_registry.py    # File/sheet name registry and constants
+│   │   └── build_network.py         # Reduced/Zonal network builders
 ├── Core Modules
 │   ├── solve_network.py
-│   ├── build_network.py
 │   └── scenario_detection.py
 ├── Integration Modules
 │   ├── integrate_thermal_generators.py

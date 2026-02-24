@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'data_reference/maintenance';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -599,23 +600,40 @@ document.write(`
 <li><p><strong>Download Appendices</strong>:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://www.nationalgrideso.com/research-and-publications/electricity-ten-year-statement-etys">ETYS Publication</a></p></li>
-<li><p>Get Appendix B Excel files</p></li>
+<li><p>Get Appendix B Excel file (contains circuits, transformers, HVDC, and upgrade data)</p></li>
 </ul>
 </li>
-<li><p><strong>Extract network data</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/extract_etys_network.py<span class="w"> </span>data/network/ETYS/ETYS_2024_appendix_b.xlsx
-</pre></div>
-</div>
-</li>
-<li><p><strong>Validate</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/validate_network_topology.py
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update upgrades</strong>:</p>
+<li><p><strong>Add the new Excel file</strong> to <code class="docutils literal notranslate"><span class="pre">data/network/ETYS/</span></code>:</p>
 <ul class="simple">
-<li><p>Review planned reinforcements</p></li>
-<li><p>Update <code class="docutils literal notranslate"><span class="pre">data/network/ETYS/ETYS_upgrades.xlsx</span></code></p></li>
+<li><p>Follow NESO’s naming convention (e.g., <code class="docutils literal notranslate"><span class="pre">ETYS</span> <span class="pre">2024</span> <span class="pre">Appendix-B</span> <span class="pre">V1.xlsx</span></code>)</p></li>
+</ul>
+</li>
+<li><p><strong>Register the new file</strong> in <code class="docutils literal notranslate"><span class="pre">scripts/network_build/etys_file_registry.py</span></code>:</p>
+<ul class="simple">
+<li><p>Add an entry to the <code class="docutils literal notranslate"><span class="pre">ETYS_FILES</span></code> dictionary mapping the new year to its filename</p></li>
+<li><p>Verify sheet names match the <code class="docutils literal notranslate"><span class="pre">ETYS_BASE_SHEETS</span></code> and <code class="docutils literal notranslate"><span class="pre">ETYS_UPGRADE_SHEETS</span></code> mappings</p></li>
+</ul>
+</li>
+<li><p><strong>Update the default ETYS year</strong> in <code class="docutils literal notranslate"><span class="pre">config/defaults.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">etys</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2025</span><span class="w">  </span><span class="c1"># Update to new publication year</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Process and validate</strong> via Snakemake:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process raw Excel into intermediate CSVs (stage 1)</span>
+snakemake<span class="w"> </span>resources/network/ETYS/ETYS_2025_components.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+
+<span class="c1"># Build and validate the network (stage 2, includes topology validation)</span>
+snakemake<span class="w"> </span>resources/network/ETYS_2025_base_network.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>Topology validation (connectivity, parameter ranges, coordinate checks) runs automatically during the <code class="docutils literal notranslate"><span class="pre">build_ETYS_base_network</span></code> rule.</p>
+</li>
+<li><p><strong>Update substation coordinates</strong> (if needed):</p>
+<ul class="simple">
+<li><p>New buses may need coordinates in <code class="docutils literal notranslate"><span class="pre">data/network/ETYS/substation_coordinates.csv</span></code></p></li>
+<li><p>Check build logs for warnings about missing or guessed coordinates</p></li>
 </ul>
 </li>
 </ol>

@@ -64,7 +64,11 @@ Each script does one thing well:
 
 | Script | Single Responsibility |
 |--------|----------------------|
-| `build_network.py` | Create base network |
+| `network_build/ETYS_network.py` | Assemble ETYS network from preprocessed data |
+| `network_build/process_ETYS_data.py` | Parse raw ETYS Excel to CSVs |
+| `network_build/ETYS_upgrades.py` | Apply planned network reinforcements |
+| `network_build/etys_file_registry.py` | Map ETYS publication years to files |
+| `network_build/build_network.py` | Create Reduced/Zonal networks |
 | `integrate_thermal_generators.py` | Add thermal capacity |
 | `solve_network.py` | Run optimization |
 
@@ -122,9 +126,15 @@ Rules define:
 
 ```
 scripts/
+├── Network Build Package
+│   ├── network_build/
+│   │   ├── ETYS_network.py          # ETYS network assembly (stage 2)
+│   │   ├── process_ETYS_data.py     # Raw Excel → CSV preprocessing (stage 1)
+│   │   ├── ETYS_upgrades.py         # Network upgrade application
+│   │   ├── etys_file_registry.py    # File/sheet name registry and constants
+│   │   └── build_network.py         # Reduced/Zonal network builders
 ├── Core Modules
 │   ├── solve_network.py
-│   ├── build_network.py
 │   └── scenario_detection.py
 ├── Integration Modules
 │   ├── integrate_thermal_generators.py

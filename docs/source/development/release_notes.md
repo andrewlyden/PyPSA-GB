@@ -17,6 +17,13 @@ Version history and changelog for PyPSA-GB.
 - Automatic historical/future scenario detection
 - GSP-level FES data integration
 - Network upgrade application for future years
+- Two-stage ETYS build pipeline (`process_ETYS_data` → `build_ETYS_base_network`)
+- Multi-year ETYS support via `etys.year` configuration (2022, 2023, 2024)
+- `etys_file_registry.py` for version-aware ETYS file and sheet mapping
+- Land boundary validation for bus coordinates (GSP region GeoJSON)
+- Offshore bus identification (OFTO wind farm connections)
+- Multi-tier coordinate resolution for missing bus locations
+- Transmission constraint configuration (`transmission.min_line_s_nom`, `capacity_scale`, etc.)
 - Centralised logging configuration
 - Scenario validation tools
 
@@ -25,7 +32,7 @@ Version history and changelog for PyPSA-GB.
 - DUKES 2025 power station data
 - REPD Q2 2025 renewable sites
 - TEC Register July 2025
-- ETYS 2023 network topology
+- ETYS 2024 network topology (default; ETYS 2022 and 2023 also supported)
 
 ---
 

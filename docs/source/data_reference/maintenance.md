@@ -137,21 +137,34 @@ REPD format occasionally changes. Check:
 
 1. **Download Appendices**:
    - [ETYS Publication](https://www.nationalgrideso.com/research-and-publications/electricity-ten-year-statement-etys)
-   - Get Appendix B Excel files
+   - Get Appendix B Excel file (contains circuits, transformers, HVDC, and upgrade data)
 
-2. **Extract network data**:
-   ```bash
-   python scripts/extract_etys_network.py data/network/ETYS/ETYS_2024_appendix_b.xlsx
+2. **Add the new Excel file** to `data/network/ETYS/`:
+   - Follow NESO's naming convention (e.g., `ETYS 2024 Appendix-B V1.xlsx`)
+
+3. **Register the new file** in `scripts/network_build/etys_file_registry.py`:
+   - Add an entry to the `ETYS_FILES` dictionary mapping the new year to its filename
+   - Verify sheet names match the `ETYS_BASE_SHEETS` and `ETYS_UPGRADE_SHEETS` mappings
+
+4. **Update the default ETYS year** in `config/defaults.yaml`:
+   ```yaml
+   etys:
+     year: 2025  # Update to new publication year
    ```
 
-3. **Validate**:
+5. **Process and validate** via Snakemake:
    ```bash
-   python scripts/validate_network_topology.py
-   ```
+   # Process raw Excel into intermediate CSVs (stage 1)
+   snakemake resources/network/ETYS/ETYS_2025_components.csv -j 1
 
-4. **Update upgrades**:
-   - Review planned reinforcements
-   - Update `data/network/ETYS/ETYS_upgrades.xlsx`
+   # Build and validate the network (stage 2, includes topology validation)
+   snakemake resources/network/ETYS_2025_base_network.nc -j 1
+   ```
+   Topology validation (connectivity, parameter ranges, coordinate checks) runs automatically during the `build_ETYS_base_network` rule.
+
+6. **Update substation coordinates** (if needed):
+   - New buses may need coordinates in `data/network/ETYS/substation_coordinates.csv`
+   - Check build logs for warnings about missing or guessed coordinates
 
 ## Generating New Weather Cutouts
 

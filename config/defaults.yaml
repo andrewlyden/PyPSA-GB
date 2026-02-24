@@ -78,9 +78,17 @@ transmission:
   capacity_scale: 1.0             # 1.0 = no scaling (use clustering instead)
 
 # ──────────────────────────────────────────────────────────────────────────────
+# ETYS DATA SOURCE (ETYS network model only)
+# ──────────────────────────────────────────────────────────────────────────────
+# Selects which ETYS publication year to use for base network topology.
+# Available: 2022, 2023, 2024
+etys:
+  year: 2024                       # ETYS publication year
+
+# ──────────────────────────────────────────────────────────────────────────────
 # ETYS NETWORK UPGRADES (ETYS network model only)
 # ──────────────────────────────────────────────────────────────────────────────
-# Applies planned network infrastructure upgrades from ETYS Appendix B 2023.
+# Applies planned network infrastructure upgrades from the selected ETYS data.
 # Includes circuit additions/removals, transformer changes, and new HVDC links.
 # Only applies when network_model: "ETYS"
 etys_upgrades:
@@ -88,6 +96,55 @@ etys_upgrades:
   # Year through which to apply upgrades (null = use modelled_year)
   # Example: If modelled_year is 2035, apply all upgrades through 2035
   upgrade_year: null              # null, or specific year like 2030
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SPATIAL MAPPING PARAMETERS
+# ──────────────────────────────────────────────────────────────────────────────
+# Controls how generators and other sites are mapped to network buses.
+# Changes here affect bus assignment for all generator types.
+# ──────────────────────────────────────────────────────────────────────────────
+spatial_mapping:
+  # Coordinate system detection thresholds
+  # (distinguish OSGB36 metres from WGS84 degrees)
+  coordinate_detection:
+    osgb36_min_value: 1000        # x or y > 1000 → OSGB36 (metres)
+    wgs84_max_absolute: 100       # x and y < 100 → WGS84 (degrees)
+
+  # Transmission operator latitude boundaries (degrees N, WGS84)
+  # SHETL: Northern Scotland (lat > shetl_lat_min)
+  # SPTL: Southern Scotland (sptl_lat_min < lat ≤ shetl_lat_min)
+  # NGET: England & Wales (lat ≤ sptl_lat_min)
+  transmission_regions:
+    shetl_lat_min: 57.0
+    sptl_lat_min: 55.5
+
+  # Maximum bus-mapping distances (km) — sites beyond these limits are
+  # mapped to the nearest bus regardless (fallback, no hard cutoff)
+  distance_km:
+    site_to_bus: 200.0            # General site → nearest bus
+    gsp_to_bus: 100.0             # GSP coordinate → nearest bus
+    thermal_generator: 150.0      # Thermal gen OSGB → nearest bus
+
+  # Fuzzy string matching score threshold (0–1)
+  fuzzy_threshold: 0.8
+
+  # Fallback: top-N most-connected buses used when no major bus is found
+  fallback_major_bus_count: 10
+
+  # Generator voltage-correction thresholds
+  # Controls when a generator is moved to a higher-voltage bus
+  generator_voltage:
+    min_check_mw: 50              # Skip bus check below this capacity (MW)
+    very_large_mw: 300            # Must connect at ≥ min_preferred_kv (MW)
+    large_low_voltage_mw: 200     # Must NOT connect at ≤ low_voltage_kv (MW)
+    medium_mw: 100                # Needs transformer capacity check (MW)
+    max_transformer_ratio: 0.8    # Max generator / transformer s_nom ratio
+    min_preferred_kv: 275         # Preferred minimum connection voltage (kV)
+    high_voltage_kv: 400          # 400 kV-only search threshold (kV)
+    low_voltage_kv: 33            # Low-voltage threshold (kV)
+
+  # Earth radius for haversine distance calculations
+  earth_radius_km: 6371.0
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MARGINAL COST DEFAULTS (for future scenarios, modelled_year > 2024)

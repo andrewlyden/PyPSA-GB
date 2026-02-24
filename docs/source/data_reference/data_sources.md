@@ -182,9 +182,11 @@ Transmission network data from NESO.
 | Appendix | Content |
 |----------|---------|
 | B-1 | Substation data (buses) |
-| B-2 | Circuit data (lines) |
-| B-3 | Transformer data |
-| B-4 | HVDC data |
+| B-2-1a/b/c/d | Base circuit data (SHE-T / SPT / NGET / OFTO) |
+| B-2-2a/b/c/d | Circuit upgrades (SHE-T / SPT / NGET / OFTO) |
+| B-3-1a/b/c/d | Base transformer data (SHE-T / SPT / NGET / OFTO) |
+| B-3-2a/b/c/d | Transformer upgrades (SHE-T / SPT / NGET / OFTO) |
+| B-5-1 | HVDC data |
 
 ### Data Fields
 
@@ -201,16 +203,22 @@ Transmission network data from NESO.
 
 ### Location
 
+The ETYS publication year is selected via `etys.year` in `config/defaults.yaml` (supports 2022, 2023, 2024). Files are mapped by `scripts/network_build/etys_file_registry.py`.
+
 ```
 data/network/
 ├── ETYS/
-│   ├── ETYS_2023_substations.csv
-│   ├── ETYS_2023_circuits.csv
-│   └── ETYS_2023_transformers.csv
-├── Reduced/
-│   └── reduced_network.csv
-└── Zonal/
-    └── zonal_network.csv
+│   ├── ETYS 2024 Appendix-B V1.xlsx    # ETYS 2024 (default)
+│   ├── ETYS Appendix B 2023.xlsx        # ETYS 2023
+│   ├── ETYS Appendix B 2022.xlsx        # ETYS 2022
+│   ├── GB_network.xlsx                  # Offshore WF edges, BMU mappings
+│   └── substation_coordinates.csv       # Bus coordinate overrides
+├── reduced_network/
+│   ├── buses.csv
+│   └── lines.csv
+└── zonal/
+    ├── buses.csv
+    └── links.csv
 ```
 
 ---

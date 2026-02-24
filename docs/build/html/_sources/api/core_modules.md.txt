@@ -67,34 +67,166 @@ print(f"Status: {n.optimization_status}")
 
 Base network construction from topology files.
 
-### Main Functions
+```{note}
+For the ETYS network model, the build logic is split across the `scripts/network_build/` package:
+- `process_ETYS_data.py` — Raw Excel parsing (stage 1)
+- `ETYS_network.py` — Network assembly (stage 2)
+- `ETYS_upgrades.py` — Network upgrade application
+- `etys_file_registry.py` — ETYS file/sheet name mapping and constants
+- `build_network.py` — Reduced/Zonal builders (ETYS delegates to `ETYS_network.py`)
+```
 
-#### `build_base_network()`
+### ETYS Network Assembly (`scripts/network_build/ETYS_network.py`)
+
+#### `create_network()`
 
 ```python
-def build_base_network(
-    network_model: str,
-    year: int = None,
+def create_network(
+    df: pd.DataFrame,
+    df_buses_with_locs: pd.DataFrame,
     logger: logging.Logger = None
 ) -> pypsa.Network:
     """
-    Build a base PyPSA network from topology files.
+    Build a PyPSA network from preprocessed ETYS component and bus DataFrames.
     
     Parameters
     ----------
-    network_model : str
-        Network type: 'ETYS', 'Reduced', 'Zonal'
-    year : int, optional
-        Modelled year (for applying upgrades)
+    df : pd.DataFrame
+        Components (circuits, transformers, HVDC) from process_ETYS_data
+    df_buses_with_locs : pd.DataFrame
+        Bus data with resolved coordinates
     logger : logging.Logger, optional
         Logger for output
         
     Returns
     -------
     pypsa.Network
-        Base network with buses, lines, transformers
+        Assembled network with buses, lines, transformers, links
     """
 ```
+
+#### `validate_network_topology()`
+
+```python
+def validate_network_topology(
+    network: pypsa.Network,
+    logger: logging.Logger = None
+) -> None:
+    """
+    Validate network connectivity, parameter ranges, and coordinate coverage.
+    """
+```
+
+#### `ensure_buses_on_land()`
+
+```python
+def ensure_buses_on_land(
+    network: pypsa.Network,
+    land_boundary: gpd.GeoDataFrame,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Validate bus coordinates against GB land boundaries and move
+    any that fall in the sea to the nearest land point.
+    """
+```
+
+### ETYS Upgrades (`scripts/network_build/ETYS_upgrades.py`)
+
+#### `apply_etys_network_upgrades()`
+
+```python
+def apply_etys_network_upgrades(
+    network: pypsa.Network,
+    modelled_year: int,
+    etys_file: str = None,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Apply all ETYS network upgrades through a target year.
+    
+    Applies circuit additions/removals/modifications, transformer
+    additions/removals/modifications, and HVDC additions.
+    
+    Parameters
+    ----------
+    network : pypsa.Network
+        Base network to modify
+    modelled_year : int
+        Apply upgrades through this year
+    etys_file : str, optional
+        Path to ETYS Appendix B Excel file
+    logger : logging.Logger, optional
+        Logger for output
+        
+    Returns
+    -------
+    pypsa.Network
+        Modified network with upgrades applied
+    """
+```
+
+#### `add_missing_buses_from_upgrades()`
+
+```python
+def add_missing_buses_from_upgrades(
+    network: pypsa.Network,
+    upgrades_data: dict,
+    logger: logging.Logger = None
+) -> pypsa.Network:
+    """
+    Add buses referenced by upgrades but missing from the base network.
+    Uses multi-pass strategy (substation coords → same-site → already-added → connected bus offset).
+    """
+```
+
+#### `remove_orphan_buses()`
+
+```python
+def remove_orphan_buses(
+    network: pypsa.Network,
+    logger: logging.Logger = None
+) -> int:
+    """
+    Remove buses with no connected lines, transformers, or links.
+    Returns the number of buses removed.
+    """
+```
+
+### ETYS Data Processing (`scripts/network_build/process_ETYS_data.py`)
+
+#### `sort_raw_ETYS_data()`
+
+```python
+def sort_raw_ETYS_data(
+    etys_file: str,
+    gb_network_file: str,
+    logger: logging.Logger = None
+) -> tuple:
+    """
+    Parse raw ETYS Appendix B Excel into standardized DataFrames.
+    
+    Returns
+    -------
+    tuple of (pd.DataFrame, pd.DataFrame)
+        (components_df, buses_df)
+    """
+```
+
+### ETYS File Registry (`scripts/network_build/etys_file_registry.py`)
+
+Central registry mapping ETYS publication years to filenames and sheet names.
+
+**Key constants:**
+
+| Constant | Description |
+|----------|-------------|
+| `ETYS_FILES` | Dict mapping years (2022, 2023, 2024) to filenames |
+| `ETYS_BASE_SHEETS` | Dict of base network sheet names (circuits, transformers, HVDC) |
+| `ETYS_UPGRADE_SHEETS` | Dict of upgrade sheet names by operator |
+| `VOLTAGE_LEVELS` | Voltage code → kV mapping |
+| `ELECTRICAL_DEFAULTS` | Default per-unit values for lines, transformers, cables |
+| `DEFAULT_RATINGS` | Default MVA ratings by component type |
 
 ---
 

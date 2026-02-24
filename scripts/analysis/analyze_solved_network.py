@@ -39,327 +39,294 @@ def load_network(network_path):
     return n
 
 
-def _convert_to_wgs84(df, x_col='x', y_col='y'):
-    """
-    Convert a DataFrame's coordinate columns to WGS84, handling mixed coordinate systems.
-    
-    Adds 'lon_wgs84' and 'lat_wgs84' columns in-place.
-    Returns the modified DataFrame (rows with valid coordinates only).
+def _to_wgs84(df, x_col='x', y_col='y'):
+    """Convert a DataFrame's coordinates to WGS84 lon/lat.
+
+    Automatically detects OSGB36 (meters) vs WGS84 (degrees) per row.
+    Returns (lon_series, lat_series) in WGS84.
     """
     from pyproj import Transformer
-    
-    df = df.copy()
-    df[x_col] = pd.to_numeric(df[x_col], errors='coerce')
-    df[y_col] = pd.to_numeric(df[y_col], errors='coerce')
-    df = df.dropna(subset=[x_col, y_col])
-    if len(df) == 0:
-        df['lon_wgs84'] = pd.Series(dtype=float)
-        df['lat_wgs84'] = pd.Series(dtype=float)
-        return df
-    
-    # Detect OSGB36 vs WGS84 per row
-    df['_is_osgb'] = (df[x_col].abs() > 100) | (df[y_col].abs() > 100)
-    df['lon_wgs84'] = df[x_col]
-    df['lat_wgs84'] = df[y_col]
-    
-    osgb_mask = df['_is_osgb']
-    if osgb_mask.any():
+
+    lon = df[x_col].copy()
+    lat = df[y_col].copy()
+    is_osgb = (lon.abs() > 100) | (lat.abs() > 100)
+
+    if is_osgb.any():
         transformer = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
+        osgb = df[is_osgb]
         lon_conv, lat_conv = transformer.transform(
-            df.loc[osgb_mask, x_col].values,
-            df.loc[osgb_mask, y_col].values
+            osgb[x_col].values, osgb[y_col].values
         )
-        df.loc[osgb_mask, 'lon_wgs84'] = lon_conv
-        df.loc[osgb_mask, 'lat_wgs84'] = lat_conv
-    
-    df.drop(columns=['_is_osgb'], inplace=True)
-    return df
+        lon.loc[is_osgb] = lon_conv
+        lat.loc[is_osgb] = lat_conv
 
-
-def _get_bus_wgs84(buses_wgs84, bus_name):
-    """Get WGS84 lon/lat for a bus name. Returns (lon, lat) or (None, None)."""
-    if bus_name in buses_wgs84.index:
-        row = buses_wgs84.loc[bus_name]
-        return row['lon_wgs84'], row['lat_wgs84']
-    return None, None
-
-
-def _add_line_traces(fig, component_df, buses_wgs84, name, color, width=1, dash=None):
-    """Add a line-type network component (lines/transformers/links) as a trace."""
-    if len(component_df) == 0:
-        return
-    
-    lons, lats = [], []
-    for _, row in component_df.iterrows():
-        lon0, lat0 = _get_bus_wgs84(buses_wgs84, row['bus0'])
-        lon1, lat1 = _get_bus_wgs84(buses_wgs84, row['bus1'])
-        if lon0 is not None and lon1 is not None:
-            lons.extend([lon0, lon1, None])
-            lats.extend([lat0, lat1, None])
-    
-    if not lons:
-        return
-    
-    count = len(component_df)
-    fig.add_trace(go.Scattergeo(
-        lon=lons, lat=lats,
-        mode='lines',
-        line=dict(width=width, color=color, dash=dash),
-        name=f'{name} ({count})',
-        showlegend=True,
-        hoverinfo='skip',
-    ))
+    return lon, lat
 
 
 def create_spatial_plot(n, output_path):
     """
-    Create comprehensive interactive spatial plot of network with Plotly.
-    
-    Shows per the original detailed format:
-    - Lines (AC transmission lines)
-    - Transformers (separate trace, different style)
-    - Internal HVDC links (dashed purple)
-    - Interconnectors (dotted red)
-    - H2 Electrolysis links (dash-dot gray)
-    - H2 Turbine links (dash-dot blue)
-    - Buses (small yellow dots)
-    - Each generator carrier as its own legend entry with count
-    - Storage units (green diamonds) with count
-    
-    Handles both OSGB36 (meters) and WGS84 (degrees) coordinate systems,
-    including networks with mixed coordinate systems.
+    Create interactive spatial plot of network with Plotly.
+
+    Shows all network components:
+    - Transmission lines, transformers, and links (interconnectors)
+    - Buses colored by voltage level
+    - Generators colored by carrier (per-carrier legend entries)
+    - Storage units
+
+    Handles both OSGB36 (meters) and WGS84 (degrees) coordinate systems.
     """
     logger.info("Creating interactive spatial plot...")
-    
-    from pyproj import Transformer
-    
-    # --- Prepare bus coordinates (everything needs this) ---
+
     buses = n.buses.copy()
-    buses = _convert_to_wgs84(buses)
-    
-    n_buses = len(n.buses)
-    n_lines = len(n.lines)
-    n_xfmrs = len(n.transformers)
-    n_links = len(n.links)
-    n_gens = len(n.generators)
-    n_storage = len(n.storage_units)
-    
-    logger.info(f"Network components: {n_buses} buses, {n_lines} lines, "
-                f"{n_xfmrs} xfmrs, {n_links} links, {n_gens} generators, {n_storage} storage")
-    
-    # Determine network name for title
-    # Try to produce a clean display name like "HT35 (Full)" or "HT35 (Clustered)"
-    net_name = n.name if n.name else Path(output_path).stem.replace('_spatial', '')
-    
-    # Create base figure
+    buses['lon_wgs84'], buses['lat_wgs84'] = _to_wgs84(buses)
+
+    osgb_count = ((buses['x'].abs() > 100) | (buses['y'].abs() > 100)).sum()
+    logger.info(f"Coordinate systems: {len(buses) - osgb_count} WGS84, {osgb_count} OSGB36")
+
     fig = go.Figure()
-    
-    # =====================================================================
-    # 1. NETWORK INFRASTRUCTURE (line-type traces)
-    # =====================================================================
-    
-    # 1a. AC Transmission Lines
-    _add_line_traces(fig, n.lines, buses,
-                     name='Lines', color='rgba(120, 120, 120, 0.4)', width=1)
-    
-    # 1b. Transformers
-    _add_line_traces(fig, n.transformers, buses,
-                     name='Transformers', color='rgba(180, 180, 120, 0.4)', width=0.8)
-    
-    # 1c. Categorize links by carrier/type
-    # Internal HVDC and cross-border interconnectors both use carrier='DC'.
-    # Distinguish them by naming convention: interconnectors start with 'IC_'.
-    # H2 system links have carrier='electrolysis', 'H2_turbine', or 'H2_gas'.
-    links = n.links.copy()
-    if len(links) > 0:
-        # H2 system links (by carrier)
-        h2e_mask = links['carrier'] == 'electrolysis'
-        h2t_mask = links['carrier'] == 'H2_turbine'
-        h2g_mask = links['carrier'] == 'H2_gas'
-        
-        # Interconnectors: name starts with 'IC_' or carrier is EU_import/EU_export
-        ic_mask = (
-            links.index.str.startswith('IC_') |
-            links['carrier'].isin(['EU_import', 'EU_export'])
-        )
-        
-        # Internal HVDC: everything else (carrier 'DC' or 'AC', not IC_ prefixed)
-        hvdc_mask = ~(ic_mask | h2e_mask | h2t_mask | h2g_mask)
-        
-        internal_hvdc = links[hvdc_mask]
-        interconnectors = links[ic_mask]
-        h2_electrolysis = links[h2e_mask]
-        h2_turbines = links[h2t_mask]
-        
-        logger.info(f"Link categorization: {len(internal_hvdc)} internal HVDC, "
-                     f"{len(interconnectors)} interconnectors, "
-                     f"{len(h2_electrolysis)} H2 electrolysis, "
-                     f"{len(h2_turbines)} H2 turbines")
-        
-        _add_line_traces(fig, internal_hvdc, buses,
-                         name='Internal HVDC', color='rgba(148, 0, 211, 0.7)',
-                         width=2, dash='dash')
-        
-        _add_line_traces(fig, interconnectors, buses,
-                         name='Interconnectors', color='rgba(220, 20, 60, 0.7)',
-                         width=2, dash='dot')
-        
-        _add_line_traces(fig, h2_electrolysis, buses,
-                         name='H₂ Electrolysis', color='rgba(100, 100, 100, 0.5)',
-                         width=1, dash='dashdot')
-        
-        _add_line_traces(fig, h2_turbines, buses,
-                         name='H₂ Turbines', color='rgba(70, 130, 180, 0.5)',
-                         width=1, dash='dashdot')
-    
-    # =====================================================================
-    # 2. BUSES
-    # =====================================================================
-    if len(buses) > 0:
+
+    # Helper: build line segments between bus pairs
+    def _build_segments(comp_df):
+        lons, lats = [], []
+        for _, row in comp_df.iterrows():
+            b0, b1 = row['bus0'], row['bus1']
+            if b0 in buses.index and b1 in buses.index:
+                lons.extend([buses.loc[b0, 'lon_wgs84'], buses.loc[b1, 'lon_wgs84'], None])
+                lats.extend([buses.loc[b0, 'lat_wgs84'], buses.loc[b1, 'lat_wgs84'], None])
+        return lons, lats
+
+    # --- Transmission Lines ---
+    if len(n.lines) > 0:
+        lons, lats = _build_segments(n.lines)
         fig.add_trace(go.Scattergeo(
-            lon=buses['lon_wgs84'],
-            lat=buses['lat_wgs84'],
-            mode='markers',
-            marker=dict(size=2.5, color='#DAA520', opacity=0.6),
-            text=[f"<b>{idx}</b>" for idx in buses.index],
-            hovertemplate='%{text}<extra></extra>',
-            name=f'Buses ({n_buses})',
-            showlegend=True,
+            lon=lons, lat=lats, mode='lines',
+            line=dict(width=1, color='rgba(100, 100, 200, 0.5)'),
+            name=f'Lines ({len(n.lines)})', showlegend=True,
         ))
-    
-    # =====================================================================
-    # 3. GENERATORS — one trace per carrier, with count and color
-    # =====================================================================
-    generators = n.generators.copy()
-    # Exclude load_shedding from map (virtual generators at every bus)
-    generators = generators[generators['carrier'] != 'load_shedding']
-    
-    # Resolve generator coordinates — prefer lon/lat, fallback to bus coordinates
-    if 'lon' in generators.columns and 'lat' in generators.columns:
-        gen_data = _convert_to_wgs84(generators, x_col='lon', y_col='lat')
-    elif 'x' in generators.columns and 'y' in generators.columns:
-        gen_data = _convert_to_wgs84(generators, x_col='x', y_col='y')
-    else:
-        # No direct coordinates — use bus coordinates
-        gen_data = generators.copy()
-        gen_data['lon_wgs84'] = gen_data['bus'].map(buses['lon_wgs84'])
-        gen_data['lat_wgs84'] = gen_data['bus'].map(buses['lat_wgs84'])
-        gen_data = gen_data.dropna(subset=['lon_wgs84', 'lat_wgs84'])
-    
-    # Load carrier color definitions
-    try:
-        from scripts.utilities.carrier_definitions import get_carrier_definitions
-        carrier_defs = get_carrier_definitions()
-        carrier_color_map = carrier_defs['color'].to_dict()
-    except Exception:
-        carrier_color_map = {}
-    
-    # Fallback colors for carriers not in definitions
-    fallback_colors = {
-        'wind_offshore': '#6BAED6', 'wind_onshore': '#3B6182',
-        'solar_pv': '#FFBB00', 'CCGT': '#8B8B8B', 'OCGT': '#A9A9A9',
-        'nuclear': '#CC4C02', 'large_hydro': '#0868AC', 'biomass': '#238B45',
-        'biogas': '#74C476', 'landfill_gas': '#A1D99B', 'sewage_gas': '#C7E9C0',
-        'waste_to_energy': '#66C2A4', 'advanced_biofuel': '#41AB5D',
-        'CHP': '#B22222', 'gas_engine': '#708090', 'oil': '#4A4A4A',
-        'marine': '#4EB3D3', 'geothermal': '#D95F0E',
-        'EU_import': '#DC143C', 'H2_turbine': '#FF1493',
-    }
-    # Merge: carrier_defs takes precedence, then fallback
-    for k, v in fallback_colors.items():
-        carrier_color_map.setdefault(k, v)
-    
-    if len(gen_data) > 0 and 'lon_wgs84' in gen_data.columns:
-        # Sort carriers: large marker types first (wind_offshore, nuclear), then alphabetical
-        carrier_order = gen_data.groupby('carrier')['p_nom'].sum().sort_values(ascending=False).index
-        
-        for carrier in carrier_order:
-            cgen = gen_data[gen_data['carrier'] == carrier]
-            count = len(cgen)
-            color = carrier_color_map.get(carrier, '#808080')
-            
-            # Scale marker size by capacity: bigger generators get bigger dots
-            sizes = np.sqrt(cgen['p_nom'].clip(1, 5000)) / 3 + 3
-            # Larger minimum for big generators (nuclear, offshore wind)
-            max_cap = cgen['p_nom'].max()
-            if max_cap > 500:
-                sizes = sizes * 1.3
-            
+
+    # --- Transformers ---
+    if len(n.transformers) > 0:
+        lons, lats = _build_segments(n.transformers)
+        fig.add_trace(go.Scattergeo(
+            lon=lons, lat=lats, mode='lines',
+            line=dict(width=1, color='rgba(200, 140, 50, 0.4)'),
+            name=f'Transformers ({len(n.transformers)})', showlegend=True,
+        ))
+
+    # --- Links (split by type for clarity) ---
+    if len(n.links) > 0:
+        # Categorise links into distinct groups
+        ic_mask = n.links.index.str.startswith('IC_')
+        ic_links = n.links[ic_mask]
+        internal = n.links[~ic_mask]
+
+        # Internal HVDC (carrier == 'DC', not interconnectors)
+        hvdc_internal = internal[internal['carrier'] == 'DC']
+        # Hydrogen electrolysis links
+        h2_elec = internal[internal['carrier'] == 'electrolysis']
+        # Hydrogen turbine links
+        h2_turb = internal[internal['carrier'] == 'H2_turbine']
+        # Anything else (future-proof)
+        other_carriers = internal[
+            ~internal['carrier'].isin(['DC', 'electrolysis', 'H2_turbine'])
+        ]
+
+        if len(hvdc_internal) > 0:
+            lons, lats = _build_segments(hvdc_internal)
             fig.add_trace(go.Scattergeo(
-                lon=cgen['lon_wgs84'],
-                lat=cgen['lat_wgs84'],
-                mode='markers',
-                marker=dict(
-                    size=sizes,
-                    color=color,
-                    opacity=0.75,
-                    line=dict(width=0.3, color='darkgray'),
-                ),
-                text=[f"<b>{carrier}</b><br>{row['p_nom']:.0f} MW<br>Bus: {row['bus']}"
-                      for _, row in cgen.iterrows()],
-                hovertemplate='%{text}<extra></extra>',
-                name=f'{carrier} ({count})',
-                showlegend=True,
+                lon=lons, lat=lats, mode='lines',
+                line=dict(width=3, color='rgba(180, 50, 180, 0.85)', dash='dash'),
+                name=f'Internal HVDC ({len(hvdc_internal)})', showlegend=True,
             ))
-    
-    # =====================================================================
-    # 4. STORAGE — green diamonds with count
-    # =====================================================================
-    storage = n.storage_units.copy() if n_storage > 0 else None
-    if storage is not None and len(storage) > 0:
-        # Resolve storage coordinates
-        if 'lon' in storage.columns and 'lat' in storage.columns:
-            storage_data = _convert_to_wgs84(storage, x_col='lon', y_col='lat')
-        elif 'x' in storage.columns and 'y' in storage.columns:
-            storage_data = _convert_to_wgs84(storage, x_col='x', y_col='y')
-        elif 'longitude' in storage.columns and 'latitude' in storage.columns:
-            storage_data = _convert_to_wgs84(storage, x_col='longitude', y_col='latitude')
-        else:
-            # Fall back to bus coordinates
-            storage_data = storage.copy()
-            storage_data['lon_wgs84'] = storage_data['bus'].map(buses['lon_wgs84'])
-            storage_data['lat_wgs84'] = storage_data['bus'].map(buses['lat_wgs84'])
-            storage_data = storage_data.dropna(subset=['lon_wgs84', 'lat_wgs84'])
-        
-        if len(storage_data) > 0 and 'lon_wgs84' in storage_data.columns:
-            stor_count = len(storage_data)
+
+        if len(ic_links) > 0:
+            lons, lats = _build_segments(ic_links)
             fig.add_trace(go.Scattergeo(
-                lon=storage_data['lon_wgs84'],
-                lat=storage_data['lat_wgs84'],
-                mode='markers',
+                lon=lons, lat=lats, mode='lines',
+                line=dict(width=2.5, color='rgba(220, 20, 60, 0.8)', dash='dot'),
+                name=f'Interconnectors ({len(ic_links)})', showlegend=True,
+            ))
+
+        if len(h2_elec) > 0:
+            lons, lats = _build_segments(h2_elec)
+            fig.add_trace(go.Scattergeo(
+                lon=lons, lat=lats, mode='lines',
+                line=dict(width=1.5, color='rgba(0, 180, 120, 0.6)', dash='dashdot'),
+                name=f'H\u2082 Electrolysis ({len(h2_elec)})', showlegend=True,
+            ))
+
+        if len(h2_turb) > 0:
+            lons, lats = _build_segments(h2_turb)
+            fig.add_trace(go.Scattergeo(
+                lon=lons, lat=lats, mode='lines',
+                line=dict(width=1.5, color='rgba(0, 120, 180, 0.5)', dash='dashdot'),
+                name=f'H\u2082 Turbines ({len(h2_turb)})', showlegend=True,
+            ))
+
+        if len(other_carriers) > 0:
+            lons, lats = _build_segments(other_carriers)
+            fig.add_trace(go.Scattergeo(
+                lon=lons, lat=lats, mode='lines',
+                line=dict(width=1.5, color='rgba(150, 150, 150, 0.6)', dash='dot'),
+                name=f'Other Links ({len(other_carriers)})', showlegend=True,
+            ))
+
+    # --- Buses ---
+    if len(buses) > 0:
+        generators = n.generators
+        gen_cap_per_bus = generators.groupby('bus')['p_nom'].sum() if len(generators) > 0 else pd.Series(dtype=float)
+
+        bus_sizes = []
+        bus_colors = []
+        bus_hover = []
+
+        for idx, bus in buses.iterrows():
+            cap = gen_cap_per_bus.get(idx, 0)
+            bus_sizes.append(max(4, min(15, 4 + cap / 1500)))
+
+            v = bus.get('v_nom', 0)
+            if v >= 400:
+                bus_colors.append('darkred')
+            elif v >= 275:
+                bus_colors.append('orange')
+            elif v >= 132:
+                bus_colors.append('gold')
+            elif v > 0:
+                bus_colors.append('lightblue')
+            else:
+                bus_colors.append('gray')
+
+            bus_hover.append(f"<b>{idx}</b><br>v_nom: {v:.0f} kV<br>Gen capacity: {cap:.0f} MW")
+
+        fig.add_trace(go.Scattergeo(
+            lon=buses['lon_wgs84'], lat=buses['lat_wgs84'], mode='markers',
+            marker=dict(size=bus_sizes, color=bus_colors, opacity=0.8,
+                        line=dict(width=0.5, color='darkgray')),
+            text=bus_hover, hovertemplate='%{text}<extra></extra>',
+            name=f'Buses ({len(buses)})', showlegend=True,
+        ))
+
+    # --- Generators (per-carrier traces for legend toggling) ---
+    carrier_colors = {
+        'wind_offshore': '#0073E6',
+        'wind_onshore': '#66B2FF',
+        'solar_pv': '#FFD700',
+        'CCGT': '#FF4500',
+        'OCGT': '#FF6347',
+        'nuclear': '#9400D3',
+        'large_hydro': '#228B22',
+        'small_hydro': '#3CB371',
+        'battery': '#FFA500',
+        'pumped_hydro': '#32CD32',
+        'H2_turbine': '#00CED1',
+        'coal': '#8B4513',
+        'oil': '#A0522D',
+        'biogas': '#6B8E23',
+        'advanced_biofuel': '#556B2F',
+        'waste_to_energy': '#708090',
+        'landfill_gas': '#808000',
+        'EU_import': '#DC143C',
+    }
+
+    if len(n.generators) > 0:
+        gen_data = n.generators.copy()
+        # Exclude load_shedding — it's at every bus and clutters the map
+        gen_data = gen_data[gen_data['carrier'] != 'load_shedding']
+
+        # Resolve generator coordinates: try lon/lat (auto-detect OSGB36), then x/y, then bus
+        if 'lon' in gen_data.columns and 'lat' in gen_data.columns:
+            has_own = gen_data['lon'].notna() & gen_data['lat'].notna()
+            if has_own.any():
+                lon_conv, lat_conv = _to_wgs84(gen_data[has_own], x_col='lon', y_col='lat')
+                gen_data.loc[has_own, 'lon_wgs84'] = lon_conv
+                gen_data.loc[has_own, 'lat_wgs84'] = lat_conv
+        else:
+            has_own = pd.Series(False, index=gen_data.index)
+
+        if 'x' in gen_data.columns and 'y' in gen_data.columns:
+            has_xy = (~has_own) & gen_data['x'].notna() & gen_data['y'].notna()
+            if has_xy.any():
+                lon_xy, lat_xy = _to_wgs84(gen_data[has_xy])
+                gen_data.loc[has_xy, 'lon_wgs84'] = lon_xy
+                gen_data.loc[has_xy, 'lat_wgs84'] = lat_xy
+                has_own = has_own | has_xy
+
+        # Fall back to bus location for remaining generators
+        needs_bus = ~has_own | gen_data.get('lon_wgs84', pd.Series(dtype=float)).isna()
+        if needs_bus.any():
+            for idx in gen_data[needs_bus].index:
+                bus_name = gen_data.loc[idx, 'bus']
+                if bus_name in buses.index:
+                    gen_data.loc[idx, 'lon_wgs84'] = buses.loc[bus_name, 'lon_wgs84']
+                    gen_data.loc[idx, 'lat_wgs84'] = buses.loc[bus_name, 'lat_wgs84']
+
+        gen_data = gen_data.dropna(subset=['lon_wgs84', 'lat_wgs84'])
+        logger.info(f"Plotting {len(gen_data)} generators (excl. load_shedding)")
+
+        # Plot one trace per carrier for legend toggling
+        for carrier, group in gen_data.groupby('carrier'):
+            color = carrier_colors.get(carrier, '#808080')
+            fig.add_trace(go.Scattergeo(
+                lon=group['lon_wgs84'], lat=group['lat_wgs84'], mode='markers',
                 marker=dict(
-                    size=7,
-                    color='#228B22',
-                    symbol='diamond',
-                    opacity=0.8,
+                    size=np.sqrt(group['p_nom'].clip(1, 5000)) / 3 + 3,
+                    color=color, opacity=0.75,
                     line=dict(width=0.5, color='darkgray'),
                 ),
-                text=[f"<b>{row['carrier']}</b><br>Power: {row['p_nom']:.0f} MW<br>Bus: {row['bus']}"
-                      for _, row in storage_data.iterrows()],
+                text=[f"<b>{name}</b><br>{row['carrier']}<br>{row['p_nom']:.0f} MW<br>Bus: {row['bus']}"
+                      for name, row in group.iterrows()],
                 hovertemplate='%{text}<extra></extra>',
-                name=f'Storage ({stor_count})',
+                name=f"{carrier} ({len(group)})",
+                legendgroup='generators',
                 showlegend=True,
             ))
-    
-    # =====================================================================
-    # 5. LAYOUT — GB-focused map with detailed title
-    # =====================================================================
-    subtitle = f"{n_buses} buses, {n_lines} lines, {n_xfmrs} xfmrs, {n_links} links, {n_gens} generators"
-    
+
+    # --- Storage ---
+    if len(n.storage_units) > 0:
+        stor = n.storage_units.copy()
+        # Resolve coordinates: x/y or fall back to bus
+        if 'x' in stor.columns and 'y' in stor.columns:
+            has_xy = stor['x'].notna() & stor['y'].notna()
+            if has_xy.any():
+                lon_s, lat_s = _to_wgs84(stor[has_xy])
+                stor.loc[has_xy, 'lon_wgs84'] = lon_s
+                stor.loc[has_xy, 'lat_wgs84'] = lat_s
+        for idx in stor.index:
+            if pd.isna(stor.loc[idx].get('lon_wgs84')):
+                bus_name = stor.loc[idx, 'bus']
+                if bus_name in buses.index:
+                    stor.loc[idx, 'lon_wgs84'] = buses.loc[bus_name, 'lon_wgs84']
+                    stor.loc[idx, 'lat_wgs84'] = buses.loc[bus_name, 'lat_wgs84']
+
+        stor = stor.dropna(subset=['lon_wgs84', 'lat_wgs84'])
+        if len(stor) > 0:
+            fig.add_trace(go.Scattergeo(
+                lon=stor['lon_wgs84'], lat=stor['lat_wgs84'], mode='markers',
+                marker=dict(size=8, color='darkgreen', symbol='diamond',
+                            opacity=0.8, line=dict(width=1, color='darkgray')),
+                text=[f"<b>{row['carrier']}</b><br>Power: {row['p_nom']:.0f} MW<br>Bus: {row['bus']}"
+                      for _, row in stor.iterrows()],
+                hovertemplate='%{text}<extra></extra>',
+                name=f'Storage ({len(stor)})', showlegend=True,
+            ))
+
+    # --- Layout ---
     fig.update_layout(
         title=dict(
-            text=f"<b>Network Topology Map: {net_name}</b><br><sup>{subtitle}</sup>",
-            x=0.5,
-            xanchor='center',
+            text=f"<b>Network Topology Map: {n.name}</b><br>"
+                 f"<sup>{len(n.buses)} buses, {len(n.lines)} lines, "
+                 f"{len(n.transformers)} xfmrs, {len(n.links)} links, "
+                 f"{len(n.generators)} generators</sup>",
+            x=0.5, xanchor='center',
         ),
         geo=dict(
             scope='europe',
             projection_type='mercator',
             center=dict(lon=-2.5, lat=54.5),
-            lonaxis_range=[-8, 2],
-            lataxis_range=[50, 60],
+            lonaxis_range=[-9, 4],
+            lataxis_range=[49, 61],
             showland=True,
-            landcolor='rgb(243, 243, 243)',
+            landcolor='rgb(240, 240, 240)',
             showocean=True,
             oceancolor='rgb(220, 235, 255)',
             showcountries=True,
@@ -367,22 +334,18 @@ def create_spatial_plot(n, output_path):
             showcoastlines=True,
             coastlinecolor='rgb(100, 100, 100)',
         ),
-        height=950,
+        height=1000,
         hovermode='closest',
         margin=dict(r=10, t=100, l=10, b=10),
         legend=dict(
-            x=0.01,
-            y=0.99,
-            bgcolor='rgba(255, 255, 255, 0.9)',
-            bordercolor='gray',
-            borderwidth=1,
-            font=dict(size=10),
-            itemsizing='constant',
+            x=0.02, y=0.98,
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='gray', borderwidth=1,
         ),
     )
-    
+
     fig.write_html(output_path)
-    logger.info(f"Spatial plot saved to {output_path} ({subtitle})")
+    logger.info(f"Spatial plot saved to {output_path}")
     return fig
 
 

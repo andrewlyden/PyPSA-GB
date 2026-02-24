@@ -1,3 +1,23 @@
+"""
+Build the ETYS transmission network from preprocessed CSV data.
+
+This script is the MODEL RULE counterpart to process_ETYS_data.py (DATA RULE).
+It reads preprocessed CSV files (components + buses) and constructs the final
+PyPSA network, including:
+  - Coordinate guessing for buses without GSP matches
+  - Land boundary validation (offshore buses stay at sea)
+  - PyPSA network assembly (buses, lines, transformers, links)
+  - ETYS network upgrades (if enabled)
+
+Inputs (via snakemake.input):
+  components: preprocessed components CSV
+  buses: preprocessed buses CSV (with is_offshore column)
+  etys_file: ETYS Appendix B Excel file (for upgrades only)
+
+Outputs (via snakemake.output):
+  network: PyPSA network as NetCDF (.nc)
+"""
+
 import pandas as pd
 import numpy as np
 import pypsa
@@ -18,44 +38,30 @@ sys.path.insert(0, str(project_root))
 # Suppress PyPSA warnings about unoptimized networks (expected during network building)
 warnings.filterwarnings('ignore', message='The network has not been optimized yet')
 
-# Add logging import
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary
-
-# Import shared constants from the ETYS file registry (single source of truth)
-from scripts.network_build.etys_file_registry import (
-    VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, EXTRA_WF_EDGE_RATINGS,
-    DEFAULT_WF_RATING, GSP_REGIONS_FILE,
-)
+from scripts.network_build.etys_file_registry import VOLTAGE_LEVELS, GSP_REGIONS_FILE
 
 # Coordinate conversion constants for GB (approximate)
 LAT_DEGREES_PER_KM = 1 / 111.0
 LON_DEGREES_PER_KM_BASE = 1 / 111.0
 
-# Default electrical parameters to avoid zero values
-DEFAULT_R = ELECTRICAL_DEFAULTS['line']['r']
-DEFAULT_X = ELECTRICAL_DEFAULTS['line']['x']
-DEFAULT_B = ELECTRICAL_DEFAULTS['line']['b']
-
 # Land boundary checking constants
 LAND_BUFFER_KM = 0.5  # Buffer distance from coastline
-
-# ─── Extra wind farm edge ratings ────────────────────────────────────────────
-# Imported from etys_file_registry — see EXTRA_WF_EDGE_RATINGS above.
 
 
 def load_land_boundaries(logger: Optional[logging.Logger] = None) -> Optional[gpd.GeoDataFrame]:
     """
     Load Great Britain land boundaries from GSP regions file.
-    
+
     Args:
         logger: Optional logger instance
-        
+
     Returns:
         GeoDataFrame with GB land boundaries or None if loading fails
     """
     if logger is None:
         logger = logging.getLogger(__name__)
-        
+
     try:
         logger.info(f"Loading GB land boundaries from {GSP_REGIONS_FILE}")
         gdf = gpd.read_file(GSP_REGIONS_FILE)
@@ -69,30 +75,30 @@ def load_land_boundaries(logger: Optional[logging.Logger] = None) -> Optional[gp
         logger.info(f"Land boundary bounds: {land_gdf.total_bounds}")
 
         return land_gdf
-        
+
     except Exception as e:
         logger.error(f"Failed to load land boundaries: {e}")
         logger.warning("Proceeding without land boundary checking")
         return None
 
 
-def check_point_on_land(lat: float, lon: float, land_boundary: gpd.GeoDataFrame, 
+def check_point_on_land(lat: float, lon: float, land_boundary: gpd.GeoDataFrame,
                        logger: Optional[logging.Logger] = None) -> bool:
     """
     Check if a coordinate point is on land (within GB boundaries).
-    
+
     Args:
         lat: Latitude in degrees
-        lon: Longitude in degrees  
+        lon: Longitude in degrees
         land_boundary: GeoDataFrame with land boundaries
         logger: Optional logger instance
-        
+
     Returns:
         True if point is on land, False if at sea
     """
     if land_boundary is None:
         return True  # Assume on land if no boundary data
-        
+
     try:
         point = Point(lon, lat)
         return land_boundary.contains(point).any()
@@ -106,61 +112,56 @@ def move_point_to_land(lat: float, lon: float, land_boundary: gpd.GeoDataFrame,
                       logger: Optional[logging.Logger] = None) -> Tuple[float, float]:
     """
     Move a point from sea to the nearest land location.
-    
-    Args:
-        lat: Original latitude in degrees
-        lon: Original longitude in degrees
-        land_boundary: GeoDataFrame with land boundaries
-        logger: Optional logger instance
-        
-    Returns:
-        Tuple of (new_lat, new_lon) on land
+
+    Uses the nearest point on the land boundary and nudges slightly inland
+    (perpendicular to the boundary toward the interior), avoiding the old
+    approach of biasing toward the GB centroid which distorted Scottish locations.
     """
-    # Handle NaN coordinates - return as-is (will be handled elsewhere)
     if pd.isna(lat) or pd.isna(lon):
         if logger:
             logger.warning(f"Cannot move point with NaN coordinates: ({lat}, {lon})")
         return lat, lon
-        
+
     if land_boundary is None:
-        return lat, lon  # Return original if no boundary data
-        
+        return lat, lon
+
     try:
         sea_point = Point(lon, lat)
         land_geom = land_boundary.geometry.iloc[0]
-        
+
         # Find nearest point on land boundary
-        nearest_geom, nearest_point = nearest_points(sea_point, land_geom)
-        
-        # Add small buffer to ensure point is clearly on land
-        buffer_deg = LAND_BUFFER_KM / 111.0  # Rough conversion km to degrees
-        land_centroid = land_geom.centroid
-        
-        # Move point slightly towards land centroid
-        direction_x = land_centroid.x - nearest_point.x
-        direction_y = land_centroid.y - nearest_point.y
-        length = np.sqrt(direction_x**2 + direction_y**2)
-        
+        _, nearest_point = nearest_points(sea_point, land_geom)
+
+        # Nudge slightly inland: move from the sea point through the nearest
+        # boundary point and a bit further (into land)
+        buffer_deg = LAND_BUFFER_KM / 111.0
+        dx = nearest_point.x - sea_point.x
+        dy = nearest_point.y - sea_point.y
+        length = np.sqrt(dx**2 + dy**2)
+
         if length > 0:
-            direction_x /= length
-            direction_y /= length
-            
-            final_lon = nearest_point.x + direction_x * buffer_deg
-            final_lat = nearest_point.y + direction_y * buffer_deg
+            # Continue in the same direction past the boundary point
+            final_lon = nearest_point.x + (dx / length) * buffer_deg
+            final_lat = nearest_point.y + (dy / length) * buffer_deg
         else:
             final_lon = nearest_point.x
             final_lat = nearest_point.y
-            
+
+        # Verify the nudged point is actually on land; if not, use boundary point
+        if not land_geom.contains(Point(final_lon, final_lat)):
+            final_lon = nearest_point.x
+            final_lat = nearest_point.y
+
         if logger:
-            distance_km = sea_point.distance(nearest_point) * 111.0  # Rough conversion
+            distance_km = sea_point.distance(nearest_point) * 111.0
             logger.debug(f"Moved point from sea ({lat:.4f}, {lon:.4f}) to land ({final_lat:.4f}, {final_lon:.4f}), distance: {distance_km:.2f} km")
-            
+
         return final_lat, final_lon
-        
+
     except Exception as e:
         if logger:
             logger.warning(f"Failed to move point ({lat}, {lon}) to land: {e}")
-        return lat, lon  # Return original if correction fails
+        return lat, lon
 
 
 def ensure_buses_on_land(network: pypsa.Network, land_boundary: Optional[gpd.GeoDataFrame],
@@ -168,335 +169,80 @@ def ensure_buses_on_land(network: pypsa.Network, land_boundary: Optional[gpd.Geo
                         skip_buses: Optional[set] = None) -> int:
     """
     Ensure all non-offshore buses in the network are located on land.
-    
+
     Offshore wind farm buses (identified via skip_buses) are legitimately
     at sea and should NOT be moved to land.
-    
+
     Args:
         network: PyPSA network with bus coordinates
         land_boundary: GeoDataFrame with land boundaries
         logger: Optional logger instance
         skip_buses: Set of bus IDs to skip (e.g. offshore wind farm buses)
-        
+
     Returns:
         Number of buses moved from sea to land
     """
     if logger is None:
         logger = logging.getLogger(__name__)
-        
+
     if land_boundary is None:
         logger.warning("No land boundary data available - skipping land validation")
         return 0
-    
+
     if skip_buses is None:
         skip_buses = set()
-        
+
     logger.info("Checking bus locations against land boundaries")
     if skip_buses:
         logger.info(f"Skipping {len(skip_buses)} offshore buses")
     buses_moved = 0
     buses_skipped = 0
-    
+
     for bus_id, bus_data in network.buses.iterrows():
         lat, lon = bus_data.lat, bus_data.lon
-        
+
         if not check_point_on_land(lat, lon, land_boundary, logger):
             # Check if this is an offshore bus that should stay at sea
             if bus_id in skip_buses:
                 buses_skipped += 1
                 logger.debug(f"Keeping offshore bus {bus_id} at sea ({lat:.4f}, {lon:.4f})")
                 continue
-            
+
             # Bus is at sea - move to land
             new_lat, new_lon = move_point_to_land(lat, lon, land_boundary, logger)
             network.buses.loc[bus_id, 'lat'] = new_lat
             network.buses.loc[bus_id, 'lon'] = new_lon
             buses_moved += 1
-            
+
             logger.debug(f"Moved bus {bus_id} from sea ({lat:.4f}, {lon:.4f}) to land ({new_lat:.4f}, {new_lon:.4f})")
-    
+
     if buses_moved > 0:
         logger.info(f"Moved {buses_moved} buses from sea to land")
     if buses_skipped > 0:
         logger.info(f"Kept {buses_skipped} offshore buses at sea")
     if buses_moved == 0 and buses_skipped == 0:
         logger.info("All buses were already on land")
-        
+
     return buses_moved
 
-def sort_raw_ETYS_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
-    """
-    Parse and process raw ETYS data from Excel sheets.
-    
-    Combines line, transformer, and interconnector data from multiple sheets,
-    standardizes column names, and adds length information for coordinate estimation.
-    
-    Args:
-        logger: Optional logger instance
-        
-    Returns:
-        DataFrame with processed network component data including length information
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-    
-    logger.info("Reading ETYS raw data from Excel sheets")
-    # Read all sheets at once
-    xls = pd.ExcelFile(snakemake.input[0])
-    logger.info(f"Loaded Excel file with {len(xls.sheet_names)} sheets")
-    
-    sheets = {
-        'B-2-1a': xls.parse('B-2-1a', skiprows=1),
-        'B-2-1b': xls.parse('B-2-1b', skiprows=1),
-        'B-2-1c': xls.parse('B-2-1c', skiprows=1),
-        'B-2-1d': xls.parse('B-2-1d', skiprows=1),
-        'B-3-1a': xls.parse('B-3-1a', skiprows=1),
-        'B-3-1b': xls.parse('B-3-1b', skiprows=1),
-        'B-3-1c': xls.parse('B-3-1c', skiprows=1),
-        'B-3-1d': xls.parse('B-3-1d', skiprows=1),
-        'B-5-1': xls.parse('B-5-1', skiprows=1)
-    }
 
-    logger.info("Processing line data sheets (B-2-1a to B-2-1d)")
-    dfa, dfb, dfc, dfd = sheets['B-2-1a'], sheets['B-2-1b'], sheets['B-2-1c'], sheets['B-2-1d']
-    for df in [dfa, dfb, dfc, dfd]:
-        df.loc[:, 'component'] = 'line'
-        df.loc[:, 'carrier'] = 'AC'
-    dfd.rename(columns={'R (% on 100MVA)': 'R (% on 100 MVA)', 'X (% on 100MVA)': 'X (% on 100 MVA)', 'B (% on 100MVA)': 'B (% on 100 MVA)', 'Rating (MVA)': 'Winter Rating (MVA)'}, inplace=True)
-
-    logger.info("Processing transformer data sheets (B-3-1a to B-3-1d)")
-    dfe, dff, dfg, dfh = sheets['B-3-1a'], sheets['B-3-1b'], sheets['B-3-1c'], sheets['B-3-1d']
-    dfe.rename(columns={'Rating (MVA)': 'Winter Rating (MVA)'}, inplace=True)
-    for df in [dff, dfg, dfh]:
-        df.rename(columns={'R (% on 100MVA)': 'R (% on 100 MVA)', 'X (% on 100MVA)': 'X (% on 100 MVA)', 'B (% on 100MVA)': 'B (% on 100 MVA)', 'Node1': 'Node 1', 'Node2': 'Node 2', 'Rating (MVA)': 'Winter Rating (MVA)'}, inplace=True)
-    for df in [dfe, dff, dfg, dfh]:
-        df.loc[:, 'component'] = 'transformer'
-        df.loc[:, 'carrier'] = 'AC'
-
-    logger.info("Processing internal HVDC link data (B-5-1)")
-    dfi = sheets['B-5-1']
-    dfi = dfi.loc[dfi['Existing'] == 'Yes'].copy()
-    logger.info(f"Found {len(dfi)} existing internal HVDC links")
-    dfi.loc[:, 'component'] = 'link'
-    dfi.loc[:, 'carrier'] = 'DC'
-
-    logger.info("Loading additional wind farm and BMU edges from GB_network.xlsx")
-    dfj = pd.read_excel(snakemake.input[1], sheet_name='Extra_WF_edges')
-    dfj.loc[:, 'component'] = 'line'
-    dfj.loc[:, 'carrier'] = 'AC'
-    # Use real OFTO-derived ratings instead of infinite capacity
-    # Ratings sourced from ETYS Appendix B-2-1d (OFTO data) and B-2-1c
-    node1_col = 'Node 1' if 'Node 1' in dfj.columns else 'Node1'
-    dfj.loc[:, 'Winter Rating (MVA)'] = dfj[node1_col].map(EXTRA_WF_EDGE_RATINGS).fillna(DEFAULT_WF_RATING)
-    rated_count = (dfj['Winter Rating (MVA)'] != DEFAULT_WF_RATING).sum()
-    logger.info(f"Loaded {len(dfj)} extra wind farm edges ({rated_count} with OFTO-derived ratings)")
-
-    dfk = pd.read_excel(snakemake.input[1], sheet_name='Extra_BMUs_edges')
-    dfk.loc[:, 'component'] = 'line'
-    dfk.loc[:, 'carrier'] = 'AC'
-    dfk.loc[:, 'Winter Rating (MVA)'] = DEFAULT_WF_RATING
-    logger.info(f"Loaded {len(dfk)} extra BMU edges")
-
-    logger.info("Concatenating all network components")
-    # Identify true offshore buses: buses that appear ONLY in OFTO data (B-2-1d,
-    # B-3-1d) and NOT in any main ETYS sheet (B-2-1a/b/c, B-3-1a/b/c).
-    # These are offshore wind farm platforms and their internal substations.
-    main_etys_buses = set()
-    for _df in [dfa, dfb, dfc, dfe, dff, dfg]:
-        main_etys_buses.update(_df['Node 1'].dropna().tolist())
-        main_etys_buses.update(_df['Node 2'].dropna().tolist())
-    
-    ofto_buses = set()
-    for _df in [dfd, dfh]:
-        ofto_buses.update(_df['Node 1'].dropna().tolist())
-        ofto_buses.update(_df['Node 2'].dropna().tolist())
-    
-    offshore_wf_buses = ofto_buses - main_etys_buses
-    logger.info(f"Identified {len(offshore_wf_buses)} offshore buses (in OFTO data only, not in main ETYS)")
-    
-    df = pd.concat([dfa, dfb, dfc, dfd, dfe, dff, dfg, dfh, dfi, dfj, dfk], ignore_index=True)
-    df.rename(columns={'Node 1': 'bus0', 'Node 2': 'bus1'}, inplace=True)
-    df.index.name = 'name'
-    df.reset_index(drop=True, inplace=True)
-    df.rename(columns={'R (% on 100 MVA)': 'r', 'X (% on 100 MVA)': 'x', 'B (% on 100 MVA)': 'b', 'Winter Rating (MVA)': 's_nom'}, inplace=True)
-    
-    # Store offshore bus set as module-level for use in coordinate guessing
-    sort_raw_ETYS_data._offshore_wf_buses = offshore_wf_buses
-    
-    # Calculate total length for distance-based coordinate estimation
-    if 'OHL Length (km)' in df.columns and 'Cable Length (km)' in df.columns:
-        df['length_km'] = df['OHL Length (km)'].fillna(0) + df['Cable Length (km)'].fillna(0)
-    elif 'Length(km)' in df.columns:  # For interconnectors
-        df['length_km'] = df['Length(km)'].fillna(0)
-    else:
-        df['length_km'] = 0
-    
-    df = df[['component', 'carrier', 'bus0', 'bus1', 'r', 'x', 'b', 's_nom', 'length_km']]
-
-    logger.info("Processing electrical parameters")
-    # Explicitly cast columns to float64
-    df['r'] = df['r'].astype('float64')
-    df['x'] = df['x'].astype('float64')
-    df['b'] = df['b'].astype('float64')
-
-    # CRITICAL: Convert from "% on 100 MVA" to per-unit (p.u.)
-    # ETYS data is in percentage format (e.g., 8.0467% = 0.080467 p.u.)
-    # PyPSA expects per-unit values, so divide by 100
-    logger.info("Converting electrical parameters from % on 100 MVA base to per-unit")
-    df['r'] = df['r'] / 100.0
-    df['x'] = df['x'] / 100.0
-    df['b'] = df['b'] / 100.0
-
-    df['r'] = df['r'].replace(0, DEFAULT_R).fillna(DEFAULT_R)
-    df['x'] = df['x'].replace(0, DEFAULT_X).fillna(DEFAULT_X)
-    df['b'] = df['b'].replace(0, DEFAULT_B).fillna(DEFAULT_B)
-    
-    logger.info(f"Processed {len(df)} network components")
-    log_dataframe_info(df, logger, "Network components summary")
-    
-    return df
-
-def buses_from_line_data(df: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
-    """
-    Extract unique buses from network line data and add voltage level and carrier information.
-    
-    Args:
-        df: DataFrame containing network line data
-        logger: Optional logger instance
-        
-    Returns:
-        DataFrame with bus information including voltage levels and carriers
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-    
-    logger.info("Extracting buses from line data")
-    # buses from line data
-    df_buses = pd.concat([df['bus0'], df['bus1']]).unique()
-    df_buses = pd.DataFrame(df_buses, columns=['name'])
-    df_buses.index = df_buses['name']
-    df_buses.index.name = 'name'
-    logger.info(f"Found {len(df_buses)} unique buses")
-
-    logger.info("Adding voltage level data to buses")
-    # add voltage data using constants
-    # extract first character of string which is a number from df_buses name column
-    map = df_buses['name'].str.extract(r'(\d+)', expand=False)
-    # remove all apart from the first character of the string
-    map = map.str[0]
-    # use this map to add voltage data to df_buses
-    df_buses['v_nom'] = map.map(VOLTAGE_LEVELS)
-
-    logger.info("Processing carrier information for buses")
-    # create a new dataframe from df with the bus0 and bus1 columns and carrier column
-    df_carrier = df[['bus0', 'bus1', 'carrier']]
-    df_carrier2 = df_carrier.copy()
-    # make bus0 index, while dropping column
-    df_carrier = df_carrier.set_index('bus0', drop=True)
-    # drop bus 1 column
-    df_carrier = df_carrier.drop(columns=['bus1'])
-
-    df_carrier2 = df_carrier2.set_index('bus1', drop=True)
-    # drop bus 0 column
-    df_carrier2 = df_carrier2.drop(columns=['bus0'])
-    # set both index names to name
-    df_carrier.index.name = 'name'
-    df_carrier2.index.name = 'name'
-    # concat dfs
-    df_carrier = pd.concat([df_carrier, df_carrier2])
-    # drop duplicates
-    df_carrier = df_carrier[~df_carrier.index.duplicated(keep='first')]
-    # add carrier column to df_buses
-    df_buses['carrier'] = df_buses.index.map(df_carrier['carrier'])
-    # set carrier of buses to AC
-    df_buses['carrier'] = 'AC'
-
-    logger.info(f"Completed bus processing with voltage levels and carriers")
-    log_dataframe_info(df_buses, logger, "Buses summary")
-    
-    return df_buses
-
-def GSP_locations_from_FES_data(logger: Optional[logging.Logger] = None) -> pd.DataFrame:
-    """
-    Load Grid Supply Point (GSP) location data from Future Energy Scenarios (FES) data.
-    
-    Args:
-        logger: Optional logger instance
-        
-    Returns:
-        DataFrame with GSP location data (coordinates)
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-
-    logger.info("Loading GSP location data from FES data")
-    # FES data with GSP locations (input[2] is Regional breakdown of FES data)
-    df2 = pd.read_excel(snakemake.input[2], sheet_name='GSP info', skiprows=4, index_col=1)
-    # df2.index = df2.index.str[:4]
-    df2 = df2[~df2.index.duplicated(keep='first')]
-    logger.info(f"Loaded {len(df2)} GSP locations")
-    df2.rename(columns={'Latitude':'lat', 'Longitude': 'lon'}, inplace=True)
-    # df2.drop(['ROTI'], inplace=True)
-    df2.drop(columns=['Name'], inplace=True)
-    df2.index.name = 'name'
-    df2['name'] = df2.index
-
-    log_dataframe_info(df2, logger, "GSP locations summary")
-    return df2
-
-def add_GSP_location_data(df_buses: pd.DataFrame, df2: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
-    """
-    Add GSP coordinate data to buses by matching the first 4 characters of bus names.
-    
-    Args:
-        df_buses: DataFrame with bus data
-        df2: DataFrame with GSP location data
-        logger: Optional logger instance
-        
-    Returns:
-        DataFrame with buses that have coordinate data where available
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-
-    logger.info("Matching buses to GSP locations")
-    # Step 1: Define a function that takes an index and returns the corresponding lon and lat values from `df2` where the first 4 characters of the index match.
-    def get_coords(index):
-        matching_df2 = df2[df2.index.str[:4] == index[:4]]
-        if not matching_df2.empty:
-            return matching_df2.iloc[0]['lon'], matching_df2.iloc[0]['lat']
-        else:
-            return None, None
-
-    # Step 2: Apply this function to the index of `df_buses` to create the new columns.
-    logger.info("Applying GSP coordinates to buses")
-    df_buses['lon'], df_buses['lat'] = zip(*df_buses.index.map(get_coords))
-    
-    # Single, clean type conversion
-    df_buses['lon'] = pd.to_numeric(df_buses['lon'], errors='coerce')
-    df_buses['lat'] = pd.to_numeric(df_buses['lat'], errors='coerce')
-    
-    # remove the name column
-    df_buses = df_buses.drop(columns=['name'])
-
-    # Count matched vs unmatched buses
-    matched_count = (~df_buses['lon'].isna()).sum()
-    total_count = len(df_buses)
-    logger.info(f"Successfully matched {matched_count}/{total_count} buses to GSP locations")
-    
-    return df_buses
-
-def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
+def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFrame,
+                                          offshore_wf_buses: set,
+                                          logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     """
     Improved coordinate guessing using distance-weighted estimation and graph connectivity.
     Uses line lengths to better estimate bus positions and ensures all onshore buses are on land.
-    Offshore wind farm buses (identified from OFTO data) are kept at their estimated sea positions.
+    Offshore wind farm buses (identified via is_offshore column) are kept at their estimated sea positions.
+
+    Args:
+        df: Components DataFrame
+        df_buses: Buses DataFrame with partial coordinates
+        offshore_wf_buses: Set of bus IDs classified as offshore
+        logger: Optional logger instance
     """
     if logger is None:
         logger = logging.getLogger(__name__)
 
-    # Retrieve offshore bus set (stored by sort_raw_ETYS_data)
-    offshore_wf_buses = getattr(sort_raw_ETYS_data, '_offshore_wf_buses', set())
     if offshore_wf_buses:
         logger.info(f"Will preserve {len(offshore_wf_buses)} offshore buses at sea positions")
 
@@ -506,12 +252,18 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
     logger.info("Creating temporary network for location guessing")
     network = pypsa.Network()
     network.set_snapshots(range(1))
-    
+
     network.add("Bus", df_buses.index, **df_buses)
-    
+
     # Add lines with length information (drop metadata columns first to avoid PyPSA 1.0.2 warnings)
+    # This temporary network is used ONLY for graph connectivity / coordinate guessing,
+    # not for power flow — all components (including HVDC links) are added as AC Lines.
+    # HVDC links have r=x=0 (correct for Link type), so assign minimum values here to
+    # avoid spurious consistency_check warnings about zero-impedance lines.
     df_with_length = df.copy()
     df_with_length = df_with_length.drop(columns=[col for col in ['component', 'lon', 'lat', 'carrier'] if col in df_with_length.columns])
+    df_with_length.loc[df_with_length['x'] == 0, 'x'] = 0.02   # HVDC entries: apply line default
+    df_with_length.loc[df_with_length['r'] == 0, 'r'] = 0.002  # HVDC entries: apply line default
     network.add("Line", df_with_length.index, **df_with_length)
     network.add("Carrier", ["AC", "DC"])
 
@@ -521,11 +273,10 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
     network.buses.loc[network.buses['lat'] == 0, 'lat'] = np.nan
 
     logger.info("Starting improved iterative coordinate guessing process")
-    
+
     # Constants for coordinate estimation
     MAX_ITERATIONS = 50
-    CONVERGENCE_THRESHOLD = 1e-6  # meters
-    
+
     prev_count = len(network.buses) + 1
     iteration = 0
 
@@ -540,52 +291,56 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
 
         prev_count = curr_count
         iteration += 1
-        
+
         logger.info(f"Iteration {iteration}: {curr_count} buses still need coordinates")
-        
+
         # Strategy 1: Use distance-weighted positioning for buses with one known neighbor
         improved_count = 0
-        
+
         for bus in network.buses[missing_coords].index:
             # Find all connected lines and their lengths
             connected_lines = network.lines[
                 (network.lines['bus0'] == bus) | (network.lines['bus1'] == bus)
             ].copy()
-            
+
             if connected_lines.empty:
                 continue
-                
+
             # Get connected buses with their distances
             connected_info = []
             for _, line in connected_lines.iterrows():
                 other_bus = line['bus1'] if line['bus0'] == bus else line['bus0']
                 other_coords = network.buses.loc[other_bus, ['lon', 'lat']]
-                
+
                 # Only use buses with known coordinates
                 if not (pd.isna(other_coords['lon']) or pd.isna(other_coords['lat'])):
                     length_km = line.get('length_km', 0)
                     connected_info.append({
                         'bus': other_bus,
                         'lon': other_coords['lon'],
-                        'lat': other_coords['lat'], 
+                        'lat': other_coords['lat'],
                         'length_km': max(length_km, 0.1)  # Minimum 100m to avoid division by zero
                     })
-            
+
             if not connected_info:
                 continue
-                
+
             # Strategy 1a: If only one connected bus with known coordinates
             if len(connected_info) == 1:
-                # Use simple distance estimation with land validation
                 ref = connected_info[0]
                 is_offshore = bus in offshore_wf_buses
-                
+
+                lat_deg_per_km = 1 / 111.0
+                lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))
+
                 if is_offshore:
-                    # Offshore bus: place at sea, away from land
-                    # Use cable length to estimate distance from onshore bus
-                    # Try directions pointing seaward (away from GB centroid ~54.5N, -2.0W)
+                    # Offshore bus: place at sea, away from land.
+                    # Buses with preserved manual coordinates (from
+                    # substation_coordinates.csv) won't reach here since
+                    # they already have valid lon/lat and are excluded by
+                    # the missing_coords filter above.
                     gb_centroid_lat, gb_centroid_lon = 54.5, -2.0
-                    
+
                     # Direction FROM centroid THROUGH the onshore bus, extending seaward
                     dir_lat = ref['lat'] - gb_centroid_lat
                     dir_lon = ref['lon'] - gb_centroid_lon
@@ -595,128 +350,127 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
                         dir_lon /= length
                     else:
                         dir_lat, dir_lon = 0, 1  # Default: eastward
-                    
-                    lat_deg_per_km = 1 / 111.0
-                    lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))
-                    
+
                     candidate_lat = ref['lat'] + dir_lat * ref['length_km'] * lat_deg_per_km
                     candidate_lon = ref['lon'] + dir_lon * ref['length_km'] * lon_deg_per_km
-                    
+
                     network.buses.loc[bus, 'lon'] = candidate_lon
                     network.buses.loc[bus, 'lat'] = candidate_lat
                     improved_count += 1
                     logger.debug(f"Placed offshore bus {bus} at ({candidate_lat:.4f}, {candidate_lon:.4f}), "
                                 f"{ref['length_km']:.1f} km from {ref['bus']}")
+                elif ref['length_km'] < 2.0:
+                    # Short onshore connection (transformer or very short line):
+                    # place at same location with tiny jitter to avoid overlap
+                    jitter = 0.001  # ~100m
+                    network.buses.loc[bus, 'lon'] = ref['lon'] + jitter
+                    network.buses.loc[bus, 'lat'] = ref['lat'] + jitter
+                    improved_count += 1
                 else:
-                    # Onshore bus: original logic — try to find a position on land
-                    best_coords = None
-                    best_distance_to_land = float('inf')
-                    
-                    for attempt in range(8):  # Try 8 different directions
-                        angle = attempt * np.pi / 4  # 45-degree increments
-                        
-                        # Convert km to approximate lat/lon degrees (rough approximation for GB)
-                        lat_deg_per_km = 1 / 111.0  # Approximately 111 km per degree latitude
-                        lon_deg_per_km = 1 / (111.0 * np.cos(np.radians(ref['lat'])))  # Adjust for latitude
-                        
+                    # Onshore bus with longer connection: try 8 directions,
+                    # score each by whether it's on land
+                    candidates = []
+                    for attempt in range(8):
+                        angle = attempt * np.pi / 4
+
                         dx = ref['length_km'] * np.cos(angle) * lon_deg_per_km
                         dy = ref['length_km'] * np.sin(angle) * lat_deg_per_km
-                        
+
                         candidate_lon = ref['lon'] + dx
                         candidate_lat = ref['lat'] + dy
-                        
-                        # Check if this position is on land
+
+                        on_land = False
+                        dist_to_land = float('inf')
                         if land_boundary is not None:
-                            if check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
-                                # Found a position on land
-                                best_coords = (candidate_lat, candidate_lon)
-                                break
-                            else:
-                                # Calculate distance to land for this candidate
+                            on_land = check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger)
+                            if not on_land:
                                 try:
                                     point = Point(candidate_lon, candidate_lat)
-                                    land_geom = land_boundary.geometry.iloc[0]
-                                    distance_to_land = point.distance(land_geom)
-                                    if distance_to_land < best_distance_to_land:
-                                        best_distance_to_land = distance_to_land
-                                        best_coords = (candidate_lat, candidate_lon)
-                                except:
-                                    continue
-                    
-                    # Use the best coordinates found (prefer on-land, otherwise closest to land)
-                    if best_coords:
-                        candidate_lat, candidate_lon = best_coords
-                        
-                        # If still at sea, move to land
-                        if land_boundary is not None and not check_point_on_land(candidate_lat, candidate_lon, land_boundary, logger):
+                                    dist_to_land = point.distance(land_boundary.geometry.iloc[0])
+                                except Exception:
+                                    pass
+                        candidates.append((candidate_lat, candidate_lon, on_land, dist_to_land))
+
+                    # Prefer on-land candidates; among those, pick the first
+                    on_land_candidates = [c for c in candidates if c[2]]
+                    if on_land_candidates:
+                        candidate_lat, candidate_lon = on_land_candidates[0][0], on_land_candidates[0][1]
+                    elif candidates:
+                        # Pick closest to land
+                        best = min(candidates, key=lambda c: c[3])
+                        candidate_lat, candidate_lon = best[0], best[1]
+                        if land_boundary is not None:
                             candidate_lat, candidate_lon = move_point_to_land(candidate_lat, candidate_lon, land_boundary, logger)
-                        
-                        network.buses.loc[bus, 'lon'] = candidate_lon
-                        network.buses.loc[bus, 'lat'] = candidate_lat
-                        improved_count += 1
-                
+                    else:
+                        # Fallback: place at neighbor
+                        candidate_lat, candidate_lon = ref['lat'], ref['lon']
+
+                    network.buses.loc[bus, 'lon'] = candidate_lon
+                    network.buses.loc[bus, 'lat'] = candidate_lat
+                    improved_count += 1
+
             # Strategy 1b: Multiple connected buses - use distance-weighted centroid
             elif len(connected_info) >= 2:
                 # Calculate distance-weighted position
                 weights = []
                 lon_coords = []
                 lat_coords = []
-                
+
                 for info in connected_info:
                     # Weight inversely proportional to distance (closer buses have more influence)
                     weight = 1.0 / info['length_km']
                     weights.append(weight)
                     lon_coords.append(info['lon'])
                     lat_coords.append(info['lat'])
-                
+
                 weights = np.array(weights)
                 weights = weights / weights.sum()  # Normalize weights
-                
+
                 estimated_lon = np.average(lon_coords, weights=weights)
                 estimated_lat = np.average(lat_coords, weights=weights)
-                
+
                 # Validate position is on land (skip for offshore buses)
                 if bus not in offshore_wf_buses:
                     if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
                         estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
-                
+
                 network.buses.loc[bus, 'lon'] = estimated_lon
                 network.buses.loc[bus, 'lat'] = estimated_lat
                 improved_count += 1
-        
+
         logger.debug(f"Improved coordinates for {improved_count} buses in iteration {iteration}")
-        
+
         # Strategy 2: Simple averaging for remaining buses (fallback)
         remaining_missing = network.buses['lon'].isna() | network.buses['lat'].isna()
         for bus in network.buses[remaining_missing].index:
             connected_lines = network.lines[
                 (network.lines['bus0'] == bus) | (network.lines['bus1'] == bus)
             ]
-            
+
             if connected_lines.empty:
                 continue
-                
+
             # Get connected buses
             connected_buses_list = []
             for _, line in connected_lines.iterrows():
                 other_bus = line['bus1'] if line['bus0'] == bus else line['bus0']
                 connected_buses_list.append(other_bus)
-            
+
             connected_buses = network.buses.loc[connected_buses_list]
             connected_buses = connected_buses[connected_buses.index != bus]
-            
+
             # Only use buses with known coordinates
             known_connected = connected_buses.dropna(subset=['lon', 'lat'])
             if not known_connected.empty:
                 # Simple average of connected bus coordinates
                 avg_coords = known_connected[['lon', 'lat']].mean()
                 estimated_lon, estimated_lat = avg_coords['lon'], avg_coords['lat']
-                
+
                 # Validate position is on land (skip for offshore buses)
                 if bus not in offshore_wf_buses:
                     if land_boundary is not None and not check_point_on_land(estimated_lat, estimated_lon, land_boundary, logger):
                         estimated_lat, estimated_lon = move_point_to_land(estimated_lat, estimated_lon, land_boundary, logger)
-                
+
                 network.buses.loc[bus, ['lon', 'lat']] = [estimated_lon, estimated_lat]
 
     # Final land boundary check for all buses (skip offshore WF buses)
@@ -729,32 +483,225 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
     # Log final results
     final_missing = (network.buses['lon'].isna() | network.buses['lat'].isna()).sum()
     logger.info(f"Coordinate guessing complete after {iteration} iterations. {final_missing} buses still without coordinates")
-    
+
     if final_missing > 0:
         missing_buses = network.buses[network.buses['lon'].isna() | network.buses['lat'].isna()]
         logger.warning(f"Buses without coordinates: {missing_buses.index.tolist()}")
-    
+
     # Remove buses with NaN coordinates
+    initial_count = len(network.buses)
     df_buses_with_locs = network.buses.dropna(subset=['lon', 'lat'])
-    logger.info(f"Final bus count after removing NaN coordinates: {len(df_buses_with_locs)}")
-    
+    dropped_count = initial_count - len(df_buses_with_locs)
+    if dropped_count > 0:
+        dropped = network.buses[network.buses['lon'].isna() | network.buses['lat'].isna()].index.tolist()
+
+        # Connectivity impact assessment: warn loudly about intermediate buses
+        for bus in dropped:
+            connected_lines = df[(df['bus0'] == bus) | (df['bus1'] == bus)]
+            n_connections = len(connected_lines)
+            if n_connections >= 2:
+                # This bus connects ≥2 lines/transformers — dropping it may disconnect the network
+                peer_buses = set(connected_lines['bus0'].tolist() + connected_lines['bus1'].tolist()) - {bus}
+                logger.error(
+                    f"Dropping INTERMEDIATE bus '{bus}' with {n_connections} connections "
+                    f"(peers: {list(peer_buses)[:6]}) — may disconnect subnetworks!"
+                )
+            elif n_connections == 1:
+                logger.warning(f"Dropping leaf bus '{bus}' with 1 connection")
+            else:
+                logger.warning(f"Dropping isolated bus '{bus}' with no connections")
+
+        logger.warning(f"DROPPED {dropped_count} buses due to missing coordinates: {dropped}")
+    logger.info(f"Final bus count after removing NaN coordinates: {len(df_buses_with_locs)} "
+                f"(dropped {dropped_count} of {initial_count})")
+
     return df_buses_with_locs
+
+
+def validate_network_topology(network: pypsa.Network,
+                               logger: Optional[logging.Logger] = None) -> None:
+    """
+    Post-build validation checks on network topology.
+
+    Runs warning-only checks (does not block execution):
+    - Connectivity: detect disconnected subnetworks
+    - Impedance ratios: X/R should typically be 5-20 for transmission
+    - Low-connectivity: warn about leaf buses (single connection)
+    - Self-loops, zero impedance, missing v_nom
+    - Coordinate completeness and bounds
+    - Zero/negative ratings, excessive parallel circuits
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    logger.info("Running network topology validation")
+
+    # 1. Connectivity check using networkx
+    try:
+        import networkx as nx
+        G = nx.Graph()
+        G.add_nodes_from(network.buses.index)
+        for _, line in network.lines.iterrows():
+            G.add_edge(line.bus0, line.bus1)
+        for _, xfmr in network.transformers.iterrows():
+            G.add_edge(xfmr.bus0, xfmr.bus1)
+        for _, link in network.links.iterrows():
+            G.add_edge(link.bus0, link.bus1)
+
+        components = list(nx.connected_components(G))
+        if len(components) == 1:
+            logger.info(f"  Connectivity: network is fully connected ({len(G.nodes)} nodes)")
+        else:
+            logger.warning(f"  Connectivity: network has {len(components)} disconnected subnetworks!")
+            for i, comp in enumerate(sorted(components, key=len, reverse=True)):
+                if i == 0:
+                    logger.info(f"    Main network: {len(comp)} buses")
+                elif len(comp) <= 10:
+                    logger.warning(f"    Island {i}: {len(comp)} buses: {sorted(comp)}")
+                else:
+                    logger.warning(f"    Island {i}: {len(comp)} buses")
+    except ImportError:
+        logger.warning("  networkx not available - skipping connectivity check")
+
+    # 2. Impedance ratio check (X/R) for lines
+    if len(network.lines) > 0:
+        r_nonzero = network.lines['r'].replace(0, np.nan)
+        xr_ratios = network.lines['x'] / r_nonzero
+        valid_xr = xr_ratios.dropna()
+        low_xr = valid_xr[valid_xr < 2]
+        high_xr = valid_xr[valid_xr > 50]
+        if len(low_xr) > 0 or len(high_xr) > 0:
+            logger.warning(f"  X/R ratios: {len(low_xr)} lines with X/R < 2, "
+                          f"{len(high_xr)} lines with X/R > 50")
+        else:
+            logger.info(f"  X/R ratios: all {len(valid_xr)} lines within normal range (2-50)")
+
+    # 3. Low-connectivity warning (leaf buses)
+    if len(network.lines) > 0 or len(network.transformers) > 0:
+        bus_connections = pd.Series(0, index=network.buses.index)
+        for comp_df in [network.lines, network.transformers]:
+            if len(comp_df) > 0:
+                bus_connections = bus_connections.add(
+                    comp_df['bus0'].value_counts(), fill_value=0)
+                bus_connections = bus_connections.add(
+                    comp_df['bus1'].value_counts(), fill_value=0)
+        if len(network.links) > 0:
+            bus_connections = bus_connections.add(
+                network.links['bus0'].value_counts(), fill_value=0)
+            bus_connections = bus_connections.add(
+                network.links['bus1'].value_counts(), fill_value=0)
+
+        leaf_buses = bus_connections[bus_connections == 1]
+        if len(leaf_buses) > 0:
+            logger.info(f"  Leaf buses (single connection): {len(leaf_buses)}")
+
+    # 4. Summary stats
+    logger.info(f"  Network summary: {len(network.buses)} buses, "
+               f"{len(network.lines)} lines, "
+               f"{len(network.transformers)} transformers, "
+               f"{len(network.links)} links")
+
+    # 5. Self-loops (bus0 == bus1)
+    try:
+        for comp_name, comp_df in [('lines', network.lines),
+                                    ('transformers', network.transformers),
+                                    ('links', network.links)]:
+            if len(comp_df) > 0:
+                self_loops = comp_df[comp_df['bus0'] == comp_df['bus1']]
+                if len(self_loops) > 0:
+                    logger.warning(f"  Self-loops: {len(self_loops)} {comp_name} "
+                                   f"where bus0 == bus1: {self_loops.index.tolist()[:10]}")
+    except Exception as e:
+        logger.debug(f"  Self-loop check failed: {e}")
+
+    # 6. Zero impedance (r==0 AND x==0 for lines/transformers)
+    try:
+        for comp_name, comp_df in [('lines', network.lines),
+                                    ('transformers', network.transformers)]:
+            if len(comp_df) > 0 and 'r' in comp_df.columns and 'x' in comp_df.columns:
+                zero_z = comp_df[(comp_df['r'] == 0) & (comp_df['x'] == 0)]
+                if len(zero_z) > 0:
+                    logger.warning(f"  Zero impedance: {len(zero_z)} {comp_name} "
+                                   f"with r=0 AND x=0: {zero_z.index.tolist()[:10]}")
+    except Exception as e:
+        logger.debug(f"  Zero impedance check failed: {e}")
+
+    # 7. Missing v_nom
+    try:
+        missing_vnom = network.buses['v_nom'].isna()
+        if missing_vnom.any():
+            logger.warning(f"  Missing v_nom: {missing_vnom.sum()} buses: "
+                           f"{network.buses[missing_vnom].index.tolist()[:10]}")
+    except Exception as e:
+        logger.debug(f"  v_nom check failed: {e}")
+
+    # 8. Coordinate completeness
+    try:
+        missing_coords = network.buses['x'].isna() | network.buses['y'].isna()
+        if missing_coords.any():
+            logger.warning(f"  Missing coordinates: {missing_coords.sum()} buses: "
+                           f"{network.buses[missing_coords].index.tolist()[:10]}")
+    except Exception as e:
+        logger.debug(f"  Coordinate completeness check failed: {e}")
+
+    # 9. Coordinate bounds (OSGB36: x ~ -200000 to 800000, y ~ 0 to 1300000)
+    try:
+        if 'x' in network.buses.columns and 'y' in network.buses.columns:
+            valid = network.buses[network.buses['x'].notna() & network.buses['y'].notna()]
+            out_of_bounds = valid[
+                (valid['x'] < -200000) | (valid['x'] > 800000) |
+                (valid['y'] < 0) | (valid['y'] > 1300000)
+            ]
+            if len(out_of_bounds) > 0:
+                logger.warning(f"  Coordinate bounds: {len(out_of_bounds)} buses "
+                               f"outside GB OSGB36 bounds: {out_of_bounds.index.tolist()[:10]}")
+            else:
+                logger.info(f"  Coordinate bounds: all {len(valid)} buses within GB OSGB36 bounds")
+    except Exception as e:
+        logger.debug(f"  Coordinate bounds check failed: {e}")
+
+    # 10. Zero or negative ratings
+    try:
+        for comp_name, comp_df, col in [('lines', network.lines, 's_nom'),
+                                         ('transformers', network.transformers, 's_nom'),
+                                         ('links', network.links, 'p_nom')]:
+            if len(comp_df) > 0 and col in comp_df.columns:
+                bad_rating = comp_df[comp_df[col] <= 0]
+                if len(bad_rating) > 0:
+                    logger.warning(f"  Zero/negative {col}: {len(bad_rating)} {comp_name}: "
+                                   f"{bad_rating.index.tolist()[:10]}")
+    except Exception as e:
+        logger.debug(f"  Rating check failed: {e}")
+
+    # 11. Duplicate components (>4 parallel circuits between same bus pair)
+    try:
+        if len(network.lines) > 0:
+            bus_pairs = network.lines.apply(
+                lambda r: tuple(sorted([r['bus0'], r['bus1']])), axis=1)
+            pair_counts = bus_pairs.value_counts()
+            excessive = pair_counts[pair_counts > 4]
+            if len(excessive) > 0:
+                logger.warning(f"  Excessive parallel circuits: {len(excessive)} bus pairs "
+                               f"with >4 lines: {excessive.head(5).to_dict()}")
+    except Exception as e:
+        logger.debug(f"  Duplicate component check failed: {e}")
+
 
 def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pypsa.Network:
     """
     Create the final PyPSA network with all components and export to NetCDF.
-    
+
     Args:
         df: DataFrame with all network components (lines, transformers, links)
         df_buses_with_locs: DataFrame with buses that have coordinates
         logger: Optional logger instance
-        
+
     Returns:
         Complete PyPSA Network object
     """
     if logger is None:
         logger = logging.getLogger(__name__)
-    
+
     logger.info("Creating final PyPSA network")
     # new network with updated locations of buses
     network2 = pypsa.Network()
@@ -762,7 +709,7 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
 
     logger.info(f"Adding {len(df_buses_with_locs)} buses to network")
     network2.add("Bus", df_buses_with_locs.index, **df_buses_with_locs)
-    
+
     # CRITICAL: Convert WGS84 (lon/lat) to OSGB36 (x/y) for PyPSA plotting
     # PyPSA expects x/y in projected coordinates (meters), not lat/lon (degrees)
     # See: https://docs.pypsa.org/latest/user-guide/plotting/static-map/
@@ -794,7 +741,10 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     df_transformer = df_transformer[df_transformer['bus0'].isin(df_buses_with_locs.index) & df_transformer['bus1'].isin(df_buses_with_locs.index)]
     # Drop metadata columns (geolocation only) - keep electrical attributes 'r', 'x', 'b'
     df_transformer = df_transformer.drop(columns=[col for col in ['component', 'lon', 'lat', 'carrier'] if col in df_transformer.columns])
-    logger.info(f"Adding {len(df_transformer)} transformers to network")
+    # Use pi-circuit model for transformers since ETYS data provides r, x, b impedance values.
+    # This must match the model used for upgrade transformers (ETYS_upgrades.py).
+    df_transformer['model'] = 'pi'
+    logger.info(f"Adding {len(df_transformer)} transformers to network (model='pi')")
     network2.add("Transformer", df_transformer.index, **df_transformer)
 
     # filter df with component of link using loc
@@ -803,74 +753,99 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     df_link = df_link.rename(columns={'s_nom': 'p_nom'})
     # Drop metadata columns that aren't PyPSA Link attributes (avoid PyPSA 1.0.2 warnings)
     df_link = df_link.drop(columns=[col for col in ['component', 'x', 'y', 'b', 'r'] if col in df_link.columns])
-    
+
     # CRITICAL: Make internal HVDC links bidirectional (p_min_pu=-1)
     # Without this, links can only transfer power FROM bus0 TO bus1, which causes
     # infeasibility when power needs to flow the other direction
     df_link['p_min_pu'] = -1.0  # Bidirectional
     df_link['p_max_pu'] = 1.0
-    
+
     logger.info(f"Adding {len(df_link)} links to network (bidirectional HVDC)")
     network2.add("Link", df_link.index, **df_link)
 
-    # Keep internal HVDC links as carrier='DC' (from B-5-1 sheet).
-    # These are internal GB HVDC corridors (Western HVDC Link, Caithness-Moray, etc.),
-    # NOT cross-border interconnectors. Cross-border interconnectors are added later
-    # by add_to_network.py and also use carrier='DC'.
-    # Previously this line set all links to 'AC', which was incorrect.
+    # HVDC links should have DC carrier
+    network2.links.loc[:, 'carrier'] = 'DC'
 
     logger.info("Setting network metadata and performing final setup")
     network2.buses['country'] = 'GB'
-    #manually modify lon and lat of interconnector bus location with index value HUCS4-
-    network2.buses.loc['HUCS4-', 'lon'] = -4.897914663907308
-    network2.buses.loc['HUCS4-', 'lat'] = 55.7173022715747
+    # HUCS4- (Hunterston converter) coordinates now handled by substation_coordinates.csv
     network2.add("Carrier", ["AC", "DC"])
     # name network ETYS base
-    network2.name = 'ETYS base'    
+    network2.name = 'ETYS base'
     network2.consistency_check()
-    
+
+    # Run topology validation checks (warning-only, does not block)
+    validate_network_topology(network2, logger)
+
     # ──────────────────────────────────────────────────────────────────────────
     # APPLY ETYS NETWORK UPGRADES (if enabled)
     # ──────────────────────────────────────────────────────────────────────────
     # Check if upgrades are enabled via snakemake params
     etys_upgrades_enabled = getattr(snakemake.params, 'etys_upgrades_enabled', False)
-    
+
+    # NOTE: Land boundary validation ran during coordinate guessing (above).
+    # Upgrade buses get coordinates from OSGB36 (x/y) via same-site matching,
+    # NOT from lat/lon guessing, so they bypass land boundary checks.
+    # If this order changes, ensure offshore upgrade buses are in the skip set.
     if etys_upgrades_enabled:
         from ETYS_upgrades import apply_etys_network_upgrades
-        
+
         # Get upgrade year (use modelled_year if upgrade_year not specified)
         modelled_year = getattr(snakemake.params, 'modelled_year', 2020)
         etys_upgrade_year = getattr(snakemake.params, 'etys_upgrade_year', None)
         upgrade_year = etys_upgrade_year if etys_upgrade_year else modelled_year
-        
-        # Path to ETYS upgrade data (same file as base network - input[0])
-        etys_upgrade_file = str(snakemake.input[0])  # ETYS Appendix B 2023.xlsx
-        
+
+        # Path to ETYS upgrade data (the ETYS Appendix B file for this year)
+        etys_upgrade_file = str(snakemake.input.etys_file)
+
+        # Path to substation coordinates (for Strategy 0 upgrade bus placement)
+        substation_coords_file = getattr(snakemake.input, 'substation_coords', None)
+        if substation_coords_file:
+            substation_coords_file = str(substation_coords_file)
+
         logger.info("="*70)
         logger.info(f"APPLYING ETYS NETWORK UPGRADES through year {upgrade_year}")
         logger.info("="*70)
-        
+
         network2 = apply_etys_network_upgrades(
             network2,
             modelled_year=upgrade_year,
             etys_file=etys_upgrade_file,
+            substation_coords_file=substation_coords_file,
             logger=logger
         )
-        
+
         # Ensure all buses (including newly added ones) have country='GB'
         network2.buses['country'] = network2.buses['country'].fillna('GB')
         network2.buses['country'] = network2.buses['country'].replace('', 'GB')
-        
+
+        # Back-convert x/y → lat/lon for any new buses added during upgrades.
+        # Upgrade buses only have OSGB36 (x/y) but downstream code may need WGS84 (lat/lon).
+        missing_latlon = network2.buses['lat'].isna() & network2.buses['x'].notna()
+        if missing_latlon.any():
+            from pyproj import Transformer as ProjTransformer
+            osgb_to_wgs = ProjTransformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
+            new_lon, new_lat = osgb_to_wgs.transform(
+                network2.buses.loc[missing_latlon, 'x'].values,
+                network2.buses.loc[missing_latlon, 'y'].values
+            )
+            network2.buses.loc[missing_latlon, 'lon'] = new_lon
+            network2.buses.loc[missing_latlon, 'lat'] = new_lat
+            logger.info(f"Back-converted {missing_latlon.sum()} upgrade bus coordinates from OSGB36 to WGS84")
+
         # Re-run consistency check after upgrades
         network2.consistency_check()
         network2.name = f'ETYS base + upgrades ({upgrade_year})'
-        
+
         logger.info(f"Network upgrades applied successfully (through {upgrade_year})")
     else:
         logger.info("ETYS network upgrades: DISABLED (set etys_upgrades.enabled: true to enable)")
-    
+
     logger.info(f"Exporting network to {snakemake.output[0]}")
-    
+
+    # Set version metadata before export to prevent compatibility warnings
+    network2.meta = {"pypsa_version": pypsa.__version__}
+
     # Suppress PyPSA warnings about unoptimized network during export
     pypsa_logger = logging.getLogger('pypsa.networks')
     original_level = pypsa_logger.level
@@ -879,56 +854,64 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
         network2.export_to_netcdf(snakemake.output[0])
     finally:
         pypsa_logger.setLevel(original_level)
-    
-    # Set version metadata before export to prevent compatibility warnings
-    network2.meta = {"pypsa_version": pypsa.__version__}
-    
+
     log_network_info(network2, logger)
     logger.info("Network creation completed successfully")
-    
+
     return network2
 
 
 if __name__ == "__main__":
     # Initialize timing
     start_time = time.time()
-    
+
     # Set up logging using centralized system, writing to Snakemake log if available
     log_path = None
     if 'snakemake' in globals() and hasattr(snakemake, 'log') and snakemake.log:
         log_path = snakemake.log[0]
     logger = setup_logging(log_path or "ETYS_network")
-    
+
     logger.info("="*50)
     logger.info("STARTING ETYS NETWORK CREATION")
-    
+
     try:
-        logger.info("Step 1: Processing raw ETYS data")
-        df = sort_raw_ETYS_data(logger)
-        
-        logger.info("Step 2: Extracting buses from line data")
-        df_buses = buses_from_line_data(df, logger)
-        
-        logger.info("Step 3: Loading GSP location data")
-        df2 = GSP_locations_from_FES_data(logger)
-        
-        logger.info("Step 4: Adding GSP location data to buses")
-        df_buses = add_GSP_location_data(df_buses, df2, logger)
-        
-        logger.info("Step 5: Guessing remaining bus locations")
-        df_buses = guess_GSP_location_of_remaining_buses(df, df_buses, logger)
-        
-        logger.info("Step 6: Creating final network")
+        # Read preprocessed CSV files from process_ETYS_data rule
+        logger.info("Step 1: Loading preprocessed components data")
+        df = pd.read_csv(str(snakemake.input.components), index_col=0)
+        logger.info(f"Loaded {len(df)} components")
+
+        logger.info("Step 2: Loading preprocessed buses data")
+        df_buses = pd.read_csv(str(snakemake.input.buses), index_col=0)
+
+        # Extract offshore bus set from is_offshore column
+        offshore_wf_buses = set(df_buses[df_buses['is_offshore'] == True].index)
+        logger.info(f"Loaded {len(df_buses)} buses ({len(offshore_wf_buses)} offshore)")
+
+        # Drop the is_offshore column before passing to network construction
+        # (PyPSA doesn't have a built-in is_offshore attribute; we re-add it after construction)
+        df_buses = df_buses.drop(columns=['is_offshore'])
+
+        logger.info("Step 3: Guessing remaining bus locations")
+        df_buses = guess_GSP_location_of_remaining_buses(df, df_buses, offshore_wf_buses, logger)
+
+        logger.info("Step 4: Creating final network")
         network = create_network(df, df_buses, logger)
-        
+
+        # Propagate is_offshore flag to the final network for downstream scripts
+        # (storage, renewables) that need to know which buses are offshore
+        network.buses['is_offshore'] = False
+        surviving_offshore = offshore_wf_buses & set(network.buses.index)
+        if surviving_offshore:
+            network.buses.loc[list(surviving_offshore), 'is_offshore'] = True
+            logger.info(f"Propagated is_offshore flag for {len(surviving_offshore)} buses to final network")
+
         logger.info("ETYS NETWORK CREATION COMPLETED SUCCESSFULLY")
-        
+
         # Log execution summary
         inputs = [snakemake.input[i] for i in range(len(snakemake.input))] if 'snakemake' in globals() else []
         outputs = [snakemake.output[0]] if 'snakemake' in globals() else []
         log_execution_summary(logger, "ETYS Network Creation", start_time, inputs=inputs, outputs=outputs)
-        
+
     except Exception as e:
         logger.exception(f"FATAL ERROR in ETYS network creation: {e}")
         raise
-    

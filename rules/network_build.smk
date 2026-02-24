@@ -9,14 +9,18 @@ This module handles building three network representation types:
   • Reduced: Simplified regional network (30-50 buses)
   • Zonal: Zone-based network with aggregated links (17 zones)
 
-WORKFLOW OVERVIEW:
-  1. Build base network topology (buses, lines, transformers)
-  2. Validate network connectivity and basic properties
+WORKFLOW OVERVIEW (ETYS):
+  1. process_ETYS_data: Parse raw Excel → intermediate CSVs (data rule)
+  2. build_ETYS_base_network: CSVs → PyPSA network with upgrades (model rule)
 
 NETWORK MODEL SELECTION:
   - Specified per-scenario in scenarios_master.yaml via 'network_model' parameter
   - Different scenarios can use different network models simultaneously
   - Wildcards constrained to prevent invalid scenario/model combinations
+
+ETYS YEAR SELECTION:
+  - Configured via etys.year in defaults.yaml or per-scenario in scenarios.yaml
+  - Supports 2022, 2023, 2024 (file naming handled by etys_file_registry.py)
 
 DATA SOURCES:
   • ETYS: NESO ETYS Appendix B (network topology), GB_network.xlsx (coordinates)
@@ -25,7 +29,7 @@ DATA SOURCES:
 
 DOCUMENTATION:
   • docs/NETWORK_BUILD_RULE.md
-  
+
 For network clustering rules, see network_clustering.smk
 """
 
@@ -37,14 +41,27 @@ resources_path = "resources"
 data_path = "data"
 
 # ──────────────────────────────────────────────────────────────────────────────
+# IMPORTS
+# ──────────────────────────────────────────────────────────────────────────────
+
+import re
+import sys
+from pathlib import Path
+
+# Add project root to path so we can import the file registry
+_project_root = str(Path(workflow.basedir).parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+from scripts.network_build.etys_file_registry import get_etys_input_files
+
+# ──────────────────────────────────────────────────────────────────────────────
 # SCENARIO FILTERING AND WILDCARD CONSTRAINTS
 # ──────────────────────────────────────────────────────────────────────────────
 # Pre-compute which scenarios use which network models to constrain wildcards
 # This prevents Snakemake from attempting invalid scenario/model combinations
 # Uses: scenarios, run_ids from main Snakefile
 # ──────────────────────────────────────────────────────────────────────────────
-
-import re
 
 # Use scenarios and run_ids from main Snakefile (no config reloading)
 _sc_defs = scenarios
@@ -69,10 +86,10 @@ def _regex_from_list(items):
     """
     Generate regex pattern that matches exactly the items in the list.
     Returns never-matching pattern if list is empty.
-    
+
     Args:
         items (list): List of scenario IDs
-    
+
     Returns:
         str: Regex pattern matching any item in list
     """
@@ -86,6 +103,13 @@ REDUCED_SCENARIO_REGEX = _regex_from_list(_reduced_scenarios)
 ZONAL_SCENARIO_REGEX = _regex_from_list(_zonal_scenarios)
 OTHER_SCENARIO_REGEX = _regex_from_list(_other_scenarios)
 ALL_SCENARIO_REGEX = _regex_from_list(_run_ids)
+
+# Collect unique ETYS years used across all ETYS scenarios
+_etys_years_used = sorted(set(
+    _sc_defs.get(sid, {}).get("etys", {}).get("year", 2023)
+    for sid in _etys_scenarios
+))
+ETYS_YEAR_REGEX = _regex_from_list([str(y) for y in _etys_years_used]) if _etys_years_used else r"(?!x)x"
 
 # Ensure explicit network construction rules take precedence over the
 # model->scenario mapping rule to avoid ambiguous rule selection when both
@@ -114,16 +138,21 @@ rule model_to_scenario_network:
         from pathlib import Path
         src = Path(str(input.model_network))
         dst = Path(str(output.scenario_network))
-        log.info(f"Mapping model network {src} → scenario network {dst}")
+        _log_path = str(log[0])
+        Path(_log_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(_log_path, 'a') as _lf:
+            _lf.write(f"Mapping model network {src} → scenario network {dst}\n")
         if not src.exists():
-            log.info(f"Source model network does not exist: {src} — leaving for upstream rules to build")
+            with open(_log_path, 'a') as _lf:
+                _lf.write(f"Source model network does not exist: {src} — leaving for upstream rules to build\n")
             # Snakemake will still consider this rule's input unresolved and will
             # schedule the required upstream rules to create it. We simply return
             # here to avoid raising errors when the source is not yet present.
             return
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
-        log.info(f"Copied {src} to {dst}")
+        with open(_log_path, 'a') as _lf:
+            _lf.write(f"Copied {src} to {dst}\n")
 
 
 # Create model-based ETYS_base.nc from the first ETYS scenario's network
@@ -161,10 +190,10 @@ if _etys_scenarios:
 def get_network_model(scenario):
     """
     Get network model type for a given scenario.
-    
+
     Args:
         scenario (str): Scenario ID (e.g., 'HT35', 'Historical_2020')
-    
+
     Returns:
         str: Network model name ('ETYS', 'Reduced', or 'Zonal')
     """
@@ -177,30 +206,32 @@ def get_network_model(scenario):
                         f"Available scenarios: {list(_sc_defs.keys())}")
 
 
+def _get_etys_year(scenario):
+    """Get the ETYS publication year for a given scenario (default: 2023)."""
+    return _sc_defs.get(scenario, {}).get("etys", {}).get("year", 2023)
+
+
 def get_network_inputs(scenario):
     """
     Return appropriate input data files based on scenario's network model.
-    
+
     Different network models require different source data:
-    - ETYS: Excel files from NESO ETYS publication
+    - ETYS: Excel files from NESO ETYS publication (year-dependent)
     - Reduced: CSV files with simplified topology
     - Zonal: CSV files with zone definitions
-    
+
     Args:
         scenario (str): Scenario ID
-    
+
     Returns:
         list: Paths to required input files for network construction
     """
     network_model = get_network_model(scenario)
     base_inputs = []
-    
+
     if network_model == "ETYS":
-        base_inputs.extend([
-            f"{data_path}/network/ETYS/ETYS Appendix B 2023.xlsx",
-            f"{data_path}/network/ETYS/GB_network.xlsx",
-            f"{data_path}/network/ETYS/Regional breakdown of FES23 data (ETYS 2023 Appendix E).xlsb"
-        ])
+        etys_year = _get_etys_year(scenario)
+        base_inputs.extend(get_etys_input_files(etys_year, data_path))
     elif network_model == "Reduced":
         base_inputs.extend([
             f"{data_path}/network/reduced_network/buses.csv",
@@ -211,58 +242,98 @@ def get_network_inputs(scenario):
             f"{data_path}/network/zonal/buses.csv",
             f"{data_path}/network/zonal/links.csv"
         ])
-    
+
     return base_inputs
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# NETWORK CONSTRUCTION RULES
+# ETYS DATA PROCESSING RULE (data rule — separated from model building)
+# ──────────────────────────────────────────────────────────────────────────────
+
+rule process_ETYS_data:
+    """
+    Parse raw ETYS Excel data into standardized intermediate CSV files.
+
+    This is a DATA RULE that isolates slow Excel I/O from model construction.
+    It processes:
+      • Circuit data from sheets B-2-1a/b/c/d (lines)
+      • Transformer data from sheets B-3-1a/b/c/d
+      • Interconnector data from sheet B-5-1
+      • Extra wind farm and BMU edges from GB_network.xlsx
+      • GSP location data from FES regional breakdown
+
+    Outputs two CSV files:
+      • components.csv: All network components (lines, transformers, links)
+      • buses.csv: Unique buses with voltage levels, GSP coordinates, and
+        offshore classification (is_offshore column)
+
+    Keyed by {etys_year} wildcard so each ETYS year is processed only once,
+    regardless of how many scenarios use it.
+    """
+    input:
+        etys_files=lambda wildcards: get_etys_input_files(int(wildcards.etys_year), data_path),
+        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv"
+    output:
+        components=f"{resources_path}/network/ETYS_{{etys_year}}_components.csv",
+        buses=f"{resources_path}/network/ETYS_{{etys_year}}_buses.csv"
+    wildcard_constraints:
+        etys_year=ETYS_YEAR_REGEX
+    conda:
+        "../envs/pypsa-gb.yaml"
+    log:
+        "logs/network_build/process_ETYS_{etys_year}_data.log"
+    benchmark:
+        "benchmarks/network_build/process_ETYS_{etys_year}_data.txt"
+    message:
+        "Processing raw ETYS {wildcards.etys_year} data into intermediate CSVs"
+    script:
+        "../scripts/network_build/process_ETYS_data.py"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# NETWORK CONSTRUCTION RULES (model rules)
 # ──────────────────────────────────────────────────────────────────────────────
 
 rule build_ETYS_base_network:
     """
     Build the ETYS (Electricity Ten Year Statement) transmission network.
-    
-    This rule constructs the detailed ETYS network representation with 2000+ buses
-    representing the GB transmission system. The network includes:
-      • Transmission buses at 400kV, 275kV, and 132kV voltage levels
-      • Transmission lines with thermal capacity limits and reactances
-      • Transformers connecting different voltage levels
-      • Geographic coordinates for all buses (WGS84)
-    
-    DATA SOURCES:
-      • ETYS Appendix B 2023: Network topology, line parameters, bus voltage levels
-      • ETYS Appendix B 2023: Network upgrade data (2024-2031)
-      • GB_network.xlsx: Geographic coordinates for all network buses
-      • ETYS 2023 Appendix E: Regional FES data breakdown (optional)
-    
+
+    This is a MODEL RULE that constructs the PyPSA network from preprocessed
+    CSV data. It handles:
+      • Coordinate guessing for buses without GSP matches
+      • Land boundary validation (offshore buses stay at sea)
+      • PyPSA network assembly (buses, lines, transformers, links)
+      • ETYS network upgrades (if enabled)
+
+    INPUTS:
+      • Preprocessed CSV files from process_ETYS_data rule
+      • ETYS Appendix B Excel file (needed for upgrade data)
+
+    ETYS YEAR:
+      Configured via etys.year in defaults.yaml or per-scenario in scenarios.yaml.
+      Supports: 2022, 2023, 2024
+
     NETWORK UPGRADES:
       When etys_upgrades.enabled=true in scenario config, applies:
-      • Circuit additions/removals/modifications from ETYS Appendix B 2023
-      • Transformer additions/removals from ETYS Appendix B 2023
-      • (Future) New HVDC interconnectors
-      Upgrades are filtered to include only those ≤ modelled_year.
-    
+      • Circuit additions/removals/modifications
+      • Transformer additions/removals
+      Upgrades are filtered to include only those <= modelled_year.
+
     OUTPUTS:
       • PyPSA Network object saved as NetCDF (.nc file)
       • Contains: buses, lines, transformers, links DataFrames
       • Ready for demand and generator integration
-    
-    PERFORMANCE:
-      • Typical runtime: 10-30 seconds (15-45s with upgrades)
-      • Memory: ~500MB for full ETYS network
-    
+
     SEE ALSO:
-      • scripts/ETYS_network.py - Detailed network construction logic
-      • scripts/ETYS_upgrades.py - Network upgrade application logic
-      • docs/NETWORK_MODELS.md - ETYS network documentation
+      • scripts/network_build/ETYS_network.py - Network construction logic
+      • scripts/network_build/process_ETYS_data.py - Data parsing logic
+      • scripts/network_build/ETYS_upgrades.py - Network upgrade logic
     """
     input:
-        lambda wildcards: get_network_model(wildcards.scenario) == "ETYS" and [
-            f"{data_path}/network/ETYS/ETYS Appendix B 2023.xlsx",  # Base network topology + upgrades
-            f"{data_path}/network/ETYS/GB_network.xlsx",
-            f"{data_path}/network/ETYS/Regional breakdown of FES23 data (ETYS 2023 Appendix E).xlsb"
-        ] or []
+        components=lambda wildcards: f"{resources_path}/network/ETYS_{_get_etys_year(wildcards.scenario)}_components.csv",
+        buses=lambda wildcards: f"{resources_path}/network/ETYS_{_get_etys_year(wildcards.scenario)}_buses.csv",
+        etys_file=lambda wildcards: get_etys_input_files(_get_etys_year(wildcards.scenario), data_path)[0],
+        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv"
     output:
         network=f"{resources_path}/network/{{scenario}}_network.nc"
     params:
@@ -287,28 +358,28 @@ rule build_ETYS_base_network:
 rule build_reduced_base_network:
     """
     Build the Reduced network (simplified regional representation).
-    
+
     This rule constructs a simplified network with 30-50 buses representing
     major GB regions and key transmission corridors. The Reduced network:
       • Aggregates detailed ETYS topology into regional nodes
       • Preserves critical transmission bottlenecks
       • Reduces computational complexity for faster analysis
       • Maintains geographic fidelity for demand/generation allocation
-    
+
     DATA SOURCES:
       • reduced_network/buses.csv: Regional bus definitions with coordinates
       • reduced_network/lines.csv: Aggregated transmission line parameters
-    
+
     USE CASES:
       • Fast scenario screening and sensitivity analysis
       • Long-term planning with reduced detail requirements
       • Multi-year simulations where speed is critical
-    
+
     PERFORMANCE:
       • Typical runtime: 5-10 seconds
       • Memory: ~100MB
       • ~10x faster simulation vs ETYS
-    
+
     SEE ALSO:
       • scripts/build_network.py - Flexible network builder
       • docs/NETWORK_MODELS.md - Network model comparison
@@ -337,34 +408,34 @@ rule build_reduced_base_network:
 rule build_zonal_base_network:
     """
     Build the Zonal network (17-zone aggregated representation).
-    
+
     This rule constructs a highly aggregated zonal network representing GB as
     17 distinct zones. The Zonal network:
       • Groups regions into coherent geographic/market zones
       • Uses links (not lines) for inter-zonal transmission
       • Ideal for market modeling and high-level policy analysis
       • Fastest computational performance
-    
+
     ZONE DEFINITIONS:
       • Typically based on DNO/GSP regions or market zones
       • Each zone has aggregated demand and generation
       • Inter-zone transmission capacity limits preserved
-    
+
     DATA SOURCES:
       • zonal/buses.csv: Zone definitions with representative coordinates
       • zonal/links.csv: Inter-zone transmission capacity
-    
+
     USE CASES:
       • Market clearing and price analysis
       • Multi-decade scenario analysis
       • High-level policy screening
       • Rapid prototyping
-    
+
     PERFORMANCE:
       • Typical runtime: <5 seconds
       • Memory: <50MB
       • ~100x faster simulation vs ETYS
-    
+
     SEE ALSO:
       • scripts/build_network.py - Handles both Reduced and Zonal
       • docs/NETWORK_MODELS.md - When to use each network type
@@ -388,4 +459,3 @@ rule build_zonal_base_network:
         "Building Zonal network for scenario: {wildcards.scenario}"
     script:
         "../scripts/network_build/build_network.py"
-

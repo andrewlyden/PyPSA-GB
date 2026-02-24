@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
@@ -1008,17 +1009,22 @@ In Scotland, 132kV is transmission (TO-operated).</p>
 <h3>Location<a class="headerlink" href="#location" title="Link to this heading">#</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/network/
 ├── ETYS/
-│   ├── ETYS_2023_substations.csv
-│   ├── ETYS_2023_circuits.csv
-│   ├── ETYS_2023_transformers.csv
-│   └── ETYS_upgrades.xlsx
-├── Reduced/
-│   ├── reduced_buses.csv
-│   └── reduced_lines.csv
-└── Zonal/
-    └── zonal_network.csv
+│   ├── ETYS 2024 Appendix-B V1.xlsx    # ETYS 2024 circuits, transformers, HVDC
+│   ├── ETYS Appendix B 2023.xlsx        # ETYS 2023 (alternative)
+│   ├── ETYS Appendix B 2022.xlsx        # ETYS 2022 (alternative)
+│   ├── GB_network.xlsx                  # Extra WF edges, BMU mappings, demand nodes
+│   ├── substation_coordinates.csv       # Manually compiled bus coordinates
+│   ├── Regional breakdown of FES24 data.xlsx  # FES regional capacity by GSP
+│   └── ...                              # FES regional files for other years
+├── reduced_network/
+│   ├── buses.csv
+│   └── lines.csv
+└── zonal/
+    ├── buses.csv
+    └── links.csv
 </pre></div>
 </div>
+<p>The ETYS publication year is selected via the <code class="docutils literal notranslate"><span class="pre">etys.year</span></code> configuration option (see <a class="reference internal" href="../user_guide/configuration.html"><span class="doc">Configuration Reference</span></a>). The <code class="docutils literal notranslate"><span class="pre">etys_file_registry.py</span></code> module maps each publication year (2022, 2023, 2024) to the correct filenames and Excel sheet names.</p>
 </section>
 <section id="loading-network-data">
 <h3>Loading Network Data<a class="headerlink" href="#loading-network-data" title="Link to this heading">#</a></h3>
@@ -1112,24 +1118,73 @@ In Scotland, 132kV is transmission (TO-operated).</p>
 </section>
 <section id="network-upgrades">
 <h2>Network Upgrades<a class="headerlink" href="#network-upgrades" title="Link to this heading">#</a></h2>
-<p>ETYS includes planned reinforcements through 2035+.</p>
+<p>ETYS includes planned reinforcements through 2031+ (depending on ETYS publication year).</p>
 <section id="applying-upgrades">
 <h3>Applying Upgrades<a class="headerlink" href="#applying-upgrades" title="Link to this heading">#</a></h3>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In scenario configuration</span>
 <span class="nt">etys_upgrades</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">  </span><span class="nt">upgrade_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span><span class="w">  </span><span class="c1"># Apply all upgrades through 2035</span>
+<span class="w">  </span><span class="nt">upgrade_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span><span class="w">  </span><span class="c1"># Apply all upgrades through 2035 (null = use modelled_year)</span>
 </pre></div>
+</div>
+<p>Upgrades are read from the ETYS Appendix B Excel file selected by <code class="docutils literal notranslate"><span class="pre">etys.year</span></code>. The upgrade sheets are organized by transmission owner:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sheet</p></th>
+<th class="head"><p>Content</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>B-2-2a</p></td>
+<td><p>Circuit changes (SHE Transmission)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-2-2b</p></td>
+<td><p>Circuit changes (SP Transmission)</p></td>
+</tr>
+<tr class="row-even"><td><p>B-2-2c</p></td>
+<td><p>Circuit changes (NGET)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-2-2d</p></td>
+<td><p>Circuit changes (OFTO)</p></td>
+</tr>
+<tr class="row-even"><td><p>B-3-2a</p></td>
+<td><p>Transformer changes (SHE Transmission)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-3-2b</p></td>
+<td><p>Transformer changes (SP Transmission)</p></td>
+</tr>
+<tr class="row-even"><td><p>B-3-2c</p></td>
+<td><p>Transformer changes (NGET)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-3-2d</p></td>
+<td><p>Transformer changes (OFTO)</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </section>
 <section id="types-of-upgrades">
 <h3>Types of Upgrades<a class="headerlink" href="#types-of-upgrades" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>New circuits</p></li>
-<li><p>Uprating existing circuits</p></li>
-<li><p>New transformers</p></li>
-<li><p>HVDC additions</p></li>
+<li><p><strong>Circuit additions</strong>: New transmission lines</p></li>
+<li><p><strong>Circuit removals</strong>: Decommissioned lines</p></li>
+<li><p><strong>Circuit modifications</strong>: Uprating existing circuits</p></li>
+<li><p><strong>Transformer additions</strong>: New transformers between voltage levels</p></li>
+<li><p><strong>Transformer removals</strong>: Decommissioned transformers</p></li>
+<li><p><strong>Transformer modifications</strong>: Re-rated transformers</p></li>
+<li><p><strong>HVDC additions</strong>: New high-voltage DC links (e.g., Eastern HVDC)</p></li>
 </ul>
+</section>
+<section id="bus-placement-for-upgrades">
+<h3>Bus Placement for Upgrades<a class="headerlink" href="#bus-placement-for-upgrades" title="Link to this heading">#</a></h3>
+<p>When upgrades reference buses not in the base network, a multi-pass strategy resolves coordinates:</p>
+<ol class="arabic simple">
+<li><p><strong>Strategy 0</strong>: Lookup in <code class="docutils literal notranslate"><span class="pre">substation_coordinates.csv</span></code> (WGS84 → OSGB36 conversion)</p></li>
+<li><p><strong>Strategy 1</strong>: Copy coordinates from a same-site bus already in the network</p></li>
+<li><p><strong>Strategy 2</strong>: Copy from a bus added earlier in the same upgrade batch</p></li>
+<li><p><strong>Strategy 3</strong>: Estimate from a connected bus using circuit length as offset</p></li>
+</ol>
+<p>After applying upgrades, orphan buses (disconnected from the network) are automatically removed.</p>
 </section>
 </section>
 <section id="coordinate-system">
@@ -1255,7 +1310,7 @@ In Scotland, 132kV is transmission (TO-operated).</p>
 <tbody>
 <tr class="row-even"><td><p>Missing coordinates</p></td>
 <td><p>Some ETYS buses lack x,y</p></td>
-<td><p>Manual geocoding</p></td>
+<td><p>Multi-tier resolution: GSP mapping → substation lookup → prefix fallback → distance-weighted guessing with land boundary validation</p></td>
 </tr>
 <tr class="row-odd"><td><p>Zero impedance</p></td>
 <td><p>Some short lines</p></td>
@@ -1264,6 +1319,14 @@ In Scotland, 132kV is transmission (TO-operated).</p>
 <tr class="row-even"><td><p>Islanded buses</p></td>
 <td><p>Disconnected substations</p></td>
 <td><p>Connected via small impedance</p></td>
+</tr>
+<tr class="row-odd"><td><p>Offshore buses</p></td>
+<td><p>Wind farm connection buses outside GB landmass</p></td>
+<td><p>Identified via OFTO data; <code class="docutils literal notranslate"><span class="pre">is_offshore</span></code> flag propagated through the pipeline</p></td>
+</tr>
+<tr class="row-even"><td><p>Land boundary</p></td>
+<td><p>Guessed coordinates may fall in the sea</p></td>
+<td><p>Coordinates validated against GSP region GeoJSON boundaries and moved to nearest land point</p></td>
 </tr>
 </tbody>
 </table>
@@ -1344,6 +1407,7 @@ In Scotland, 132kV is transmission (TO-operated).</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#network-upgrades">Network Upgrades</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#applying-upgrades">Applying Upgrades</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#types-of-upgrades">Types of Upgrades</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bus-placement-for-upgrades">Bus Placement for Upgrades</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#coordinate-system">Coordinate System</a><ul class="nav section-nav flex-column">

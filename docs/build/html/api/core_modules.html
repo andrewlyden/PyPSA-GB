@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/core_modules';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -471,43 +472,197 @@ document.write(`
 <section id="build-network">
 <h2>build_network<a class="headerlink" href="#build-network" title="Link to this heading">#</a></h2>
 <p>Base network construction from topology files.</p>
-<section id="id2">
-<h3>Main Functions<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
-<section id="build-base-network">
-<h4><code class="docutils literal notranslate"><span class="pre">build_base_network()</span></code><a class="headerlink" href="#build-base-network" title="Link to this heading">#</a></h4>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">build_base_network</span><span class="p">(</span>
-    <span class="n">network_model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For the ETYS network model, the build logic is split across the <code class="docutils literal notranslate"><span class="pre">scripts/network_build/</span></code> package:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">process_ETYS_data.py</span></code> — Raw Excel parsing (stage 1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ETYS_network.py</span></code> — Network assembly (stage 2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ETYS_upgrades.py</span></code> — Network upgrade application</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">etys_file_registry.py</span></code> — ETYS file/sheet name mapping and constants</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">build_network.py</span></code> — Reduced/Zonal builders (ETYS delegates to <code class="docutils literal notranslate"><span class="pre">ETYS_network.py</span></code>)</p></li>
+</ul>
+</div>
+<section id="etys-network-assembly-scripts-network-build-etys-network-py">
+<h3>ETYS Network Assembly (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/ETYS_network.py</span></code>)<a class="headerlink" href="#etys-network-assembly-scripts-network-build-etys-network-py" title="Link to this heading">#</a></h3>
+<section id="create-network">
+<h4><code class="docutils literal notranslate"><span class="pre">create_network()</span></code><a class="headerlink" href="#create-network" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">create_network</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">df_buses_with_locs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Build a base PyPSA network from topology files.</span>
+<span class="sd">    Build a PyPSA network from preprocessed ETYS component and bus DataFrames.</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    network_model : str</span>
-<span class="sd">        Network type: &#39;ETYS&#39;, &#39;Reduced&#39;, &#39;Zonal&#39;</span>
-<span class="sd">    year : int, optional</span>
-<span class="sd">        Modelled year (for applying upgrades)</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">        Components (circuits, transformers, HVDC) from process_ETYS_data</span>
+<span class="sd">    df_buses_with_locs : pd.DataFrame</span>
+<span class="sd">        Bus data with resolved coordinates</span>
 <span class="sd">    logger : logging.Logger, optional</span>
 <span class="sd">        Logger for output</span>
 <span class="sd">        </span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    pypsa.Network</span>
-<span class="sd">        Base network with buses, lines, transformers</span>
+<span class="sd">        Assembled network with buses, lines, transformers, links</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
 </section>
+<section id="validate-network-topology">
+<h4><code class="docutils literal notranslate"><span class="pre">validate_network_topology()</span></code><a class="headerlink" href="#validate-network-topology" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">validate_network_topology</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate network connectivity, parameter ranges, and coordinate coverage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="ensure-buses-on-land">
+<h4><code class="docutils literal notranslate"><span class="pre">ensure_buses_on_land()</span></code><a class="headerlink" href="#ensure-buses-on-land" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">ensure_buses_on_land</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">land_boundary</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate bus coordinates against GB land boundaries and move</span>
+<span class="sd">    any that fall in the sea to the nearest land point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="etys-upgrades-scripts-network-build-etys-upgrades-py">
+<h3>ETYS Upgrades (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/ETYS_upgrades.py</span></code>)<a class="headerlink" href="#etys-upgrades-scripts-network-build-etys-upgrades-py" title="Link to this heading">#</a></h3>
+<section id="apply-etys-network-upgrades">
+<h4><code class="docutils literal notranslate"><span class="pre">apply_etys_network_upgrades()</span></code><a class="headerlink" href="#apply-etys-network-upgrades" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_etys_network_upgrades</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">modelled_year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">etys_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply all ETYS network upgrades through a target year.</span>
+<span class="sd">    </span>
+<span class="sd">    Applies circuit additions/removals/modifications, transformer</span>
+<span class="sd">    additions/removals/modifications, and HVDC additions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network : pypsa.Network</span>
+<span class="sd">        Base network to modify</span>
+<span class="sd">    modelled_year : int</span>
+<span class="sd">        Apply upgrades through this year</span>
+<span class="sd">    etys_file : str, optional</span>
+<span class="sd">        Path to ETYS Appendix B Excel file</span>
+<span class="sd">    logger : logging.Logger, optional</span>
+<span class="sd">        Logger for output</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pypsa.Network</span>
+<span class="sd">        Modified network with upgrades applied</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="add-missing-buses-from-upgrades">
+<h4><code class="docutils literal notranslate"><span class="pre">add_missing_buses_from_upgrades()</span></code><a class="headerlink" href="#add-missing-buses-from-upgrades" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add_missing_buses_from_upgrades</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">upgrades_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add buses referenced by upgrades but missing from the base network.</span>
+<span class="sd">    Uses multi-pass strategy (substation coords → same-site → already-added → connected bus offset).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="remove-orphan-buses">
+<h4><code class="docutils literal notranslate"><span class="pre">remove_orphan_buses()</span></code><a class="headerlink" href="#remove-orphan-buses" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">remove_orphan_buses</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove buses with no connected lines, transformers, or links.</span>
+<span class="sd">    Returns the number of buses removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="etys-data-processing-scripts-network-build-process-etys-data-py">
+<h3>ETYS Data Processing (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/process_ETYS_data.py</span></code>)<a class="headerlink" href="#etys-data-processing-scripts-network-build-process-etys-data-py" title="Link to this heading">#</a></h3>
+<section id="sort-raw-etys-data">
+<h4><code class="docutils literal notranslate"><span class="pre">sort_raw_ETYS_data()</span></code><a class="headerlink" href="#sort-raw-etys-data" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sort_raw_ETYS_data</span><span class="p">(</span>
+    <span class="n">etys_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">gb_network_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse raw ETYS Appendix B Excel into standardized DataFrames.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple of (pd.DataFrame, pd.DataFrame)</span>
+<span class="sd">        (components_df, buses_df)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="etys-file-registry-scripts-network-build-etys-file-registry-py">
+<h3>ETYS File Registry (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/etys_file_registry.py</span></code>)<a class="headerlink" href="#etys-file-registry-scripts-network-build-etys-file-registry-py" title="Link to this heading">#</a></h3>
+<p>Central registry mapping ETYS publication years to filenames and sheet names.</p>
+<p><strong>Key constants:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ETYS_FILES</span></code></p></td>
+<td><p>Dict mapping years (2022, 2023, 2024) to filenames</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ETYS_BASE_SHEETS</span></code></p></td>
+<td><p>Dict of base network sheet names (circuits, transformers, HVDC)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ETYS_UPGRADE_SHEETS</span></code></p></td>
+<td><p>Dict of upgrade sheet names by operator</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VOLTAGE_LEVELS</span></code></p></td>
+<td><p>Voltage code → kV mapping</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ELECTRICAL_DEFAULTS</span></code></p></td>
+<td><p>Default per-unit values for lines, transformers, cables</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEFAULT_RATINGS</span></code></p></td>
+<td><p>Default MVA ratings by component type</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 </section>
 <hr class="docutils" />
 <section id="scenario-detection">
 <h2>scenario_detection<a class="headerlink" href="#scenario-detection" title="Link to this heading">#</a></h2>
 <p>Automatic routing based on modelled year.</p>
-<section id="id3">
-<h3>Main Functions<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<section id="id2">
+<h3>Main Functions<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
 <section id="is-historical-scenario">
 <h4><code class="docutils literal notranslate"><span class="pre">is_historical_scenario()</span></code><a class="headerlink" href="#is-historical-scenario" title="Link to this heading">#</a></h4>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">is_historical_scenario</span><span class="p">(</span><span class="n">scenario</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -552,8 +707,8 @@ document.write(`
 </div>
 </section>
 </section>
-<section id="id4">
-<h3>Usage Example<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<section id="id3">
+<h3>Usage Example<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.scenario_detection</span> <span class="kn">import</span> <span class="n">is_historical_scenario</span><span class="p">,</span> <span class="n">auto_configure_scenario</span>
 
 <span class="n">scenario</span> <span class="o">=</span> <span class="p">{</span>
@@ -578,8 +733,8 @@ document.write(`
 <section id="carrier-definitions">
 <h2>carrier_definitions<a class="headerlink" href="#carrier-definitions" title="Link to this heading">#</a></h2>
 <p>Technology/carrier definitions and attributes.</p>
-<section id="id5">
-<h3>Main Functions<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<section id="id4">
+<h3>Main Functions<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
 <section id="get-carrier-definitions">
 <h4><code class="docutils literal notranslate"><span class="pre">get_carrier_definitions()</span></code><a class="headerlink" href="#get-carrier-definitions" title="Link to this heading">#</a></h4>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_carrier_definitions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -649,8 +804,8 @@ document.write(`
 </table>
 </div>
 </section>
-<section id="id6">
-<h3>Usage Example<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<section id="id5">
+<h3>Usage Example<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scripts.carrier_definitions</span> <span class="kn">import</span> <span class="n">get_carrier_definitions</span>
 
 <span class="n">carriers</span> <span class="o">=</span> <span class="n">get_carrier_definitions</span><span class="p">()</span>
@@ -668,8 +823,8 @@ document.write(`
 <section id="logging-config">
 <h2>logging_config<a class="headerlink" href="#logging-config" title="Link to this heading">#</a></h2>
 <p>Centralized logging configuration.</p>
-<section id="id7">
-<h3>Main Functions<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<section id="id6">
+<h3>Main Functions<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
 <section id="setup-logging">
 <h4><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code><a class="headerlink" href="#setup-logging" title="Link to this heading">#</a></h4>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup_logging</span><span class="p">(</span>
@@ -736,8 +891,8 @@ document.write(`
 <section id="time-utils">
 <h2>time_utils<a class="headerlink" href="#time-utils" title="Link to this heading">#</a></h2>
 <p>Time series manipulation utilities.</p>
-<section id="id8">
-<h3>Main Functions<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<section id="id7">
+<h3>Main Functions<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
 <section id="align-time-series">
 <h4><code class="docutils literal notranslate"><span class="pre">align_time_series()</span></code><a class="headerlink" href="#align-time-series" title="Link to this heading">#</a></h4>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">align_time_series</span><span class="p">(</span>
@@ -783,8 +938,8 @@ document.write(`
 <section id="validation-utils">
 <h2>validation_utils<a class="headerlink" href="#validation-utils" title="Link to this heading">#</a></h2>
 <p>Data validation functions.</p>
-<section id="id9">
-<h3>Main Functions<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<section id="id8">
+<h3>Main Functions<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
 <section id="validate-network-connectivity">
 <h4><code class="docutils literal notranslate"><span class="pre">validate_network_connectivity()</span></code><a class="headerlink" href="#validate-network-connectivity" title="Link to this heading">#</a></h4>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">validate_network_connectivity</span><span class="p">(</span>
@@ -881,32 +1036,45 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-network">build_network</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Main Functions</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#build-base-network"><code class="docutils literal notranslate"><span class="pre">build_base_network()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-network-assembly-scripts-network-build-etys-network-py">ETYS Network Assembly (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/ETYS_network.py</span></code>)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#create-network"><code class="docutils literal notranslate"><span class="pre">create_network()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#validate-network-topology"><code class="docutils literal notranslate"><span class="pre">validate_network_topology()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ensure-buses-on-land"><code class="docutils literal notranslate"><span class="pre">ensure_buses_on_land()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-upgrades-scripts-network-build-etys-upgrades-py">ETYS Upgrades (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/ETYS_upgrades.py</span></code>)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#apply-etys-network-upgrades"><code class="docutils literal notranslate"><span class="pre">apply_etys_network_upgrades()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#add-missing-buses-from-upgrades"><code class="docutils literal notranslate"><span class="pre">add_missing_buses_from_upgrades()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#remove-orphan-buses"><code class="docutils literal notranslate"><span class="pre">remove_orphan_buses()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-data-processing-scripts-network-build-process-etys-data-py">ETYS Data Processing (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/process_ETYS_data.py</span></code>)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sort-raw-etys-data"><code class="docutils literal notranslate"><span class="pre">sort_raw_ETYS_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#etys-file-registry-scripts-network-build-etys-file-registry-py">ETYS File Registry (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/etys_file_registry.py</span></code>)</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-detection">scenario_detection</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Main Functions</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#is-historical-scenario"><code class="docutils literal notranslate"><span class="pre">is_historical_scenario()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#auto-configure-scenario"><code class="docutils literal notranslate"><span class="pre">auto_configure_scenario()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Usage Example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Usage Example</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#carrier-definitions">carrier_definitions</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Main Functions</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#get-carrier-definitions"><code class="docutils literal notranslate"><span class="pre">get_carrier_definitions()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#defined-carriers">Defined Carriers</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Usage Example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Usage Example</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logging-config">logging_config</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Main Functions</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#setup-logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#get-log-path"><code class="docutils literal notranslate"><span class="pre">get_log_path()</span></code></a></li>
 </ul>
@@ -915,7 +1083,7 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time-utils">time_utils</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Main Functions</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#align-time-series"><code class="docutils literal notranslate"><span class="pre">align_time_series()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#resample-to-hourly"><code class="docutils literal notranslate"><span class="pre">resample_to_hourly()</span></code></a></li>
 </ul>
@@ -923,7 +1091,7 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-utils">validation_utils</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Main Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Main Functions</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#validate-network-connectivity"><code class="docutils literal notranslate"><span class="pre">validate_network_connectivity()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#validate-generator-data"><code class="docutils literal notranslate"><span class="pre">validate_generator_data()</span></code></a></li>
 </ul>

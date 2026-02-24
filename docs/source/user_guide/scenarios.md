@@ -46,7 +46,13 @@ Future_2035:
 **Data sources**:
 - Thermal/Renewables/Storage: FES projections
 - Demand: FES annual totals with historical profiles
-- Network: ETYS planned upgrades (optional)
+- Network: ETYS base topology with planned upgrades (optional)
+
+```{tip}
+ETYS network upgrades are controlled by `etys_upgrades.enabled` and `etys_upgrades.upgrade_year`.
+The ETYS publication year is set via `etys.year` (supports 2022, 2023, 2024).
+See {doc}`configuration` for details.
+```
 
 ## FES Pathway Selection
 

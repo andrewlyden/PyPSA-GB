@@ -119,16 +119,22 @@ flowchart TB
 ```
 data/network/
 ├── ETYS/
-│   ├── ETYS_2023_substations.csv
-│   ├── ETYS_2023_circuits.csv
-│   ├── ETYS_2023_transformers.csv
-│   └── ETYS_upgrades.xlsx
-├── Reduced/
-│   ├── reduced_buses.csv
-│   └── reduced_lines.csv
-└── Zonal/
-    └── zonal_network.csv
+│   ├── ETYS 2024 Appendix-B V1.xlsx    # ETYS 2024 circuits, transformers, HVDC
+│   ├── ETYS Appendix B 2023.xlsx        # ETYS 2023 (alternative)
+│   ├── ETYS Appendix B 2022.xlsx        # ETYS 2022 (alternative)
+│   ├── GB_network.xlsx                  # Extra WF edges, BMU mappings, demand nodes
+│   ├── substation_coordinates.csv       # Manually compiled bus coordinates
+│   ├── Regional breakdown of FES24 data.xlsx  # FES regional capacity by GSP
+│   └── ...                              # FES regional files for other years
+├── reduced_network/
+│   ├── buses.csv
+│   └── lines.csv
+└── zonal/
+    ├── buses.csv
+    └── links.csv
 ```
+
+The ETYS publication year is selected via the `etys.year` configuration option (see {doc}`../user_guide/configuration`). The `etys_file_registry.py` module maps each publication year (2022, 2023, 2024) to the correct filenames and Excel sheet names.
 
 ### Loading Network Data
 
@@ -173,7 +179,7 @@ High-voltage DC interconnections and internal links.
 
 ## Network Upgrades
 
-ETYS includes planned reinforcements through 2035+.
+ETYS includes planned reinforcements through 2031+ (depending on ETYS publication year).
 
 ### Applying Upgrades
 
@@ -181,15 +187,42 @@ ETYS includes planned reinforcements through 2035+.
 # In scenario configuration
 etys_upgrades:
   enabled: true
-  upgrade_year: 2035  # Apply all upgrades through 2035
+  upgrade_year: 2035  # Apply all upgrades through 2035 (null = use modelled_year)
 ```
+
+Upgrades are read from the ETYS Appendix B Excel file selected by `etys.year`. The upgrade sheets are organized by transmission owner:
+
+| Sheet | Content |
+|-------|--------|
+| B-2-2a | Circuit changes (SHE Transmission) |
+| B-2-2b | Circuit changes (SP Transmission) |
+| B-2-2c | Circuit changes (NGET) |
+| B-2-2d | Circuit changes (OFTO) |
+| B-3-2a | Transformer changes (SHE Transmission) |
+| B-3-2b | Transformer changes (SP Transmission) |
+| B-3-2c | Transformer changes (NGET) |
+| B-3-2d | Transformer changes (OFTO) |
 
 ### Types of Upgrades
 
-- New circuits
-- Uprating existing circuits
-- New transformers
-- HVDC additions
+- **Circuit additions**: New transmission lines
+- **Circuit removals**: Decommissioned lines
+- **Circuit modifications**: Uprating existing circuits
+- **Transformer additions**: New transformers between voltage levels
+- **Transformer removals**: Decommissioned transformers
+- **Transformer modifications**: Re-rated transformers
+- **HVDC additions**: New high-voltage DC links (e.g., Eastern HVDC)
+
+### Bus Placement for Upgrades
+
+When upgrades reference buses not in the base network, a multi-pass strategy resolves coordinates:
+
+1. **Strategy 0**: Lookup in `substation_coordinates.csv` (WGS84 → OSGB36 conversion)
+2. **Strategy 1**: Copy coordinates from a same-site bus already in the network
+3. **Strategy 2**: Copy from a bus added earlier in the same upgrade batch
+4. **Strategy 3**: Estimate from a connected bus using circuit length as offset
+
+After applying upgrades, orphan buses (disconnected from the network) are automatically removed.
 
 ## Coordinate System
 
@@ -290,6 +323,8 @@ The workflow validates network data:
 
 | Issue | Description | Handling |
 |-------|-------------|----------|
-| Missing coordinates | Some ETYS buses lack x,y | Manual geocoding |
+| Missing coordinates | Some ETYS buses lack x,y | Multi-tier resolution: GSP mapping → substation lookup → prefix fallback → distance-weighted guessing with land boundary validation |
 | Zero impedance | Some short lines | Minimum impedance applied |
 | Islanded buses | Disconnected substations | Connected via small impedance |
+| Offshore buses | Wind farm connection buses outside GB landmass | Identified via OFTO data; `is_offshore` flag propagated through the pipeline |
+| Land boundary | Guessed coordinates may fall in the sea | Coordinates validated against GSP region GeoJSON boundaries and moved to nearest land point |

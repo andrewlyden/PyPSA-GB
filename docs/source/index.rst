@@ -97,6 +97,7 @@ Run a 2035 Holistic Transition scenario:
    snakemake resources/network/HT35_solved.nc -j 4
 
 
+
 .. toctree::
    :maxdepth: 2
    :hidden:

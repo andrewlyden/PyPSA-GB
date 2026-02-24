@@ -45,6 +45,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'data_reference/data_sources';</script>
     <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -705,13 +706,19 @@ document.write(`
 <tr class="row-even"><td><p>B-1</p></td>
 <td><p>Substation data (buses)</p></td>
 </tr>
-<tr class="row-odd"><td><p>B-2</p></td>
-<td><p>Circuit data (lines)</p></td>
+<tr class="row-odd"><td><p>B-2-1a/b/c/d</p></td>
+<td><p>Base circuit data (SHE-T / SPT / NGET / OFTO)</p></td>
 </tr>
-<tr class="row-even"><td><p>B-3</p></td>
-<td><p>Transformer data</p></td>
+<tr class="row-even"><td><p>B-2-2a/b/c/d</p></td>
+<td><p>Circuit upgrades (SHE-T / SPT / NGET / OFTO)</p></td>
 </tr>
-<tr class="row-odd"><td><p>B-4</p></td>
+<tr class="row-odd"><td><p>B-3-1a/b/c/d</p></td>
+<td><p>Base transformer data (SHE-T / SPT / NGET / OFTO)</p></td>
+</tr>
+<tr class="row-even"><td><p>B-3-2a/b/c/d</p></td>
+<td><p>Transformer upgrades (SHE-T / SPT / NGET / OFTO)</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-5-1</p></td>
 <td><p>HVDC data</p></td>
 </tr>
 </tbody>
@@ -736,15 +743,20 @@ document.write(`
 </section>
 <section id="id11">
 <h3>Location<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<p>The ETYS publication year is selected via <code class="docutils literal notranslate"><span class="pre">etys.year</span></code> in <code class="docutils literal notranslate"><span class="pre">config/defaults.yaml</span></code> (supports 2022, 2023, 2024). Files are mapped by <code class="docutils literal notranslate"><span class="pre">scripts/network_build/etys_file_registry.py</span></code>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data/network/
 ├── ETYS/
-│   ├── ETYS_2023_substations.csv
-│   ├── ETYS_2023_circuits.csv
-│   └── ETYS_2023_transformers.csv
-├── Reduced/
-│   └── reduced_network.csv
-└── Zonal/
-    └── zonal_network.csv
+│   ├── ETYS 2024 Appendix-B V1.xlsx    # ETYS 2024 (default)
+│   ├── ETYS Appendix B 2023.xlsx        # ETYS 2023
+│   ├── ETYS Appendix B 2022.xlsx        # ETYS 2022
+│   ├── GB_network.xlsx                  # Offshore WF edges, BMU mappings
+│   └── substation_coordinates.csv       # Bus coordinate overrides
+├── reduced_network/
+│   ├── buses.csv
+│   └── lines.csv
+└── zonal/
+    ├── buses.csv
+    └── links.csv
 </pre></div>
 </div>
 </section>

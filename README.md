@@ -46,4 +46,10 @@ If you use PyPSA-GB in your research, please cite:
 
 See [full documentation](https://pypsa-gb.readthedocs.io) for detailed usage.
 
-![PyPSA-GB ETYS Clustered Network Model](pics/ETYS_clustered.png)
+### Network Model Visualisations
+
+The PyPSA-GB ETYS full network model represents Great Britain's transmission system with 2000+ buses, capturing the detailed topology of the high-voltage grid. The figures below show the network for a historical year (2023) and a future scenario year (2035), including planned infrastructure upgrades from the ETYS.
+
+![PyPSA-GB ETYS Full Network Model (2023)](pics/ETYS_full_2023.png)
+
+![PyPSA-GB ETYS Full Network Model (2035)](pics/ETYS_full_2035.png)

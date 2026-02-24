@@ -147,7 +147,6 @@ def _get_clustering_busmap(wildcards):
         return []
     
     return busmap
-    return busmap
 
 
 # ══════════════════════════════════════════════════════════════════════════════
