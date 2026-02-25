@@ -107,6 +107,66 @@ transmission:
   capacity_scale: 1.0             # 1.0 = no scaling (use clustering instead)
 
 # ──────────────────────────────────────────────────────────────────────────────
+# MARKET SIMULATION (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+# Two-stage market dispatch: wholesale clearing + balancing mechanism redispatch.
+# Stage 1 (Wholesale): Copperplate dispatch — no network constraints, uniform price.
+# Stage 2 (Balancing): Anchored redispatch — full network constraints, generators
+#   and storage adjust from wholesale position at bid/offer prices.
+#
+# Requires a finalized network ({scenario}.nc) from the main workflow.
+# Run via: snakemake -s Snakefile_market --cores 4
+# Or integrated with main workflow when market.enabled: true in a scenario.
+market:
+  enabled: false                          # Master toggle for market simulation
+
+  # ── Stage 1: Wholesale Market ──────────────────────────────────────────────
+  wholesale:
+    # s_nom value (MVA) applied to ALL lines and transformers to create
+    # copperplate (unconstrained) dispatch. Must be >> max line flow.
+    transmission_relaxation: 1.0e6
+
+  # ── Stage 2: Balancing Mechanism ───────────────────────────────────────────
+  balancing:
+    # How bid/offer prices are determined:
+    #   "derived" - Calculated from generator marginal_cost ± markup/discount
+    #   "csv"     - Load from external CSV file (future extension)
+    bid_offer_source: "derived"
+
+    # Default fractional markup/discount applied to marginal_cost
+    # offer_price = marginal_cost * (1 + default_offer_markup)
+    # bid_price   = marginal_cost * (1 - default_bid_discount)
+    default_offer_markup: 0.10            # 10% above marginal_cost for offers (increase output)
+    default_bid_discount: 0.10            # 10% below marginal_cost for bids (decrease output)
+
+    # Per-carrier overrides for bid/offer pricing
+    # Carriers not listed here use the defaults above
+    carrier_overrides:
+      nuclear:
+        offer_markup: 0.50                # Expensive to ramp up
+        bid_discount: 0.05                # Cheap to turn down
+      wind_onshore:
+        offer_markup: 0.0                 # Cannot offer more than available
+        bid_discount: 0.05
+      wind_offshore:
+        offer_markup: 0.0
+        bid_discount: 0.05
+      solar_pv:
+        offer_markup: 0.0
+        bid_discount: 0.05
+      battery:
+        offer_markup: 0.15
+        bid_discount: 0.15
+      pumped_hydro:
+        offer_markup: 0.15
+        bid_discount: 0.15
+
+    # Fix interconnectors at their wholesale position in the BM solve
+    # true  = ICs cannot be redispatched (v1 default)
+    # false = ICs participate in BM (future extension)
+    fix_interconnectors: true
+
+# ──────────────────────────────────────────────────────────────────────────────
 # ETYS DATA SOURCE (ETYS network model only)
 # ──────────────────────────────────────────────────────────────────────────────
 # Selects which ETYS publication year to use for base network topology.

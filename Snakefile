@@ -359,6 +359,7 @@ include: "rules/hydrogen.smk"             # Hydrogen system (electrolysis, H2 st
 include: "rules/interconnectors.smk"      # Cross-border interconnections
 include: "rules/solve.smk"                # Network finalization and optimization
 include: "rules/analysis.smk"             # Post-solve analysis: spatial plots, dashboards, notebooks
+include: "rules/market.smk"               # Market simulation: wholesale + balancing mechanism
 
 # ------------------------------------------------------------------------------
 # FINAL TARGET CONSTRUCTION
@@ -539,15 +540,44 @@ finalize_targets += expand(
 )
 
 # Optimization results (solving enabled)
+# Market-enabled scenarios use two-stage dispatch instead of standard solve
+_market_ids = [rid for rid in run_ids if scenarios.get(rid, {}).get('market', {}).get('enabled', False)]
+_solve_ids = [rid for rid in run_ids if rid not in _market_ids]
+
 optimization_targets = []
 optimization_targets += expand(
     f"{resources_path}/network/{{scenario}}_solved.nc", 
-    scenario=run_ids
+    scenario=_solve_ids
 )
 optimization_targets += expand(
     f"{resources_path}/network/{{scenario}}_optimization_summary.txt", 
-    scenario=run_ids
+    scenario=_solve_ids
 )
+
+# --- Market Simulation Targets ------------------------------------------------
+# Two-stage dispatch: wholesale (copperplate) + balancing mechanism (redispatch)
+# Only built for scenarios with market.enabled: true
+# ------------------------------------------------------------------------------
+
+market_targets = []
+for rid in run_ids:
+    if scenarios.get(rid, {}).get('market', {}).get('enabled', False):
+        market_targets.extend([
+            f"{resources_path}/market/{rid}_wholesale.nc",
+            f"{resources_path}/market/{rid}_wholesale_dispatch.csv",
+            f"{resources_path}/market/{rid}_wholesale_storage.csv",
+            f"{resources_path}/market/{rid}_wholesale_links.csv",
+            f"{resources_path}/market/{rid}_wholesale_price.csv",
+            f"{resources_path}/market/{rid}_balancing.nc",
+            f"{resources_path}/market/{rid}_balancing_dispatch.csv",
+            f"{resources_path}/market/{rid}_redispatch_summary.csv",
+            f"{resources_path}/market/{rid}_constraint_costs.csv",
+            f"{resources_path}/market/{rid}_congestion.csv",
+            f"{resources_path}/market/{rid}_price_comparison.csv",
+            f"{resources_path}/analysis/{rid}_market_dashboard.html",
+            f"{resources_path}/analysis/{rid}_market_summary.json",
+            f"{resources_path}/analysis/{rid}_market_notebook.ipynb",
+        ])
 
 # --- Analysis Outputs --------------------------------------------------------
 # Consolidated analysis: spatial plots, dashboards, notebooks
@@ -557,17 +587,18 @@ optimization_targets += expand(
 analysis_targets = []
 
 # Spatial plots, dashboards, and notebooks for each solved scenario
+# Market-enabled scenarios have their own analysis via market.smk
 analysis_targets += expand(
     f"{resources_path}/analysis/{{scenario}}_spatial.html", 
-    scenario=run_ids
+    scenario=_solve_ids
 )
 analysis_targets += expand(
     f"{resources_path}/analysis/{{scenario}}_dashboard.html", 
-    scenario=run_ids
+    scenario=_solve_ids
 )
 analysis_targets += expand(
     f"{resources_path}/analysis/{{scenario}}_notebook.ipynb", 
-    scenario=run_ids
+    scenario=_solve_ids
 )
 
 # ------------------------------------------------------------------------------
@@ -590,3 +621,6 @@ rule all:
         # Optimization and analysis (solving enabled)
         optimization_targets,     # Solved networks and results
         analysis_targets,         # Spatial plots, dashboards, notebooks
+        
+        # Market simulation (only for market-enabled scenarios)
+        market_targets,           # Wholesale + BM dispatch, dashboards

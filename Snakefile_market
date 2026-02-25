@@ -1,0 +1,131 @@
+# ==============================================================================
+# PyPSA-GB: Market Simulation Workflow
+# ==============================================================================
+"""
+MARKET SIMULATION WORKFLOW — Two-Stage Dispatch
+
+This workflow runs the two-stage market simulation on already-finalized
+networks from the main workflow.  It can be run:
+
+  (a) Standalone  — assumes {scenario}.nc already exists:
+        snakemake -s Snakefile_market --cores 4
+
+  (b) Integrated  — included in the main Snakefile when scenarios have
+        market.enabled: true (targets added automatically to 'rule all').
+
+STAGES:
+  1. solve_wholesale_market     — Copperplate dispatch (no line constraints)
+  2. solve_balancing_mechanism  — Anchored redispatch with full constraints
+  3. analyze_market_results     — Dashboard + JSON summary
+
+PREREQUISITES:
+  The main workflow must have produced finalized networks first:
+      snakemake --cores 8
+
+  Then run market simulation:
+      snakemake -s Snakefile_market --cores 4
+"""
+
+# ------------------------------------------------------------------------------
+# IMPORTS AND SETUP
+# ------------------------------------------------------------------------------
+
+import yaml
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path.cwd() / "scripts"))
+sys.path.insert(0, str(Path.cwd() / "config"))
+
+from scripts.utilities.scenario_detection import (
+    auto_configure_scenario,
+    validate_scenario_complete,
+)
+from config_loader import load_config
+
+# ------------------------------------------------------------------------------
+# CONFIGURATION LOADING
+# ------------------------------------------------------------------------------
+
+configfile: "config/config.yaml"
+
+_full_config = load_config()
+scenarios = _full_config["scenarios"]
+
+# ------------------------------------------------------------------------------
+# PATH DEFINITIONS
+# ------------------------------------------------------------------------------
+
+resources_path = "resources"
+data_path = "data"
+
+# ------------------------------------------------------------------------------
+# SCENARIO SELECTION
+# ------------------------------------------------------------------------------
+# When run standalone, only market-enabled scenarios are targeted.
+# Command-line override: snakemake -s Snakefile_market --config scenario=HT35_market
+# ------------------------------------------------------------------------------
+
+if config.get("scenario"):
+    run_ids = [config["scenario"]]
+    print(f"[Market] Using command-line scenario: {run_ids[0]}")
+else:
+    all_ids = config.get("run_scenarios", [])
+    # Filter to only market-enabled scenarios
+    run_ids = [
+        rid for rid in all_ids
+        if scenarios.get(rid, {}).get("market", {}).get("enabled", False)
+    ]
+    if not run_ids:
+        print("[Market] WARNING: No market-enabled scenarios found in run_scenarios.")
+        print("         Add market: { enabled: true } to a scenario in scenarios.yaml")
+        print("         and include it in config.yaml run_scenarios.")
+        # Fall back to all run_scenarios so Snakemake doesn't error on empty targets
+        run_ids = all_ids
+
+print(f"[Market] Active scenarios: {run_ids}")
+
+# Validate
+unknown = set(run_ids) - set(scenarios)
+if unknown:
+    raise ValueError(f"Unknown scenario IDs: {unknown}")
+
+# Auto-configure
+for rid in run_ids:
+    auto_configure_scenario(scenarios[rid])
+
+# ------------------------------------------------------------------------------
+# INCLUDE MARKET RULES
+# ------------------------------------------------------------------------------
+
+include: "rules/market.smk"
+
+# ------------------------------------------------------------------------------
+# TARGETS
+# ------------------------------------------------------------------------------
+
+market_targets = []
+for rid in run_ids:
+    if scenarios.get(rid, {}).get("market", {}).get("enabled", False):
+        market_targets.extend([
+            f"{resources_path}/market/{rid}_wholesale.nc",
+            f"{resources_path}/market/{rid}_wholesale_dispatch.csv",
+            f"{resources_path}/market/{rid}_wholesale_storage.csv",
+            f"{resources_path}/market/{rid}_wholesale_links.csv",
+            f"{resources_path}/market/{rid}_wholesale_price.csv",
+            f"{resources_path}/market/{rid}_balancing.nc",
+            f"{resources_path}/market/{rid}_balancing_dispatch.csv",
+            f"{resources_path}/market/{rid}_redispatch_summary.csv",
+            f"{resources_path}/market/{rid}_constraint_costs.csv",
+            f"{resources_path}/market/{rid}_congestion.csv",
+            f"{resources_path}/market/{rid}_price_comparison.csv",
+            f"{resources_path}/analysis/{rid}_market_dashboard.html",
+            f"{resources_path}/analysis/{rid}_market_summary.json",
+        ])
+
+if not market_targets:
+    print("[Market] No market targets to build (no market-enabled scenarios).")
+
+rule all:
+    input:
+        market_targets

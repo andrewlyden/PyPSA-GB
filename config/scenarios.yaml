@@ -52,6 +52,19 @@ Historical_2020_ETYS:
     start: "2020-12-07 00:00"
     end: "2020-12-13 23:00"
 
+Historical_2020_ETYS_market:
+  description: "2020 Historical - Full ETYS Network - Two-stage market dispatch (wholesale + BM)"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-01 23:00"
+  market:
+    enabled: true
+
 Historical_2019_reduced:
   description: "2019 Historical - Reduced Network (32 buses)"
   modelled_year: 2019
@@ -753,6 +766,51 @@ Test_NoAgg_Future:
     enabled: true
     start: "2035-01-01 00:00"
     end: "2035-01-01 05:00"
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║ MARKET SIMULATION SCENARIOS                                                ║
+# ║ Two-stage dispatch: wholesale (copperplate) + balancing mechanism          ║
+# ║ Requires: finalized network from main workflow ({scenario}.nc exists)      ║
+# ║ Run: snakemake -s Snakefile_market --cores 4                               ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+# Full ETYS 2035 with market simulation
+HT35_market:
+  description: "HT 2035 ETYS - Two-stage market dispatch (wholesale + BM)"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 23:00"
+  market:
+    enabled: true
+
+# Quick test scenario for market simulation (Reduced network, short period)
+Test_Market:
+  description: "Market test - Reduced network, 6 hours (fast smoke test)"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2035-01-01 00:00"
+    end: "2035-01-01 05:00"
+  market:
+    enabled: true
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TEMPLATES (copy and modify for new scenarios)
