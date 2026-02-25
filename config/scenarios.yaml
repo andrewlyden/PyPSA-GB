@@ -673,6 +673,32 @@ Test_Weather_2020:
     start: "2035-01-01 00:00"
     end: "2035-01-07 23:00"
 
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║ FORECAST SCENARIOS (mode: forecast)                                       ║
+# ║ Uses external weather cutout + external commodity curves                  ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+Forecast_DA_Example:
+  description: "Day-ahead forecast dispatch example (external weather + gas curve)"
+  mode: "forecast"
+  forecast:
+    enabled: true
+    generator_baseline_year: 2024
+    horizon_hours: 24
+    rolling_step_hours: 24
+    weather_inputs:
+      cutout_file: "resources/atlite/cutouts/uk-2026.nc"
+    price_inputs:
+      gas_curve_file: "data/forecast/example_gas_curve.csv"
+  modelled_year: 2026
+  renewables_year: 2026
+  demand_year: 2024
+  network_model: "Reduced"
+  solve_period:
+    enabled: true
+    start: "2026-01-01 00:00"
+    end: "2026-01-01 23:00"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TEMPLATES (copy and modify for new scenarios)
@@ -700,6 +726,29 @@ Test_Weather_2020:
 #   network_model: "ETYS"          # Or "Reduced", "Zonal"
 #   # demand_timeseries: "ESPENI"  # Optional: "ESPENI" (default), "eload", "desstinee"
 #   # profile_year: 2050           # Optional: for eload/desstinee, 2010 or 2050 (auto-selected if omitted)
+#
+# FORECAST TEMPLATE:
+# ------------------
+# My_Forecast_DA:
+#   description: "Forecast dispatch scenario"
+#   mode: "forecast"
+#   forecast:
+#     enabled: true
+#     generator_baseline_year: 2024  # Optional thermal fleet baseline
+#     horizon_hours: 24
+#     rolling_step_hours: 24
+#     weather_inputs:
+#       cutout_file: "resources/atlite/cutouts/uk-YYYY.nc"
+#     price_inputs:
+#       gas_curve_file: "data/forecast/my_gas_curve.csv"
+#   modelled_year: YYYY
+#   renewables_year: YYYY
+#   demand_year: 2024               # Historical demand-shape baseline (ESPENI)
+#   network_model: "Reduced"        # Or "ETYS", "Zonal"
+#   solve_period:
+#     enabled: true
+#     start: "YYYY-MM-DD 00:00"
+#     end: "YYYY-MM-DD 23:00"
 #
 # DEMAND DATA SOURCES FOR FUTURE SCENARIOS:
 # -----------------------------------------

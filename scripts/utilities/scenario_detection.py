@@ -2,13 +2,16 @@
 Scenario Detection and Auto-Configuration Module
 
 This module handles intelligent detection of historical vs. future scenarios
-and automatically configures data sources appropriately.
+and automatically configures data sources appropriately. It also supports
+forecast-driven scenarios where external price/weather data is injected.
 
 Key Functions:
 - is_historical_scenario: Determine if scenario year is historical (≤2024)
+- is_forecast_scenario: Determine if scenario uses forecast mode
 - auto_configure_scenario: Automatically set data source based on scenario year
 - validate_historical_scenario: Validate historical scenario configuration
 - validate_future_scenario: Validate future scenario configuration
+- validate_forecast_scenario: Validate forecast scenario configuration
 - validate_scenario_complete: Complete scenario validation
 - summarize_scenario_configuration: Generate summary of scenario setup
 """
@@ -19,6 +22,29 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
+
+
+def is_forecast_scenario(scenario):
+    """
+    Determine whether a scenario is configured for forecast mode.
+
+    A scenario is considered forecast mode when:
+      - mode == "forecast", OR
+      - forecast.enabled == True
+
+    Args:
+        scenario (dict or Any): Scenario dictionary or any object.
+
+    Returns:
+        bool: True if forecast mode is enabled.
+    """
+    if not isinstance(scenario, dict):
+        return False
+
+    mode = str(scenario.get("mode", "standard")).lower()
+    forecast_cfg = scenario.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
 
 
 def is_historical_scenario(scenario_year):
@@ -33,6 +59,9 @@ def is_historical_scenario(scenario_year):
     """
     # Handle both int and dict inputs
     if isinstance(scenario_year, dict):
+        if is_forecast_scenario(scenario_year):
+            # Forecast mode always routes away from historical/future static data routing.
+            return False
         scenario_year = scenario_year.get('modelled_year') or scenario_year.get('year')
     
     if scenario_year is None:
@@ -56,6 +85,15 @@ def auto_configure_scenario(scenario_dict):
     enhanced = dict(scenario_dict)
     # Try both 'modelled_year' and 'year' for compatibility
     scenario_year = scenario_dict.get("modelled_year") or scenario_dict.get("year", 2025)
+
+    if is_forecast_scenario(scenario_dict):
+        # Forecast scenario: external weather and commodity inputs.
+        enhanced["data_source"] = "forecast"
+        enhanced["generator_data_source"] = "FORECAST"
+        enhanced["demand_source"] = "forecast"
+        enhanced["_needs_fes"] = False
+        enhanced["_is_forecast"] = True
+        return enhanced
     
     is_hist = is_historical_scenario(scenario_year)
     
@@ -65,12 +103,14 @@ def auto_configure_scenario(scenario_dict):
         enhanced["generator_data_source"] = "DUKES"
         enhanced["demand_source"] = "ESPENI"
         enhanced["_needs_fes"] = False
+        enhanced["_is_forecast"] = False
     else:
         # Future scenario: use FES
         enhanced["data_source"] = "future"
         enhanced["generator_data_source"] = "FES"
         enhanced["demand_source"] = "FES"
         enhanced["_needs_fes"] = True
+        enhanced["_is_forecast"] = False
     
     return enhanced
 
@@ -139,6 +179,60 @@ def validate_future_scenario(scenario_dict, scenario_id):
     return (len(errors) == 0, errors, warnings)
 
 
+def validate_forecast_scenario(scenario_dict, scenario_id):
+    """
+    Validate a forecast scenario configuration.
+
+    Args:
+        scenario_dict (dict): The scenario configuration
+        scenario_id (str): The scenario identifier
+
+    Returns:
+        tuple: (is_valid, errors, warnings)
+    """
+    errors = []
+    warnings = []
+
+    # Basic required fields
+    year = scenario_dict.get("modelled_year") or scenario_dict.get("year")
+    if not year:
+        errors.append(f"Scenario {scenario_id}: Missing 'modelled_year' or 'year' field")
+
+    if "network_model" not in scenario_dict:
+        errors.append(f"Scenario {scenario_id}: Missing 'network_model'")
+
+    forecast_cfg = scenario_dict.get("forecast", {})
+    if not isinstance(forecast_cfg, dict):
+        forecast_cfg = {}
+
+    weather_inputs = forecast_cfg.get("weather_inputs", {})
+    if not isinstance(weather_inputs, dict):
+        weather_inputs = {}
+
+    price_inputs = forecast_cfg.get("price_inputs", {})
+    if not isinstance(price_inputs, dict):
+        price_inputs = {}
+
+    # For MVP forecast workflow, these are treated as required.
+    if not weather_inputs.get("cutout_file"):
+        errors.append(
+            f"Scenario {scenario_id}: Forecast mode requires forecast.weather_inputs.cutout_file"
+        )
+
+    if not price_inputs.get("gas_curve_file"):
+        errors.append(
+            f"Scenario {scenario_id}: Forecast mode requires forecast.price_inputs.gas_curve_file"
+        )
+
+    # Sensible default warnings
+    if not forecast_cfg.get("horizon_hours"):
+        warnings.append(
+            f"Scenario {scenario_id}: forecast.horizon_hours not set, default horizon will be used"
+        )
+
+    return (len(errors) == 0, errors, warnings)
+
+
 def validate_scenario_complete(scenario_dict):
     """
     Perform complete validation of a scenario.
@@ -157,7 +251,11 @@ def validate_scenario_complete(scenario_dict):
     year = scenario_dict.get("modelled_year") or scenario_dict.get("year")
     
     # Determine type and validate accordingly
-    if is_historical_scenario(year):
+    if is_forecast_scenario(scenario_dict):
+        valid, frc_errors, frc_warnings = validate_forecast_scenario(scenario_dict, "unknown")
+        errors.extend(frc_errors)
+        warnings.extend(frc_warnings)
+    elif is_historical_scenario(year):
         valid, hist_errors, hist_warnings = validate_historical_scenario(scenario_dict, "unknown")
         errors.extend(hist_errors)
         warnings.extend(hist_warnings)
@@ -211,14 +309,25 @@ def summarize_scenario_configuration(scenarios_dict_or_dict):
     
     historical = []
     future = []
+    forecast = []
     dukes_years = set()
     fes_years = set()
     cutout_years = set()
     
     for scenario_id, config in scenarios_to_summarize.items():
         year = config.get("modelled_year") or config.get("year")
-        
-        if is_historical_scenario(year):
+
+        if is_forecast_scenario(config):
+            forecast.append(scenario_id)
+            # Forecast scenarios can provide an external cutout path, but we still
+            # track the configured years for summary output.
+            renewables_year = config.get("renewables_year")
+            if renewables_year:
+                cutout_years.add(renewables_year)
+            demand_year = config.get("demand_year")
+            if demand_year:
+                cutout_years.add(demand_year)
+        elif is_historical_scenario(year):
             historical.append(scenario_id)
             if year:
                 dukes_years.add(year)
@@ -236,6 +345,7 @@ def summarize_scenario_configuration(scenarios_dict_or_dict):
     return {
         "historical": historical,
         "future": future,
+        "forecast": forecast,
         "dukes_years_needed": list(sorted(dukes_years)),
         "fes_years_needed": list(sorted(fes_years)),
         "cutout_years_needed": list(sorted(cutout_years))
@@ -252,6 +362,9 @@ def check_cutout_availability(year):
     Returns:
         bool: True if cutout exists, False otherwise
     """
+    if year is None:
+        return False
+
     # Default cutout location
     cutout_path = Path("resources/atlite") / f"uk-{year}.nc"
     
@@ -344,4 +457,3 @@ def validate_all_active_scenarios(config_path, scenarios_path, check_files=True,
             'total_warnings': total_warnings
         }
     }
-

@@ -19,7 +19,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 from apply_marginal_costs import (
     CARBON_EMISSION_FACTORS,
     HISTORICAL_FUEL_PRICES,
-    PROTECTED_CARRIERS
+    PROTECTED_CARRIERS,
+    apply_time_varying_marginal_costs_to_network,
+    load_forecast_fuel_price_timeseries,
 )
 
 
@@ -278,3 +280,57 @@ class TestEdgeCases:
         # Should not raise
         mc = fuel_price / efficiency
         assert mc > 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEST: Forecast Fuel Price Handling
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestForecastFuelPrices:
+    """Test forecast fuel curve parsing and time-varying MC application."""
+
+    def test_load_forecast_fuel_price_timeseries_and_align_snapshots(self, tmp_path):
+        csv_path = tmp_path / "forecast_curve.csv"
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2026-01-01 00:00", periods=3, freq="2h"),
+                "gas_price_gbp_per_mwh_thermal": [28.0, 32.0, 36.0],
+            }
+        )
+        df.to_csv(csv_path, index=False)
+
+        snapshots = pd.date_range("2026-01-01 00:00", periods=5, freq="h")
+        loaded = load_forecast_fuel_price_timeseries(str(csv_path), snapshots=snapshots)
+
+        assert list(loaded.index) == list(snapshots)
+        assert "gas" in loaded.columns
+        assert loaded["gas"].iloc[0] == pytest.approx(28.0)
+        assert loaded["gas"].iloc[2] == pytest.approx(32.0)
+        assert loaded["gas"].iloc[-1] == pytest.approx(36.0)
+
+    def test_apply_time_varying_marginal_costs_updates_network(self, simple_network):
+        snapshots = pd.DatetimeIndex(simple_network.snapshots)
+        fuel_ts = pd.DataFrame(
+            {
+                "gas": np.linspace(20.0, 30.0, len(snapshots)),
+                "coal": 12.0,
+            },
+            index=snapshots,
+        )
+        fallback_prices = {"gas": 25.0, "coal": 12.0, "oil": 50.0, "biomass": 40.0}
+
+        summary = apply_time_varying_marginal_costs_to_network(
+            network=simple_network,
+            fuel_price_timeseries=fuel_ts,
+            carbon_price=20.0,
+            fallback_fuel_prices=fallback_prices,
+        )
+
+        assert "marginal_cost_mean" in summary.columns
+        assert len(simple_network.generators_t.marginal_cost) == len(snapshots)
+
+        ccgt_series = simple_network.generators_t.marginal_cost["CCGT1"]
+        assert ccgt_series.iloc[-1] > ccgt_series.iloc[0]
+
+        load_shed_series = simple_network.generators_t.marginal_cost["LoadShed"]
+        assert (load_shed_series == 6000).all()

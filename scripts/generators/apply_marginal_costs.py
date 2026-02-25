@@ -6,6 +6,7 @@ This script computes time-varying marginal costs for thermal generators based on
 - Carbon prices (UK ETS + carbon support price)
 - Generator efficiency
 - Emission factors
+- Optional forecast fuel price timeseries for short-term dispatch prediction
 
 The marginal costs are critical for optimization - without them, thermal
 generators have zero cost, leading to unbounded optimization problems.
@@ -140,6 +141,106 @@ HISTORICAL_CARBON_PRICES = {
     2023: 68.0,   # UK ETS ~£50 + UK CPF £18
     2024: 85.0,   # UK ETS ~£65-70 + UK CPF ~£18
 }
+
+
+TIMESTAMP_COLUMN_CANDIDATES = [
+    "snapshot",
+    "timestamp",
+    "datetime",
+    "time",
+    "date",
+]
+
+FORECAST_FUEL_COLUMN_CANDIDATES = {
+    "gas": ["gas", "gas_price", "gas_price_gbp_per_mwh_thermal", "natural_gas", "nbp"],
+    "coal": ["coal", "coal_price", "coal_price_gbp_per_mwh_thermal"],
+    "oil": ["oil", "oil_price", "oil_price_gbp_per_mwh_thermal"],
+    "biomass": ["biomass", "biomass_price", "biomass_price_gbp_per_mwh_thermal"],
+}
+
+
+def _find_matching_column(columns, candidates):
+    """Find matching column by exact or case-insensitive name."""
+    lowered = {str(col).lower(): col for col in columns}
+    for candidate in candidates:
+        if candidate in columns:
+            return candidate
+        if candidate.lower() in lowered:
+            return lowered[candidate.lower()]
+    return None
+
+
+def load_forecast_fuel_price_timeseries(
+    forecast_file: str,
+    snapshots: pd.DatetimeIndex = None,
+) -> pd.DataFrame:
+    """
+    Load forecast fuel price timeseries from CSV and normalize columns.
+
+    Required:
+      - timestamp column (snapshot/timestamp/datetime/time/date)
+      - gas price column
+
+    Optional:
+      - coal, oil, biomass columns
+
+    Parameters
+    ----------
+    forecast_file : str
+        Path to forecast fuel curve CSV.
+    snapshots : pd.DatetimeIndex, optional
+        If provided, align/interpolate data to these snapshots.
+
+    Returns
+    -------
+    pd.DataFrame
+        Time-indexed dataframe with columns among [gas, coal, oil, biomass].
+    """
+    path = Path(forecast_file)
+    if not path.exists():
+        raise FileNotFoundError(f"Forecast fuel price file not found: {forecast_file}")
+
+    df = pd.read_csv(path)
+    if df.empty:
+        raise ValueError(f"Forecast fuel price file is empty: {forecast_file}")
+
+    timestamp_col = _find_matching_column(df.columns, TIMESTAMP_COLUMN_CANDIDATES)
+    if not timestamp_col:
+        raise ValueError(
+            "No timestamp column found in forecast fuel prices. "
+            f"Expected one of: {TIMESTAMP_COLUMN_CANDIDATES}"
+        )
+
+    df[timestamp_col] = pd.to_datetime(df[timestamp_col], errors="coerce", utc=True)
+    df = df[df[timestamp_col].notna()].copy()
+    if len(df) == 0:
+        raise ValueError("No valid timestamps found in forecast fuel price file")
+
+    df[timestamp_col] = df[timestamp_col].dt.tz_convert("UTC").dt.tz_localize(None)
+    df = df.set_index(timestamp_col).sort_index()
+    if df.index.duplicated().any():
+        logger.warning("Duplicate timestamps in forecast fuel prices; averaging duplicates.")
+        df = df.groupby(level=0).mean(numeric_only=True)
+
+    out = pd.DataFrame(index=df.index)
+    for fuel, candidates in FORECAST_FUEL_COLUMN_CANDIDATES.items():
+        col = _find_matching_column(df.columns, candidates)
+        if col:
+            out[fuel] = pd.to_numeric(df[col], errors="coerce")
+
+    if "gas" not in out.columns:
+        raise ValueError(
+            "Forecast fuel price file must contain gas prices. "
+            f"Accepted gas columns: {FORECAST_FUEL_COLUMN_CANDIDATES['gas']}"
+        )
+
+    if snapshots is not None and len(snapshots) > 0:
+        full_index = out.index.union(snapshots).sort_values()
+        out = out.reindex(full_index)
+        out = out.interpolate(method="time").ffill().bfill()
+        out = out.reindex(snapshots)
+
+    return out
 
 
 def get_historical_fuel_prices(year: int) -> dict:
@@ -788,6 +889,111 @@ def apply_marginal_costs_to_network(network: pypsa.Network,
     
     return mc_df
 
+
+def apply_time_varying_marginal_costs_to_network(
+    network: pypsa.Network,
+    fuel_price_timeseries: pd.DataFrame,
+    carbon_price: float,
+    fallback_fuel_prices: dict,
+) -> pd.DataFrame:
+    """
+    Apply time-varying marginal costs to generators.
+
+    The forecast curve can vary by snapshot (typically hourly). Only fuels present
+    in the forecast table (e.g. gas) are overridden; all others fall back to
+    configured/default values.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        Network with generators and snapshots.
+    fuel_price_timeseries : pd.DataFrame
+        Time-indexed table with columns among [gas, coal, oil, biomass].
+    carbon_price : float
+        Carbon price in £/tonne CO2.
+    fallback_fuel_prices : dict
+        Default fuel prices from config (used for missing columns/fuels).
+
+    Returns
+    -------
+    pd.DataFrame
+        Per-generator summary with min/mean/max marginal cost.
+    """
+    if len(network.snapshots) == 0:
+        raise ValueError("Network has no snapshots; cannot apply time-varying marginal costs")
+
+    snapshots = pd.DatetimeIndex(network.snapshots)
+    if len(fuel_price_timeseries) == 0:
+        raise ValueError("Forecast fuel price timeseries is empty")
+
+    # Align to snapshots and fill gaps.
+    ts = fuel_price_timeseries.copy()
+    full_index = ts.index.union(snapshots).sort_values()
+    ts = ts.reindex(full_index).interpolate(method="time").ffill().bfill().reindex(snapshots)
+
+    generators = network.generators.copy()
+    if "carrier" not in generators.columns:
+        raise ValueError("Network generators table has no 'carrier' column")
+
+    carriers = generators["carrier"].fillna("unknown")
+    efficiencies = pd.to_numeric(generators.get("efficiency", 1.0), errors="coerce").fillna(1.0)
+    efficiencies = efficiencies.clip(lower=1e-3, upper=1.0)
+    emission_factors = carriers.map(CARBON_EMISSION_FACTORS).fillna(0.0)
+    protected_mask = carriers.isin(PROTECTED_CARRIERS)
+    protected_costs = pd.to_numeric(generators.get("marginal_cost", 0.0), errors="coerce").fillna(0.0)
+
+    mc_ts = pd.DataFrame(index=snapshots, columns=generators.index, dtype=float)
+
+    for snapshot in snapshots:
+        # Build per-snapshot fuel price map, then expand to carrier aliases.
+        base_prices = dict(fallback_fuel_prices)
+        row = ts.loc[snapshot]
+        for fuel in ["gas", "coal", "oil", "biomass"]:
+            if fuel in row.index and pd.notna(row[fuel]):
+                base_prices[fuel] = float(row[fuel])
+        expanded_prices = _expand_fuel_prices(base_prices)
+
+        fuel_prices_for_gens = carriers.map(expanded_prices).fillna(0.0).astype(float)
+        fuel_component = fuel_prices_for_gens / efficiencies
+        carbon_component = (emission_factors * carbon_price / 1000.0) / efficiencies
+        mc = fuel_component + carbon_component
+
+        # Never override protected carriers (especially load shedding VOLL).
+        mc[protected_mask] = protected_costs[protected_mask]
+        mc_ts.loc[snapshot] = mc.values
+
+    # PyPSA uses generators_t.marginal_cost for time-dependent costs.
+    network.generators_t.marginal_cost = mc_ts
+
+    # Keep static marginal_cost populated for compatibility with existing checks.
+    network.generators.loc[:, "marginal_cost"] = mc_ts.iloc[0].astype(float)
+
+    summary = pd.DataFrame({
+        "generator": generators.index,
+        "carrier": carriers.values,
+        "p_nom_MW": pd.to_numeric(generators.get("p_nom", 0.0), errors="coerce").fillna(0.0).values,
+        "protected": protected_mask.values,
+        "marginal_cost_first_snapshot": mc_ts.iloc[0].values,
+        "marginal_cost_mean": mc_ts.mean(axis=0).values,
+        "marginal_cost_min": mc_ts.min(axis=0).values,
+        "marginal_cost_max": mc_ts.max(axis=0).values,
+    })
+
+    logger.info(
+        "Applied time-varying marginal costs for %d generators across %d snapshots",
+        len(generators),
+        len(snapshots),
+    )
+    if "gas" in ts.columns:
+        logger.info(
+            "Forecast gas price range used: £%.2f to £%.2f/MWh thermal",
+            float(ts["gas"].min()),
+            float(ts["gas"].max()),
+        )
+
+    return summary
+
+
 def main():
     """Main execution function."""
     global logger
@@ -818,16 +1024,40 @@ def main():
             scenario_config['_fuel_price_file'] = snakemake.params.fuel_price_file
         if hasattr(snakemake.params, 'carbon_price_file') and snakemake.params.carbon_price_file:
             scenario_config['_carbon_price_file'] = snakemake.params.carbon_price_file
+        forecast_fuel_price_file = (
+            snakemake.params.forecast_fuel_price_file
+            if hasattr(snakemake.params, "forecast_fuel_price_file")
+            else None
+        )
 
         # Load fuel prices and carbon price
         fuel_prices = load_fuel_prices(scenario_config)
         carbon_price = get_carbon_price(scenario_config)
-        
-        # Apply marginal costs
-        marginal_cost_df = apply_marginal_costs_to_network(
-            network, fuel_prices, carbon_price
-        )
-        
+
+        mode = str(scenario_config.get("mode", "standard")).lower()
+        forecast_cfg = scenario_config.get("forecast", {})
+        forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+        is_forecast_mode = mode == "forecast" or forecast_enabled
+
+        if is_forecast_mode and forecast_fuel_price_file:
+            logger.info("Forecast mode detected: applying time-varying marginal costs")
+            forecast_ts = load_forecast_fuel_price_timeseries(
+                forecast_fuel_price_file,
+                snapshots=pd.DatetimeIndex(network.snapshots),
+            )
+            fallback_prices = load_marginal_cost_config(scenario_config)["fuel_prices"]
+            marginal_cost_df = apply_time_varying_marginal_costs_to_network(
+                network=network,
+                fuel_price_timeseries=forecast_ts,
+                carbon_price=carbon_price,
+                fallback_fuel_prices=fallback_prices,
+            )
+        else:
+            # Default behavior: static costs by carrier.
+            marginal_cost_df = apply_marginal_costs_to_network(
+                network, fuel_prices, carbon_price
+            )
+
         # Save marginal cost breakdown
         output_csv = snakemake.output.marginal_costs_csv
         marginal_cost_df.to_csv(output_csv, index=False)
@@ -848,4 +1078,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

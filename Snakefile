@@ -29,6 +29,7 @@ PREREQUISITES:
 
 import yaml
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Add scripts directory to Python path for imports
@@ -84,6 +85,79 @@ print(f"Active scenarios: {run_ids}")
 unknown = set(run_ids) - set(scenarios)
 if unknown:
     raise ValueError(f"Unknown scenario IDs: {unknown}. Check scenarios_master.yaml for valid IDs.")
+
+
+def _is_forecast_mode(scenario_cfg):
+    """Return True if scenario is configured as forecast mode."""
+    mode = str(scenario_cfg.get("mode", "standard")).lower()
+    forecast_cfg = scenario_cfg.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
+
+
+def _parse_iso_datetime(value):
+    """Parse datetime from CLI/config value and normalize to naive UTC."""
+    raw = str(value).strip()
+    raw = raw.replace("Z", "+00:00")
+    dt = datetime.fromisoformat(raw)
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
+def _apply_forecast_window_overrides():
+    """
+    Apply runtime forecast overrides from Snakemake --config args.
+
+    Supported overrides:
+      - forecast_issue_time=YYYY-MM-DDTHH:MM
+      - forecast_horizon_hours=<int>
+    """
+    cli_issue_time = config.get("forecast_issue_time")
+    cli_horizon = config.get("forecast_horizon_hours")
+
+    if cli_issue_time is None and cli_horizon is None:
+        return
+
+    for rid in run_ids:
+        if rid not in scenarios:
+            continue
+        scenario_cfg = scenarios[rid]
+        if not _is_forecast_mode(scenario_cfg):
+            continue
+
+        forecast_cfg = scenario_cfg.setdefault("forecast", {})
+        if cli_issue_time is not None:
+            forecast_cfg["issue_time_utc"] = str(cli_issue_time)
+        if cli_horizon is not None:
+            forecast_cfg["horizon_hours"] = int(cli_horizon)
+
+        issue_time_utc = forecast_cfg.get("issue_time_utc")
+        horizon_hours = int(forecast_cfg.get("horizon_hours", 24))
+        if not issue_time_utc or horizon_hours <= 0:
+            continue
+
+        start_dt = _parse_iso_datetime(issue_time_utc)
+        end_dt = start_dt + timedelta(hours=horizon_hours - 1)
+
+        solve_period = scenario_cfg.setdefault("solve_period", {})
+        solve_period["enabled"] = True
+        solve_period["start"] = start_dt.strftime("%Y-%m-%d %H:%M")
+        solve_period["end"] = end_dt.strftime("%Y-%m-%d %H:%M")
+
+        # Keep scenario years aligned with forecast issue year for dispatch windowing.
+        # Do not force demand_year here: forecast runs typically use a fixed
+        # historical demand baseline year (e.g. ESPENI 2020/2024).
+        scenario_cfg["modelled_year"] = start_dt.year
+        scenario_cfg["renewables_year"] = start_dt.year
+
+        print(
+            f"[FORECAST OVERRIDE] {rid}: issue={issue_time_utc}, "
+            f"horizon={horizon_hours}h, solve_period={solve_period['start']}→{solve_period['end']}"
+        )
+
+
+_apply_forecast_window_overrides()
 
 # ------------------------------------------------------------------------------
 # SCENARIO AUTO-CONFIGURATION AND VALIDATION
@@ -162,6 +236,9 @@ if summary['historical']:
 if summary['future']:
     print(f"  Future scenarios ({len(summary['future'])}): {', '.join(summary['future'])}")
     print(f"      -> Downloading FES data for years: {summary['fes_years_needed']}")
+if summary.get('forecast'):
+    print(f"  Forecast scenarios ({len(summary['forecast'])}): {', '.join(summary['forecast'])}")
+    print("      -> Using external forecast weather + fuel curve inputs")
 print(f"  Weather cutouts needed for years: {summary['cutout_years_needed']}")
 print()
 

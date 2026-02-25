@@ -319,8 +319,20 @@ def main():
             import re
             match = re.search(r'(\d{4})', Path(path).stem)
             return int(match.group(1)) if match else None
-        
-        cutout_by_year = {extract_year_from_path(f): f for f in cutout_files}
+
+        # Prefer explicit mapping from Snakemake params for forecast/custom cutouts.
+        cutout_by_year = {}
+        explicit_cutout_map = getattr(snakemake.params, "cutout_year_map", None)
+        if isinstance(explicit_cutout_map, dict) and explicit_cutout_map:
+            for key, value in explicit_cutout_map.items():
+                try:
+                    cutout_by_year[int(key)] = value
+                except (TypeError, ValueError):
+                    logger.warning(f"Invalid cutout year key in cutout_year_map: {key}")
+
+        if not cutout_by_year:
+            cutout_by_year = {extract_year_from_path(f): f for f in cutout_files}
+
         onshore_output_by_year = {extract_year_from_path(f): f for f in onshore_outputs}
         offshore_output_by_year = {extract_year_from_path(f): f for f in offshore_outputs}
         solar_output_by_year = {extract_year_from_path(f): f for f in solar_outputs}
@@ -400,4 +412,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

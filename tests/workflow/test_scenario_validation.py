@@ -17,6 +17,14 @@ import subprocess
 from pathlib import Path
 
 
+def _is_forecast_scenario(scenario):
+    """Return True when scenario is configured in forecast mode."""
+    mode = str(scenario.get("mode", "standard")).lower()
+    forecast_cfg = scenario.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
+
+
 @pytest.fixture
 def project_root():
     """Get the project root directory."""
@@ -157,7 +165,7 @@ class TestFutureScenarioValidation:
             modelled_year = scenario.get('modelled_year')
             
             # Future scenarios should have FES config
-            if modelled_year and modelled_year > 2024:
+            if modelled_year and modelled_year > 2024 and not _is_forecast_scenario(scenario):
                 assert 'FES_year' in scenario, \
                     f"Scenario {scenario_id}: future scenario missing FES_year"
                 assert 'FES_scenario' in scenario, \
@@ -171,7 +179,7 @@ class TestFutureScenarioValidation:
             modelled_year = scenario.get('modelled_year')
             
             # Future scenarios should have historical base years
-            if modelled_year and modelled_year > 2024:
+            if modelled_year and modelled_year > 2024 and not _is_forecast_scenario(scenario):
                 renewables_year = scenario.get('renewables_year')
                 demand_year = scenario.get('demand_year')
                 
@@ -386,4 +394,3 @@ class TestErrorDetection:
             for field in required_fields:
                 assert field in scenario, \
                     f"{scenario_id}: missing required field {field}"
-

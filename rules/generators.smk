@@ -26,6 +26,15 @@ Data update points:
 # Import scenario detection utility
 from scripts.utilities.scenario_detection import is_historical_scenario
 
+
+def _scenario_is_forecast_cfg(scenario_cfg):
+    """Return True when scenario config is forecast mode."""
+    mode = str(scenario_cfg.get("mode", "standard")).lower()
+    forecast_cfg = scenario_cfg.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
+
+
 # === Extract lists of key inputs ===
 def _extract_from_scenarios(key, default=None):
     """Extract values from active scenarios, skipping those without the key."""
@@ -73,8 +82,23 @@ def get_generator_data_sources(wildcards):
     modelled_year = scenario_config['modelled_year']
     
     inputs = {}
-    
-    if is_historical_scenario(scenario_config):
+
+    if _scenario_is_forecast_cfg(scenario_config):
+        # Forecast: use latest available historical DUKES fleet as baseline.
+        forecast_cfg = scenario_config.get("forecast", {})
+        default_dukes_year = min(int(modelled_year), 2024)
+        baseline_year = (
+            forecast_cfg.get("generator_baseline_year")
+            if isinstance(forecast_cfg, dict)
+            else None
+        )
+        try:
+            dukes_year = int(baseline_year) if baseline_year is not None else default_dukes_year
+        except (TypeError, ValueError):
+            dukes_year = default_dukes_year
+        dukes_year = max(2004, min(2024, dukes_year))
+        inputs['dukes_data'] = f"{resources_path}/generators/DUKES/DUKES_{dukes_year}_generators.csv"
+    elif is_historical_scenario(scenario_config):
         # Historical: Use DUKES ONLY (no FES fallback)
         inputs['dukes_data'] = f"{resources_path}/generators/DUKES/DUKES_{modelled_year}_generators.csv"
     else:
@@ -108,7 +132,7 @@ def get_renewable_data_sources(wildcards):
     
     inputs = {}
     
-    if is_historical_scenario(scenario_config):
+    if is_historical_scenario(scenario_config) or _scenario_is_forecast_cfg(scenario_config):
         # Historical: Use REPD site data for individual renewable generators
         inputs['use_fes'] = False
         inputs['wind_onshore_sites'] = f"{resources_path}/renewable/wind_onshore_sites.csv"
@@ -150,6 +174,34 @@ def get_renewable_profiles(wildcards):
         f"{resources_path}/renewable/profiles/small_hydro_{renewables_year}.csv",
     ]
     return profiles
+
+
+def _is_forecast_mode(scenario_id):
+    """Return True when scenario is configured as forecast mode."""
+    scenario_cfg = scenarios.get(scenario_id, {})
+    return _scenario_is_forecast_cfg(scenario_cfg)
+
+
+def _get_forecast_gas_curve_file(scenario_id):
+    """Get raw forecast gas curve path from scenario config, or None."""
+    scenario_cfg = scenarios.get(scenario_id, {})
+    forecast_cfg = scenario_cfg.get("forecast", {})
+    if not isinstance(forecast_cfg, dict):
+        return None
+    price_inputs = forecast_cfg.get("price_inputs", {})
+    if not isinstance(price_inputs, dict):
+        return None
+    curve_file = price_inputs.get("gas_curve_file")
+    if _is_forecast_mode(scenario_id) and not curve_file:
+        raise ValueError(
+            f"Scenario '{scenario_id}' is forecast mode but forecast.price_inputs.gas_curve_file is missing."
+        )
+    return curve_file
+
+
+def _get_forecast_fuel_prices_output(scenario_id):
+    """Get standardized forecast fuel prices output path for scenario."""
+    return f"{resources_path}/marginal_costs/forecast_fuel_prices_{scenario_id}.csv"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -735,13 +787,13 @@ rule add_renewables_to_network:
         shoreline_wave_sites=f"{resources_path}/renewable/shoreline_wave_sites.csv",
         tidal_lagoon_sites=f"{resources_path}/renewable/tidal_lagoon_sites.csv",
         # FES data (for future scenarios - use function to get conditional path)
-        fes_data=lambda wildcards: f"{resources_path}/FES/FES_{scenarios[wildcards.scenario].get('FES_year', 2025)}_data.csv" if not is_historical_scenario(scenarios[wildcards.scenario]) else []
+        fes_data=lambda wildcards: f"{resources_path}/FES/FES_{scenarios[wildcards.scenario].get('FES_year', 2025)}_data.csv" if (not is_historical_scenario(scenarios[wildcards.scenario]) and not _is_forecast_mode(wildcards.scenario)) else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables.pkl",
         summary=f"{resources_path}/generators/{{scenario}}_renewables_summary.csv"
     params:
         scenario_config=lambda wildcards: scenarios.get(wildcards.scenario, {}),
-        is_historical=lambda wildcards: is_historical_scenario(scenarios.get(wildcards.scenario, {}))
+        is_historical=lambda wildcards: is_historical_scenario(scenarios.get(wildcards.scenario, {})) or _is_forecast_mode(wildcards.scenario)
     log:
         "logs/integrate_renewable_generators_{scenario}.log"
     benchmark:
@@ -955,6 +1007,34 @@ rule finalize_generator_integration:
 # MARGINAL COST CALCULATION
 # ══════════════════════════════════════════════════════════════════════════════
 
+rule prepare_forecast_fuel_prices:
+    """
+    Normalize external forecast fuel curves for forecast-mode scenarios.
+
+    This rule standardizes user-provided commodity forecast data to a canonical
+    format used by apply_marginal_costs.py:
+      snapshot, gas, coal, oil, biomass
+
+    It is only required when mode=forecast.
+    """
+    input:
+        raw_curve=lambda w: _get_forecast_gas_curve_file(w.scenario) if _is_forecast_mode(w.scenario) else []
+    output:
+        forecast_fuel_prices=f"{resources_path}/marginal_costs/forecast_fuel_prices_{{scenario}}.csv"
+    params:
+        scenario_config=lambda w: scenarios[w.scenario]
+    log:
+        "logs/forecast_fuel_prices_{scenario}.log"
+    benchmark:
+        "benchmarks/generators/forecast_fuel_prices_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    script:
+        "../scripts/generators/prepare_forecast_fuel_prices.py"
+
+
 rule apply_marginal_costs_to_network:
     """
     Compute and apply marginal costs to thermal generators.
@@ -1024,7 +1104,8 @@ rule apply_marginal_costs_to_network:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
         # Optional: FES price inputs for future scenarios (>2024)
         fuel_prices=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
-        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else []
+        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
+        forecast_fuel_prices=lambda w: _get_forecast_fuel_prices_output(w.scenario) if _is_forecast_mode(w.scenario) else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_costs.pkl",
         marginal_costs_csv=f"{resources_path}/generators/{{scenario}}_marginal_costs_breakdown.csv"
@@ -1032,7 +1113,8 @@ rule apply_marginal_costs_to_network:
         scenario_config=lambda w: scenarios[w.scenario],
         # Optional: Pass FES price file paths to script for dynamic price loading
         fuel_price_file=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
-        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None
+        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
+        forecast_fuel_price_file=lambda w: _get_forecast_fuel_prices_output(w.scenario) if _is_forecast_mode(w.scenario) else None
     log:
         "logs/marginal_costs_{scenario}.log"
     benchmark:
@@ -1150,4 +1232,3 @@ rule add_generators:
 # Configuration is now via config/defaults.yaml and config/scenarios.yaml.
 # See documentation for details.
 # =============================================================================
-

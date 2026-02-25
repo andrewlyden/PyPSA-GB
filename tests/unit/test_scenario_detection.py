@@ -15,8 +15,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 
 from scenario_detection import (
+    is_forecast_scenario,
     is_historical_scenario,
     auto_configure_scenario,
+    validate_forecast_scenario,
     validate_scenario_complete,
     check_cutout_availability,
 )
@@ -82,6 +84,28 @@ def boundary_scenario_2025():
     }
 
 
+@pytest.fixture
+def forecast_scenario():
+    """Create a forecast-mode scenario."""
+    return {
+        'mode': 'forecast',
+        'forecast': {
+            'enabled': True,
+            'horizon_hours': 24,
+            'weather_inputs': {
+                'cutout_file': 'resources/atlite/cutouts/uk-2026.nc'
+            },
+            'price_inputs': {
+                'gas_curve_file': 'data/forecast/example_gas_curve.csv'
+            },
+        },
+        'modelled_year': 2026,
+        'renewables_year': 2026,
+        'demand_year': 2024,
+        'network_model': 'Reduced',
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST: is_historical_scenario
 # ══════════════════════════════════════════════════════════════════════════════
@@ -128,6 +152,30 @@ class TestIsHistoricalScenario:
         assert is_historical_scenario(scenario) is False
 
 
+class TestForecastScenarioDetection:
+    """Test forecast-mode detection and validation."""
+
+    def test_detects_forecast_mode(self, forecast_scenario):
+        assert is_forecast_scenario(forecast_scenario) is True
+
+    def test_forecast_is_not_classified_as_historical(self, forecast_scenario):
+        assert is_historical_scenario(forecast_scenario) is False
+
+    def test_validate_forecast_scenario_passes_with_required_inputs(self, forecast_scenario):
+        valid, errors, warnings = validate_forecast_scenario(forecast_scenario, "Forecast_Test")
+        assert valid is True
+        assert errors == []
+        assert isinstance(warnings, list)
+
+    def test_validate_forecast_scenario_fails_without_inputs(self, forecast_scenario):
+        broken = dict(forecast_scenario)
+        broken['forecast'] = {'enabled': True}
+        valid, errors, _ = validate_forecast_scenario(broken, "Forecast_Test")
+        assert valid is False
+        assert any("cutout_file" in msg for msg in errors)
+        assert any("gas_curve_file" in msg for msg in errors)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST: auto_configure_scenario
 # ══════════════════════════════════════════════════════════════════════════════
@@ -165,6 +213,14 @@ class TestAutoConfigureScenario:
         
         assert historical_scenario['modelled_year'] == original_year
 
+    def test_forecast_adds_forecast_routing_metadata(self, forecast_scenario):
+        configured = auto_configure_scenario(forecast_scenario)
+        assert configured.get("data_source") == "forecast"
+        assert configured.get("generator_data_source") == "FORECAST"
+        assert configured.get("demand_source") == "forecast"
+        assert configured.get("_needs_fes") is False
+        assert configured.get("_is_forecast") is True
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST: validate_scenario_complete
@@ -187,6 +243,12 @@ class TestValidateScenarioComplete:
         assert isinstance(result, dict)
         assert 'errors' in result
         assert len(result['errors']) == 0  # No errors for valid scenario
+
+    def test_valid_forecast_scenario_passes(self, forecast_scenario):
+        result = validate_scenario_complete(forecast_scenario)
+        assert isinstance(result, dict)
+        assert 'errors' in result
+        assert len(result['errors']) == 0
     
     def test_missing_modelled_year_fails(self):
         """Test that missing modelled_year fails validation."""

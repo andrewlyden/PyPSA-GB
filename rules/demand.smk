@@ -37,10 +37,40 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 def scenario_is_historical(scenario_id):
-    """Check if a scenario is historical (modelled_year <= 2024)."""
+    """Check if a scenario should follow historical demand routing (no FES)."""
+    if scenario_is_forecast(scenario_id):
+        return True
+
     scenario = scenarios.get(scenario_id, {})
     modelled_year = scenario.get("modelled_year", 2035)
     return modelled_year <= 2024
+
+
+def scenario_is_forecast(scenario_id):
+    """Check if a scenario runs in forecast mode."""
+    scenario = scenarios.get(scenario_id, {})
+    mode = str(scenario.get("mode", "standard")).lower()
+    forecast_cfg = scenario.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
+
+
+def get_weather_cutout_input(wildcards):
+    """Get weather cutout input path, with forecast override support."""
+    scenario_id = wildcards.scenario
+    scenario = scenarios.get(scenario_id, {})
+
+    if scenario_is_forecast(scenario_id):
+        forecast_cfg = scenario.get("forecast", {})
+        if isinstance(forecast_cfg, dict):
+            weather_inputs = forecast_cfg.get("weather_inputs", {})
+            if isinstance(weather_inputs, dict):
+                custom_cutout = weather_inputs.get("cutout_file")
+                if custom_cutout:
+                    return custom_cutout
+
+    renewables_year = scenario.get("renewables_year", 2020)
+    return f"{resources_path}/atlite/cutouts/uk-{renewables_year}.nc"
 
 
 def get_fes_data_input(wildcards):
@@ -529,9 +559,7 @@ rule build_heat_profiles_atlite:
     Performance: ~30-60 seconds depending on cutout size
     """
     input:
-        cutout=lambda wildcards: (
-            f"{resources_path}/atlite/cutouts/uk-{scenarios[wildcards.scenario].get('renewables_year', 2020)}.nc"
-        ),
+        cutout=get_weather_cutout_input,
         network=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl"
     output:
         heat_demand=f"{resources_path}/demand/heat_demand_{{scenario}}.nc",

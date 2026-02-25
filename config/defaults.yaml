@@ -14,6 +14,11 @@ voll: 6000.0                      # Value of Lost Load (£/MWh)
 # ──────────────────────────────────────────────────────────────────────────────
 # DATA SOURCES
 # ──────────────────────────────────────────────────────────────────────────────
+# Scenario mode:
+#   "standard" - Existing historical/future scenario workflow
+#   "forecast" - External forecast-driven workflow (future weather + commodity curves)
+mode: "standard"
+
 # Temporal profile source for demand (annual totals always from FES for future scenarios)
 # Options:
 #   "ESPENI"    - Historical half-hourly GB demand (recommended, uses demand_year)
@@ -22,6 +27,26 @@ voll: 6000.0                      # Value of Lost Load (£/MWh)
 # 
 # For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
 demand_timeseries: "ESPENI"
+
+# Forecast-mode configuration (used when mode: "forecast")
+forecast:
+  enabled: false
+  # Optional DUKES baseline year used for thermal fleet in forecast mode.
+  # If null, model chooses min(modelled_year, 2024).
+  generator_baseline_year: null
+  # Optional override for run-time rolling dispatch windows.
+  issue_time_utc: null
+  horizon_hours: 24
+  rolling_step_hours: 24
+  weather_inputs:
+    # Path to an atlite-compatible cutout NetCDF used for forecasted weather.
+    # Example: resources/atlite/cutouts/uk-2026.nc
+    cutout_file: null
+  price_inputs:
+    # Path to forecast commodity curve CSV. Required columns:
+    #   timestamp + gas (or gas_price_gbp_per_mwh_thermal).
+    # Optional columns: coal, oil, biomass.
+    gas_curve_file: null
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SOLVER CONFIGURATION

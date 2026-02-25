@@ -237,14 +237,28 @@ def validate_scenario(scenario: Dict[str, Any]) -> List[str]:
     for field in required:
         if field not in scenario:
             errors.append(f"[{scenario_id}] Missing required field: {field}")
+
+    mode = str(scenario.get("mode", "standard")).lower()
+    forecast_cfg = scenario.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    is_forecast_mode = mode == "forecast" or forecast_enabled
     
     # Future scenarios need FES config
     modelled_year = scenario.get("modelled_year", 0)
-    if modelled_year > 2024:
+    if modelled_year > 2024 and not is_forecast_mode:
         if "FES_year" not in scenario:
             errors.append(f"[{scenario_id}] Future scenario (year {modelled_year}) requires FES_year")
         if "FES_scenario" not in scenario:
             errors.append(f"[{scenario_id}] Future scenario (year {modelled_year}) requires FES_scenario")
+
+    # Forecast scenarios need explicit external inputs for MVP workflow
+    if is_forecast_mode:
+        weather_inputs = forecast_cfg.get("weather_inputs", {}) if isinstance(forecast_cfg, dict) else {}
+        price_inputs = forecast_cfg.get("price_inputs", {}) if isinstance(forecast_cfg, dict) else {}
+        if not weather_inputs.get("cutout_file"):
+            errors.append(f"[{scenario_id}] Forecast scenario requires forecast.weather_inputs.cutout_file")
+        if not price_inputs.get("gas_curve_file"):
+            errors.append(f"[{scenario_id}] Forecast scenario requires forecast.price_inputs.gas_curve_file")
     
     # Validate network_model
     valid_networks = ["ETYS", "Reduced", "Zonal"]

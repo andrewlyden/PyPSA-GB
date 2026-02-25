@@ -36,6 +36,8 @@ TECHNOLOGIES COVERED:
 
 """
 
+from pathlib import Path
+
 # ══════════════════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════════════════════
@@ -63,36 +65,73 @@ def _get_required_cutout_years():
             if sid in scenarios:
                 sc = scenarios[sid]
                 years.add(sc.get("renewables_year", 2020))
-                years.add(sc.get("demand_year", 2020))
     except Exception as e:
         print(f"Warning: Could not determine required years: {e}")
         years.add(2020)
     return years
 
 
+def _is_forecast_mode(scenario_cfg):
+    """Return True for forecast-mode scenarios."""
+    mode = str(scenario_cfg.get("mode", "standard")).lower()
+    forecast_cfg = scenario_cfg.get("forecast", {})
+    forecast_enabled = isinstance(forecast_cfg, dict) and forecast_cfg.get("enabled", False)
+    return mode == "forecast" or forecast_enabled
+
+
+def _get_forecast_cutout_override(scenario_cfg):
+    """Get scenario-level forecast cutout override path, if configured."""
+    forecast_cfg = scenario_cfg.get("forecast", {})
+    if not isinstance(forecast_cfg, dict):
+        return None
+    weather_inputs = forecast_cfg.get("weather_inputs", {})
+    if not isinstance(weather_inputs, dict):
+        return None
+    return weather_inputs.get("cutout_file")
+
+
+def _build_cutout_map():
+    """
+    Build mapping {year -> cutout_file_path}.
+
+    Standard scenarios map to resources/atlite/cutouts/uk-{year}.nc.
+    Forecast scenarios can override with forecast.weather_inputs.cutout_file.
+    """
+    mapping = {}
+    for sid in run_ids:
+        if sid not in scenarios:
+            continue
+        sc = scenarios[sid]
+        renewables_y = sc.get("renewables_year", 2020)
+        years = {renewables_y}
+
+        override = None
+        if _is_forecast_mode(sc):
+            override = _get_forecast_cutout_override(sc)
+
+        for year in years:
+            target = override if override else f"{atlite_cutouts_path}/uk-{year}.nc"
+            if year in mapping and mapping[year] != target:
+                raise ValueError(
+                    f"Conflicting cutout paths for year {year}: "
+                    f"{mapping[year]} vs {target}. "
+                    "Use unique renewables_year values per forecast scenario."
+                )
+            mapping[year] = target
+
+    if not mapping:
+        mapping[2020] = f"{atlite_cutouts_path}/uk-2020.nc"
+    return mapping
+
+
 def _get_available_cutouts():
     """List existing cutout files for required years, error if missing."""
-    from pathlib import Path
-    import sys
-    
-    # Add scripts to path for imports
-    sys.path.insert(0, 'scripts')
-    from scripts.utilities.scenario_detection import check_cutout_availability, is_historical_scenario
-
-    cutout_dir = Path(atlite_cutouts_path)
-    if not cutout_dir.exists():
-        raise FileNotFoundError(
-            "Cutout directory not found: "
-            f"{cutout_dir}\n"
-            "Generate cutouts first: snakemake -s Snakefile_cutouts --cores 4"
-        )
-
-    req_years = _get_required_cutout_years()
+    req_map = _build_cutout_map()
     have, missing = [], []
     missing_details = []
     
-    for y in sorted(req_years):
-        p = cutout_dir / f"uk-{y}.nc"
+    for y in sorted(req_map):
+        p = Path(req_map[y])
         if p.exists():
             have.append(str(p))
         else:
@@ -105,9 +144,11 @@ def _get_available_cutouts():
             ]
             
             if scenarios_needing_year:
-                scenario_type = "HISTORICAL" if y <= 2024 else "FUTURE"
+                scenario_type = "FORECAST" if any(
+                    _is_forecast_mode(scenarios[sid]) for sid in scenarios_needing_year
+                ) else ("HISTORICAL" if y <= 2024 else "FUTURE")
                 missing_details.append(
-                    f"  • uk-{y}.nc (required by {', '.join(scenarios_needing_year)}) [{scenario_type}]"
+                    f"  • {p} (required by {', '.join(scenarios_needing_year)}) [{scenario_type}]"
                 )
 
     if missing:
@@ -118,10 +159,10 @@ def _get_available_cutouts():
             f"Required cutout files not found:\n" +
             "\n".join(missing_details) + "\n\n" +
             "🔧 SOLUTION:\n"
-            "1. Update config/cutouts_config.yaml to include missing years:\n"
-            f"   years_to_process: {sorted(list(req_years))}\n\n"
-            "2. Run cutout generation workflow:\n"
+            "1. For standard scenarios, generate yearly cutouts via:\n"
             "   snakemake -s Snakefile_cutouts --cores 2\n\n"
+            "2. For forecast scenarios, set forecast.weather_inputs.cutout_file\n"
+            "   to an existing atlite-compatible NetCDF cutout path.\n\n"
             "This will download and process ERA5 weather data for the required years.\n"
             "Note: Cutout generation can take 30-60 minutes per year.\n"
             "=" * 80
@@ -133,7 +174,8 @@ def _get_available_cutouts():
 
 # Static lists used by rules
 required_years = _get_required_cutout_years()
-expected_cutouts = [f"{atlite_cutouts_path}/uk-{y}.nc" for y in sorted(required_years)]
+cutout_map = _build_cutout_map()
+expected_cutouts = [cutout_map[y] for y in sorted(cutout_map)]
 
 # Early check (fail-fast) for missing cutouts
 try:
@@ -288,7 +330,8 @@ rule generate_renewable_profiles:
         # - Storage technologies: modeled as storage units, not generators
     params:
         renewables_year=lambda wc: sorted(required_years),
-        scenario_configs=lambda wc: {rid: {} for rid in ["HT35"]}
+        scenario_configs=lambda wc: {rid: {} for rid in ["HT35"]},
+        cutout_year_map=lambda wc: {str(k): v for k, v in cutout_map.items()}
     log:
         expand(
             "logs/generate_renewable_profiles_optimized_{renewables_year}.log",
