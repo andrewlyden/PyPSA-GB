@@ -848,12 +848,12 @@ document.write(`
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kmeans&quot;</span>
 <span class="w">    </span><span class="nt">n_clusters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="w">    </span><span class="c1"># Optional: post-clustering component aggregation</span>
-<span class="w">    </span><span class="nt">aggregate_components</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">      </span><span class="nt">include_loads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># merge loads per bus</span>
-<span class="w">      </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical storage units</span>
-<span class="w">      </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Store components</span>
+<span class="w">  </span><span class="c1"># Component aggregation — top-level config, runs for ALL scenarios at finalization</span>
+<span class="w">  </span><span class="nt">component_aggregation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">include_loads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># merge loads per bus</span>
+<span class="w">    </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical storage units</span>
+<span class="w">    </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Store components</span>
 </pre></div>
 </div>
 </section>
@@ -892,7 +892,7 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<
     </pre></section>
 <section id="generator-storage-aggregation-optional">
 <h3>2. Generator &amp; Storage Aggregation (optional)<a class="headerlink" href="#generator-storage-aggregation-optional" title="Link to this heading">#</a></h3>
-<p>If <code class="docutils literal notranslate"><span class="pre">aggregate_components.enabled:</span> <span class="pre">true</span></code>, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. Dispatch is unchanged, but asset count drops sharply (useful for memory).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">component_aggregation.enabled:</span> <span class="pre">true</span></code> (a top-level config, not nested under <code class="docutils literal notranslate"><span class="pre">clustering</span></code>), identical generators and/or storage are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. This runs in <code class="docutils literal notranslate"><span class="pre">finalize_network.py</span></code> for <strong>all</strong> scenarios — independent of whether clustering is enabled.</p>
 </section>
 <section id="line-aggregation">
 <h3>3. Line Aggregation<a class="headerlink" href="#line-aggregation" title="Link to this heading">#</a></h3>
@@ -1055,7 +1055,7 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered.nc<span class=
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>Enable <code class="docutils literal notranslate"><span class="pre">aggregate_components</span></code> to reduce asset count after clustering.</p></li>
+<li><p>Enable <code class="docutils literal notranslate"><span class="pre">component_aggregation</span></code> to reduce asset count after clustering.</p></li>
 <li><p>Shorten <code class="docutils literal notranslate"><span class="pre">solve_period</span></code> or increase <code class="docutils literal notranslate"><span class="pre">timestep_minutes</span></code> to reduce time steps during solve.</p></li>
 </ul>
 </section>

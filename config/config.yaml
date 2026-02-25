@@ -56,7 +56,13 @@ run_scenarios:
   # - HT30_event_response
 
   # ─── Tutorial scenarios used in documentation ───
-  - Historical_2015_reduced
-  - Historical_2023_etys
-  - HT35_clustered
-  - EE50_clustered
+  # - Historical_2015_reduced
+  # - Historical_2023_etys
+  # - HT35_clustered
+  # - EE50_clustered
+
+  # ─── Aggregation test (run both to compare generator/component counts) ───
+  - Test_Agg_Historical        # REPD path: renewable + component agg ON
+  - Test_NoAgg_Historical      # REPD path: both OFF (baseline)
+  - Test_Agg_Future              # FES path:  renewable + component agg ON
+  - Test_NoAgg_Future            # FES path:  both OFF (baseline)

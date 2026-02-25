@@ -528,10 +528,12 @@ document.write(`
 <span class="c1"># Clustering defaults (disabled unless scenario opts in)</span>
 <span class="nt">clustering</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">  </span><span class="nt">aggregate_components</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">    </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">    </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+
+<span class="c1"># Component aggregation — runs at finalization for ALL scenarios (disabled by default)</span>
+<span class="nt">component_aggregation</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 
 <span class="c1"># Transmission constraint settings (ETYS network only)</span>
 <span class="nt">transmission</span><span class="p">:</span>
@@ -713,14 +715,42 @@ document.write(`
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">HT35_clustered</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">clustering</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">preset</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gsp_spatial&quot;</span><span class="w">   </span><span class="c1"># or inline: { method: kmeans, n_clusters: 10 }</span>
-
-<span class="w">    </span><span class="c1"># Optional: aggregate identical components after clustering</span>
-<span class="w">    </span><span class="nt">aggregate_components</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="w">      </span><span class="nt">include_loads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">            </span><span class="c1"># merge loads per bus</span>
-<span class="w">      </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical StorageUnits</span>
-<span class="w">      </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Stores (rarely used)</span>
+<span class="w">  </span><span class="c1"># Component aggregation — runs at finalization for ALL scenarios (independent of clustering)</span>
+<span class="w">  </span><span class="nt">component_aggregation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">include_loads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">            </span><span class="c1"># merge loads per bus</span>
+<span class="w">    </span><span class="nt">include_storage_units</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># merge identical StorageUnits</span>
+<span class="w">    </span><span class="nt">include_stores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">         </span><span class="c1"># merge Stores (rarely used)</span>
 </pre></div>
+</div>
+</section>
+<section id="renewable-generator-aggregation">
+<h2>Renewable Generator Aggregation<a class="headerlink" href="#renewable-generator-aggregation" title="Link to this heading">#</a></h2>
+<p>Optionally aggregate renewable generators per (bus, carrier) group after integration, reducing model size while conserving capacity and energy:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">renewable_aggregation</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">              </span><span class="c1"># false by default</span>
+<span class="w">  </span><span class="nt">carriers</span><span class="p">:</span><span class="w">                  </span><span class="c1"># Carriers to aggregate</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wind_onshore</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wind_offshore</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">solar_pv</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">large_hydro</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">small_hydro</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tidal_stream</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">shoreline_wave</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tidal_lagoon</span>
+</pre></div>
+</div>
+<p>When enabled, all generators sharing the same bus and carrier are merged into one:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">p_nom</span></code></strong> is summed exactly (capacity conserved)</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">p_max_pu</span></code></strong> time series is capacity-weighted averaged (energy conserved)</p></li>
+<li><p>Groups with a single generator are untouched</p></li>
+<li><p>Non-renewable generators are never affected</p></li>
+</ul>
+<p>This runs inline as part of <code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators</span></code> — no extra pipeline step.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Aggregation is most beneficial on large ETYS networks (2000+ buses) where many GSPs share a bus, reducing generator count by 50-90% with negligible accuracy loss.</p>
 </div>
 </section>
 <section id="demand-flexibility">
@@ -882,6 +912,7 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#clustering-configuration">Clustering Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#renewable-generator-aggregation">Renewable Generator Aggregation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#demand-flexibility">Demand Flexibility</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#environment-variables">Environment Variables</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">Validation</a></li>

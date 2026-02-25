@@ -190,6 +190,64 @@ def load_fes_renewable_generators(
 
 ---
 
+## aggregate_renewable_generators
+
+Aggregates renewable generators per (bus, carrier) group. Called inline as Stage 6.5 of `integrate_renewable_generators` when `renewable_aggregation.enabled: true`.
+
+### Main Functions
+
+#### `aggregate_renewables_by_bus()`
+
+```python
+def aggregate_renewables_by_bus(
+    network: pypsa.Network,
+    carriers: list[str],
+    logger: logging.Logger = None
+) -> tuple[pypsa.Network, int]:
+    """
+    Aggregate renewable generators per (bus, carrier) group.
+
+    For each group:
+    - p_nom is summed exactly (capacity conserved)
+    - p_max_pu time series is capacity-weighted averaged (energy conserved)
+    - Single-member groups are unchanged
+    - Non-renewable generators are untouched
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        Network containing generators to aggregate
+    carriers : list[str]
+        Renewable carriers to aggregate
+    logger : logging.Logger
+        Logger for output
+
+    Returns
+    -------
+    tuple[pypsa.Network, int]
+        Modified network and number of generators removed
+    """
+```
+
+### Aggregation Logic
+
+For a group of generators $(g_1, g_2, \ldots, g_n)$ at the same bus with the same carrier:
+
+$$p_{\text{nom}}^{\text{agg}} = \sum_i p_{\text{nom},i}$$
+
+$$p_{\text{max\_pu}}^{\text{agg}}(t) = \frac{\sum_i p_{\text{nom},i} \cdot p_{\text{max\_pu},i}(t)}{\sum_i p_{\text{nom},i}}$$
+
+The aggregated generator is named `{bus}_{carrier}__agg{N}` where N is the group size.
+
+### Example Effect
+
+| Scenario | Before | After | Reduction |
+|----------|--------|-------|-----------|
+| HT35 (ETYS) | ~1,964 renewable gens | ~80 | 96% |
+| Historical 2020 (ETYS) | ~1,200 renewable gens | ~90 | 93% |
+
+---
+
 ## add_storage
 
 Integrates storage units (batteries, pumped hydro).

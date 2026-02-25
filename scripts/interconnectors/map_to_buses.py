@@ -149,19 +149,25 @@ def map_landing_points_to_buses(interconnectors_df: pd.DataFrame,
         # Filter for the specific network model
         network_mapping = bus_mapping_df[bus_mapping_df['network_model'] == network_model].copy()
         
+        # Only use GB-side mappings for from_bus lookup (exclude NI/External entries)
+        if 'country' in network_mapping.columns:
+            gb_mapping = network_mapping[network_mapping['country'] == 'GB'].copy()
+        else:
+            gb_mapping = network_mapping.copy()
+        
         # Create lookup dictionaries for both landing points and interconnector names
         landing_point_lookup = {}
         name_lookup = {}
         
-        if 'landing_point' in network_mapping.columns:
+        if 'landing_point' in gb_mapping.columns:
             # Normalize landing point names for matching
-            network_mapping['landing_point_normalized'] = network_mapping['landing_point'].str.lower().str.strip()
-            landing_point_lookup = dict(zip(network_mapping['landing_point_normalized'], network_mapping['bus']))
+            gb_mapping['landing_point_normalized'] = gb_mapping['landing_point'].str.lower().str.strip()
+            landing_point_lookup = dict(zip(gb_mapping['landing_point_normalized'], gb_mapping['bus']))
         
-        if 'interconnector_name' in network_mapping.columns:
+        if 'interconnector_name' in gb_mapping.columns:
             # Create interconnector name lookup (exclude empty names)
-            name_subset = network_mapping[network_mapping['interconnector_name'].notna() & 
-                                        (network_mapping['interconnector_name'] != '')]
+            name_subset = gb_mapping[gb_mapping['interconnector_name'].notna() & 
+                                        (gb_mapping['interconnector_name'] != '')]
             name_lookup = dict(zip(name_subset['interconnector_name'], name_subset['bus']))
         
         logger.info(f"Created bus lookup with {len(landing_point_lookup)} landing point mappings and {len(name_lookup)} name mappings")
@@ -624,10 +630,19 @@ def main():
             unmapped_mask = mapped_df['from_bus'].isna()
             if unmapped_mask.any():
                 logger.info(f"Attempting manual bus mapping for {unmapped_mask.sum()} remaining interconnectors...")
+                # Load the manual bus mapping CSV which has landing_point and
+                # interconnector_name columns needed for name-based matching.
+                manual_mapping_path = Path(project_root) / "data" / "interconnectors" / "bus_mapping.csv"
+                if manual_mapping_path.exists():
+                    manual_bus_mapping_df = load_bus_mapping(str(manual_mapping_path), target_network_model)
+                    logger.info(f"Loaded manual bus mapping from {manual_mapping_path}")
+                else:
+                    manual_bus_mapping_df = bus_mapping_df
+                    logger.warning(f"Manual bus mapping file not found at {manual_mapping_path}, using network-extracted mapping")
                 # Apply the original mapping function only to unmapped ones
                 temp_df = map_landing_points_to_buses(
                     interconnectors_df[unmapped_mask], 
-                    bus_mapping_df, 
+                    manual_bus_mapping_df, 
                     target_network_model
                 )
                 # Update the mapped_df with results - only update from_bus and to_bus

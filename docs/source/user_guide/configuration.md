@@ -121,10 +121,12 @@ solve_period:
 # Clustering defaults (disabled unless scenario opts in)
 clustering:
   enabled: false
-  aggregate_components:
-    enabled: false
-    include_storage_units: false
-    include_stores: false
+
+# Component aggregation — runs at finalization for ALL scenarios (disabled by default)
+component_aggregation:
+  enabled: false
+  include_storage_units: false
+  include_stores: false
 
 # Transmission constraint settings (ETYS network only)
 transmission:
@@ -290,13 +292,42 @@ Use in scenario:
 HT35_clustered:
   clustering:
     preset: "gsp_spatial"   # or inline: { method: kmeans, n_clusters: 10 }
+  # Component aggregation — runs at finalization for ALL scenarios (independent of clustering)
+  component_aggregation:
+    enabled: true
+    include_loads: true            # merge loads per bus
+    include_storage_units: true   # merge identical StorageUnits
+    include_stores: false         # merge Stores (rarely used)
+```
 
-    # Optional: aggregate identical components after clustering
-    aggregate_components:
-      enabled: true
-      include_loads: true            # merge loads per bus
-      include_storage_units: true   # merge identical StorageUnits
-      include_stores: false         # merge Stores (rarely used)
+## Renewable Generator Aggregation
+
+Optionally aggregate renewable generators per (bus, carrier) group after integration, reducing model size while conserving capacity and energy:
+
+```yaml
+renewable_aggregation:
+  enabled: true              # false by default
+  carriers:                  # Carriers to aggregate
+    - wind_onshore
+    - wind_offshore
+    - solar_pv
+    - large_hydro
+    - small_hydro
+    - tidal_stream
+    - shoreline_wave
+    - tidal_lagoon
+```
+
+When enabled, all generators sharing the same bus and carrier are merged into one:
+- **`p_nom`** is summed exactly (capacity conserved)
+- **`p_max_pu`** time series is capacity-weighted averaged (energy conserved)
+- Groups with a single generator are untouched
+- Non-renewable generators are never affected
+
+This runs inline as part of `integrate_renewable_generators` — no extra pipeline step.
+
+```{tip}
+Aggregation is most beneficial on large ETYS networks (2000+ buses) where many GSPs share a bus, reducing generator count by 50-90% with negligible accuracy loss.
 ```
 
 ## Demand Flexibility

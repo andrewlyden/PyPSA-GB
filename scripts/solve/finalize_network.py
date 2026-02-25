@@ -18,6 +18,12 @@ from scripts.archive.deep_network_validation import deep_validate_network
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
 
+# Component aggregation (merges identical generators/storage/loads)
+from scripts.network_clustering.aggregate_components import (
+    aggregate_identical_components,
+    _aggregate_loads_by_bus,
+)
+
 # Suppress PyPSA warnings about unoptimized networks (expected at finalization stage)
 warnings.filterwarnings('ignore', message='The network has not been optimized yet')
 warnings.filterwarnings('ignore', message='no model is stored')
@@ -284,6 +290,47 @@ if __name__ == "__main__":
         
         logger.info("=" * 80)
         
+        # COMPONENT AGGREGATION: merge identical generators/storage/loads
+        agg_config = scenario_config.get('component_aggregation', {})
+        if isinstance(agg_config, dict) and agg_config.get('enabled', False):
+            logger.info("=" * 80)
+            logger.info("COMPONENT AGGREGATION")
+            logger.info("=" * 80)
+            include_committable = agg_config.get('include_committable', False)
+            tol = agg_config.get('tolerance', 1e-9)
+            removed_total = 0
+
+            if agg_config.get('include_generators', True):
+                removed_total += aggregate_identical_components(
+                    network, "generators",
+                    capacity_fields=["p_nom", "p_nom_min", "p_nom_max"],
+                    time_fields=["p_max_pu", "p_min_pu"],
+                    include_committable=include_committable, tol=tol,
+                )
+            if agg_config.get('include_storage_units', False):
+                removed_total += aggregate_identical_components(
+                    network, "storage_units",
+                    capacity_fields=["p_nom", "p_nom_min", "p_nom_max"],
+                    time_fields=["p_max_pu", "p_min_pu"],
+                    include_committable=include_committable, tol=tol,
+                )
+            if agg_config.get('include_stores', False):
+                removed_total += aggregate_identical_components(
+                    network, "stores",
+                    capacity_fields=["e_nom", "e_nom_min", "e_nom_max"],
+                    time_fields=["e_max_pu", "e_min_pu"],
+                    include_committable=include_committable, tol=tol,
+                )
+            if agg_config.get('include_loads', False):
+                removed_total += _aggregate_loads_by_bus(network)
+
+            logger.info(f"Total components removed via aggregation: {removed_total}")
+            logger.info(f"Network now has {len(network.generators)} generators")
+        else:
+            logger.info("Component aggregation disabled; skipping.")
+        
+        logger.info("=" * 80)
+
         # CRITICAL FIX: Clean up very small p_max_pu values that confuse solver
         # PyPSA docs: https://docs.pypsa.org/latest/user-guide/troubleshooting/
         # Very small non-zero values (< 0.001) can cause unbounded optimization

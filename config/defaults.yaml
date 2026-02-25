@@ -52,11 +52,40 @@ solve_mode: "LP"                # Options: "LP" or "MILP"
 # ──────────────────────────────────────────────────────────────────────────────
 clustering:
   enabled: false
-  aggregate_components:
-    enabled: false
-    include_storage_units: false      # Aggregate storage units when possible
-    include_loads: false               # Aggregate loads per bus after clustering
-    include_stores: false           # Aggregate Store components (rarely used)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# COMPONENT AGGREGATION (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+# Merges identical generators/storage/loads at the same bus after clustering,
+# summing their capacities. Components must have matching attributes and
+# time series to be merged. Independent of clustering config.
+component_aggregation:
+  enabled: false
+  include_generators: true          # Aggregate identical generators
+  include_storage_units: false      # Aggregate storage units when possible
+  include_loads: false              # Aggregate loads per bus
+  include_stores: false             # Aggregate Store components (rarely used)
+  include_committable: false        # Allow committable unit merging
+  tolerance: 1.0e-9                 # Float comparison tolerance
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RENEWABLE AGGREGATION (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+# Merges renewable generators at the same bus and carrier into a single
+# representative generator, using capacity-weighted average p_max_pu profiles.
+# Dramatically reduces generator count (e.g. thousands of REPD sites → one per
+# bus) without changing optimization results. Independent of spatial clustering.
+renewable_aggregation:
+  enabled: false
+  carriers:                        # Carriers eligible for aggregation
+    - wind_onshore
+    - wind_offshore
+    - solar_pv
+    - large_hydro
+    - small_hydro
+    - tidal_stream
+    - shoreline_wave
+    - tidal_lagoon
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SOLVE PERIOD (full year by default)

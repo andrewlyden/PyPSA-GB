@@ -73,12 +73,12 @@ MyScenario:
   clustering:
     method: "kmeans"
     n_clusters: 100
-    # Optional: post-clustering component aggregation
-    aggregate_components:
-      enabled: true
-      include_loads: true           # merge loads per bus
-      include_storage_units: true   # merge identical storage units
-      include_stores: false         # merge Store components
+  # Component aggregation — top-level config, runs for ALL scenarios at finalization
+  component_aggregation:
+    enabled: true
+    include_loads: true           # merge loads per bus
+    include_storage_units: true   # merge identical storage units
+    include_stores: false         # merge Store components
 ```
 
 ## Running Clustered Scenarios
@@ -118,7 +118,7 @@ flowchart LR
 
 ### 2. Generator & Storage Aggregation (optional)
 
-If `aggregate_components.enabled: true`, identical generators and/or storage at each clustered bus are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. Dispatch is unchanged, but asset count drops sharply (useful for memory).
+If `component_aggregation.enabled: true` (a top-level config, not nested under `clustering`), identical generators and/or storage are merged (capacities summed) when they share the same attributes and time series. Loads can also be merged per bus. This runs in `finalize_network.py` for **all** scenarios — independent of whether clustering is enabled.
 
 ### 3. Line Aggregation
 
@@ -258,5 +258,5 @@ If clustering or solving uses too much memory:
 snakemake resources/network/HT35_clustered.nc -j 1
 ```
 
-- Enable `aggregate_components` to reduce asset count after clustering.
+- Enable `component_aggregation` to reduce asset count after clustering.
 - Shorten `solve_period` or increase `timestep_minutes` to reduce time steps during solve.

@@ -48,6 +48,9 @@ import logging
 # Import shared spatial utilities
 from scripts.utilities.spatial_utils import map_sites_to_buses, apply_etys_bmu_mapping
 
+# Import renewable aggregation (capacity-weighted merge per bus+carrier)
+from scripts.generators.aggregate_renewable_generators import aggregate_renewables_by_bus
+
 # Inlined helpers and functions from scripts/add_generators.py to make this script
 # self-contained and avoid cross-module imports that cause multiple loggers.
 
@@ -1562,6 +1565,50 @@ def main():
         logger.info(f"  Renewable generators added: {added_generators}")
         logger.info("-" * 80)
         stage_times['6. Add generators to network'] = time.time() - stage_start
+        
+        # STAGE 6.5: Optionally aggregate renewables by (bus, carrier)
+        # This reduces thousands of individual REPD site generators into one
+        # representative generator per (bus, carrier) group, using capacity-weighted
+        # average p_max_pu profiles. Dramatically reduces problem size without
+        # changing optimization results.
+        agg_config = scenario_config.get('renewable_aggregation', {})
+        if agg_config.get('enabled', False):
+            stage_start = time.time()
+            logger.info("-" * 80)
+            logger.info("AGGREGATING RENEWABLE GENERATORS BY (BUS, CARRIER)")
+            logger.info("-" * 80)
+            
+            from scripts.generators.aggregate_renewable_generators import DEFAULT_RENEWABLE_CARRIERS
+            agg_carriers = agg_config.get('carriers', DEFAULT_RENEWABLE_CARRIERS)
+            
+            pre_agg_count = len(network.generators)
+            # Log per-carrier capacity before aggregation for verification
+            pre_agg_capacity = network.generators.groupby('carrier')['p_nom'].sum()
+            
+            network, removed_count = aggregate_renewables_by_bus(
+                network, carriers=agg_carriers, logger=logger
+            )
+            
+            post_agg_count = len(network.generators)
+            post_agg_capacity = network.generators.groupby('carrier')['p_nom'].sum()
+            
+            # Verify capacity conservation
+            for carrier in agg_carriers:
+                before = pre_agg_capacity.get(carrier, 0.0)
+                after = post_agg_capacity.get(carrier, 0.0)
+                if abs(before - after) > 0.01:
+                    logger.error(
+                        f"CAPACITY MISMATCH for {carrier}: "
+                        f"{before:.2f} MW before vs {after:.2f} MW after aggregation!"
+                    )
+                else:
+                    logger.debug(f"  {carrier}: capacity conserved at {after:.2f} MW")
+            
+            logger.info(f"Aggregation reduced generators from {pre_agg_count} to {post_agg_count} "
+                       f"(removed {removed_count})")
+            stage_times['6.5. Aggregate renewables'] = time.time() - stage_start
+        else:
+            logger.info("Renewable aggregation disabled (set renewable_aggregation.enabled: true to enable)")
         
         # STAGE 7: Create summary by technology
         stage_start = time.time()
