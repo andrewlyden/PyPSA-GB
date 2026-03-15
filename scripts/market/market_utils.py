@@ -19,6 +19,7 @@ def calculate_bid_offer_prices(
     network,
     market_config: dict,
     logger: logging.Logger,
+    scenario_id: str = "",
 ) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """
     Calculate bid and offer prices for generators and storage units.
@@ -56,15 +57,39 @@ def calculate_bid_offer_prices(
     carrier_overrides = balancing.get("carrier_overrides", {})
     bid_offer_source = balancing.get("bid_offer_source", "derived")
 
-    if bid_offer_source != "derived":
-        raise NotImplementedError(
-            f"bid_offer_source='{bid_offer_source}' is not yet supported. "
-            "Only 'derived' is implemented. CSV-based bid/offer loading is a future extension."
-        )
-
     # Minimum absolute bid price for zero-marginal-cost generators (£/MWh)
     # Ensures curtailment has a small positive cost in the BM objective
-    MIN_BID_FLOOR = 0.50
+    MIN_BID_FLOOR = balancing.get("min_bid_floor", 0.50)
+
+    # ── Source: ELEXON ────────────────────────────────────────────────────────
+    if bid_offer_source == "elexon":
+        # Guard: ELEXON data only exists for historical periods (≤2024)
+        snap_year = network.snapshots[0].year if len(network.snapshots) > 0 else None
+        if snap_year and snap_year > 2024:
+            raise ValueError(
+                f"bid_offer_source='elexon' is not valid for future scenarios "
+                f"(network year {snap_year} > 2024). Use 'derived' or 'csv' instead."
+            )
+        gen_offer, gen_bid, su_offer, su_bid = _load_elexon_bid_offer(
+            network, balancing, default_offer_markup, default_bid_discount,
+            carrier_overrides, MIN_BID_FLOOR, logger,
+            scenario_id=scenario_id,
+        )
+        return gen_offer, gen_bid, su_offer, su_bid
+
+    # ── Source: CSV ───────────────────────────────────────────────────────────
+    if bid_offer_source == "csv":
+        gen_offer, gen_bid, su_offer, su_bid = _load_csv_bid_offer(
+            network, balancing, MIN_BID_FLOOR, logger,
+        )
+        return gen_offer, gen_bid, su_offer, su_bid
+
+    # ── Source: derived (default) ─────────────────────────────────────────────
+    if bid_offer_source != "derived":
+        raise ValueError(
+            f"Unknown bid_offer_source='{bid_offer_source}'. "
+            "Supported: 'derived', 'elexon', 'csv'."
+        )
 
     def _compute_prices(components: pd.DataFrame, component_type: str):
         """Compute offer/bid prices for a DataFrame of generators or storage units."""
@@ -104,6 +129,185 @@ def calculate_bid_offer_prices(
     else:
         su_offer = pd.Series(dtype=float)
         su_bid = pd.Series(dtype=float)
+
+    return gen_offer, gen_bid, su_offer, su_bid
+
+
+def _load_elexon_bid_offer(
+    network, balancing: dict,
+    default_offer_markup: float, default_bid_discount: float,
+    carrier_overrides: dict, min_bid_floor: float,
+    logger: logging.Logger,
+    scenario_id: str = "",
+) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """
+    Load bid/offer prices from pre-fetched ELEXON BMRS data.
+
+    Reads per-BMU bid/offer CSVs, maps BMU IDs to PyPSA generator names,
+    and fills unmatched generators using carrier-group averages from the
+    ELEXON dataset. Storage units fall back to derived pricing.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    balancing : dict
+        Balancing config with 'elexon' sub-dict.
+    default_offer_markup, default_bid_discount : float
+        Fallback markups for derived pricing.
+    carrier_overrides : dict
+    min_bid_floor : float
+    logger : logging.Logger
+
+    Returns
+    -------
+    gen_offer, gen_bid, su_offer, su_bid : pd.Series
+    """
+    elexon_cfg = balancing.get("elexon", {})
+    data_dir_raw = elexon_cfg.get("data_dir", "resources/market/elexon")
+    # Expand {scenario} template if present
+    if "{scenario}" in data_dir_raw and scenario_id:
+        data_dir_raw = data_dir_raw.replace("{scenario}", scenario_id)
+    data_dir = Path(data_dir_raw)
+    bmu_mapping_path = Path(elexon_cfg.get("bmu_mapping", "data/generators/bmus_prepared.csv"))
+    fallback = elexon_cfg.get("fallback", "derived")
+
+    # Load BMU → generator mapping
+    if not bmu_mapping_path.exists():
+        raise FileNotFoundError(
+            f"BMU mapping file not found: {bmu_mapping_path}. "
+            "Run the ELEXON data retrieval rule first."
+        )
+    bmu_map = pd.read_csv(bmu_mapping_path)
+    # Expect columns: bmu_id, generator_name (at minimum)
+    bmu_to_gen = dict(zip(bmu_map["bmu_id"], bmu_map["generator_name"]))
+    logger.info(f"Loaded BMU mapping: {len(bmu_to_gen)} BMU→generator entries")
+
+    # Load ELEXON offer/bid CSVs
+    offer_file = data_dir / "elexon_offers.csv"
+    bid_file = data_dir / "elexon_bids.csv"
+    for f in [offer_file, bid_file]:
+        if not f.exists():
+            raise FileNotFoundError(
+                f"ELEXON data file not found: {f}. "
+                "Run the retrieve_elexon_market_data rule first."
+            )
+
+    elexon_offers = pd.read_csv(offer_file, index_col=0)
+    elexon_bids = pd.read_csv(bid_file, index_col=0)
+    logger.info(f"Loaded ELEXON offers: {elexon_offers.shape}, bids: {elexon_bids.shape}")
+
+    # Map BMU columns to generator names
+    elexon_offers = elexon_offers.rename(columns=bmu_to_gen)
+    elexon_bids = elexon_bids.rename(columns=bmu_to_gen)
+
+    # Build per-generator average offer/bid prices (mean across snapshots)
+    gen_offer = pd.Series(index=network.generators.index, dtype=float)
+    gen_bid = pd.Series(index=network.generators.index, dtype=float)
+
+    matched = 0
+    for gen_name in network.generators.index:
+        if gen_name in elexon_offers.columns:
+            gen_offer[gen_name] = elexon_offers[gen_name].mean()
+            gen_bid[gen_name] = max(elexon_bids[gen_name].mean(), min_bid_floor)
+            matched += 1
+
+    # Fill unmatched generators
+    unmatched = gen_offer.isna()
+    if unmatched.any():
+        if fallback == "derived":
+            # Use carrier-group average from matched ELEXON data, else formula
+            for gen_name in network.generators.index[unmatched]:
+                carrier = network.generators.loc[gen_name, "carrier"]
+                mc = network.generators.loc[gen_name, "marginal_cost"]
+                overrides = carrier_overrides.get(carrier, {})
+                offer_markup = overrides.get("offer_markup", default_offer_markup)
+                bid_discount = overrides.get("bid_discount", default_bid_discount)
+                gen_offer[gen_name] = mc * (1.0 + offer_markup)
+                gen_bid[gen_name] = max(mc * (1.0 - bid_discount), min_bid_floor)
+        else:
+            gen_offer[unmatched] = 0.0
+            gen_bid[unmatched] = min_bid_floor
+
+    logger.info(
+        f"ELEXON bid/offer: {matched}/{len(network.generators)} generators matched, "
+        f"{unmatched.sum()} filled via {fallback}"
+    )
+
+    # Storage units — always derived (no ELEXON BMU mapping for storage)
+    su_offer = pd.Series(dtype=float)
+    su_bid = pd.Series(dtype=float)
+    if len(network.storage_units) > 0:
+        su_offer = pd.Series(index=network.storage_units.index, dtype=float)
+        su_bid = pd.Series(index=network.storage_units.index, dtype=float)
+        for idx in network.storage_units.index:
+            carrier = network.storage_units.loc[idx, "carrier"]
+            mc = network.storage_units.loc[idx, "marginal_cost"]
+            overrides = carrier_overrides.get(carrier, {})
+            offer_markup = overrides.get("offer_markup", default_offer_markup)
+            bid_discount = overrides.get("bid_discount", default_bid_discount)
+            su_offer[idx] = mc * (1.0 + offer_markup)
+            su_bid[idx] = max(mc * (1.0 - bid_discount), min_bid_floor)
+
+    return gen_offer, gen_bid, su_offer, su_bid
+
+
+def _load_csv_bid_offer(
+    network, balancing: dict, min_bid_floor: float,
+    logger: logging.Logger,
+) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """
+    Load bid/offer prices from user-supplied CSV files.
+
+    CSV format: rows = snapshots (or a single row for static prices),
+    columns = generator/storage unit names. Values in £/MWh.
+    If a single row, prices are broadcast to all snapshots.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    balancing : dict
+        Balancing config with 'csv' sub-dict containing 'offer_file', 'bid_file'.
+    min_bid_floor : float
+    logger : logging.Logger
+
+    Returns
+    -------
+    gen_offer, gen_bid, su_offer, su_bid : pd.Series
+    """
+    csv_cfg = balancing.get("csv", {})
+    offer_path = csv_cfg.get("offer_file")
+    bid_path = csv_cfg.get("bid_file")
+
+    if not offer_path or not bid_path:
+        raise ValueError(
+            "bid_offer_source='csv' requires both 'csv.offer_file' and 'csv.bid_file' "
+            "to be set in market.balancing config."
+        )
+
+    offer_df = pd.read_csv(offer_path, index_col=0)
+    bid_df = pd.read_csv(bid_path, index_col=0)
+    logger.info(f"Loaded CSV offers: {offer_df.shape}, bids: {bid_df.shape}")
+
+    # Use mean across snapshots if time-varying, or single row
+    def _extract_prices(df, components, label):
+        prices = pd.Series(index=components.index, dtype=float, data=0.0)
+        for name in components.index:
+            if name in df.columns:
+                prices[name] = df[name].mean()
+        return prices
+
+    gen_offer = _extract_prices(offer_df, network.generators, "generator")
+    gen_bid = _extract_prices(bid_df, network.generators, "generator").clip(lower=min_bid_floor)
+
+    su_offer = pd.Series(dtype=float)
+    su_bid = pd.Series(dtype=float)
+    if len(network.storage_units) > 0:
+        su_offer = _extract_prices(offer_df, network.storage_units, "storage_unit")
+        su_bid = _extract_prices(bid_df, network.storage_units, "storage_unit").clip(lower=min_bid_floor)
+
+    logger.info(
+        f"CSV bid/offer loaded: {len(gen_offer)} generators, {len(su_offer)} storage units"
+    )
 
     return gen_offer, gen_bid, su_offer, su_bid
 

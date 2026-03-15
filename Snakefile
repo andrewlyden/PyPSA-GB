@@ -562,22 +562,32 @@ optimization_targets += expand(
 market_targets = []
 for rid in run_ids:
     if scenarios.get(rid, {}).get('market', {}).get('enabled', False):
+        # Wholesale outputs (always included for market scenarios)
         market_targets.extend([
             f"{resources_path}/market/{rid}_wholesale.nc",
             f"{resources_path}/market/{rid}_wholesale_dispatch.csv",
             f"{resources_path}/market/{rid}_wholesale_storage.csv",
             f"{resources_path}/market/{rid}_wholesale_links.csv",
             f"{resources_path}/market/{rid}_wholesale_price.csv",
-            f"{resources_path}/market/{rid}_balancing.nc",
-            f"{resources_path}/market/{rid}_balancing_dispatch.csv",
-            f"{resources_path}/market/{rid}_redispatch_summary.csv",
-            f"{resources_path}/market/{rid}_constraint_costs.csv",
-            f"{resources_path}/market/{rid}_congestion.csv",
-            f"{resources_path}/market/{rid}_price_comparison.csv",
-            f"{resources_path}/analysis/{rid}_market_dashboard.html",
-            f"{resources_path}/analysis/{rid}_market_summary.json",
-            f"{resources_path}/analysis/{rid}_market_notebook.ipynb",
         ])
+        # Wholesale-only notebook (generated when wholesale_only: true)
+        if scenarios.get(rid, {}).get('market', {}).get('wholesale_only', False):
+            market_targets.append(
+                f"{resources_path}/analysis/{rid}_wholesale_notebook.ipynb"
+            )
+        # Balancing + analysis outputs (skipped when wholesale_only: true)
+        if not scenarios.get(rid, {}).get('market', {}).get('wholesale_only', False):
+            market_targets.extend([
+                f"{resources_path}/market/{rid}_balancing.nc",
+                f"{resources_path}/market/{rid}_balancing_dispatch.csv",
+                f"{resources_path}/market/{rid}_redispatch_summary.csv",
+                f"{resources_path}/market/{rid}_constraint_costs.csv",
+                f"{resources_path}/market/{rid}_congestion.csv",
+                f"{resources_path}/market/{rid}_price_comparison.csv",
+                f"{resources_path}/analysis/{rid}_market_dashboard.html",
+                f"{resources_path}/analysis/{rid}_market_summary.json",
+                f"{resources_path}/analysis/{rid}_market_notebook.ipynb",
+            ])
 
 # --- Analysis Outputs --------------------------------------------------------
 # Consolidated analysis: spatial plots, dashboards, notebooks

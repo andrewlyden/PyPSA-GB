@@ -166,15 +166,15 @@ class TestCalculateBidOfferPrices:
         assert len(su_offer) == 1
         assert su_offer["battery_1"] == pytest.approx(0.1 * 1.15)
 
-    def test_unsupported_source_raises(self, market_network):
-        """bid_offer_source='csv' raises NotImplementedError."""
+    def test_csv_source_without_files_raises(self, market_network):
+        """bid_offer_source='csv' without file paths raises ValueError."""
         import logging
 
         logger = logging.getLogger("test_market")
         bad_config = {
             "balancing": {"bid_offer_source": "csv"},
         }
-        with pytest.raises(NotImplementedError, match="csv"):
+        with pytest.raises(ValueError, match="csv"):
             calculate_bid_offer_prices(market_network, bad_config, logger)
 
 

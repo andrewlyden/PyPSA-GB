@@ -68,6 +68,26 @@ run_scenarios:
   # - Test_NoAgg_Future            # FES path:  both OFF (baseline)
 
   # ─── Market simulation (two-stage dispatch: wholesale + BM) ───
-  # - HT35_market                  # Full ETYS, 1 week
+  # - HT35_market                    # Full ETYS, 1 week, ELEXON-calibrated MCs
   # - Test_Market                  # Reduced network, 6 hours (fast smoke test)
-  - Historical_2020_ETYS_market
+  # - Historical_2020_ETYS_market
+
+  # ─── Subsidy-aware scenarios (new functionality) ───
+  # subsidy_tracking → subsidy MC → market dispatch → revenue tracking
+  # - Test_Subsidy_Historical        # 2024 winter: ELEXON BM bids, ETYS network
+  # - Test_Subsidy_Future          # HT 2035: FES CfD fractions, 6h faster test
+
+  # ─── Contrasting system conditions (one per year, complement to lowwind) ───
+  - Historical_2021_highdemand        # 2021 cold snap, Jan 8-14 — high demand, thermal-dominant
+  - Historical_2022_highdemand        # 2022 energy crisis winter peak, Dec 12-18 — high SMP
+  - Historical_2023_highsolar         # 2023 spring renewable surge, May 15-21 — low demand/prices
+  - Historical_2024_highwind          # 2024 Storm Isha/Jocelyn, Jan 21-27 — peak wind output
+
+  # ─── Wholesale market investigation (lowwind baseline — already run) ───
+  # - Historical_2021_lowwind           # Historical 2021, low-wind Mar 2-8, wholesale only
+  # - Historical_2022_lowwind           # Historical 2022, low-wind Mar 22-28, wholesale only
+  # - Historical_2023_lowwind           # Historical 2023, low-wind Feb 27 - Mar 5
+  # - Historical_2024_lowwind           # Historical 2024, low-wind Jan 6-12, wholesale only
+  - HT35_lowwind                      # FES HT 2035, low-wind (2023 weather proxy)
+  - HT35_dunkelflaute                 # FES HT 2035, dunkelflaute (2021 weather Dec 16-22)
+  # - HT35_wholesale_only              # Reduced network, 24h, wholesale only

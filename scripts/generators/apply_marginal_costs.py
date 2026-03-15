@@ -1,14 +1,11 @@
 """
 Apply marginal costs to generators in PyPSA network.
 
-This script computes time-varying marginal costs for thermal generators based on:
-- Fuel prices (gas, coal, oil)
-- Carbon prices (UK ETS + carbon support price)
-- Generator efficiency
-- Emission factors
+Simplified two-tier approach:
+  1. Empirical MCs (from ELEXON calibration) when available
+  2. Formula/subsidy fallback otherwise
 
-The marginal costs are critical for optimization - without them, thermal
-generators have zero cost, leading to unbounded optimization problems.
+Flat if/elif logic — no layers, no static prerun files.
 """
 
 import pypsa
@@ -16,93 +13,63 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from scripts.utilities.logging_config import setup_logging
-
-# Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
 
 logger = setup_logging("apply_marginal_costs")
 
-# Carriers that should NEVER have their marginal cost modified
-# These are either already set correctly or should remain as-is
+# ══════════════════════════════════════════════════════════════════════════════
+# CONSTANTS
+# ══════════════════════════════════════════════════════════════════════════════
+
 PROTECTED_CARRIERS = {
-    'load_shedding',  # CRITICAL: Must keep VOLL cost, never overwrite
-    'load shedding',
-    'voll',
-    'VOLL',
-    'demand response',  # DSR marginal cost set by event_flex.py (incentive payment)
-    'demand_response',
+    'load_shedding', 'load shedding', 'voll', 'VOLL',
+    'demand response', 'demand_response',
 }
 
-# Carbon emission factors (kg CO2/MWh_thermal)
-# Source: UK Parliament POST Note 383 - Carbon footprint of electricity generation
-CARBON_EMISSION_FACTORS = {
-    'coal': 846,       # kg CO2/MWh
-    'Coal': 846,
-    'gas': 488,        # kg CO2/MWh (average CCGT/OCGT)
-    'Gas': 488,
-    'CCGT': 488,       # Combined Cycle Gas Turbine
-    'OCGT': 488,       # Open Cycle Gas Turbine
-    'oil': 533,        # kg CO2/MWh
-    'Oil': 533,
-    'biomass': 120,    # kg CO2/MWh (lifecycle - treated as low carbon)
-    'Biomass': 120,
-    'Biomass (dedicated)': 120,
-    'Biomass (co-firing)': 120,
-    'Bioenergy': 120,  # Alternative name for biomass
-    'waste': 180,      # kg CO2/MWh (energy from waste)
-    'Waste': 180,
-    'waste_to_energy': 180,
-    'landfill_gas': 240,  # Slightly higher than general waste
-    'sewage_gas': 240,
-    'biogas': 240,
-    'advanced_biofuel': 120,
-    'nuclear': 12,     # kg CO2/MWh (lifecycle only)
-    'Nuclear': 12,
-    'PWR': 12,         # Pressurized Water Reactor
-    'AGR': 12,         # Advanced Gas-cooled Reactor
-    'hydro': 24,       # kg CO2/MWh (lifecycle only)
-    'Hydro': 24,
-    'Large Hydro': 24,
-    'large_hydro': 24,
-    'Small Hydro': 24,
-    'small_hydro': 24,
-    'Hydro / pumped storage': 24,
-    'Pumped Storage': 0,  # No emissions from pumping
-    'wind': 11,        # kg CO2/MWh (lifecycle only)
-    'Wind': 11,
-    'Wind (Onshore)': 11,
-    'Wind (Offshore)': 11,
-    'wind_onshore': 11,
-    'wind_offshore': 11,
-    'solar': 48,       # kg CO2/MWh (lifecycle only)
-    'Solar': 48,
-    'solar_pv': 48,
-    'Battery': 0,      # No direct emissions
-    'battery': 0,
-    'geothermal': 38,  # Lifecycle emissions
-    'tidal_stream': 15,
-    'shoreline_wave': 15,
-    'Conventional Steam': 846,  # Assume coal-based
-    'Conventional steam': 846,
-    # Future/emerging technologies
-    'H2': 0,               # Green hydrogen (negligible lifecycle emissions)
-    'micro_CHP': 488,      # Natural gas basis (same as CCGT)
-    'gas_engine': 600,     # Reciprocating engine (higher emissions than turbine)
-    'fuel_cell': 0,        # Assume green hydrogen input
-    'CHP': 488             # Combined Heat & Power (natural gas basis)
+THERMAL_CARRIERS = {
+    'CCGT', 'OCGT', 'Coal', 'coal', 'Oil', 'oil',
+    'Biomass', 'biomass', 'Bioenergy', 'CHP', 'micro_CHP',
+    'gas_engine', 'waste', 'Waste', 'waste_to_energy',
+    'landfill_gas', 'sewage_gas', 'biogas', 'advanced_biofuel',
+    'Conventional Steam', 'Conventional steam',
+    'Biomass (dedicated)', 'Biomass (co-firing)',
 }
+
+RENEWABLE_CARRIERS = {
+    'wind_onshore', 'wind_offshore', 'solar_pv',
+    'large_hydro', 'small_hydro', 'tidal_stream',
+    'shoreline_wave', 'tidal_lagoon', 'marine',
+}
+
+
+
+# Carbon emission factors (kg CO2/MWh_thermal)
+CARBON_EMISSION_FACTORS = {
+    'coal': 846, 'Coal': 846, 'Conventional Steam': 846, 'Conventional steam': 846,
+    'gas': 488, 'Gas': 488, 'CCGT': 488, 'OCGT': 488, 'CHP': 488, 'micro_CHP': 488,
+    'gas_engine': 600,
+    'oil': 533, 'Oil': 533,
+    'biomass': 120, 'Biomass': 120, 'Biomass (dedicated)': 120, 'Biomass (co-firing)': 120,
+    'Bioenergy': 120, 'advanced_biofuel': 120,
+    'waste': 180, 'Waste': 180, 'waste_to_energy': 180,
+    'landfill_gas': 240, 'sewage_gas': 240, 'biogas': 240,
+    'nuclear': 12, 'Nuclear': 12, 'PWR': 12, 'AGR': 12,
+    'hydro': 24, 'Hydro': 24, 'Large Hydro': 24, 'large_hydro': 24,
+    'Small Hydro': 24, 'small_hydro': 24, 'Hydro / pumped storage': 24,
+    'Pumped Storage': 0, 'Battery': 0, 'battery': 0,
+    'wind': 11, 'Wind': 11, 'wind_onshore': 11, 'wind_offshore': 11,
+    'Wind (Onshore)': 11, 'Wind (Offshore)': 11,
+    'solar': 48, 'Solar': 48, 'solar_pv': 48,
+    'geothermal': 38, 'tidal_stream': 15, 'shoreline_wave': 15,
+    'H2': 0, 'fuel_cell': 0,
+}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # HISTORICAL FUEL AND CARBON PRICES (2010-2024)
 # ══════════════════════════════════════════════════════════════════════════════
-# Sources:
-# - Gas: NBP Day-Ahead prices (BEIS/DESNZ Energy Price Statistics)
-# - Coal: CIF ARA coal prices converted to £/MWh thermal
-# - Carbon: EU ETS + UK Carbon Price Floor (from April 2013)
-# ══════════════════════════════════════════════════════════════════════════════
 
 HISTORICAL_FUEL_PRICES = {
-    # Year: {gas, coal, oil, biomass} in £/MWh thermal
     2010: {'gas': 20.0, 'coal': 10.0, 'oil': 45.0, 'biomass': 35.0},
     2011: {'gas': 22.0, 'coal': 12.0, 'oil': 50.0, 'biomass': 35.0},
     2012: {'gas': 25.0, 'coal': 12.0, 'oil': 55.0, 'biomass': 35.0},
@@ -113,743 +80,684 @@ HISTORICAL_FUEL_PRICES = {
     2017: {'gas': 17.0, 'coal': 10.0, 'oil': 35.0, 'biomass': 35.0},
     2018: {'gas': 25.0, 'coal': 12.0, 'oil': 45.0, 'biomass': 35.0},
     2019: {'gas': 20.0, 'coal': 8.0, 'oil': 40.0, 'biomass': 35.0},
-    2020: {'gas': 12.0, 'coal': 6.0, 'oil': 25.0, 'biomass': 35.0},  # COVID crash
-    2021: {'gas': 45.0, 'coal': 15.0, 'oil': 50.0, 'biomass': 35.0},  # Energy crisis begins
-    2022: {'gas': 80.0, 'coal': 25.0, 'oil': 70.0, 'biomass': 40.0},  # Peak energy crisis
-    2023: {'gas': 40.0, 'coal': 15.0, 'oil': 55.0, 'biomass': 40.0},  # Prices moderating
-    2024: {'gas': 35.0, 'coal': 12.0, 'oil': 50.0, 'biomass': 40.0},  # Current levels
+    2020: {'gas': 12.0, 'coal': 6.0, 'oil': 25.0, 'biomass': 35.0},
+    2021: {'gas': 45.0, 'coal': 15.0, 'oil': 50.0, 'biomass': 35.0},
+    2022: {'gas': 80.0, 'coal': 25.0, 'oil': 70.0, 'biomass': 40.0},
+    2023: {'gas': 40.0, 'coal': 15.0, 'oil': 55.0, 'biomass': 40.0},
+    2024: {'gas': 35.0, 'coal': 12.0, 'oil': 50.0, 'biomass': 40.0},
 }
 
 HISTORICAL_CARBON_PRICES = {
-    # Year: £/tonne CO2 (EU ETS + UK Carbon Price Floor from 2013)
-    # Pre-2013: EU ETS only
-    # 2013+: EU ETS + UK CPF (Carbon Price Floor)
-    2010: 12.0,   # EU ETS only (~€14)
-    2011: 10.0,   # EU ETS declining
-    2012: 7.0,    # EU ETS crashed (~€7)
-    2013: 21.0,   # EU ETS ~£5 + UK CPF £16
-    2014: 21.0,   # EU ETS ~£5 + UK CPF £16
-    2015: 25.0,   # EU ETS ~£7 + UK CPF £18
-    2016: 23.0,   # EU ETS ~£5 + UK CPF £18
-    2017: 23.0,   # EU ETS ~£5 + UK CPF £18
-    2018: 33.0,   # EU ETS recovering ~£15 + UK CPF £18
-    2019: 43.0,   # EU ETS ~£25 + UK CPF £18 (coal-to-gas switching)
-    2020: 43.0,   # EU ETS ~£25 + UK CPF £18
-    2021: 63.0,   # UK ETS launched at ~£45 + UK CPF £18
-    2022: 88.0,   # UK ETS ~£70 + UK CPF £18
-    2023: 68.0,   # UK ETS ~£50 + UK CPF £18
-    2024: 85.0,   # UK ETS ~£65-70 + UK CPF ~£18
+    2010: 12.0, 2011: 10.0, 2012: 7.0, 2013: 21.0, 2014: 21.0,
+    2015: 25.0, 2016: 23.0, 2017: 23.0, 2018: 33.0, 2019: 43.0,
+    2020: 43.0, 2021: 63.0, 2022: 88.0, 2023: 68.0, 2024: 85.0,
 }
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# PRICE LOADING
+# ══════════════════════════════════════════════════════════════════════════════
+
 def get_historical_fuel_prices(year: int) -> dict:
-    """
-    Get historical fuel prices for a given year.
-    
-    Parameters
-    ----------
-    year : int
-        The modelled year
-        
-    Returns
-    -------
-    dict
-        Fuel prices in £/MWh thermal
-    """
+    """Get historical fuel prices, clamped to available range."""
     if year in HISTORICAL_FUEL_PRICES:
         return HISTORICAL_FUEL_PRICES[year].copy()
-    elif year < min(HISTORICAL_FUEL_PRICES.keys()):
-        # Use earliest available
-        return HISTORICAL_FUEL_PRICES[min(HISTORICAL_FUEL_PRICES.keys())].copy()
+    elif year < min(HISTORICAL_FUEL_PRICES):
+        return HISTORICAL_FUEL_PRICES[min(HISTORICAL_FUEL_PRICES)].copy()
     else:
-        # Use latest available
-        return HISTORICAL_FUEL_PRICES[max(HISTORICAL_FUEL_PRICES.keys())].copy()
+        return HISTORICAL_FUEL_PRICES[max(HISTORICAL_FUEL_PRICES)].copy()
 
 
 def get_historical_carbon_price(year: int) -> float:
-    """
-    Get historical carbon price for a given year.
-    
-    Parameters
-    ----------
-    year : int
-        The modelled year
-        
-    Returns
-    -------
-    float
-        Carbon price in £/tonne CO2
-    """
+    """Get historical carbon price, clamped to available range."""
     if year in HISTORICAL_CARBON_PRICES:
         return HISTORICAL_CARBON_PRICES[year]
-    elif year < min(HISTORICAL_CARBON_PRICES.keys()):
-        return HISTORICAL_CARBON_PRICES[min(HISTORICAL_CARBON_PRICES.keys())]
+    elif year < min(HISTORICAL_CARBON_PRICES):
+        return HISTORICAL_CARBON_PRICES[min(HISTORICAL_CARBON_PRICES)]
     else:
-        return HISTORICAL_CARBON_PRICES[max(HISTORICAL_CARBON_PRICES.keys())]
-
-
-def load_fuel_prices(scenario_config: dict) -> dict:
-    """
-    Load fuel prices with automatic source selection.
-
-    Priority order:
-    1. Historical lookup table (for modelled_year ≤ 2024)
-    2. Scenario-specific override in scenarios.yaml (marginal_costs.fuel_prices)
-    3. FES dynamic prices (if FES_year specified, use_fes_prices=true, and CSV exists)
-    4. Configuration defaults from defaults.yaml (marginal_costs.fuel_prices)
-    5. Fallback hardcoded values (for backward compatibility)
-
-    Parameters
-    ----------
-    scenario_config : dict
-        Scenario configuration dictionary (includes defaults merged in)
-
-    Returns
-    -------
-    dict
-        Fuel prices in £/MWh_thermal (before efficiency adjustment)
-    """
-    # Load marginal cost configuration
-    mc_config = load_marginal_cost_config(scenario_config)
-
-    # 1. Check if this is a historical scenario (highest priority for historical years)
-    #    Historical scenarios should always use historical fuel prices unless the user
-    #    explicitly set fuel_prices in the scenario definition (not inherited from defaults).
-    modelled_year = scenario_config.get('modelled_year')
-
-    if modelled_year and modelled_year <= 2024:
-        # Historical scenario - use historical lookup
-        historical_prices = get_historical_fuel_prices(modelled_year)
-        logger.info(f"Using HISTORICAL fuel prices for {modelled_year}:")
-        for fuel, price in historical_prices.items():
-            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-        return _expand_fuel_prices(historical_prices)
-
-    # 2. Check if scenario explicitly provides fuel prices (override for future scenarios)
-    if 'marginal_costs' in scenario_config and 'fuel_prices' in scenario_config['marginal_costs']:
-        explicit_prices = scenario_config['marginal_costs']['fuel_prices']
-        logger.info(f"Using scenario-specific fuel prices (explicit override):")
-        for fuel, price in explicit_prices.items():
-            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-        return _expand_fuel_prices(explicit_prices)
-
-    # 3. Try FES dynamic prices for future scenarios
-    if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:
-        fes_year = scenario_config.get('FES_year')
-        fuel_price_file = scenario_config.get('_fuel_price_file')  # Passed from Snakemake params
-
-        if fes_year:
-            fes_prices = load_fes_fuel_prices(fes_year, modelled_year, fuel_price_file)
-            if fes_prices:
-                logger.info(f"Using FES DYNAMIC fuel prices for {modelled_year} (FES {fes_year})")
-                return _expand_fuel_prices(fes_prices)
-            else:
-                logger.info(f"FES fuel prices not available, falling back to configured defaults")
-
-    # 4. Use configured defaults from defaults.yaml
-    logger.info(f"Using CONFIGURED DEFAULT fuel prices (future scenario):")
-    for fuel, price in mc_config['fuel_prices'].items():
-        logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-    return _expand_fuel_prices(mc_config['fuel_prices'])
+        return HISTORICAL_CARBON_PRICES[max(HISTORICAL_CARBON_PRICES)]
 
 
 def _expand_fuel_prices(base_prices: dict) -> dict:
-    """
-    Expand base fuel prices to include all carrier name variants.
-    
-    Parameters
-    ----------
-    base_prices : dict
-        Base prices with keys: gas, coal, oil, biomass
-        
-    Returns
-    -------
-    dict
-        Expanded prices with all carrier name variants
-    """
-    gas_price = base_prices.get('gas', 35.0)
-    coal_price = base_prices.get('coal', 30.0)
-    oil_price = base_prices.get('oil', 75.0)
-    biomass_price = base_prices.get('biomass', 45.0)
-    
+    """Expand base fuel prices {gas, coal, oil, biomass} to all carrier variants."""
+    gas = base_prices.get('gas', 35.0)
+    coal = base_prices.get('coal', 30.0)
+    oil = base_prices.get('oil', 75.0)
+    bio = base_prices.get('biomass', 45.0)
     return {
-        # Gas variants
-        'gas': gas_price,
-        'Gas': gas_price,
-        'CCGT': gas_price,
-        'OCGT': gas_price,
-        
-        # Coal variants
-        'coal': coal_price,
-        'Coal': coal_price,
-        'Conventional Steam': coal_price,
-        'Conventional steam': coal_price,
-        
-        # Oil variants
-        'oil': oil_price,
-        'Oil': oil_price,
-        
-        # Biomass/waste fuels (use biomass as base, adjust others)
-        'biomass': biomass_price,
-        'Biomass': biomass_price,
-        'Biomass (dedicated)': biomass_price,
-        'Biomass (co-firing)': biomass_price,
-        'Bioenergy': biomass_price,
-        'biogas': biomass_price * 0.9,      # Slightly cheaper
-        'landfill_gas': biomass_price * 0.6,  # Waste gas is cheaper
-        'sewage_gas': biomass_price * 0.7,
-        'advanced_biofuel': biomass_price * 1.1,
-        'waste_to_energy': biomass_price * 0.5,  # Low cost (paid to take waste)
-        
-        # Nuclear (very low marginal cost)
-        'nuclear': 8.0,
-        'Nuclear': 8.0,
-        'PWR': 8.0,
-        'AGR': 8.0,
-        
-        # Hydro (very low marginal cost)
-        'hydro': 5.0,
-        'Hydro': 5.0,
-        'Large Hydro': 5.0,
-        'large_hydro': 5.0,
-        'Small Hydro': 5.0,
-        'small_hydro': 5.0,
-        'Hydro / pumped storage': 5.0,
-        
-        # Storage (minimal wear cost)
-        'Pumped Storage': 0.1,
-        'Battery': 0.1,
-        'battery': 0.1,
-        
-        # Renewables (zero fuel cost, tiny O&M)
-        'wind': 0.5,
-        'Wind': 0.5,
-        'Wind (Onshore)': 0.5,
-        'Wind (Offshore)': 0.5,
-        'wind_onshore': 0.5,
-        'wind_offshore': 0.5,
-        'solar': 0.5,
-        'Solar': 0.5,
-        'solar_pv': 0.5,
-        
-        # Marine renewables
-        'geothermal': 3.0,
-        'tidal_stream': 1.0,
-        'shoreline_wave': 1.0,
-
-        # Future/emerging technologies
-        'H2': 50.0,                  # Hydrogen production cost
-        'micro_CHP': gas_price,      # Same as CCGT/OCGT (natural gas)
-        'gas_engine': gas_price,     # Natural gas fuel
-        'fuel_cell': 50.0,           # High hydrogen cost
-        'CHP': gas_price,            # Combined Heat & Power (was defaulting to 0, should be gas)
-        'waste': biomass_price * 0.5 # Waste-to-energy (low/negative gate fee)
+        'gas': gas, 'Gas': gas, 'CCGT': gas, 'OCGT': gas,
+        'CHP': gas, 'micro_CHP': gas, 'gas_engine': gas,
+        'coal': coal, 'Coal': coal,
+        'Conventional Steam': coal, 'Conventional steam': coal,
+        'oil': oil, 'Oil': oil,
+        'biomass': bio, 'Biomass': bio,
+        'Biomass (dedicated)': bio, 'Biomass (co-firing)': bio,
+        'Bioenergy': bio, 'biogas': bio * 0.9,
+        'landfill_gas': bio * 0.6, 'sewage_gas': bio * 0.7,
+        'advanced_biofuel': bio * 1.1,
+        'waste': bio * 0.5, 'Waste': bio * 0.5, 'waste_to_energy': bio * 0.5,
+        'nuclear': 8.0, 'Nuclear': 8.0, 'PWR': 8.0, 'AGR': 8.0,
+        'hydro': 5.0, 'Hydro': 5.0, 'Large Hydro': 5.0, 'large_hydro': 5.0,
+        'Small Hydro': 5.0, 'small_hydro': 5.0, 'Hydro / pumped storage': 5.0,
+        'Pumped Storage': 0.1, 'Battery': 0.1, 'battery': 0.1,
+        'wind': 0.5, 'Wind': 0.5, 'wind_onshore': 0.5, 'wind_offshore': 0.5,
+        'Wind (Onshore)': 0.5, 'Wind (Offshore)': 0.5,
+        'solar': 0.5, 'Solar': 0.5, 'solar_pv': 0.5,
+        'geothermal': 3.0, 'tidal_stream': 1.0, 'shoreline_wave': 1.0,
+        'H2': 50.0, 'fuel_cell': 50.0,
     }
 
 
-def load_marginal_cost_config(scenario_config: dict) -> dict:
-    """
-    Load marginal cost configuration from scenario config (merged with defaults).
-
-    Parameters
-    ----------
-    scenario_config : dict
-        Scenario configuration dictionary (includes defaults.yaml merged in)
-
-    Returns
-    -------
-    dict
-        {'carbon_price': float, 'fuel_prices': dict, 'use_fes_prices': bool}
-    """
-    # Get marginal_costs block from scenario config (merged with defaults)
+def load_fuel_prices(scenario_config: dict) -> dict:
+    """Load fuel prices: historical table > scenario override > FES > defaults."""
     mc_config = scenario_config.get('marginal_costs', {})
+    modelled_year = scenario_config.get('modelled_year')
 
-    # Fallback defaults (for backward compatibility if not in config)
-    default_carbon = 85.0
-    default_fuels = {
-        'gas': 35.0, 'coal': 30.0, 'oil': 75.0, 'biomass': 45.0,
-        'nuclear': 8.0, 'hydro': 5.0, 'wind': 0.5, 'solar': 0.5,
-        'battery': 0.1
-    }
+    # Historical scenarios: always use lookup table
+    if modelled_year and modelled_year <= 2024:
+        prices = get_historical_fuel_prices(modelled_year)
+        logger.info(f"Using HISTORICAL fuel prices for {modelled_year}: "
+                    f"gas={prices['gas']}, coal={prices['coal']}")
+        return _expand_fuel_prices(prices)
 
-    # Get carbon price (scenario override → config default → hardcoded)
-    carbon_price = mc_config.get('carbon_price', default_carbon)
+    # Scenario explicit override
+    if 'fuel_prices' in mc_config:
+        logger.info("Using scenario-specific fuel prices")
+        return _expand_fuel_prices(mc_config['fuel_prices'])
 
-    # Get fuel prices (merge scenario overrides with defaults)
-    config_fuels = mc_config.get('fuel_prices', {})
-    fuel_prices = {**default_fuels, **config_fuels}
+    # FES dynamic prices for future scenarios
+    if modelled_year and modelled_year > 2024 and mc_config.get('use_fes_prices', True):
+        fes_year = scenario_config.get('FES_year')
+        fuel_file = scenario_config.get('_fuel_price_file')
+        if fes_year:
+            fes_prices = _load_fes_fuel_prices(fes_year, modelled_year, fuel_file)
+            if fes_prices:
+                logger.info(f"Using FES fuel prices for {modelled_year} (FES {fes_year})")
+                return _expand_fuel_prices(fes_prices)
 
-    # Get FES price usage flag
-    use_fes_prices = mc_config.get('use_fes_prices', True)
-
-    logger.debug("Marginal cost configuration:")
-    logger.debug(f"  Carbon price: £{carbon_price:.2f}/tonne CO2")
-    logger.debug(f"  Use FES prices: {use_fes_prices}")
-    if config_fuels:
-        logger.debug(f"  Fuel price overrides: {list(config_fuels.keys())}")
-
-    return {
-        'carbon_price': carbon_price,
-        'fuel_prices': fuel_prices,
-        'use_fes_prices': use_fes_prices
-    }
-
-
-def load_fes_fuel_prices(fes_year: int, modelled_year: int, fuel_price_file: str = None) -> dict:
-    """
-    Load dynamic fuel prices from FES extraction CSV files.
-
-    Parameters
-    ----------
-    fes_year : int
-        FES publication year (e.g., 2024)
-    modelled_year : int
-        Target year for prices (e.g., 2035)
-    fuel_price_file : str, optional
-        Path to FES fuel prices CSV. If None, constructs from fes_year.
-
-    Returns
-    -------
-    dict
-        Fuel prices by carrier {fuel: price_gbp_per_mwh_thermal}
-    """
-    from pathlib import Path
-
-    if fuel_price_file is None:
-        fuel_price_file = f"resources/marginal_costs/fuel_prices_{fes_year}.csv"
-
-    fuel_price_path = Path(fuel_price_file)
-
-    if not fuel_price_path.exists():
-        logger.warning(f"FES fuel price file not found: {fuel_price_file}")
-        return None
-
-    try:
-        # Read FES price CSV
-        df = pd.read_csv(fuel_price_path)
-
-        # Expected columns: [year, fuel, price_gbp_per_mwh_thermal]
-        if 'year' not in df.columns or 'fuel' not in df.columns or 'price_gbp_per_mwh_thermal' not in df.columns:
-            logger.warning(f"FES fuel price CSV has unexpected format: {df.columns.tolist()}")
-            return None
-
-        # Filter/interpolate for modelled_year
-        fuel_prices = {}
-        for fuel in df['fuel'].unique():
-            fuel_df = df[df['fuel'] == fuel].sort_values('year')
-
-            if len(fuel_df) == 0:
-                continue
-
-            # Exact match
-            exact = fuel_df[fuel_df['year'] == modelled_year]
-            if len(exact) > 0:
-                fuel_prices[fuel] = float(exact.iloc[0]['price_gbp_per_mwh_thermal'])
-                continue
-
-            # Interpolate
-            years = fuel_df['year'].values
-            prices = fuel_df['price_gbp_per_mwh_thermal'].values
-
-            if modelled_year < years.min():
-                fuel_prices[fuel] = float(prices[0])
-            elif modelled_year > years.max():
-                fuel_prices[fuel] = float(prices[-1])
-            else:
-                fuel_prices[fuel] = float(np.interp(modelled_year, years, prices))
-
-        logger.info(f"Loaded FES fuel prices for {modelled_year} from FES {fes_year}:")
-        for fuel, price in fuel_prices.items():
-            logger.info(f"  {fuel}: £{price:.2f}/MWh thermal")
-
-        return fuel_prices
-
-    except Exception as e:
-        logger.warning(f"Failed to load FES fuel prices from {fuel_price_file}: {e}")
-        return None
-
-
-def load_fes_carbon_price(fes_year: int, modelled_year: int, carbon_price_file: str = None) -> float:
-    """
-    Load dynamic carbon price from FES extraction CSV.
-
-    Parameters
-    ----------
-    fes_year : int
-        FES publication year (e.g., 2024)
-    modelled_year : int
-        Target year for price (e.g., 2035)
-    carbon_price_file : str, optional
-        Path to FES carbon prices CSV. If None, constructs from fes_year.
-
-    Returns
-    -------
-    float or None
-        Carbon price in £/tonne CO2, or None if not available
-    """
-    from pathlib import Path
-
-    if carbon_price_file is None:
-        carbon_price_file = f"resources/marginal_costs/carbon_prices_{fes_year}.csv"
-
-    carbon_price_path = Path(carbon_price_file)
-
-    if not carbon_price_path.exists():
-        logger.warning(f"FES carbon price file not found: {carbon_price_file}")
-        return None
-
-    try:
-        # Read FES price CSV
-        df = pd.read_csv(carbon_price_path)
-
-        # Expected columns: [year, carbon_price_gbp_per_tco2]
-        if 'year' not in df.columns or 'carbon_price_gbp_per_tco2' not in df.columns:
-            logger.warning(f"FES carbon price CSV has unexpected format: {df.columns.tolist()}")
-            return None
-
-        df = df.sort_values('year')
-        years = df['year'].values
-        prices = df['carbon_price_gbp_per_tco2'].values
-
-        # Exact match
-        exact = df[df['year'] == modelled_year]
-        if len(exact) > 0:
-            carbon_price = float(exact.iloc[0]['carbon_price_gbp_per_tco2'])
-            logger.info(f"Loaded FES carbon price for {modelled_year} from FES {fes_year}: £{carbon_price:.2f}/tonne CO2")
-            return carbon_price
-
-        # Interpolate
-        if modelled_year < years.min():
-            carbon_price = float(prices[0])
-        elif modelled_year > years.max():
-            carbon_price = float(prices[-1])
-        else:
-            carbon_price = float(np.interp(modelled_year, years, prices))
-
-        logger.info(f"Interpolated FES carbon price for {modelled_year} from FES {fes_year}: £{carbon_price:.2f}/tonne CO2")
-        return carbon_price
-
-    except Exception as e:
-        logger.warning(f"Failed to load FES carbon price from {carbon_price_file}: {e}")
-        return None
+    # Config defaults
+    default_fuels = mc_config.get('fuel_prices', {'gas': 35, 'coal': 30, 'oil': 75, 'biomass': 45})
+    logger.info("Using configured DEFAULT fuel prices")
+    return _expand_fuel_prices(default_fuels)
 
 
 def get_carbon_price(scenario_config: dict) -> float:
-    """
-    Get carbon price with automatic source selection.
-
-    Priority order:
-    1. Historical lookup table (for modelled_year ≤ 2024)
-    2. Scenario-specific override in scenarios.yaml (marginal_costs.carbon_price)
-    3. FES dynamic price (if FES_year specified, use_fes_prices=true, and CSV exists)
-    4. Configuration default from defaults.yaml (marginal_costs.carbon_price)
-    5. Fallback hardcoded value (for backward compatibility)
-
-    Parameters
-    ----------
-    scenario_config : dict
-        Scenario configuration dictionary (includes defaults merged in)
-
-    Returns
-    -------
-    float
-        Carbon price in £/tonne CO2
-    """
-    # Load marginal cost configuration
-    mc_config = load_marginal_cost_config(scenario_config)
-
-    # 1. Check if this is a historical scenario (highest priority for historical years)
-    #    Historical scenarios should always use historical carbon prices unless the user
-    #    explicitly set carbon_price in the scenario definition (not inherited from defaults).
+    """Get carbon price: historical table > scenario override > FES > defaults."""
+    mc_config = scenario_config.get('marginal_costs', {})
     modelled_year = scenario_config.get('modelled_year')
 
     if modelled_year and modelled_year <= 2024:
-        # Historical scenario - use historical lookup
-        historical_carbon = get_historical_carbon_price(modelled_year)
-        logger.info(f"Using HISTORICAL carbon price for {modelled_year}: £{historical_carbon:.2f}/tonne CO2")
-        return historical_carbon
+        price = get_historical_carbon_price(modelled_year)
+        logger.info(f"Using HISTORICAL carbon price for {modelled_year}: {price:.2f}/tCO2")
+        return price
 
-    # 2. Check if scenario explicitly provides carbon price (override for future scenarios)
-    if 'marginal_costs' in scenario_config and 'carbon_price' in scenario_config['marginal_costs']:
-        carbon_price = scenario_config['marginal_costs']['carbon_price']
-        logger.info(f"Using scenario carbon price (explicit override): £{carbon_price:.2f}/tonne CO2")
-        return carbon_price
+    if 'carbon_price' in mc_config:
+        return mc_config['carbon_price']
 
-    # 3. Try FES dynamic carbon price for future scenarios
-    if modelled_year and modelled_year > 2024 and mc_config['use_fes_prices']:
+    if modelled_year and modelled_year > 2024 and mc_config.get('use_fes_prices', True):
         fes_year = scenario_config.get('FES_year')
-        carbon_price_file = scenario_config.get('_carbon_price_file')  # Passed from Snakemake params
-
+        carbon_file = scenario_config.get('_carbon_price_file')
         if fes_year:
-            fes_carbon = load_fes_carbon_price(fes_year, modelled_year, carbon_price_file)
+            fes_carbon = _load_fes_carbon_price(fes_year, modelled_year, carbon_file)
             if fes_carbon is not None:
-                logger.info(f"Using FES DYNAMIC carbon price for {modelled_year} (FES {fes_year})")
                 return fes_carbon
+
+    return mc_config.get('carbon_price', 85.0)
+
+
+def _load_fes_fuel_prices(fes_year, modelled_year, fuel_price_file=None):
+    """Load FES fuel prices CSV, interpolating for modelled_year."""
+    if fuel_price_file is None:
+        fuel_price_file = f"resources/marginal_costs/fuel_prices_{fes_year}.csv"
+    path = Path(fuel_price_file)
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_csv(path)
+        if not {'year', 'fuel', 'price_gbp_per_mwh_thermal'}.issubset(df.columns):
+            return None
+        prices = {}
+        for fuel in df['fuel'].unique():
+            fdf = df[df['fuel'] == fuel].sort_values('year')
+            exact = fdf[fdf['year'] == modelled_year]
+            if len(exact) > 0:
+                prices[fuel] = float(exact.iloc[0]['price_gbp_per_mwh_thermal'])
             else:
-                logger.info(f"FES carbon price not available, falling back to configured default")
+                prices[fuel] = float(np.interp(modelled_year, fdf['year'], fdf['price_gbp_per_mwh_thermal']))
+        logger.info(f"Loaded FES fuel prices for {modelled_year} from FES {fes_year}")
+        return prices
+    except Exception as e:
+        logger.warning(f"Failed to load FES fuel prices: {e}")
+        return None
 
-    # 4. Use configured default from defaults.yaml
-    logger.info(f"Using CONFIGURED DEFAULT carbon price (future scenario): £{mc_config['carbon_price']:.2f}/tonne CO2")
-    return mc_config['carbon_price']
+
+def _load_fes_carbon_price(fes_year, modelled_year, carbon_price_file=None):
+    """Load FES carbon price CSV, interpolating for modelled_year."""
+    if carbon_price_file is None:
+        carbon_price_file = f"resources/marginal_costs/carbon_prices_{fes_year}.csv"
+    path = Path(carbon_price_file)
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_csv(path)
+        if not {'year', 'carbon_price_gbp_per_tco2'}.issubset(df.columns):
+            return None
+        df = df.sort_values('year')
+        exact = df[df['year'] == modelled_year]
+        if len(exact) > 0:
+            return float(exact.iloc[0]['carbon_price_gbp_per_tco2'])
+        return float(np.interp(modelled_year, df['year'], df['carbon_price_gbp_per_tco2']))
+    except Exception as e:
+        logger.warning(f"Failed to load FES carbon price: {e}")
+        return None
 
 
-def calculate_marginal_cost(carrier: str, 
-                           fuel_price: float,
-                           carbon_price: float, 
-                           efficiency: float = 1.0) -> tuple:
-    """
-    Calculate marginal cost for a generator.
-    
-    Parameters
-    ----------
-    carrier : str
-        Generator carrier/fuel type
-    fuel_price : float
-        Fuel price in £/MWh_thermal
-    carbon_price : float
-        Carbon price in £/tonne CO2
-    efficiency : float
-        Generator efficiency (fraction, e.g., 0.5 for 50%)
-        
-    Returns
-    -------
-    tuple
-        (fuel_cost_per_MWh_elec, carbon_cost_per_MWh_elec, total_marginal_cost)
-    """
-    # Ensure efficiency is valid
+# ══════════════════════════════════════════════════════════════════════════════
+# FORMULA MC CALCULATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+def calculate_marginal_cost(carrier: str, fuel_price: float,
+                            carbon_price: float, efficiency: float = 1.0) -> tuple:
+    """Calculate (fuel_cost_elec, carbon_cost_elec, total_mc) for a generator."""
     if efficiency <= 0 or efficiency > 1.0:
-        logger.warning(f"Invalid efficiency {efficiency} for {carrier}, using 1.0")
         efficiency = 1.0
-    
-    # Fuel cost per MWh electric = fuel_price_thermal / efficiency
-    fuel_cost_elec = fuel_price / efficiency
-    
-    # Carbon cost per MWh electric
+    fuel_cost = fuel_price / efficiency
     emission_factor = CARBON_EMISSION_FACTORS.get(carrier, 0)
-    # Carbon cost = (emission_factor kg/MWh) * (carbon_price £/tonne) / 1000
-    carbon_cost_thermal = (emission_factor * carbon_price) / 1000  # £/MWh thermal
-    carbon_cost_elec = carbon_cost_thermal / efficiency  # £/MWh electric
-    
-    # Total marginal cost
-    total_marginal_cost = fuel_cost_elec + carbon_cost_elec
-    
-    return fuel_cost_elec, carbon_cost_elec, total_marginal_cost
+    carbon_cost = (emission_factor * carbon_price) / 1000 / efficiency
+    return fuel_cost, carbon_cost, fuel_cost + carbon_cost
 
-def apply_marginal_costs_to_network(network: pypsa.Network,
-                                    fuel_prices: dict,
-                                    carbon_price: float) -> pd.DataFrame:
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DATA LOADERS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _load_thermal_empirical_mc(filepath):
+    """Load daily thermal empirical MCs. Returns DataFrame or None."""
+    if not filepath or not Path(filepath).exists():
+        return None
+    try:
+        df = pd.read_csv(filepath)
+        if 'generator' not in df.columns or 'empirical_mc' not in df.columns:
+            return None
+        logger.info(f"Loaded thermal empirical MCs: {df['generator'].nunique()} generators, "
+                    f"{df['date'].nunique() if 'date' in df.columns else '?'} days")
+        return df
+    except Exception as e:
+        logger.warning(f"Failed to load thermal empirical MCs: {e}")
+        return None
+
+
+def _load_renewable_empirical_mc(filepath):
+    """Load renewable empirical MCs. Returns {generator: mc} dict."""
+    if not filepath or not Path(filepath).exists():
+        return {}
+    try:
+        df = pd.read_csv(filepath)
+        if 'generator' not in df.columns or 'empirical_mc' not in df.columns:
+            return {}
+        mcs = dict(zip(df['generator'], df['empirical_mc']))
+        logger.info(f"Loaded renewable empirical MCs: {len(mcs)} generators")
+        return mcs
+    except Exception as e:
+        logger.warning(f"Failed to load renewable empirical MCs: {e}")
+        return {}
+
+
+def _get_roc_buyout_price(buyout_prices: dict, modelled_year: int) -> float:
+    """Get ROC buyout price for a given year, interpolating if needed."""
+    if not buyout_prices:
+        return 0.0
+    prices = {int(k): v for k, v in buyout_prices.items()}
+    if modelled_year in prices:
+        return prices[modelled_year]
+    years = sorted(prices.keys())
+    if modelled_year <= years[0]:
+        return prices[years[0]]
+    if modelled_year >= years[-1]:
+        return prices[years[-1]]
+    for i in range(len(years) - 1):
+        if years[i] <= modelled_year <= years[i + 1]:
+            frac = (modelled_year - years[i]) / (years[i + 1] - years[i])
+            return prices[years[i]] + frac * (prices[years[i + 1]] - prices[years[i]])
+    return 0.0
+
+
+def _build_renewable_mc_lookup(renewable_mcs, network):
+    """Match renewable empirical MC keys to network generator names.
+
+    Strategy: direct name match, then substring match (both directions).
+    Only matches generators with a renewable carrier.
     """
-    Apply marginal costs to all generators in the network.
-    
-    CRITICAL: Load shedding generators are NEVER modified - they must retain
-    their VOLL (Value of Lost Load) cost to prevent unbounded optimization.
-    
-    Parameters
-    ----------
-    network : pypsa.Network
-        Network with generators
-    fuel_prices : dict
-        Fuel prices by carrier (£/MWh thermal)
-    carbon_price : float
-        Carbon price (£/tonne CO2)
-        
-    Returns
-    -------
-    pd.DataFrame
-        Breakdown of marginal costs by generator
+    if not renewable_mcs:
+        return {}
+
+    lookup = {}
+    sorted_stations = sorted(renewable_mcs.keys(), key=len, reverse=True)
+
+    for gen_name in network.generators.index:
+        carrier = network.generators.at[gen_name, 'carrier']
+        if carrier not in RENEWABLE_CARRIERS:
+            continue
+
+        # Direct match
+        if gen_name in renewable_mcs:
+            lookup[gen_name] = renewable_mcs[gen_name]
+            continue
+
+        # Substring match (both directions)
+        base = gen_name.lower().split('__agg')[0].strip()
+        base_ns = base.replace(' ', '').replace('_', '')
+        for st in sorted_stations:
+            st_ns = st.lower().replace(' ', '').replace('_', '')
+            if st_ns in base_ns or base_ns in st_ns:
+                lookup[gen_name] = renewable_mcs[st]
+                break
+
+    logger.info(f"Renewable MC lookup: {len(lookup)} matched "
+                f"(from {len(renewable_mcs)} calibrated stations)")
+    return lookup
+
+
+def _compute_carrier_factors(thermal_daily_df, fuel_prices, carbon_price,
+                             scenario_config=None):
+    """Derive carrier correction factors from empirical data or external file.
+
+    When carrier_correction_factors.enabled=True and a file is configured,
+    loads pre-computed factors (e.g. from historical ELEXON calibration).
+    Otherwise, computes inline from thermal daily empirical data (historical behaviour).
+
+    Returns {carrier: factor} where factor = median(empirical) / formula.
     """
-    logger.info("Computing marginal costs for generators")
+    mc_config = (scenario_config or {}).get('marginal_costs', {})
+    ccf_config = mc_config.get('carrier_correction_factors', {})
+
+    # ── External file mode (for future scenarios) ─────────────────────────────
+    if ccf_config.get('enabled', False) and ccf_config.get('file'):
+        return _load_carrier_factors_from_file(ccf_config, scenario_config)
+
+    # ── Inline mode (for historical scenarios with empirical data) ────────────
+    if thermal_daily_df is None or thermal_daily_df.empty:
+        return {}
+
+    CARRIER_EFF = {
+        'CCGT': 0.49, 'OCGT': 0.35, 'Coal': 0.36, 'coal': 0.36,
+        'Oil': 0.30, 'oil': 0.30, 'Biomass': 0.35, 'nuclear': 0.33,
+    }
+
+    carrier_medians = thermal_daily_df.groupby('carrier')['empirical_mc'].median()
+    factors = {}
+    for carrier, emp_mc in carrier_medians.items():
+        eff = CARRIER_EFF.get(carrier)
+        if eff is None:
+            continue
+        fp = fuel_prices.get(carrier, 0)
+        _, _, formula_mc = calculate_marginal_cost(carrier, fp, carbon_price, eff)
+        if formula_mc > 0:
+            factors[carrier] = emp_mc / formula_mc
+            logger.info(f"  Carrier factor {carrier}: {factors[carrier]:.3f} "
+                        f"(empirical {emp_mc:.1f} / formula {formula_mc:.1f})")
+    return factors
+
+
+def _load_carrier_factors_from_file(ccf_config, scenario_config):
+    """Load carrier correction factors from external CSV.
+
+    Selection logic:
+      - source_year="closest": pick year nearest to modelled_year
+      - source_year="median": use aggregated median rows
+      - source_year=<int>: use that specific year
+    """
+    # Prefer Snakemake-resolved path, fall back to config value
+    filepath = Path(
+        scenario_config.get('_correction_factors_file') or ccf_config['file']
+    )
+    if not filepath.exists():
+        logger.warning(f"Carrier correction factors file not found: {filepath}")
+        return {}
+
+    fallback = ccf_config.get('fallback', 1.0)
+    source_year = ccf_config.get('source_year', 'closest')
+    modelled_year = (scenario_config or {}).get('modelled_year', 2035)
+
+    try:
+        df = pd.read_csv(filepath)
+        if not {'source_year', 'carrier', 'correction_factor'}.issubset(df.columns):
+            logger.warning(f"Carrier correction factors CSV missing required columns")
+            return {}
+
+        # Select rows based on source_year config
+        if source_year == 'median':
+            selected = df[df['source_year'] == 'median']
+        elif source_year == 'closest':
+            numeric_years = df[df['source_year'] != 'median']['source_year'].astype(int)
+            if len(numeric_years) == 0:
+                selected = df[df['source_year'] == 'median']
+            else:
+                closest_year = int(numeric_years.iloc[
+                    (numeric_years - modelled_year).abs().argmin()
+                ])
+                selected = df[df['source_year'].astype(str) == str(closest_year)]
+                logger.info(f"  Using correction factors from closest year: {closest_year}")
+        else:
+            # Specific year
+            selected = df[df['source_year'].astype(str) == str(source_year)]
+            if selected.empty:
+                logger.warning(f"No correction factors for source_year={source_year}, "
+                               f"falling back to median")
+                selected = df[df['source_year'] == 'median']
+
+        if selected.empty:
+            logger.warning("No matching correction factors found")
+            return {}
+
+        factors = {}
+        for _, row in selected.iterrows():
+            carrier = row['carrier']
+            factor = float(row['correction_factor'])
+            # Skip nuclear — nuclear_override takes precedence
+            if carrier in ('nuclear', 'Nuclear'):
+                logger.info(f"  Skipping nuclear correction factor ({factor:.3f}) — "
+                            f"nuclear_override takes precedence")
+                continue
+            factors[carrier] = factor
+            logger.info(f"  Loaded carrier factor {carrier}: {factor:.3f} "
+                        f"(from file, source_year={row['source_year']})")
+
+        return factors
+
+    except Exception as e:
+        logger.warning(f"Failed to load carrier correction factors: {e}")
+        return {}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN: APPLY MARGINAL COSTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
+                                    scenario_config=None):
+    """Apply marginal costs to all generators using flat two-tier logic.
+
+    Priority for each generator:
+      1. Protected carriers (load_shedding) -> skip
+      2. Nuclear -> config.nuclear_mc
+      3. Thermal + in thermal_empirical_mc -> daily empirical value
+      4. Thermal + not in empirical -> formula x carrier_factor
+      5. Renewable + in renewable_empirical_mc -> empirical value
+      6. Renewable + subsidy fallback -> CfD=0, ROC=negative, merchant=0
+      7. Everything else -> formula MC
+    """
+    logger.info("Applying marginal costs to generators")
     logger.info(f"Total generators: {len(network.generators)}")
 
-    # Normalize carriers before processing
+    mc_config = (scenario_config or {}).get('marginal_costs', {})
+    modelled_year = (scenario_config or {}).get('modelled_year', 2024)
+    sub_config = mc_config.get('subsidies', {})
+
+    # Nuclear MC
+    nuclear_mc = mc_config.get('nuclear_mc', 10.0)
+
+    # Load thermal empirical MCs
+    thermal_mc_file = (scenario_config or {}).get('_thermal_mc_file')
+    thermal_daily_df = _load_thermal_empirical_mc(thermal_mc_file)
+
+    # Load renewable empirical MCs
+    renewable_mc_file = (scenario_config or {}).get('_renewable_mc_file')
+    renewable_mcs_raw = _load_renewable_empirical_mc(renewable_mc_file)
+    renewable_mc_lookup = _build_renewable_mc_lookup(renewable_mcs_raw, network)
+
+    # Compute carrier correction factors inline from thermal daily data
+    carrier_factors = _compute_carrier_factors(thermal_daily_df, fuel_prices, carbon_price,
+                                               scenario_config=scenario_config)
+
+    # Build thermal empirical lookup: {generator: median_mc}
+    thermal_mc_lookup = {}
+    if thermal_daily_df is not None and not thermal_daily_df.empty:
+        thermal_mc_lookup = (
+            thermal_daily_df.groupby('generator')['empirical_mc']
+            .median().to_dict()
+        )
+        logger.info(f"Thermal empirical MC lookup: {len(thermal_mc_lookup)} generators")
+
+    # Subsidy config
+    subsidy_enabled = sub_config.get('enabled', False)
+    cfd_dispatch_cost = sub_config.get('cfd_dispatch_cost', 0.0)
+    roc_buyout = 0.0
+    if subsidy_enabled:
+        buyout_prices = sub_config.get('roc_buyout_prices', {})
+        roc_buyout = _get_roc_buyout_price(buyout_prices, modelled_year)
+        logger.info(f"Subsidies enabled: CfD={cfd_dispatch_cost}, ROC buyout={roc_buyout:.2f}")
+
+    # Normalize unclassified carriers
     if 'carrier' in network.generators.columns:
-        unclassified_mask = network.generators['carrier'] == 'unclassified'
-        if unclassified_mask.any():
-            logger.warning(f"Normalizing {unclassified_mask.sum()} 'unclassified' generators to carrier 'OCGT'")
-            network.generators.loc[unclassified_mask, 'carrier'] = 'OCGT'
-    
-    marginal_cost_data = []
-    protected_count = 0
-    unmapped_carriers = set()
-    
+        mask = network.generators['carrier'] == 'unclassified'
+        if mask.any():
+            logger.warning(f"Normalizing {mask.sum()} 'unclassified' generators to 'OCGT'")
+            network.generators.loc[mask, 'carrier'] = 'OCGT'
+
+    # ── Main loop ────────────────────────────────────────────────────────────
+    mc_data = []
+
     for gen_name, gen in network.generators.iterrows():
         carrier = gen.get('carrier', 'unknown')
         efficiency = gen.get('efficiency', 1.0)
         p_nom = gen.get('p_nom', 0)
         existing_mc = gen.get('marginal_cost', 0.0)
-        
-        # CRITICAL: Never modify protected carriers (especially load_shedding)
+
+        # 1. Protected — never touch
         if carrier in PROTECTED_CARRIERS:
-            protected_count += 1
-            marginal_cost_data.append({
-                'generator': gen_name,
-                'carrier': carrier,
-                'p_nom_MW': p_nom,
-                'efficiency': efficiency,
-                'fuel_price_thermal': 0.0,
-                'fuel_cost_electric': 0.0,
-                'carbon_cost': 0.0,
-                'marginal_cost_total': existing_mc,  # Keep existing VOLL
-                'protected': True
-            })
+            mc_data.append({'generator': gen_name, 'carrier': carrier,
+                            'p_nom_MW': p_nom, 'marginal_cost': existing_mc,
+                            'source': 'protected'})
             continue
-        
-        # Get fuel price for this carrier
-        fuel_price = fuel_prices.get(carrier, None)
-        
-        # Warn if carrier not mapped (but use 0.0 as fallback)
-        if fuel_price is None:
-            if carrier not in unmapped_carriers:
-                unmapped_carriers.add(carrier)
-                logger.warning(f"⚠️  Carrier '{carrier}' not in fuel_prices map - using £0/MWh")
-            fuel_price = 0.0
-        
-        # Calculate marginal cost components
-        fuel_cost, carbon_cost, total_mc = calculate_marginal_cost(
-            carrier, fuel_price, carbon_price, efficiency
-        )
-        
-        # Apply to network
-        network.generators.loc[gen_name, 'marginal_cost'] = total_mc
-        
-        # Store breakdown
-        marginal_cost_data.append({
-            'generator': gen_name,
-            'carrier': carrier,
-            'p_nom_MW': p_nom,
-            'efficiency': efficiency,
-            'fuel_price_thermal': fuel_price,
-            'fuel_cost_electric': fuel_cost,
-            'carbon_cost': carbon_cost,
-            'marginal_cost_total': total_mc,
-            'protected': False
-        })
-    
-    # Create summary DataFrame
-    mc_df = pd.DataFrame(marginal_cost_data)
-    
-    # Report on protected generators
-    if protected_count > 0:
-        logger.info(f"\n✓ Protected {protected_count} generators from cost modification")
-        protected_df = mc_df[mc_df['protected'] == True]
-        for carrier in protected_df['carrier'].unique():
-            carrier_data = protected_df[protected_df['carrier'] == carrier]
-            count = len(carrier_data)
-            voll = carrier_data['marginal_cost_total'].iloc[0]
-            logger.info(f"  {carrier}: {count} units @ £{voll:,.0f}/MWh VOLL")
-    
-    # Warn about unmapped carriers
-    if unmapped_carriers:
-        logger.warning(f"\n⚠️  {len(unmapped_carriers)} carriers not mapped to fuel prices:")
-        for carrier in sorted(unmapped_carriers):
-            count = len(mc_df[mc_df['carrier'] == carrier])
-            capacity = mc_df[mc_df['carrier'] == carrier]['p_nom_MW'].sum()
-            logger.warning(f"  {carrier}: {count} units, {capacity:,.1f} MW → £0/MWh")
-    
-    # Log summary by carrier
-    logger.info("\nMarginal cost summary by carrier:")
+
+        # 2. Nuclear — fixed override
+        if carrier in ('nuclear', 'Nuclear', 'PWR', 'AGR'):
+            mc = nuclear_mc
+            source = 'nuclear_override'
+
+        # 3. Thermal with empirical MC
+        elif gen_name in thermal_mc_lookup:
+            mc = thermal_mc_lookup[gen_name]
+            source = 'thermal_empirical'
+
+        # 4. Thermal without empirical — formula x carrier factor
+        elif carrier in THERMAL_CARRIERS:
+            fp = fuel_prices.get(carrier, 0)
+            _, _, formula_mc = calculate_marginal_cost(carrier, fp, carbon_price, efficiency)
+            factor = carrier_factors.get(carrier, 1.0)
+            mc = formula_mc * factor
+            source = f'formula*{factor:.3f}' if factor != 1.0 else 'formula'
+
+        # 5. Renewable with empirical MC (from ELEXON bids)
+        elif gen_name in renewable_mc_lookup:
+            mc = renewable_mc_lookup[gen_name]
+            source = 'renewable_empirical'
+
+        # 6. Renewable subsidy fallback
+        elif carrier in RENEWABLE_CARRIERS:
+            support_type = gen.get('support_type', None)
+            if subsidy_enabled and support_type == 'CfD':
+                mc = cfd_dispatch_cost
+                source = 'subsidy_CfD'
+            elif subsidy_enabled and support_type == 'ROC':
+                ro_banding = gen.get('ro_banding', 0.0)
+                if pd.notna(ro_banding) and ro_banding > 0:
+                    mc = -(float(ro_banding) * roc_buyout)
+                    source = 'subsidy_ROC'
+                else:
+                    mc = 0.0
+                    source = 'renewable_default'
+            else:
+                mc = 0.0
+                source = 'renewable_default'
+
+        # 7. Everything else — formula
+        else:
+            fp = fuel_prices.get(carrier, 0)
+            _, _, mc = calculate_marginal_cost(carrier, fp, carbon_price, efficiency)
+            source = 'formula'
+
+        network.generators.loc[gen_name, 'marginal_cost'] = mc
+        mc_data.append({'generator': gen_name, 'carrier': carrier,
+                        'p_nom_MW': p_nom, 'marginal_cost': mc,
+                        'source': source})
+
+    mc_df = pd.DataFrame(mc_data)
+
+    # ── Logging ──────────────────────────────────────────────────────────────
+    active = mc_df[mc_df['source'] != 'protected']
+    protected = mc_df[mc_df['source'] == 'protected']
+    if len(protected):
+        logger.info(f"Protected {len(protected)} generators (load_shedding etc.)")
+
+    logger.info("\nMarginal cost summary:")
     logger.info("=" * 80)
-    
-    summary = mc_df[mc_df['protected'] == False].groupby('carrier').agg({
-        'generator': 'count',
-        'p_nom_MW': 'sum',
-        'marginal_cost_total': ['mean', 'min', 'max']
-    }).round(2)
-    
-    for carrier in summary.index:
-        count = int(summary.loc[carrier, ('generator', 'count')])
-        capacity = summary.loc[carrier, ('p_nom_MW', 'sum')]
-        mean_mc = summary.loc[carrier, ('marginal_cost_total', 'mean')]
-        min_mc = summary.loc[carrier, ('marginal_cost_total', 'min')]
-        max_mc = summary.loc[carrier, ('marginal_cost_total', 'max')]
-        
-        logger.info(f"{carrier:20s}: {count:4d} units, {capacity:8.1f} MW, "
-                   f"MC: £{mean_mc:6.2f}/MWh (£{min_mc:.2f}-£{max_mc:.2f})")
-    
+    if len(active) > 0:
+        summary = active.groupby('carrier').agg(
+            count=('generator', 'count'),
+            capacity=('p_nom_MW', 'sum'),
+            mean_mc=('marginal_cost', 'mean'),
+            min_mc=('marginal_cost', 'min'),
+            max_mc=('marginal_cost', 'max'),
+        ).round(2)
+        for carrier in summary.index:
+            r = summary.loc[carrier]
+            logger.info(f"  {carrier:20s}: {int(r['count']):4d} units, {r['capacity']:8.1f} MW, "
+                        f"MC: {r['mean_mc']:6.2f} ({r['min_mc']:.2f}-{r['max_mc']:.2f})")
     logger.info("=" * 80)
-    
-    # Check for zero-cost generators (should only be renewables + storage)
-    zero_cost = mc_df[(mc_df['marginal_cost_total'] == 0) & (mc_df['protected'] == False)]
-    if len(zero_cost) > 0:
-        logger.info(f"\nGenerators with ZERO marginal cost: {len(zero_cost)}")
-        zero_carriers = zero_cost.groupby('carrier').size()
-        for carrier, count in zero_carriers.items():
-            logger.info(f"  {carrier}: {count} units")
-    
-    # Check for high-cost generators (thermal should be £50-150/MWh)
-    thermal_carriers = ['CCGT', 'OCGT', 'Coal', 'Oil', 'gas', 'coal', 'oil', 
-                       'Conventional Steam', 'Conventional steam']
-    thermal_gens = mc_df[mc_df['carrier'].isin(thermal_carriers)]
-    
-    if len(thermal_gens) > 0:
-        logger.info(f"\nThermal generator marginal costs:")
-        for carrier in thermal_gens['carrier'].unique():
-            carrier_gens = thermal_gens[thermal_gens['carrier'] == carrier]
-            mean_mc = carrier_gens['marginal_cost_total'].mean()
-            logger.info(f"  {carrier}: £{mean_mc:.2f}/MWh average")
-    else:
-        logger.warning("⚠️  No thermal generators found!")
-    
+
+    # Source breakdown
+    source_counts = active.groupby('source').size()
+    logger.info("MC source breakdown:")
+    for src, count in source_counts.items():
+        logger.info(f"  {src}: {count} generators")
+
     return mc_df
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TIME-VARYING MC (daily empirical)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def apply_time_varying_mc(network, scenario_config, daily_mc_file=None):
+    """Convert static MCs to hourly time series using daily empirical MCs."""
+    mc_cfg = scenario_config.get('marginal_costs', {})
+    emp_cfg = mc_cfg.get('empirical_calibration', {})
+
+    daily_enabled = emp_cfg.get('enabled', False) and daily_mc_file
+
+    if not daily_enabled:
+        logger.info("Time-varying MC: disabled")
+        return
+
+    logger.info("=" * 60)
+    logger.info("APPLYING TIME-VARYING MARGINAL COSTS")
+    logger.info("=" * 60)
+
+    snapshots = network.snapshots
+    gen_names = network.generators.index
+    static_mc = network.generators['marginal_cost']
+
+    # Start with static MC broadcast
+    mc_t = pd.DataFrame(
+        np.tile(static_mc.values, (len(snapshots), 1)),
+        index=snapshots, columns=gen_names, dtype=float,
+    )
+
+    # ── Daily empirical MC override ──────────────────────────────────────────
+    # Nuclear carriers must be excluded: their ELEXON bids reflect strategic
+    # BM behaviour (high bids to avoid turn-down), not short-run marginal cost.
+    # The nuclear_override (Layer 2) must take precedence.
+    nuclear_carriers = {'nuclear', 'Nuclear', 'PWR', 'AGR'}
+    gen_carriers = network.generators['carrier']
+    skip_nuclear = set(gen_carriers[gen_carriers.isin(nuclear_carriers)].index)
+
+    try:
+        daily_df = pd.read_csv(daily_mc_file)
+        if 'date' in daily_df.columns:
+            daily_df['date'] = pd.to_datetime(daily_df['date']).dt.date
+            daily_lookup = daily_df.set_index(['generator', 'date'])['empirical_mc']
+            snap_dates = pd.Series(snapshots).dt.date.values
+
+            overridden = 0
+            skipped_nuclear = 0
+            for gen in gen_names:
+                if gen in skip_nuclear:
+                    skipped_nuclear += 1
+                    continue
+                for d in sorted(set(snap_dates)):
+                    if (gen, d) in daily_lookup.index:
+                        emp_mc = daily_lookup.loc[(gen, d)]
+                        if pd.notna(emp_mc) and emp_mc > 0:
+                            mask = snap_dates == d
+                            mc_t.loc[mask, gen] = emp_mc
+                            overridden += 1
+
+            logger.info(f"  Daily MC: overrode {overridden} (generator, date) cells")
+            if skipped_nuclear:
+                logger.info(f"  Preserved nuclear_override for {skipped_nuclear} nuclear generators")
+    except Exception as e:
+        logger.warning(f"  Failed to load daily MCs: {e}")
+
+    network.generators_t['marginal_cost'] = mc_t
+    logger.info(f"  Result: {mc_t.shape[0]} snapshots x {mc_t.shape[1]} generators")
+    logger.info(f"  MC range: {mc_t.min().min():.2f}-{mc_t.max().max():.2f}/MWh")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SNAKEMAKE ENTRY POINT
+# ══════════════════════════════════════════════════════════════════════════════
+
 def main():
-    """Main execution function."""
+    """Snakemake entry point."""
     global logger
-    
-    # Reinitialize logger with Snakemake log path
+
     log_path = snakemake.log[0] if hasattr(snakemake, 'log') and snakemake.log else "apply_marginal_costs"
     logger = setup_logging(log_path)
-    
+
     logger.info("=" * 80)
     logger.info("APPLYING MARGINAL COSTS TO NETWORK")
     logger.info("=" * 80)
-    
+
     try:
-        # Load network
-        input_path = snakemake.input.network
-        logger.info(f"Loading network from: {input_path}")
-        network = load_network(input_path, custom_logger=logger)
-        
-        logger.info(f"Network: {network.name}")
-        logger.info(f"Buses: {len(network.buses)}")
-        logger.info(f"Generators: {len(network.generators)}")
-        
-        # Get parameters
+        network = load_network(snakemake.input.network, custom_logger=logger)
         scenario_config = snakemake.params.scenario_config
 
-        # Add file paths to scenario_config if provided (for FES integration)
+        # Pass file paths through scenario_config for the apply function
         if hasattr(snakemake.params, 'fuel_price_file') and snakemake.params.fuel_price_file:
             scenario_config['_fuel_price_file'] = snakemake.params.fuel_price_file
         if hasattr(snakemake.params, 'carbon_price_file') and snakemake.params.carbon_price_file:
             scenario_config['_carbon_price_file'] = snakemake.params.carbon_price_file
+        if hasattr(snakemake.params, 'thermal_mc_file') and snakemake.params.thermal_mc_file:
+            scenario_config['_thermal_mc_file'] = snakemake.params.thermal_mc_file
+        if hasattr(snakemake.params, 'renewable_mc_file') and snakemake.params.renewable_mc_file:
+            scenario_config['_renewable_mc_file'] = snakemake.params.renewable_mc_file
+        if hasattr(snakemake.params, 'correction_factors_file') and snakemake.params.correction_factors_file:
+            scenario_config['_correction_factors_file'] = snakemake.params.correction_factors_file
 
-        # Load fuel prices and carbon price
         fuel_prices = load_fuel_prices(scenario_config)
         carbon_price = get_carbon_price(scenario_config)
-        
-        # Apply marginal costs
-        marginal_cost_df = apply_marginal_costs_to_network(
-            network, fuel_prices, carbon_price
+
+        mc_df = apply_marginal_costs_to_network(
+            network, fuel_prices, carbon_price, scenario_config
         )
-        
-        # Save marginal cost breakdown
-        output_csv = snakemake.output.marginal_costs_csv
-        marginal_cost_df.to_csv(output_csv, index=False)
-        logger.info(f"\nSaved marginal cost breakdown to: {output_csv}")
-        
-        # Save updated network
-        output_network = snakemake.output.network
-        save_network(network, output_network, custom_logger=logger)
-        logger.info(f"Saved network with marginal costs to: {output_network}")
-        
+
+        # Time-varying MC (daily empirical base)
+        thermal_mc_file = getattr(snakemake.params, 'thermal_mc_file', None)
+        apply_time_varying_mc(network, scenario_config, daily_mc_file=thermal_mc_file)
+
+        # Save outputs
+        mc_df.to_csv(snakemake.output.marginal_costs_csv, index=False)
+        save_network(network, snakemake.output.network, custom_logger=logger)
+
         logger.info("=" * 80)
-        logger.info("✓ MARGINAL COSTS APPLIED SUCCESSFULLY")
+        logger.info("MARGINAL COSTS APPLIED SUCCESSFULLY")
         logger.info("=" * 80)
-        
+
     except Exception as e:
         logger.error(f"Failed to apply marginal costs: {e}", exc_info=True)
         raise
 
 if __name__ == "__main__":
     main()
-

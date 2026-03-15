@@ -38,7 +38,7 @@ solver:
   NumericFocus: 3                 # 0-3, higher = more careful numerics (3=max)
   ScaleFlag: 2                    # 0-3, automatic scaling (2=aggressive)
   DualReductions: 0               # 0=disable (clearer error messages)
-  BarIterLimit: 200               # Increase from default 1000 iterations
+  BarIterLimit: 200               # Limit barrier iterations (default 1000); early termination governed by BarConvTol
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OPTIMIZATION MODE
@@ -119,6 +119,7 @@ transmission:
 # Or integrated with main workflow when market.enabled: true in a scenario.
 market:
   enabled: false                          # Master toggle for market simulation
+  wholesale_only: false                   # If true, run only wholesale (no balancing/analysis)
 
   # ── Stage 1: Wholesale Market ──────────────────────────────────────────────
   wholesale:
@@ -129,15 +130,17 @@ market:
   # ── Stage 2: Balancing Mechanism ───────────────────────────────────────────
   balancing:
     # How bid/offer prices are determined:
-    #   "derived" - Calculated from generator marginal_cost ± markup/discount
-    #   "csv"     - Load from external CSV file (future extension)
+    #   "derived" - Calculated from generator marginal_cost ± markup/discount (default)
+    #   "elexon"  - Actual ELEXON BMRS bid/offer data (historical scenarios only)
+    #   "csv"     - Load from external CSV files (custom/research use)
     bid_offer_source: "derived"
 
     # Default fractional markup/discount applied to marginal_cost
     # offer_price = marginal_cost * (1 + default_offer_markup)
-    # bid_price   = marginal_cost * (1 - default_bid_discount)
+    # bid_price   = max(marginal_cost * (1 - default_bid_discount), min_bid_floor)
     default_offer_markup: 0.10            # 10% above marginal_cost for offers (increase output)
     default_bid_discount: 0.10            # 10% below marginal_cost for bids (decrease output)
+    min_bid_floor: 0.50                   # Minimum bid price (£/MWh) — prevents zero/negative bids
 
     # Per-carrier overrides for bid/offer pricing
     # Carriers not listed here use the defaults above
@@ -154,6 +157,12 @@ market:
       solar_pv:
         offer_markup: 0.0
         bid_discount: 0.05
+      large_hydro:
+        offer_markup: 0.0                 # Variable resource — cannot offer above available flow
+        bid_discount: 0.05
+      small_hydro:
+        offer_markup: 0.0
+        bid_discount: 0.05
       battery:
         offer_markup: 0.15
         bid_discount: 0.15
@@ -165,6 +174,28 @@ market:
     # true  = ICs cannot be redispatched (v1 default)
     # false = ICs participate in BM (future extension)
     fix_interconnectors: true
+
+    # ── ELEXON source config (only used when bid_offer_source: "elexon") ────
+    elexon:
+      # {scenario} is expanded at runtime — BOD data stored per-scenario, separate
+      # from shared calibration caches in resources/market/elexon/
+      data_dir: "resources/market/{scenario}/elexon"  # Where ELEXON BOD CSVs are stored
+      bmu_mapping: "data/generators/bmus_prepared.csv" # BMU ID → generator name mapping
+      fallback: "derived"               # For unmatched generators: "derived" or "zero"
+
+    # ── CSV source config (only used when bid_offer_source: "csv") ──────────
+    csv:
+      offer_file: null                   # Path to offer prices CSV (generator × snapshot)
+      bid_file: null                     # Path to bid prices CSV (generator × snapshot)
+
+  # ── Post-Solve Revenue Tracking ──────────────────────────────────────────
+  # Calculates CfD difference payments and ROC income after market solve.
+  # Requires market.enabled: true AND subsidy_tracking.enabled: true.
+  revenue_tracking:
+    enabled: false                        # Master toggle
+    include_cfd: true                     # Calculate CfD top-up/clawback payments
+    include_roc: true                     # Calculate ROC income
+    output_format: "csv"                  # "csv", "json", or "both"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # ETYS DATA SOURCE (ETYS network model only)
@@ -236,35 +267,159 @@ spatial_mapping:
   earth_radius_km: 6371.0
 
 # ──────────────────────────────────────────────────────────────────────────────
-# MARGINAL COST DEFAULTS (for future scenarios, modelled_year > 2024)
+# MARGINAL COST DEFAULTS
 # ──────────────────────────────────────────────────────────────────────────────
-# Historical scenarios (≤2024) automatically use built-in historical lookup tables
-# Future scenarios (>2024) use these defaults unless overridden in scenarios.yaml
+# Historical scenarios (<=2024) automatically use built-in historical lookup tables.
+# Future scenarios (>2024) use these defaults unless overridden in scenarios.yaml.
 # ──────────────────────────────────────────────────────────────────────────────
 
 marginal_costs:
-  # Carbon price (£/tonne CO2)
+  # Nuclear MC override (ELEXON bid prices reflect strategic behaviour, not SRMC)
+  nuclear_mc: 10.0
+
+  # Default fuel prices (used when historical tables and FES data are unavailable)
+  fuel_prices:
+    gas: 35.0
+    coal: 30.0
+    oil: 75.0
+    biomass: 45.0
+
+  # Default carbon price
   carbon_price: 85.0
 
-  # Fuel prices (£/MWh thermal, before efficiency adjustment)
-  fuel_prices:
-    gas: 35.0          # Natural gas (CCGT/OCGT)
-    coal: 30.0         # Coal
-    oil: 75.0          # Oil
-    biomass: 45.0      # Biomass/bioenergy
-    nuclear: 8.0       # Very low marginal operating cost
-    hydro: 5.0         # Very low marginal cost
-    wind: 0.5          # Minimal variable O&M
-    solar: 0.5         # Minimal variable O&M
-    battery: 0.1       # Wear and tear cost
-
-  # Historical data: Built-in lookup tables (2010-2024) used automatically
-  # for historical scenarios. Cannot be overridden to maintain accuracy.
+  # Use built-in historical lookup tables for modelled_year <= 2024
   use_historical_data: true
 
-  # FES dynamic prices: For future scenarios (>2024), use FES-extracted prices if available
-  # Falls back to defaults above if FES extraction not available
+  # Use FES-extracted prices for future scenarios (>2024)
   use_fes_prices: true
+
+  # ── Carrier Correction Factors ───────────────────────────────────────────────
+  # When enabled, loads pre-computed correction factors from a CSV file.
+  # These factors scale formula MCs to match real-world dispatch costs,
+  # derived from historical ELEXON calibration (e.g., CCGT ≈ 0.62).
+  # Useful for future scenarios where per-generator ELEXON data is unavailable.
+  # Generate the file: python scripts/generators/export_correction_factors.py
+  carrier_correction_factors:
+    enabled: false                       # Default off for backward compat
+    file: "data/market/historical_carrier_correction_factors.csv"
+    source_year: "closest"               # "closest" | "median" | specific year (e.g. 2023)
+    fallback: 1.0                        # Factor when carrier not in file
+
+  # ── Empirical Calibration (ELEXON data) ────────────────────────────────────
+  # When enabled, calibrates per-generator thermal MCs  and renewable MCs
+  # from ELEXON data. Carrier correction factors are derived inline.
+  empirical_calibration:
+    enabled: false
+    window_days: 7                       # Rolling window half-width for thermal calibration
+
+  # ── Subsidy-Aware MC (fallback for renewables without empirical data) ──────
+  subsidies:
+    enabled: false
+    cfd_dispatch_cost: 0.0
+    roc_buyout_prices:
+      2021: 50.05
+      2022: 54.73
+      2023: 57.47
+      2024: 59.10
+      2025: 61.00
+      2026: 62.83
+      2027: 64.72
+      2028: 66.66
+      2029: 68.66
+      2030: 70.72
+      2031: 72.84
+      2032: 75.03
+      2033: 77.28
+      2034: 79.60
+      2035: 81.99
+      2036: 84.45
+      2037: 86.98
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SUBSIDY TRACKING (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+# Controls whether CfD/ROC support_type is assigned to renewable generators
+# during integration. Required for marginal_costs.subsidies and market revenue tracking.
+# When disabled, no subsidy attributes are stored — all generators treated as merchant.
+subsidy_tracking:
+  enabled: false                          # Master toggle
+
+  # ROC eligibility window (years from operational_date)
+  roc_eligibility_years: 20              # Standard ROC accreditation period
+
+  # Date-based ROC inference for REPD sites missing ro_banding data.
+  # Non-CfD renewables operational before this date are assumed ROC-accredited
+  # with default banding values below. After this date, new ROC accreditation closed.
+  roc_closure_date: "2017-04-01"         # New ROC accreditation closed 1 April 2017
+
+  # Default ROC banding (ROC/MWh) by carrier, used when REPD ro_banding field is blank.
+  # Based on Ofgem published banding levels for the final accreditation period.
+  # Only applied to sites operational before roc_closure_date that lack explicit data.
+  default_roc_bandings:
+    wind_onshore: 0.9                    # Ofgem Band 2 (2013-2017)
+    wind_offshore: 2.0                   # Ofgem Band 2 (pre-2015 projects, most legacy)
+    solar_pv: 1.2                        # Ofgem Band 3 (>50kW, 2013-2015)
+    small_hydro: 1.0                     # Ofgem Band 2 (≤20MW)
+    large_hydro: 1.0                     # Ofgem Band 2
+    tidal_stream: 5.0                    # Ofgem Band 1 (emerging tech)
+    shoreline_wave: 5.0                  # Ofgem Band 1 (emerging tech)
+    biomass: 1.5                         # Ofgem dedicated biomass band
+
+  # For FES-sourced generators (no REPD data), what fraction get CfD vs merchant.
+  # Carriers not listed default to 0.0 (all merchant).
+  fes_cfd_fractions:
+    wind_offshore: 1.0                   # All new offshore assumed CfD
+    wind_onshore: 0.3                    # 30% CfD, 70% merchant
+    solar_pv: 0.5                        # 50% CfD, 50% merchant
+    nuclear: 1.0                         # All new nuclear CfD (SZC)
+
+  # CfD strike prices by allocation round (£/MWh nominal)
+  # Used for post-solve revenue tracking only (NOT dispatch MC)
+  cfd_strike_prices:
+    AR1_offshore: 150.0
+    AR2_offshore: 75.0
+    AR3_offshore: 58.0
+    AR4_offshore: 40.0
+    AR5_offshore: 37.35
+    AR6_offshore: 73.0
+    AR6_onshore: 53.0
+    AR6_solar: 47.0
+    future_offshore: 80.0               # Projected for 2030s
+    future_onshore: 55.0
+    future_solar: 50.0
+    future_nuclear: 92.50               # SZC strike price
+
+# ──────────────────────────────────────────────────────────────────────────────
+# INTERCONNECTOR PRICING
+# ──────────────────────────────────────────────────────────────────────────────
+# Controls how EU_supply generator marginal costs are set.
+#
+# source options:
+#   "derived"  — Annual average from FES European generation-mix merit order (default).
+#                No API token required. Produces a single scalar MC per country.
+#   "entsoe"   — Hourly day-ahead prices from the ENTSO-E Transparency Platform.
+#                Requires an API token in .env or ENTSOE_API_TOKEN env var.
+#                Falls back to "derived" if the token is missing or fetch fails.
+#   "csv"      — User-supplied hourly CSV (datetime index, one column per country).
+#
+# For future scenarios (>2024) with source "entsoe":
+#   Hourly prices are fetched for the WEATHER year (e.g. 2021 for a dunkelflaute
+#   scenario), then scaled so the annual mean matches the FES-derived MC for the
+#   modelled year. This preserves the hourly price shape (weather-correlated)
+#   while matching the projected annual price level.
+#
+# For historical scenarios (≤2024) with source "entsoe":
+#   Actual ENTSO-E prices for the modelled year are used directly (no scaling).
+#   Flows remain fixed (ESPENI p_set) but the MC feeds shadow prices / marginal
+#   pricing signals for accurate wholesale price reporting.
+interconnectors:
+  pricing:
+    source: "derived"                # "derived" | "entsoe" | "csv"
+    eur_to_gbp: 0.86                # EUR→GBP conversion rate
+    gb_price: 50.0                   # GB wholesale price for price differentials (£/MWh)
+    price_floor: 0.0                # Minimum EU price (£/MWh)
+    price_cap: 500.0                # Maximum EU price (£/MWh)
+    csv_file: null                  # Path to user-supplied CSV (source: "csv" only)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # LOGGING

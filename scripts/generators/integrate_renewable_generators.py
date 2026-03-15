@@ -114,6 +114,190 @@ def filter_sites_by_year(sites_df: pd.DataFrame, modelled_year: int,
     return filtered_df
 
 
+def _assign_subsidy_attributes(
+    sites_df: pd.DataFrame,
+    modelled_year: int,
+    roc_eligibility_years: int,
+    fes_cfd_fractions: dict,
+    logger: logging.Logger,
+    roc_closure_date: str = "2017-04-01",
+    default_roc_bandings: Optional[dict] = None,
+) -> pd.DataFrame:
+    """
+    Assign support_type and region attributes to renewable sites.
+
+    For REPD sites (historical): uses cfd_round and ro_banding columns, with a
+    date-based fallback for the ~90% of sites missing ro_banding data.  Non-CfD
+    renewables operational before the ROC closure date (April 2017) are inferred
+    as ROC-accredited using technology-specific default banding values — following
+    the same assumption used by GBPower (all non-CfD wind/solar are ROC).
+
+    For FES sites (future): splits generators into CfD/merchant sub-units
+    based on fes_cfd_fractions config (ROC scheme closed 2017, no new ROC).
+
+    Also assigns region ('north' or 'south') based on latitude threshold 55.5°.
+
+    Parameters
+    ----------
+    sites_df : DataFrame
+        Renewable sites with at least 'technology' and 'capacity_mw' columns.
+    modelled_year : int
+        The year being modelled (for ROC expiry check).
+    roc_eligibility_years : int
+        Number of years ROC accreditation lasts (typically 20).
+    fes_cfd_fractions : dict
+        Carrier → fraction of new capacity assumed to be CfD (e.g. wind_offshore: 1.0).
+    logger : Logger
+    roc_closure_date : str
+        Date after which new ROC accreditation was closed (default "2017-04-01").
+    default_roc_bandings : dict, optional
+        Carrier → default ROC banding (ROC/MWh) for sites missing REPD ro_banding data.
+
+    Returns
+    -------
+    DataFrame with added columns: support_type, region.
+    FES rows may be duplicated where CfD fraction is between 0 and 1.
+    """
+    df = sites_df.copy()
+
+    has_cfd = 'cfd_round' in df.columns
+    has_roc = 'ro_banding' in df.columns
+    has_opdate = 'operational_date' in df.columns
+
+    # --- Assign support_type ---
+    if has_cfd or has_roc:
+        # REPD path: use actual REPD subsidy columns
+        support = pd.Series('merchant', index=df.index)
+
+        if has_cfd:
+            is_cfd = df['cfd_round'].notna() & (df['cfd_round'] != '')
+            support[is_cfd] = 'CfD'
+
+        if has_roc:
+            is_roc = df['ro_banding'].notna() & (df['ro_banding'] > 0)
+            # Check ROC expiry: operational_date + roc_eligibility_years > modelled_year
+            if has_opdate:
+                op_dates = pd.to_datetime(df['operational_date'], format='%d/%m/%Y', errors='coerce')
+                roc_expiry = op_dates + pd.DateOffset(years=roc_eligibility_years)
+                roc_expired = roc_expiry <= pd.Timestamp(f'{modelled_year}-01-01')
+                # Only assign ROC if not expired AND not already CfD
+                is_roc = is_roc & ~roc_expired & (support != 'CfD')
+            else:
+                # No operational_date — assume ROC still valid if banding present
+                is_roc = is_roc & (support != 'CfD')
+            support[is_roc] = 'ROC'
+
+        # --- Date-based ROC inference fallback ---
+        # REPD ro_banding is blank for ~90% of sites. For non-CfD renewables
+        # operational before the ROC closure date, infer ROC accreditation with
+        # default banding by technology. This follows GBPower's approach where
+        # all non-CfD wind/solar are assumed ROC.
+        if default_roc_bandings and has_opdate:
+            roc_cutoff = pd.Timestamp(roc_closure_date)
+            op_dates = pd.to_datetime(df['operational_date'], format='%d/%m/%Y', errors='coerce')
+
+            # Eligible: still 'merchant', operational before ROC closure, not expired
+            is_merchant = support == 'merchant'
+            is_pre_closure = op_dates.notna() & (op_dates < roc_cutoff)
+            roc_expiry_inferred = op_dates + pd.DateOffset(years=roc_eligibility_years)
+            not_expired = roc_expiry_inferred > pd.Timestamp(f'{modelled_year}-01-01')
+
+            # Carrier must have a default banding defined
+            carrier_col = 'technology' if 'technology' in df.columns else 'carrier'
+            has_default_banding = df[carrier_col].map(
+                lambda c: c in default_roc_bandings
+            )
+
+            infer_mask = is_merchant & is_pre_closure & not_expired & has_default_banding
+            n_inferred = infer_mask.sum()
+
+            if n_inferred > 0:
+                support[infer_mask] = 'ROC'
+                # Fill in ro_banding with the default value for each carrier
+                if 'ro_banding' not in df.columns:
+                    df['ro_banding'] = np.nan
+                for carrier, banding in default_roc_bandings.items():
+                    carrier_mask = infer_mask & (df[carrier_col] == carrier)
+                    df.loc[carrier_mask, 'ro_banding'] = float(banding)
+
+                inferred_mw = df.loc[infer_mask, 'capacity_mw'].sum()
+                logger.info(f"  ROC inference: {n_inferred} sites ({inferred_mw:.0f} MW) "
+                            f"inferred as ROC (operational before {roc_closure_date}, "
+                            f"default banding applied)")
+                # Log per-carrier breakdown
+                for carrier in df.loc[infer_mask, carrier_col].unique():
+                    c_mask = infer_mask & (df[carrier_col] == carrier)
+                    c_mw = df.loc[c_mask, 'capacity_mw'].sum()
+                    c_banding = default_roc_bandings.get(carrier, '?')
+                    logger.info(f"    {carrier}: {c_mask.sum()} sites, "
+                                f"{c_mw:.0f} MW, banding={c_banding} ROC/MWh")
+
+        df['support_type'] = support
+        n_cfd = (support == 'CfD').sum()
+        n_roc = (support == 'ROC').sum()
+        n_merchant = (support == 'merchant').sum()
+        logger.info(f"  REPD subsidy assignment: {n_cfd} CfD, "
+                     f"{n_roc} ROC, {n_merchant} merchant")
+    else:
+        # FES path: no REPD columns — split by fes_cfd_fractions
+        rows_cfd = []
+        rows_merchant = []
+        rows_unchanged = []
+
+        for idx, row in df.iterrows():
+            carrier = row.get('technology', '')
+            fraction = fes_cfd_fractions.get(carrier, 0.0)
+            cap = row.get('capacity_mw', 0.0)
+
+            if fraction >= 1.0:
+                row_copy = row.copy()
+                row_copy['support_type'] = 'CfD'
+                rows_cfd.append(row_copy)
+            elif fraction <= 0.0:
+                row_copy = row.copy()
+                row_copy['support_type'] = 'merchant'
+                rows_merchant.append(row_copy)
+            else:
+                # Split into CfD and merchant sub-units
+                cfd_row = row.copy()
+                cfd_row['capacity_mw'] = cap * fraction
+                cfd_row['support_type'] = 'CfD'
+                if 'site_name' in cfd_row.index and pd.notna(cfd_row.get('site_name')):
+                    cfd_row['site_name'] = str(cfd_row['site_name']) + '_CfD'
+                rows_cfd.append(cfd_row)
+
+                merch_row = row.copy()
+                merch_row['capacity_mw'] = cap * (1.0 - fraction)
+                merch_row['support_type'] = 'merchant'
+                if 'site_name' in merch_row.index and pd.notna(merch_row.get('site_name')):
+                    merch_row['site_name'] = str(merch_row['site_name']) + '_merchant'
+                rows_merchant.append(merch_row)
+
+        all_rows = rows_cfd + rows_merchant
+        # Include any rows that weren't processed (shouldn't happen, but safe)
+        if all_rows:
+            df = pd.DataFrame(all_rows).reset_index(drop=True)
+        else:
+            df['support_type'] = 'merchant'
+
+        n_cfd = (df['support_type'] == 'CfD').sum()
+        n_merch = (df['support_type'] == 'merchant').sum()
+        logger.info(f"  FES subsidy assignment: {n_cfd} CfD, {n_merch} merchant "
+                     f"({len(df)} total rows, was {len(sites_df)})")
+
+    # --- Assign region based on latitude ---
+    if 'lat' in df.columns:
+        df['region'] = np.where(df['lat'] > 55.5, 'north', 'south')
+        n_north = (df['region'] == 'north').sum()
+        n_south = (df['region'] == 'south').sum()
+        logger.info(f"  Region assignment: {n_north} north, {n_south} south")
+    else:
+        df['region'] = 'south'  # default fallback
+        logger.warning("  No lat column found — defaulting all to 'south'")
+
+    return df
+
+
 def _hash_snapshots(snapshots) -> str:
     if len(snapshots) == 0:
         return "empty"
@@ -305,7 +489,8 @@ def add_renewable_generators(
     p_nom_col: str = 'capacity_mw',
     carrier_col: str = 'technology',
     overwrite: bool = False,
-    snapshot_weighting: Optional[pd.Series] = None
+    snapshot_weighting: Optional[pd.Series] = None,
+    renewables_year: Optional[int] = None
 ) -> pypsa.Network:
     logger.info(f"Adding {len(sites_df)} renewable generators to network")
     required_cols = ['bus', p_nom_col, carrier_col]
@@ -332,7 +517,20 @@ def add_renewable_generators(
         }
         for tech in valid_sites[carrier_col].unique():
             profile_name = tech_to_profile.get(tech, tech.lower().replace(' ', '_'))
-            profile_files = list(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
+            # Use year-specific glob to avoid loading profiles from wrong weather year
+            if renewables_year is not None:
+                profile_files = list(Path(profiles_dir).glob(f"{profile_name}_{renewables_year}.csv"))
+                if not profile_files:
+                    # Fallback: try broader glob but prefer correct year
+                    all_files = sorted(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
+                    year_str = str(renewables_year)
+                    profile_files = [f for f in all_files if year_str in f.name]
+                    if not profile_files:
+                        profile_files = all_files
+                        if profile_files:
+                            logger.warning(f"No {renewables_year} profile for {tech}, using {profile_files[0].name}")
+            else:
+                profile_files = sorted(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
             if profile_files:
                 profile_path = profile_files[0]
                 cache_key = _get_profile_cache_key(profile_path, snapshots_hash)
@@ -394,6 +592,11 @@ def add_renewable_generators(
         elif 'lat' in site and 'lon' in site and pd.notna(site['lat']) and pd.notna(site['lon']):
             gen_attrs['lon'] = float(site['lon'])
             gen_attrs['lat'] = float(site['lat'])
+        
+        # Pass through subsidy tracking and region attributes (if assigned by Stage 5.75)
+        for attr in ['support_type', 'ro_banding', 'cfd_round', 'region']:
+            if attr in site and pd.notna(site[attr]):
+                gen_attrs[attr] = site[attr]
         
         # Look up generator characteristics using carrier name mapping
         # Network uses lowercase_underscore names (e.g., 'wind_offshore')
@@ -1537,6 +1740,31 @@ def main():
             
             stage_times['5.5. ETYS BMU mapping'] = time.time() - stage_start_bmu
         
+        # STAGE 5.75: Assign subsidy tracking attributes (support_type + region)
+        subsidy_config = scenario_config.get('subsidy_tracking', {})
+        if subsidy_config.get('enabled', False):
+            stage_start_sub = time.time()
+            logger.info("-" * 80)
+            logger.info("ASSIGNING SUBSIDY TRACKING ATTRIBUTES")
+            logger.info("-" * 80)
+            
+            roc_years = subsidy_config.get('roc_eligibility_years', 20)
+            fes_fractions = subsidy_config.get('fes_cfd_fractions', {})
+            roc_closure = subsidy_config.get('roc_closure_date', '2017-04-01')
+            default_bandings = subsidy_config.get('default_roc_bandings', {})
+            
+            renewable_sites = _assign_subsidy_attributes(
+                renewable_sites,
+                modelled_year or 2024,
+                roc_years,
+                fes_fractions,
+                logger,
+                roc_closure_date=roc_closure,
+                default_roc_bandings=default_bandings,
+            )
+            
+            stage_times['5.75. Subsidy attributes'] = time.time() - stage_start_sub
+        
         # STAGE 6: Add renewable generators to network
         stage_start = time.time()
         logger.info("-" * 80)
@@ -1548,11 +1776,13 @@ def main():
         
         initial_gen_count = len(network.generators)
         
+        renewables_year = scenario_config.get('renewables_year', modelled_year)
         network = add_renewable_generators(
             network, 
             renewable_sites,
             profiles_dir=profiles_dir,
-            p_nom_col='capacity_mw'
+            p_nom_col='capacity_mw',
+            renewables_year=renewables_year
         )
         
         final_gen_count = len(network.generators)

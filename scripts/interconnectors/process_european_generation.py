@@ -255,7 +255,7 @@ def calculate_country_prices(
 
 def calculate_price_differentials(
     country_prices: pd.DataFrame,
-    gb_price: float = 50.0  # Placeholder GB price - should come from GB generation mix
+    gb_price: float = 50.0  # Default GB price — override via interconnectors.pricing.gb_price
 ) -> pd.DataFrame:
     """
     Calculate price differentials between GB and connected countries.
@@ -265,7 +265,8 @@ def calculate_price_differentials(
     
     Args:
         country_prices: Estimated prices by country, scenario, year
-        gb_price: GB electricity price (£/MWh) - currently placeholder
+        gb_price: GB electricity price (£/MWh).  Override via config
+            ``interconnectors.pricing.gb_price`` (default 50.0).
         
     Returns:
         pd.DataFrame: Price differentials and flow indicators by country, scenario, year
@@ -432,7 +433,11 @@ def main():
     country_prices = calculate_country_prices(parsed_mix, marginal_costs)
     
     # Calculate price differentials
-    price_differentials = calculate_price_differentials(country_prices)
+    # gb_price can be overridden via Snakemake params (from interconnectors.pricing.gb_price)
+    gb_price = 50.0
+    if "snakemake" in dir():
+        gb_price = snakemake.params.get("gb_price", 50.0)
+    price_differentials = calculate_price_differentials(country_prices, gb_price=gb_price)
     
     # Save outputs
     logger.info(f"Saving marginal costs to {output_costs}")

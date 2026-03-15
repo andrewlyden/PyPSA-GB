@@ -99,7 +99,8 @@ class RenewableSiteDataProcessor:
             'CHP Enabled', 'Country', 'Turbine Capacity', 
             'No. of Turbines', 'Height of Turbines (m)',
             'Mounting Type for Solar', 'Development Status',
-            'X-coordinate', 'Y-coordinate', 'Operational'
+            'X-coordinate', 'Y-coordinate', 'Operational',
+            'CfD Allocation Round', 'RO Banding (ROC/MWh)', 'CfD Capacity (MW)'
         ]
         
         try:
@@ -273,7 +274,10 @@ class RenewableSiteDataProcessor:
         # Rename columns to match downstream expectations
         rename_map = {
             'Site Name': 'site_name',
-            'Installed Capacity (MWelec)': 'capacity_mw'
+            'Installed Capacity (MWelec)': 'capacity_mw',
+            'CfD Allocation Round': 'cfd_round',
+            'RO Banding (ROC/MWh)': 'ro_banding',
+            'CfD Capacity (MW)': 'cfd_capacity_mw',
         }
         tech_df = tech_df.rename(columns={k: v for k, v in rename_map.items() if k in tech_df.columns})
 

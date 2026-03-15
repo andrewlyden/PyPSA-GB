@@ -399,6 +399,34 @@ def create_market_summary(
     return summary
 
 
+def _add_revenue_tracking_to_summary(
+    summary: dict,
+    balancing_network,
+    scenario_config: dict,
+    logger,
+) -> dict:
+    """Add CfD/ROC revenue tracking data to market summary if enabled."""
+    rev_config = scenario_config.get('market', {}).get('revenue_tracking', {})
+    if not rev_config.get('enabled', False):
+        return summary
+
+    sub_config = scenario_config.get('subsidy_tracking', {})
+    if not sub_config.get('enabled', False):
+        logger.info("Revenue tracking enabled but subsidy_tracking disabled — skipping")
+        return summary
+
+    try:
+        from scripts.market.revenue_tracking import compute_revenue_tracking
+        results = compute_revenue_tracking(balancing_network, scenario_config, logger)
+        summary['revenue'] = results.get('summary', {})
+        logger.info(f"Revenue tracking added to summary: {summary['revenue']}")
+    except Exception as e:
+        logger.warning(f"Revenue tracking failed: {e}")
+        summary['revenue'] = {'error': str(e)}
+
+    return summary
+
+
 if __name__ == "__main__":
     # ──────────────────────────────────────────────────────────────────────
     # Setup
@@ -469,6 +497,11 @@ if __name__ == "__main__":
             price_comparison=price_comparison,
             scenario_id=scenario_id,
             logger=logger,
+        )
+
+        # ── Add revenue tracking if enabled ──────────────────────────────
+        summary = _add_revenue_tracking_to_summary(
+            summary, balancing_network, scenario_config, logger
         )
 
         with open(snakemake.output.summary_json, "w", encoding="utf-8") as f:

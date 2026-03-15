@@ -777,6 +777,10 @@ def apply_plant_phase_out_filtering(df: pd.DataFrame, modelled_year: int) -> pd.
     to filter out plants that closed before the modelled year. Also applies known
     capacity reductions for plants operating at reduced capacity in their final years.
 
+    A plant is only removed if its closure date falls strictly before 1 January of the
+    modelled year, so a plant closing partway through the modelled year (e.g. Sep 2024)
+    is retained (at reduced capacity if applicable) for scenarios set in that year.
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -815,8 +819,8 @@ def apply_plant_phase_out_filtering(df: pd.DataFrame, modelled_year: int) -> pd.
             plant_name = row['name']
             closure_year = row['closure_year']
 
-            if closure_year > modelled_year:
-                continue  # Plant still operational in modelled year
+            if closure_year >= modelled_year:
+                continue  # Plant still operational during modelled year
 
             # Match by partial name (e.g. "Ratcliffe" matches "Ratcliffe (Steam)")
             mask = df['station_name'].str.contains(plant_name, case=False, na=False)
@@ -1492,8 +1496,10 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
             'coal': 'coal',
             'coal (steam)': 'conventional_steam',
             'coal / oil': 'coal',            # Coal stations with oil backup/start-up
-            # Nuclear
+            # Nuclear - covers all DUKES format variants
             'nuclear': 'nuclear',
+            'nuclear agr': 'nuclear',        # DUKES 2021 format: Advanced Gas-cooled Reactor
+            'nuclear pwr': 'nuclear',        # DUKES 2021 format: Pressurised Water Reactor
             # Bioenergy / waste
             'biomass': 'biomass',
             'waste': 'waste_to_energy',
@@ -1654,6 +1660,8 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
         # Add coordinates if available (needed for plotting and validation)
         if 'lat' in row and pd.notna(row['lat']):
             gen_attrs['lat'] = float(row['lat'])
+            # Assign north/south region based on latitude threshold
+            gen_attrs['region'] = 'north' if float(row['lat']) > 55.5 else 'south'
         if 'lon' in row and pd.notna(row['lon']):
             gen_attrs['lon'] = float(row['lon'])
         
@@ -2187,6 +2195,13 @@ def main():
                             # Calculate availability (p_max_pu) as output / capacity
                             # Clip to 0-1 range to handle any data issues
                             availability = (nuclear_output / installed_capacity).clip(0, 1)
+                            
+                            # Resample to monthly averages to smooth out individual
+                            # plant outages that are unrealistically applied fleet-wide.
+                            # Planned outages at one plant shouldn't constrain all plants.
+                            monthly_avg = availability.resample('MS').mean()
+                            availability = monthly_avg.reindex(availability.index, method='ffill')
+                            logger.info(f"  Smoothed to monthly averages (removes individual outage dips)")
                             
                             # Resample to match network snapshots
                             # Network snapshots may be half-hourly or hourly

@@ -120,17 +120,55 @@ def _build_balancing_extra_functionality(
                 coords={"snapshot": sns, "name": idx},
             )
 
+        def _make_upper(sns, names, arr):
+            idx = pd.Index(names, name="name")
+            return xr.DataArray(
+                arr, dims=["snapshot", "name"],
+                coords={"snapshot": sns, "name": idx},
+            )
+
         # ── 1. Generator increase/decrease variables ─────────────────────
         gen_names = [g for g in wholesale_gen.columns if g in network.generators.index]
         if gen_names:
             lower_gen = _zero_lower(snapshots, gen_names)
 
+            # Upper bounds prevent the LP going unbounded when offer prices are
+            # negative (e.g. ROC generators with negative marginal costs).
+            # increase ≤ p_max[g,t] - p_wholesale[g,t]  (headroom to ceiling)
+            # decrease ≤ p_wholesale[g,t] - p_min[g,t]  (headroom to floor)
+            p_nom_gen = network.generators.loc[gen_names, "p_nom"].values  # (G,)
+            p_max_pu_static = network.generators.loc[gen_names, "p_max_pu"].values
+            p_min_pu_static = network.generators.loc[gen_names, "p_min_pu"].values
+
+            p_max_arr = np.outer(np.ones(n_snapshots), p_nom_gen * p_max_pu_static)
+            p_min_arr = np.outer(np.ones(n_snapshots), p_nom_gen * p_min_pu_static)
+
+            # Apply time-varying p_max_pu where present (renewables).
+            if not network.generators_t.p_max_pu.empty:
+                tv_cols = [g for g in gen_names
+                           if g in network.generators_t.p_max_pu.columns]
+                if tv_cols:
+                    tv_idx = [gen_names.index(g) for g in tv_cols]
+                    tv_vals = (
+                        network.generators_t.p_max_pu[tv_cols]
+                        .reindex(snapshots)
+                        .fillna(1.0)
+                        .values
+                    ) * p_nom_gen[tv_idx][np.newaxis, :]
+                    p_max_arr[:, tv_idx] = tv_vals
+
+            ws_gen_arr = wholesale_gen[gen_names].reindex(snapshots).values
+            upper_inc_arr = np.maximum(0.0, p_max_arr - ws_gen_arr)
+            upper_dec_arr = np.maximum(0.0, ws_gen_arr - p_min_arr)
+
             model.add_variables(
                 lower=lower_gen,
+                upper=_make_upper(snapshots, gen_names, upper_inc_arr),
                 name="Generator-increase",
             )
             model.add_variables(
                 lower=lower_gen,
+                upper=_make_upper(snapshots, gen_names, upper_dec_arr),
                 name="Generator-decrease",
             )
 
@@ -139,12 +177,9 @@ def _build_balancing_extra_functionality(
             gen_inc = model.variables["Generator-increase"]
             gen_dec = model.variables["Generator-decrease"]
 
-            # Build RHS: wholesale dispatch values
-            ws_gen_vals = wholesale_gen[gen_names].reindex(snapshots).values
-
             lhs = gen_p - gen_inc + gen_dec
             model.add_constraints(
-                lhs == ws_gen_vals,
+                lhs == ws_gen_arr,
                 name="Generator-bm_anchor",
             )
 
@@ -157,12 +192,22 @@ def _build_balancing_extra_functionality(
         if su_names:
             lower_su = _zero_lower(snapshots, su_names)
 
+            # Upper bounds: net dispatch can swing ±p_nom from wholesale position.
+            # increase ≤ p_nom - ws_su  (headroom above current net dispatch)
+            # decrease ≤ ws_su + p_nom  (headroom below current net dispatch)
+            p_nom_su = network.storage_units.loc[su_names, "p_nom"].values  # (S,)
+            ws_su_arr = wholesale_su[su_names].reindex(snapshots).values    # (T, S)
+            su_upper_inc_arr = np.maximum(0.0, p_nom_su[np.newaxis, :] - ws_su_arr)
+            su_upper_dec_arr = np.maximum(0.0, ws_su_arr + p_nom_su[np.newaxis, :])
+
             model.add_variables(
                 lower=lower_su,
+                upper=_make_upper(snapshots, su_names, su_upper_inc_arr),
                 name="StorageUnit-increase",
             )
             model.add_variables(
                 lower=lower_su,
+                upper=_make_upper(snapshots, su_names, su_upper_dec_arr),
                 name="StorageUnit-decrease",
             )
 
@@ -173,11 +218,9 @@ def _build_balancing_extra_functionality(
 
             # Storage net dispatch = p_dispatch - p_store
             # Anchor: (p_dispatch - p_store) == p_wholesale + increase - decrease
-            ws_su_vals = wholesale_su[su_names].reindex(snapshots).values
-
             lhs = su_p - su_store - su_inc + su_dec
             model.add_constraints(
-                lhs == ws_su_vals,
+                lhs == ws_su_arr,
                 name="StorageUnit-bm_anchor",
             )
 
@@ -292,6 +335,15 @@ if __name__ == "__main__":
         solver_options = snakemake.params.solver_options
         scenario_id = scenario_config.get("scenario_id", snakemake.wildcards.scenario)
 
+        # Override ELEXON paths when Snakemake provides them as inputs
+        if hasattr(snakemake.input, 'bmu_mapping'):
+            market_config.setdefault("balancing", {}).setdefault("elexon", {})
+            market_config["balancing"]["elexon"]["bmu_mapping"] = snakemake.input.bmu_mapping
+        if hasattr(snakemake.input, 'elexon_offers'):
+            elexon_dir = str(Path(snakemake.input.elexon_offers).parent)
+            market_config.setdefault("balancing", {}).setdefault("elexon", {})
+            market_config["balancing"]["elexon"]["data_dir"] = elexon_dir
+
         logger.info(f"Scenario: {scenario_id}")
         logger.info(
             f"Network: {len(network.buses)} buses, "
@@ -356,7 +408,7 @@ if __name__ == "__main__":
         logger.info("CALCULATING BID/OFFER PRICES")
         logger.info("=" * 80)
         gen_offer, gen_bid, su_offer, su_bid = calculate_bid_offer_prices(
-            network, market_config, logger
+            network, market_config, logger, scenario_id=scenario_id
         )
 
         # ── Build extra_functionality callback ───────────────────────────

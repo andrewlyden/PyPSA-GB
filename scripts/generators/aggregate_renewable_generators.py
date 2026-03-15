@@ -128,11 +128,18 @@ def aggregate_renewables_by_bus(
     new_p_max_pu = {}
     new_p_min_pu = {}
 
-    # Group by (bus, carrier)
-    groups = renewable_df.groupby(["bus", "carrier"])
+    # Group by (bus, carrier, support_type) to prevent mixing CfD/ROC/merchant
+    # generators that have different marginal costs. If support_type column is
+    # absent (subsidy_tracking disabled), fall back to (bus, carrier) only.
+    group_keys = ["bus", "carrier"]
+    if "support_type" in renewable_df.columns:
+        group_keys.append("support_type")
+    groups = renewable_df.groupby(group_keys)
     n_groups = len(groups)
 
-    for (bus, carrier), group in groups:
+    for group_key, group in groups:
+        bus = group_key[0]
+        carrier = group_key[1]
         members = list(group.index)
         n_members = len(members)
 
@@ -168,8 +175,13 @@ def aggregate_renewables_by_bus(
         largest_idx = group["p_nom"].idxmax()
         base = group.loc[largest_idx].copy()
 
-        # Create aggregated name
-        agg_name = f"{bus}_{carrier}__agg{n_members}"
+        # Create aggregated name (include support_type when grouping by it
+        # to avoid collisions, e.g. CfD vs merchant on same bus+carrier)
+        if "support_type" in group_keys and len(group_key) > 2:
+            support = group_key[2]
+            agg_name = f"{bus}_{carrier}_{support}__agg{n_members}"
+        else:
+            agg_name = f"{bus}_{carrier}__agg{n_members}"
         base.name = agg_name
 
         # Sum capacity fields
