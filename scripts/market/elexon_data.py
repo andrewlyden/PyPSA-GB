@@ -74,38 +74,38 @@ def fetch_bod_data(
     """
     _check_requests_available()
 
-    url = f"{ELEXON_API_BASE}/balancing/settlement/bid-offer"
-    params = {"settlementDate": date, "format": "json"}
-    if settlement_period is not None:
-        params["settlementPeriod"] = settlement_period
+    url = f"{ELEXON_API_BASE}/datasets/BOD/stream"
+    day_start = pd.Timestamp(date)
+    day_end = day_start + pd.Timedelta(days=1)
+    params = {
+        "from": day_start.strftime("%Y-%m-%dT00:00Z"),
+        "to": day_end.strftime("%Y-%m-%dT00:00Z"),
+        "format": "json",
+    }
 
-    all_records = []
-    params["offset"] = 0
-    params["limit"] = 1000
-
-    while True:
-        resp = requests.get(url, params=params, timeout=60)
-        resp.raise_for_status()
-        data = resp.json()
-        records = data.get("data", [])
-        if not records:
-            break
-        all_records.extend(records)
-        if len(records) < params["limit"]:
-            break
-        params["offset"] += params["limit"]
-        time.sleep(1.0 / ELEXON_RATE_LIMIT)
+    resp = requests.get(url, params=params, timeout=300)
+    resp.raise_for_status()
+    data = resp.json()
+    if isinstance(data, dict):
+        all_records = data.get("data", [])
+    else:
+        all_records = data
 
     if not all_records:
         return pd.DataFrame()
 
     df = pd.DataFrame(all_records)
+    if settlement_period is not None and "settlementPeriod" in df.columns:
+        df = df[df["settlementPeriod"] == settlement_period].copy()
+
     # Standardise column names
     col_map = {
         "bmUnit": "bmu_id",
         "settlementPeriod": "settlement_period",
         "offerPrice": "offer_price",
         "bidPrice": "bid_price",
+        "offer": "offer_price",
+        "bid": "bid_price",
         "offerLevel": "offer_volume",
         "bidLevel": "bid_volume",
         "pairId": "pair_id",
@@ -143,14 +143,24 @@ def aggregate_bod_to_hourly(
     if bod_df.empty:
         return pd.DataFrame(), pd.DataFrame()
 
-    # Separate offers (positive pair_id → higher volume = offer) and bids
+    if "offer_volume" not in bod_df.columns and "level_to" in bod_df.columns:
+        bod_df["offer_volume"] = pd.to_numeric(
+            bod_df["level_to"], errors="coerce"
+        ).abs()
+    if "bid_volume" not in bod_df.columns and "level_from" in bod_df.columns:
+        bod_df["bid_volume"] = pd.to_numeric(
+            bod_df["level_from"], errors="coerce"
+        ).abs()
+
     offers = bod_df[bod_df["offer_price"].notna()].copy()
     bids = bod_df[bod_df["bid_price"].notna()].copy()
 
     def _weighted_avg(group, price_col, vol_col):
-        vols = group[vol_col].abs()
+        if vol_col not in group.columns:
+            return group[price_col].mean()
+        vols = pd.to_numeric(group[vol_col], errors="coerce").abs()
         total = vols.sum()
-        if total == 0:
+        if vols.isna().all() or total == 0:
             return group[price_col].mean()
         return (group[price_col] * vols).sum() / total
 
@@ -569,10 +579,128 @@ def fetch_mid_prices_bulk(
     prices = df["price"].astype(float)
     prices.name = "mid_price"
 
+    # Deduplicate timestamps that can arise from BST→GMT clock-change days
+    # (ELEXON emits 50 settlement periods on a 25-hour day; periods 49/50 map
+    # to the same wall-clock hours as SP1/SP2 of the following settlement day)
+    if prices.index.duplicated().any():
+        n_dups = prices.index.duplicated().sum()
+        logger.debug(f"Deduplicating {n_dups} duplicate MID timestamps (clock change)")
+        prices = prices.groupby(level=0).mean()
+
     logger.info(f"Fetched MID prices: {len(prices)} periods, "
                 f"£{prices.min():.1f} to £{prices.max():.1f}/MWh, "
                 f"mean £{prices.mean():.1f}/MWh")
     return prices
+
+
+def fetch_b1610_bulk(
+    start_date: str,
+    end_date: str,
+    logger: logging.Logger = logger,
+) -> pd.DataFrame:
+    """
+    Fetch B1610 actual generation per BMU in bulk via stream endpoint.
+
+    Uses /datasets/B1610/stream for fast bulk download in monthly chunks,
+    replacing the per-SP fetch approach (~730 individual API calls → ~12 bulk
+    calls for a full year). Returns the same pivoted format as the sampled
+    approach but with full settlement period coverage.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date (YYYY-MM-DD).
+    end_date : str
+        End date (YYYY-MM-DD), inclusive.
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame with datetime index, BMU ID columns, MW values.
+        Empty DataFrame if the stream endpoint is unavailable.
+    """
+    _check_requests_available()
+
+    url = f"{ELEXON_API_BASE}/datasets/B1610/stream"
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date) + pd.Timedelta(days=1)
+
+    all_records = []
+    chunk_start = start
+    chunk_num = 0
+    fetch_start = time.time()
+
+    while chunk_start < end:
+        # Monthly chunks to stay within API response size limits
+        chunk_end = min(chunk_start + pd.DateOffset(months=1), end)
+        chunk_num += 1
+        params = {
+            "from": chunk_start.strftime("%Y-%m-%dT00:00Z"),
+            "to": chunk_end.strftime("%Y-%m-%dT00:00Z"),
+            "format": "json",
+        }
+
+        elapsed = time.time() - fetch_start
+        logger.info(f"  Fetching B1610 chunk {chunk_num}: "
+                     f"{chunk_start.date()} to {chunk_end.date()} "
+                     f"({elapsed:.0f}s elapsed)")
+
+        try:
+            resp = requests.get(url, params=params, timeout=300)
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                all_records.extend(data)
+            elif isinstance(data, dict):
+                all_records.extend(data.get("data", []))
+        except Exception as e:
+            logger.warning(f"  B1610 stream chunk failed: {e}")
+            # If stream endpoint is not available, return empty to signal fallback
+            if chunk_num == 1:
+                logger.warning("  B1610 stream endpoint unavailable — will fall back to per-SP fetch")
+                return pd.DataFrame()
+
+        chunk_start = chunk_end
+        time.sleep(0.5)
+
+    if not all_records:
+        logger.warning("No B1610 data returned from stream")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_records)
+
+    # Standardise column names
+    col_map = {
+        "bmUnit": "bmu_id",
+        "settlementDate": "settlement_date",
+        "settlementPeriod": "settlement_period",
+        "quantity": "generation_mw",
+    }
+    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
+
+    # Filter to transmission BMUs only
+    if "bmu_id" in df.columns:
+        df = df[df["bmu_id"].str.startswith("T_", na=False)].copy()
+
+    if df.empty:
+        logger.warning("No transmission BMUs in B1610 stream data")
+        return pd.DataFrame()
+
+    # Build datetime index
+    df["datetime"] = pd.to_datetime(df["settlement_date"]) + \
+        pd.to_timedelta((df["settlement_period"].astype(int) - 1) * 30, unit="min")
+
+    # Pivot to matrix form (datetime × bmu_id)
+    gen_pivot = df.pivot_table(
+        index="datetime", columns="bmu_id", values="generation_mw",
+        aggfunc="max"
+    ).fillna(0.0).sort_index()
+
+    elapsed = time.time() - fetch_start
+    logger.info(f"  B1610 stream complete: {gen_pivot.shape[0]} periods × "
+                f"{gen_pivot.shape[1]} BMUs in {elapsed:.0f}s")
+
+    return gen_pivot
 
 
 def retrieve_wholesale_calibration_data(
@@ -580,6 +708,7 @@ def retrieve_wholesale_calibration_data(
     end_date: str,
     output_dir: str,
     sample_sps: list = None,
+    use_stream: bool = True,
     logger: logging.Logger = logger,
 ) -> dict:
     """
@@ -587,11 +716,9 @@ def retrieve_wholesale_calibration_data(
 
     Downloads:
       1. MID wholesale prices via bulk stream (fast, full resolution)
-      2. B1610 actual generation per BMU at sampled settlement periods
-         (2 SPs per day by default — morning peak SP20 + evening peak SP38)
-
-    This gives ~730 observations per generator over a year, enough to see
-    which generators cycle on/off at different price levels.
+      2. B1610 actual generation per BMU — prefers the /stream bulk endpoint
+         (~12 monthly API calls). Falls back to per-SP sampling if stream
+         is unavailable (730 API calls for 2 SPs/day over a year).
 
     Parameters
     ----------
@@ -602,7 +729,11 @@ def retrieve_wholesale_calibration_data(
     output_dir : str
         Directory to write output CSVs.
     sample_sps : list, optional
-        Settlement periods to sample B1610 at. Default [20, 38] (10am, 7pm).
+        Settlement periods to sample B1610 at (fallback only).
+        Default [20, 38] (10am, 7pm).
+    use_stream : bool
+        Try B1610 stream endpoint first (default True). Set False to force
+        per-SP fetch.
     logger : Logger
 
     Returns
@@ -621,14 +752,11 @@ def retrieve_wholesale_calibration_data(
     end = pd.Timestamp(end_date)
     dates = pd.date_range(start, end, freq="D")
     n_days = len(dates)
-    n_queries = n_days * len(sample_sps)
 
     logger.info("=" * 70)
     logger.info("WHOLESALE MARKET CALIBRATION DATA FETCH")
     logger.info("=" * 70)
     logger.info(f"Period: {start_date} to {end_date} ({n_days} days)")
-    logger.info(f"Sample SPs: {sample_sps} ({len(sample_sps)} per day)")
-    logger.info(f"B1610 API calls: {n_queries} (≈{n_queries / ELEXON_RATE_LIMIT / 60:.0f} min)")
 
     # ── 1. Fetch MID wholesale prices (bulk, fast) ───────────────────
     logger.info("\n── Stage 1: Market Index Prices (MID) ──")
@@ -638,50 +766,68 @@ def retrieve_wholesale_calibration_data(
     mid_prices.to_csv(prices_path)
     logger.info(f"Saved MID prices: {len(mid_prices)} periods → {prices_path}")
 
-    # ── 2. Fetch B1610 at sampled SPs ────────────────────────────────
-    logger.info(f"\n── Stage 2: B1610 Generation ({n_queries} API calls) ──")
-    all_gen_rows = []
-    failed = 0
-
-    for i, date in enumerate(dates):
-        date_str = date.strftime("%Y-%m-%d")
-        base = pd.Timestamp(date_str)
-
-        if (i + 1) % 30 == 0 or i == 0:
-            logger.info(f"  Day {i + 1}/{n_days}: {date_str} "
-                        f"({len(all_gen_rows)} records so far)")
-
-        for sp in sample_sps:
-            try:
-                gen_df = fetch_generation_per_unit(date_str, sp, logger=logger)
-                if not gen_df.empty:
-                    dt = base + timedelta(minutes=30 * (sp - 1))
-                    for _, row in gen_df.iterrows():
-                        all_gen_rows.append({
-                            "datetime": dt,
-                            "bmu_id": row["bmu_id"],
-                            "generation_mw": row["generation_mw"],
-                        })
-            except Exception as e:
-                failed += 1
-                if failed <= 5:
-                    logger.warning(f"  B1610 {date_str} SP{sp} failed: {e}")
-                elif failed == 6:
-                    logger.warning("  (suppressing further B1610 warnings)")
-
-            time.sleep(1.0 / ELEXON_RATE_LIMIT)
-
-    if failed:
-        logger.info(f"  B1610 fetch complete: {failed} failures out of {n_queries}")
-
-    # Build generation matrix
+    # ── 2. Fetch B1610 generation data ───────────────────────────────
     pn_path = out_path / "pn_data.csv"
-    if all_gen_rows:
-        gen_long = pd.DataFrame(all_gen_rows)
-        gen_pivot = gen_long.pivot_table(
-            index="datetime", columns="bmu_id", values="generation_mw",
-            aggfunc="max"
-        ).fillna(0.0)
+    gen_pivot = pd.DataFrame()
+
+    # Try bulk stream first (fast: ~12 API calls vs ~730)
+    if use_stream:
+        logger.info("\n── Stage 2: B1610 Generation (bulk stream) ──")
+        gen_pivot = fetch_b1610_bulk(start_date, end_date, logger=logger)
+
+    # Fall back to per-SP sampling if stream returned empty
+    if gen_pivot.empty:
+        n_queries = n_days * len(sample_sps)
+        logger.info(f"\n── Stage 2: B1610 Generation (per-SP fallback, "
+                     f"{n_queries} API calls, ~{n_queries / ELEXON_RATE_LIMIT / 60:.0f} min) ──")
+        all_gen_rows = []
+        failed = 0
+        fetch_start = time.time()
+
+        for i, date in enumerate(dates):
+            date_str = date.strftime("%Y-%m-%d")
+            base = pd.Timestamp(date_str)
+
+            if (i + 1) % 30 == 0 or i == 0:
+                elapsed = time.time() - fetch_start
+                rate = (i + 1) / elapsed if elapsed > 0 else 0
+                remaining = (n_days - i - 1) / rate if rate > 0 else 0
+                logger.info(f"  Day {i + 1}/{n_days}: {date_str} "
+                            f"({elapsed:.0f}s elapsed, ~{remaining:.0f}s remaining, "
+                            f"{len(all_gen_rows)} records)")
+
+            for sp in sample_sps:
+                try:
+                    gen_df = fetch_generation_per_unit(date_str, sp, logger=logger)
+                    if not gen_df.empty:
+                        dt = base + timedelta(minutes=30 * (sp - 1))
+                        for _, row in gen_df.iterrows():
+                            all_gen_rows.append({
+                                "datetime": dt,
+                                "bmu_id": row["bmu_id"],
+                                "generation_mw": row["generation_mw"],
+                            })
+                except Exception as e:
+                    failed += 1
+                    if failed <= 5:
+                        logger.warning(f"  B1610 {date_str} SP{sp} failed: {e}")
+                    elif failed == 6:
+                        logger.warning("  (suppressing further B1610 warnings)")
+
+                time.sleep(1.0 / ELEXON_RATE_LIMIT)
+
+        if failed:
+            logger.info(f"  B1610 fetch complete: {failed} failures out of {n_queries}")
+
+        if all_gen_rows:
+            gen_long = pd.DataFrame(all_gen_rows)
+            gen_pivot = gen_long.pivot_table(
+                index="datetime", columns="bmu_id", values="generation_mw",
+                aggfunc="max"
+            ).fillna(0.0)
+
+    # Save generation matrix
+    if not gen_pivot.empty:
         gen_pivot.to_csv(pn_path)
         logger.info(f"Saved generation data: {gen_pivot.shape[0]} periods × "
                      f"{gen_pivot.shape[1]} BMUs → {pn_path}")
@@ -691,6 +837,419 @@ def retrieve_wholesale_calibration_data(
 
     logger.info("=" * 70)
     return {"pn_file": str(pn_path), "prices_file": str(prices_path)}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BM VALIDATION DATA — BOALF & SYSTEM PRICES
+# ══════════════════════════════════════════════════════════════════════════════
+# Three datasets for validating the balancing mechanism solve:
+#   1. BOALF  — actual BM acceptances (increase/decrease volumes by BMU)
+#   2. System prices (SBP/SSP) — half-hourly imbalance cash-out prices
+#   3. Full B1610 — actual generation at all 48 SPs (not sampled)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def fetch_boalf_bulk(
+    start_date: str,
+    end_date: str,
+    logger: logging.Logger = logger,
+) -> pd.DataFrame:
+    """
+    Fetch Bid-Offer Acceptance Level Flagged (BOALF) data via stream endpoint.
+
+    BOALF records every BM acceptance issued by NESO — the actual increase and
+    decrease volumes instructed in the balancing mechanism. This is the primary
+    dataset for validating BM redispatch volumes.
+
+    Uses /datasets/BOALF/stream for efficient bulk download in weekly chunks.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date (YYYY-MM-DD).
+    end_date : str
+        End date (YYYY-MM-DD), inclusive.
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame with columns: datetime, bmu_id, acceptance_number,
+        acceptance_level (MW), bid_offer_flag, so_flag, stor_flag, rr_flag,
+        level_from, level_to
+        Empty DataFrame if endpoint is unavailable.
+    """
+    _check_requests_available()
+
+    url = f"{ELEXON_API_BASE}/datasets/BOALF/stream"
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date) + pd.Timedelta(days=1)
+
+    all_records = []
+    chunk_start = start
+    chunk_num = 0
+    fetch_start = time.time()
+
+    while chunk_start < end:
+        # Weekly chunks to stay within API response limits
+        chunk_end = min(chunk_start + pd.Timedelta(days=7), end)
+        chunk_num += 1
+        params = {
+            "from": chunk_start.strftime("%Y-%m-%dT00:00Z"),
+            "to": chunk_end.strftime("%Y-%m-%dT00:00Z"),
+            "format": "json",
+        }
+
+        elapsed = time.time() - fetch_start
+        logger.info(f"  Fetching BOALF chunk {chunk_num}: "
+                     f"{chunk_start.date()} to {chunk_end.date()} "
+                     f"({elapsed:.0f}s elapsed)")
+
+        try:
+            resp = requests.get(url, params=params, timeout=300)
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                all_records.extend(data)
+            elif isinstance(data, dict):
+                all_records.extend(data.get("data", []))
+        except Exception as e:
+            logger.warning(f"  BOALF stream chunk failed: {e}")
+            if chunk_num == 1:
+                logger.warning("  BOALF stream endpoint unavailable")
+                return pd.DataFrame()
+
+        chunk_start = chunk_end
+        time.sleep(0.5)
+
+    if not all_records:
+        logger.warning("No BOALF data returned from stream")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_records)
+
+    # Standardise column names
+    col_map = {
+        "bmUnit": "bmu_id",
+        "settlementDate": "settlement_date",
+        "settlementPeriod": "settlement_period",
+        "acceptanceNumber": "acceptance_number",
+        "acceptanceLevel": "acceptance_level",
+        "bidOfferAcceptanceNumber": "bo_acceptance_number",
+        "soFlag": "so_flag",
+        "storFlag": "stor_flag",
+        "storProviderFlag": "stor_provider_flag",
+        "rrFlag": "rr_flag",
+        "levelFrom": "level_from",
+        "levelTo": "level_to",
+        "deemedBidOfferFlag": "bid_offer_flag",
+    }
+    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
+
+    if "stor_provider_flag" in df.columns and "stor_flag" not in df.columns:
+        df["stor_flag"] = df["stor_provider_flag"]
+
+    for flag_col in ["so_flag", "stor_flag", "rr_flag"]:
+        if flag_col not in df.columns:
+            df[flag_col] = False
+
+    # Build datetime index
+    if "settlement_date" in df.columns and "settlement_period" in df.columns:
+        df["datetime"] = pd.to_datetime(df["settlement_date"]) + \
+            pd.to_timedelta((df["settlement_period"].astype(int) - 1) * 30, unit="min")
+
+    # Filter to transmission BMUs
+    if "bmu_id" in df.columns:
+        df = df[df["bmu_id"].str.startswith("T_", na=False)].copy()
+
+    elapsed = time.time() - fetch_start
+    logger.info(f"  BOALF stream complete: {len(df)} records in {elapsed:.0f}s")
+
+    return df
+
+
+def fetch_disbsad_range(
+    start_date: str,
+    end_date: str,
+    logger: logging.Logger = logger,
+) -> pd.DataFrame:
+    """
+    Fetch Disaggregated Balancing Services Adjustment Data for a date range.
+
+    DISBSAD represents non-BM balancing-service adjustments received from NESO,
+    including cost and volume per settlement period. This is useful as a sidecar
+    diagnostic to quantify balancing actions the energy-only BM model does not
+    explicitly represent.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date (YYYY-MM-DD).
+    end_date : str
+        End date (YYYY-MM-DD), inclusive.
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame with columns: datetime, settlement_date, settlement_period,
+        cost, volume, so_flag, stor_flag, service.
+        Empty DataFrame if endpoint is unavailable.
+    """
+    _check_requests_available()
+
+    url = f"{ELEXON_API_BASE}/datasets/DISBSAD/stream"
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date) + pd.Timedelta(days=1)
+
+    all_records = []
+    chunk_start = start
+    chunk_num = 0
+    fetch_start = time.time()
+
+    while chunk_start < end:
+        chunk_end = min(chunk_start + pd.Timedelta(days=7), end)
+        chunk_num += 1
+        params = {
+            "from": chunk_start.strftime("%Y-%m-%dT00:00Z"),
+            "to": chunk_end.strftime("%Y-%m-%dT00:00Z"),
+            "format": "json",
+        }
+
+        elapsed = time.time() - fetch_start
+        logger.info(
+            f"  Fetching DISBSAD chunk {chunk_num}: "
+            f"{chunk_start.date()} to {chunk_end.date()} ({elapsed:.0f}s elapsed)"
+        )
+
+        try:
+            resp = requests.get(url, params=params, timeout=300)
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                all_records.extend(data)
+            elif isinstance(data, dict):
+                all_records.extend(data.get("data", []))
+        except Exception as e:
+            logger.warning(f"  DISBSAD stream chunk failed: {e}")
+            if chunk_num == 1:
+                logger.warning("  DISBSAD stream endpoint unavailable")
+                return pd.DataFrame()
+
+        chunk_start = chunk_end
+        time.sleep(0.5)
+
+    if not all_records:
+        logger.warning("No DISBSAD data returned from stream")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_records)
+    col_map = {
+        "settlementDate": "settlement_date",
+        "settlementPeriod": "settlement_period",
+        "soFlag": "so_flag",
+        "storFlag": "stor_flag",
+    }
+    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
+
+    if "settlement_date" in df.columns and "settlement_period" in df.columns:
+        dt = pd.to_datetime(df["settlement_date"], errors="coerce")
+        sp_offset = pd.to_timedelta(
+            (pd.to_numeric(df["settlement_period"], errors="coerce").fillna(1).astype(int) - 1) * 30,
+            unit="min",
+        )
+        df["datetime"] = dt + sp_offset
+
+    for numeric_col in ["cost", "volume"]:
+        if numeric_col in df.columns:
+            df[numeric_col] = pd.to_numeric(df[numeric_col], errors="coerce").fillna(0.0)
+
+    for flag_col in ["so_flag", "stor_flag"]:
+        if flag_col not in df.columns:
+            df[flag_col] = False
+
+    if "service" not in df.columns:
+        df["service"] = pd.NA
+
+    elapsed = time.time() - fetch_start
+    logger.info(f"  DISBSAD stream complete: {len(df)} records in {elapsed:.0f}s")
+    return df
+
+
+def fetch_system_prices_range(
+    start_date: str,
+    end_date: str,
+    logger: logging.Logger = logger,
+) -> pd.DataFrame:
+    """
+    Fetch half-hourly system buy/sell prices for a date range.
+
+    Downloads SBP (System Buy Price) and SSP (System Sell Price) for every
+    settlement period. These are the imbalance cash-out prices that reflect
+    BM actions, useful for comparing against model nodal prices.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date (YYYY-MM-DD).
+    end_date : str
+        End date (YYYY-MM-DD), inclusive.
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame indexed by datetime with columns: system_buy_price,
+        system_sell_price (both £/MWh). Resampled to hourly.
+    """
+    _check_requests_available()
+
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date)
+    dates = pd.date_range(start, end, freq="D")
+
+    logger.info(f"Fetching system prices: {start_date} to {end_date} ({len(dates)} days)")
+
+    all_rows = []
+    for i, date in enumerate(dates):
+        date_str = date.strftime("%Y-%m-%d")
+        base = pd.Timestamp(date_str)
+
+        try:
+            url = f"{ELEXON_API_BASE}/balancing/settlement/system-prices/{date_str}"
+            resp = requests.get(url, params={"format": "json"}, timeout=60)
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+
+            for rec in data:
+                sp = int(rec.get("settlementPeriod", 0))
+                dt = base + timedelta(minutes=30 * (sp - 1))
+                all_rows.append({
+                    "datetime": dt,
+                    "system_buy_price": float(rec.get("systemBuyPrice", 0)),
+                    "system_sell_price": float(rec.get("systemSellPrice", 0)),
+                })
+        except Exception as e:
+            logger.warning(f"  System prices failed for {date_str}: {e}")
+
+        time.sleep(1.0 / ELEXON_RATE_LIMIT)
+
+    if not all_rows:
+        logger.warning("No system price data collected")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_rows).set_index("datetime").sort_index()
+
+    # Resample to hourly (mean of two half-hours)
+    df_hourly = df.resample("h").mean()
+
+    logger.info(f"System prices: {len(df_hourly)} hourly periods, "
+                f"SBP mean £{df_hourly['system_buy_price'].mean():.1f}/MWh")
+    return df_hourly
+
+
+def retrieve_bm_validation_data(
+    start_date: str,
+    end_date: str,
+    output_dir: str,
+    logger: logging.Logger = logger,
+) -> dict:
+    """
+    Fetch all ELEXON data needed for BM validation for a date range.
+
+        Downloads four datasets:
+      1. BOALF (Bid-Offer Acceptance Levels) — actual BM acceptances
+      2. System prices (SBP/SSP) — half-hourly imbalance prices
+      3. Full B1610 generation — actual output per BMU (all settlement periods)
+            4. DISBSAD — non-BM balancing-service adjustment volumes and costs
+
+    Parameters
+    ----------
+    start_date : str
+        Start date (YYYY-MM-DD).
+    end_date : str
+        End date (YYYY-MM-DD), inclusive.
+    output_dir : str
+        Directory to write output CSVs.
+    logger : Logger
+
+    Returns
+    -------
+    dict with keys 'boalf_file', 'system_prices_file', 'b1610_file',
+        'disbsad_file'
+        pointing to output paths.
+    """
+    _check_requests_available()
+
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    logger.info("=" * 70)
+    logger.info("BM VALIDATION DATA FETCH")
+    logger.info("=" * 70)
+    logger.info(f"Period: {start_date} to {end_date}")
+
+    # ── 1. Fetch BOALF (BM acceptances) ──────────────────────────────
+    logger.info("\n── Stage 1: BOALF (BM Acceptances) ──")
+    boalf = fetch_boalf_bulk(start_date, end_date, logger=logger)
+    boalf_path = out_path / "boalf_data.csv"
+    if not boalf.empty:
+        boalf.to_csv(boalf_path, index=False)
+        logger.info(f"Saved BOALF: {len(boalf)} records → {boalf_path}")
+    else:
+        if boalf_path.exists() and boalf_path.stat().st_size >= 100:
+            logger.warning(
+                "No BOALF data collected; preserving existing cached file "
+                f"{boalf_path}"
+            )
+        else:
+            logger.warning("No BOALF data collected")
+
+    # ── 2. Fetch system prices ───────────────────────────────────────
+    logger.info("\n── Stage 2: System Prices (SBP/SSP) ──")
+    sys_prices = fetch_system_prices_range(start_date, end_date, logger=logger)
+    sys_prices_path = out_path / "system_prices.csv"
+    if not sys_prices.empty:
+        sys_prices.to_csv(sys_prices_path)
+        logger.info(f"Saved system prices: {len(sys_prices)} periods → {sys_prices_path}")
+    else:
+        pd.DataFrame().to_csv(sys_prices_path)
+        logger.warning("No system price data collected")
+
+    # ── 3. Fetch full B1610 generation ───────────────────────────────
+    logger.info("\n── Stage 3: B1610 Actual Generation (full resolution) ──")
+    b1610 = fetch_b1610_bulk(start_date, end_date, logger=logger)
+    b1610_path = out_path / "b1610_actual.csv"
+    if not b1610.empty:
+        b1610.to_csv(b1610_path)
+        logger.info(f"Saved B1610: {b1610.shape} → {b1610_path}")
+    else:
+        if b1610_path.exists() and b1610_path.stat().st_size >= 100:
+            logger.warning(
+                "No B1610 data collected; preserving existing cached file "
+                f"{b1610_path}"
+            )
+        else:
+            logger.warning("No B1610 data collected")
+
+    # ── 4. Fetch DISBSAD ───────────────────────────────────────────────
+    logger.info("\n── Stage 4: DISBSAD (non-BM balancing-service adjustments) ──")
+    disbsad = fetch_disbsad_range(start_date, end_date, logger=logger)
+    disbsad_path = out_path / "disbsad_data.csv"
+    if not disbsad.empty:
+        disbsad.to_csv(disbsad_path, index=False)
+        logger.info(f"Saved DISBSAD: {len(disbsad)} records → {disbsad_path}")
+    else:
+        pd.DataFrame().to_csv(disbsad_path, index=False)
+        logger.warning("No DISBSAD data collected")
+
+    logger.info("=" * 70)
+    logger.info("BM VALIDATION DATA FETCH COMPLETE")
+    logger.info("=" * 70)
+
+    return {
+        "boalf_file": str(boalf_path),
+        "system_prices_file": str(sys_prices_path),
+        "b1610_file": str(b1610_path),
+        "disbsad_file": str(disbsad_path),
+    }
 
 
 def main():

@@ -6,22 +6,11 @@
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ──────────────────────────────────────────────────────────────────────────────
-# TIME & RESOLUTION
+# TIMESTEP AND VOLL
 # ──────────────────────────────────────────────────────────────────────────────
 timestep_minutes: 60              # 60 = hourly, 30 = half-hourly
 voll: 6000.0                      # Value of Lost Load (£/MWh)
 
-# ──────────────────────────────────────────────────────────────────────────────
-# DATA SOURCES
-# ──────────────────────────────────────────────────────────────────────────────
-# Temporal profile source for demand (annual totals always from FES for future scenarios)
-# Options:
-#   "ESPENI"    - Historical half-hourly GB demand (recommended, uses demand_year)
-#   "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
-#   "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
-# 
-# For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
-demand_timeseries: "ESPENI"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SOLVER CONFIGURATION
@@ -50,6 +39,7 @@ solve_mode: "LP"                # Options: "LP" or "MILP"
 # ──────────────────────────────────────────────────────────────────────────────
 # CLUSTERING (disabled by default)
 # ──────────────────────────────────────────────────────────────────────────────
+# see the clustering.yaml file for detailed clustering presets and strategies
 clustering:
   enabled: false
 
@@ -61,7 +51,7 @@ clustering:
 # time series to be merged. Independent of clustering config.
 component_aggregation:
   enabled: false
-  include_generators: true          # Aggregate identical generators
+  include_generators: false          # Aggregate identical thermal generators
   include_storage_units: false      # Aggregate storage units when possible
   include_loads: false              # Aggregate loads per bus
   include_stores: false             # Aggregate Store components (rarely used)
@@ -88,6 +78,104 @@ renewable_aggregation:
     - tidal_lagoon
 
 # ──────────────────────────────────────────────────────────────────────────────
+# RENEWABLE PERFORMANCE FACTORS (ERA5 bias + turbine model correction)
+# ──────────────────────────────────────────────────────────────────────────────
+# ERA5 reanalysis and idealised turbine power curves (NREL_5MW offshore,
+# Vestas_V112_3MW onshore) systematically overstate the available generation
+# from real UK wind and solar fleets. These factors downscale p_max_pu profiles
+# to represent realistic uncurtailed availability — they must NOT include
+# curtailment effects (network constraints are handled by the BM stage).
+#
+# CALIBRATION TARGET: the model's wholesale (pre-BM) wind generation should
+# approximate ESPENI metered output + estimated real curtailment. Performance
+# factors should NOT be tuned to match ESPENI directly, because that would bake
+# real curtailment into the resource — leaving the BM with insufficient wind
+# to curtail and breaking the two-stage architecture.
+#
+# Factors are decomposed into distinct physical mechanisms so each can be
+# reasoned about, calibrated, and tested independently:
+#
+#   era5_bias:        ERA5 reanalysis wind speed / irradiance overestimate
+#   turbine_curve:    Idealised power curve vs real fleet efficiency
+#   wake_losses:      Farm-scale wake interactions (absent from atlite)
+#   availability:     Maintenance, faults, grid connection downtime
+#
+# The effective factor applied to each carrier is the PRODUCT of all four
+# components. For example:
+#   wind_offshore: 0.83 × 0.93 × 0.90 × 0.93 = 0.645
+#   wind_onshore:  0.91 × 0.95 × 0.98 × 0.95 = 0.805
+#   solar_pv:      0.95 × 0.97 × 1.00 × 0.95 = 0.875
+#
+# If 'factors' is provided (flat dict, e.g. {wind_offshore: 0.82}), it is used
+# directly as the effective factor for backward compatibility, and the stacked
+# components are ignored.
+#
+# References: Staffell & Pfenninger (2016) doi:10.1016/j.energy.2016.08.004;
+#             Bloomfield et al. (2020) doi:10.1002/met.1858;
+#             Barthelmie et al. (2010) doi:10.1002/we.348 (wake losses)
+#
+# Diagnostic: run scripts/generators/calibrate_wind_profiles.py to compare
+# ERA5 totals against ESPENI metered output (see that script for caveats about
+# curtailment confounding the ESPENI comparison).
+renewable_performance_factors:
+  enabled: true                    # Apply ERA5 bias-correction factors during generator build
+
+  # Option A (preferred): stacked component factors — product is applied per carrier.
+  # Each component addresses one physical loss mechanism.
+  era5_bias:                       # ERA5 reanalysis wind speed / irradiance overestimate
+    wind_offshore: 0.83            # North Sea ~+15% speed → ~+20% power (1/1.20≈0.83)
+    wind_onshore:  0.91            # UK onshore ~+7% speed → ~+10% power (1/1.10≈0.91)
+    solar_pv:      0.95            # ERA5 SSRD small positive bias ~+3–5%
+
+  turbine_curve:                   # Idealised power curve vs real fleet efficiency
+    wind_offshore: 0.93            # NREL_5MW ideal vs real fleet (−5 to 7%)
+    wind_onshore:  0.95            # Vestas_V112 ideal vs real fleet (~−5%)
+    solar_pv:      0.97            # Module temperature de-rating + inverter losses
+
+  wake_losses:                     # Farm-scale wake interactions (not modelled in atlite)
+    wind_offshore: 0.90            # 5–15% depending on farm size/spacing
+    wind_onshore:  0.98            # 1–3% (wider spacing, less dense farms)
+    solar_pv:      1.00            # N/A for solar
+
+  availability:                    # Maintenance, faults, grid connection downtime
+    wind_offshore: 0.93            # 5–8% downtime (subsea cable, harsh environment)
+    wind_onshore:  0.95            # 3–6% downtime
+    solar_pv:      0.97            # 2–4% downtime (soiling, inverter faults)
+
+  # Option B (backward-compatible): flat override factors.
+  # If 'factors' is provided and non-empty, it is used AS-IS and stacked
+  # components above are IGNORED. Uncomment to use:
+  # factors:
+  #   wind_offshore: 0.82
+  #   wind_onshore:  0.80
+  #   solar_pv:      0.88
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# EMBEDDED GENERATION CORRECTION (historical scenarios only)
+# ──────────────────────────────────────────────────────────────────────────────
+# REPD does not include small-scale/rooftop solar (or embedded wind) that
+# connects below the transmission level. TOTAL_ESPENI already INCLUDES this
+# embedded generation (energy balance: metered gen + net imports + embedded =
+# TOTAL_ESPENI), but the model has no generators representing it.
+#
+# When enabled this feature:
+#   1. Reads measured embedded solar (& optionally wind) from the ESPENI
+#      NGEM columns for the demand_year
+#   2. Saves the MW timeseries to resources/demand/{scenario}_embedded_{carrier}.csv
+#   3. Subtracts the modelled output of REPD generators already in the network
+#      (solar_pv for solar, wind_onshore for wind) to avoid double-counting —
+#      NGEM_EMBEDDED_SOLAR includes ALL solar (there is no ELEX solar column)
+#   4. Creates embedded_solar (/ embedded_wind) generators for the residual gap,
+#      representing rooftop / small-scale capacity not captured by REPD
+#
+# Demand is NOT changed.
+embedded_generation:
+  enabled: true                   # Set true to activate
+  solar: true                      # Include embedded solar from ESPENI
+  wind: true                      # Include embedded wind from ESPENI
+
+# ──────────────────────────────────────────────────────────────────────────────
 # SOLVE PERIOD (full year by default)
 # ──────────────────────────────────────────────────────────────────────────────
 solve_period:
@@ -105,13 +193,107 @@ transmission:
   min_transformer_s_nom: 0        # 0 = use actual ratings
   # Scaling factor for all line/transformer capacities (1.0 = no change)
   capacity_scale: 1.0             # 1.0 = no scaling (use clustering instead)
+  # Minimum voltage (kV) for BM line constraints.
+  # Lines with v_nom strictly below this threshold have their s_nom set to 9999 MVA
+  # (effectively unconstrained) before the BM solve.
+  #
+  # Rationale: ETYS Appendix B captures individual 132 kV trunk segments but omits
+  # the parallel 33/66 kV sub-transmission mesh and ring paths that exist in the real
+  # network.  The DC power flow distributes loop currents through these radial segments
+  # with no alternative path, saturating them at unrealistically low levels.  NESO
+  # manages 132 kV loop flows through operational tools (phase-shifters, local BM
+  # actions) that this model cannot replicate.  Removing 132 kV constraints is
+  # consistent with the NESO boundary-flow data being published at inter-zone level
+  # (≥275 kV), where local intra-zone constraints are assumed handled separately.
+  #
+  # Set to 0 to disable (use raw ETYS ratings for all voltage levels).
+  # Set to 220 to relax all 132 kV and below (recommended default).
+  # Set to 275 to also relax 220 kV lines (more aggressive).
+  min_bm_constraint_voltage_kv: 220
+
+  # Per-line s_nom overrides — correct known ETYS data errors or targeted exceptions.
+  # Format: { line_id: corrected_s_nom_mva }.  Applied in both the solve
+  # step and the balancing mechanism (after loading, before optimisation).
+  # Explicit overrides take precedence over min_bm_constraint_voltage_kv.
+  line_rating_overrides:
+    CHAP1-_ECCF1J_0: 120         # ETYS lists 18 MVA — likely 132kV/11kV misentry
+    MAHI3-_TRLO3-_0: 9999        # 33kV artifact: 81 MW wind behind 40 MVA sub-transmission
+    GLGL3-_WHLL3-_0: 9999        # 33kV artifact: 70 MW wind behind 30 MVA sub-transmission
+    HARR3-_KYPE3A_0: 9999        # 33kV artifact: 72 MW wind behind 40 MVA sub-transmission
+
+  # ── Transmission Outage Schedule ────────────────────────────────────────────
+  # Applies transmission outage effects. Without outages the model sees
+  # full intact-network capacity and under-estimates constraint costs
+  # (e.g. NESO 2020 thermal constraints = £596M, model intact-only ≈ £126M).
+  #
+  # Three modes:
+  #   "csv"       — load from a user-supplied CSV file
+  #   "synthetic" — generate stochastic outages from parameters below
+  #   "neso"      — apply NESO day-ahead boundary limits
+  outage_schedule:
+    enabled: false                # Master toggle
+    source: "neso"                 # "csv" | "synthetic" | "neso"
+
+    # ── NESO mode ─────────────────────────────────────────────────────────────
+    # Fetches real NESO Day-Ahead Constraint Flows & Limits data from the API.
+    # The same NESO source data can be enforced in two different ways:
+    #   uniform_s_max_pu:
+    #       Convert each boundary limit into a uniform percentage derate and
+    #       apply that same s_max_pu to every mapped line in the boundary.
+    #       This is the legacy method and assumes each line shares the
+    #       boundary restriction in proportion to its s_nom.
+    #   aggregate_boundary:
+    #       Keep the normal per-line thermal limits, but add an optimisation
+    #       constraint so the signed total flow across the mapped boundary cut
+    #       stays within the NESO limit. This is usually the better match to
+    #       what the NESO dataset is actually publishing.
+    # These limits already include N-1/N-2 security margins and real outages.
+    # Source: https://www.neso.energy/data-portal/day-ahead-constraint-flows-and-limits
+    neso:
+      boundary_mapping: "data/network/neso_boundary_mapping.yaml"
+      resource_id: "38a18ec1-9e40-465d-93fb-301e80fd1352"
+      api_base: "https://api.neso.energy/api/3/action/datastore_search_sql"
+      cache_dir: "resources/neso_cache"   # Cache fetched data locally
+      constraint_mode: "aggregate_boundary" # "uniform_s_max_pu" | "aggregate_boundary"
+      nearest_tolerance_minutes: 45       # Direct timestamp match window before gap filling
+      gap_fill_mode: "interpolate"        # "interpolate" | "nearest_available" | "unconstrained" | "fail"
+                                          # interpolate = use surrounding NESO data, then edge-fill if needed
+      min_s_max_pu: 0.05                  # Uniform mode only: floor to prevent near-zero line capacity
+
+    # ── Synthetic mode ────────────────────────────────────────────────────────
+    # Generates random maintenance outages based on typical GB transmission patterns.
+    # Only applied to lines/transformers above min_s_nom_mva.
+    synthetic:
+      seed: 42                    # Random seed for reproducibility
+      min_s_nom_mva: 100          # Only schedule outages on lines >= this rating
+      # Annual forced outage rate (fraction of hours unavailable per year)
+      forced_outage_rate:
+        400: 0.03                 # 400kV: ~3% unavailability (263 hours/year)
+        275: 0.04                 # 275kV: ~4%
+        132: 0.05                 # 132kV: ~5%
+      # Average maintenance window duration (hours)
+      maintenance_duration_hours: 168   # 1 week typical
+      # Seasonal weighting — more maintenance in low-demand months
+      seasonal_weights:
+        1: 0.4                    # January (winter — minimal maintenance)
+        2: 0.5
+        3: 0.8
+        4: 1.2                    # April (spring shoulder)
+        5: 1.5
+        6: 1.8                    # June (summer — peak maintenance)
+        7: 1.8
+        8: 1.5
+        9: 1.2                    # September
+        10: 0.8
+        11: 0.5
+        12: 0.3                   # December (winter — minimal)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MARKET SIMULATION (disabled by default)
 # ──────────────────────────────────────────────────────────────────────────────
 # Two-stage market dispatch: wholesale clearing + balancing mechanism redispatch.
 # Stage 1 (Wholesale): Copperplate dispatch — no network constraints, uniform price.
-# Stage 2 (Balancing): Anchored redispatch — full network constraints, generators
+# Stage 2 (Balancing): Redispatch — full network constraints, generators
 #   and storage adjust from wholesale position at bid/offer prices.
 #
 # Requires a finalized network ({scenario}.nc) from the main workflow.
@@ -123,70 +305,285 @@ market:
 
   # ── Stage 1: Wholesale Market ──────────────────────────────────────────────
   wholesale:
+    # Dispatch mode:
+    #   "single"              - Solve entire period in one LP (current default)
+    #   "rolling_day_ahead"   - Solve in rolling windows (day-ahead market)
+    #     Each window is optimised independently; storage SoC carries between
+    #     windows when carry_soc is true.  Produces more realistic day-ahead
+    #     scheduling since generators/storage can only see window_hours ahead.
+    mode: "single"
+    window_hours: 24                      # Hours per window (rolling_day_ahead mode)
+    carry_soc: true                       # Carry storage SoC between windows
+
     # s_nom value (MVA) applied to ALL lines and transformers to create
     # copperplate (unconstrained) dispatch. Must be >> max line flow.
     transmission_relaxation: 1.0e6
 
   # ── Stage 2: Balancing Mechanism ───────────────────────────────────────────
   balancing:
+    # Dispatch mode:
+    #   "full_period"   - Solve entire period in one LP (current default)
+    #   "rolling"       - Solve in rolling windows, each anchored to wholesale
+    #     window_hours=1 gives per-timestep BM (most realistic for gas/nuclear).
+    #     window_hours=24 gives per-day BM (better for storage SoC tracking).
+    #     Storage SoC carries between windows automatically.
+    mode: "full_period"
+    window_hours: 1                       # Hours per window (rolling mode only)
     # How bid/offer prices are determined:
-    #   "derived" - Calculated from generator marginal_cost ± markup/discount (default)
+    #   "auto"    - Prefer ELEXON for historical scenarios when files exist, else derived
+    #   "derived" - Calculated from generator marginal_cost ± markup/discount
     #   "elexon"  - Actual ELEXON BMRS bid/offer data (historical scenarios only)
     #   "csv"     - Load from external CSV files (custom/research use)
-    bid_offer_source: "derived"
+    bid_offer_source: "auto"
 
     # Default fractional markup/discount applied to marginal_cost
     # offer_price = marginal_cost * (1 + default_offer_markup)
-    # bid_price   = max(marginal_cost * (1 - default_bid_discount), min_bid_floor)
+    # bid_price   = marginal_cost * (1 - default_bid_discount)
+    # No floors or ceilings are applied to BM bid/offer prices.
     default_offer_markup: 0.10            # 10% above marginal_cost for offers (increase output)
     default_bid_discount: 0.10            # 10% below marginal_cost for bids (decrease output)
-    min_bid_floor: 0.50                   # Minimum bid price (£/MWh) — prevents zero/negative bids
 
-    # Per-carrier overrides for bid/offer pricing
-    # Carriers not listed here use the defaults above
+    # ── Carrier-specific bid/offer pricing models ─────────────────────────────
+    # Two pricing modes per carrier:
+    #   "markup"   (default) — offer = mc × (1 + offer_markup), bid = mc × (1 - bid_discount)
+    #   "absolute" — offer = offer_price, bid = bid_price (fixed £/MWh values)
+    #
+    # Absolute prices capture strategic BM bidding that markup models miss:
+    #   - Nuclear bids very high to avoid being turned down (restart cost)
+    #   - Wind/solar bids reflect lost subsidy value (ROC/CfD)
+    #   - CCGTs in constrained zones bid well above MC
+    #
+    # Bid prices are in "ESO cost" convention: positive = costs ESO to decrease.
     carrier_overrides:
       nuclear:
-        offer_markup: 0.50                # Expensive to ramp up
-        bid_discount: 0.05                # Cheap to turn down
+        mode: "absolute"
+        offer_price: 999.0                # Nuclear almost never offers up in BM
+        bid_price: 150.0                  # Very expensive to turn down (restart cost)
+      CCGT:
+        mode: "markup"
+        offer_markup: 0.85                # ELEXON median offer/MC ratio ≈ 1.86 (was 0.50)
+        bid_discount: 0.10                # Moderate cost to turn down
+      OCGT:
+        mode: "markup"
+        offer_markup: 1.30                # ELEXON median offer/MC ratio ≈ 2.30 (was 0.30)
+        bid_discount: 0.10
+      coal:
+        mode: "absolute"
+        offer_price: 200.0                # ELEXON coal offers highly strategic (median £1136)
+        bid_price: 150.0                  # Coal slow to restart → high bid to reduce
+      oil:
+        mode: "markup"
+        offer_markup: 0.20
+        bid_discount: 0.10
+      biomass:
+        mode: "absolute"
+        offer_price: 120.0                # Biomass CHP offer price
+        bid_price: 80.0                   # CHP must-run → expensive to turn down
       wind_onshore:
-        offer_markup: 0.0                 # Cannot offer more than available
-        bid_discount: 0.05
+        mode: "absolute"
+        offer_price: 0.0                  # Cannot offer more than available
+        bid_price: 25.0                   # ELEXON median ≈ £25 (was £45)
       wind_offshore:
-        offer_markup: 0.0
-        bid_discount: 0.05
+        mode: "absolute"
+        offer_price: 0.0
+        # Weighted average: ~40% ROC (2.0×£50=£100) + ~60% CfD (avg ~£80)
+        # For historical scenarios with legacy high-strike projects
+        bid_price: 90.0                   # Higher than onshore due to CfD strikes + higher ROC
       solar_pv:
-        offer_markup: 0.0
-        bid_discount: 0.05
+        mode: "absolute"
+        offer_price: 0.0
+        bid_price: 55.0                   # Lost ROC subsidy (1.2 × £50 buyout ~ £60)
+      embedded_solar:
+        mode: "absolute"
+        offer_price: 0.0
+        bid_price: 30.0                   # Embedded solar — lower subsidy exposure
+      embedded_wind:
+        mode: "absolute"
+        offer_price: 0.0
+        bid_price: 40.0
       large_hydro:
-        offer_markup: 0.0                 # Variable resource — cannot offer above available flow
-        bid_discount: 0.05
+        mode: "absolute"
+        offer_price: 50.0                 # ELEXON median ≈ £51 (was £0)
+        bid_price: 5.0                    # Water is free — low cost to curtail
       small_hydro:
-        offer_markup: 0.0
-        bid_discount: 0.05
-      battery:
-        offer_markup: 0.15
-        bid_discount: 0.15
+        mode: "absolute"
+        offer_price: 0.0
+        bid_price: 30.0                   # Small hydro may have FiT/ROC
+      waste_to_energy:
+        mode: "absolute"
+        offer_price: 120.0
+        bid_price: 80.0                   # Must-run due to waste contracts
+      landfill_gas:
+        mode: "absolute"
+        offer_price: 100.0
+        bid_price: 60.0                   # Must-run (gas flaring alternative)
+      sewage_gas:
+        mode: "absolute"
+        offer_price: 100.0
+        bid_price: 60.0
+      biogas:
+        mode: "absolute"
+        offer_price: 110.0
+        bid_price: 70.0
+      advanced_biofuel:
+        mode: "absolute"
+        offer_price: 130.0
+        bid_price: 80.0
+      # ── Storage carriers ────────────────────────────────────────────────────
+      # Storage units in BM: positive net dispatch = discharging (offers up),
+      # negative net dispatch = charging (bids down from wholesale position).
+      # Pumped storage actively participates in BM for frequency response and
+      # constraint management. Battery storage increasingly participates too.
+      Pumped Storage Hydroelectricity:
+        mode: "absolute"
+        offer_price: 50.0                 # PSH offer to generate — competitive with CCGT (~£54)
+        bid_price: 60.0                   # PSH bid to pump (reduce generation)
       pumped_hydro:
-        offer_markup: 0.15
-        bid_discount: 0.15
+        mode: "absolute"
+        offer_price: 50.0                 # PSH offer to generate — competitive with CCGT (~£54)
+        bid_price: 60.0
+      battery:
+        mode: "absolute"
+        offer_price: 120.0                # Battery offer (faster response premium)
+        bid_price: 50.0                   # Battery bid (reduce discharge / charge)
+      Battery:
+        mode: "absolute"
+        offer_price: 120.0
+        bid_price: 50.0
+      Domestic Battery:
+        mode: "absolute"
+        offer_price: 100.0                # Aggregated domestic battery
+        bid_price: 40.0
+      LAES:
+        mode: "absolute"
+        offer_price: 150.0                # Liquid air — less efficient
+        bid_price: 60.0
+      CAES:
+        mode: "absolute"
+        offer_price: 80.0                 # Compressed air — lower cost
+        bid_price: 40.0
+
+    # ── Minimum stable generation (must-run constraints) ─────────────────────
+    # Applied only in Stage 2 (BM).  Prevents the LP from turning off baseload
+    # ── Marginal cost floors (£/MWh) ──────────────────────────────────────────
+    # Safety net for generators that end up with zero MC after the cost
+    # application pipeline.  Applied in BM pre-solve only.  Zero-cost
+    # dispatchable generators create unrealistic dispatch (dispatched first,
+    # never curtailed).  These floors do NOT override positive MCs.
+    mc_floors:
+      biogas: 55.0                          # Biogas CHP fuel + O&M
+      landfill_gas: 40.0                    # Landfill gas O&M
+      sewage_gas: 45.0                      # Sewage gas O&M
+      waste_to_energy: 30.0                 # Gate fee offsets some cost
+      advanced_biofuel: 60.0                # Advanced biofuel fuel cost
+      oil: 90.0                             # Oil-fired plant fuel cost
+      OCGT: 80.0                            # Gas turbine fuel cost
+      CCGT: 50.0                            # Combined cycle fuel cost
+      coal: 40.0                            # Coal fuel cost
 
     # Fix interconnectors at their wholesale position in the BM solve
     # true  = ICs cannot be redispatched (v1 default)
     # false = ICs participate in BM (future extension)
     fix_interconnectors: true
 
+    # Optional BM participation filter.
+    # Use this when you do NOT want the whole PyPSA fleet to behave like BM units.
+    # Modes:
+    #   generators.mode / storage_units.mode:
+    #     "all"           - every asset can redispatch (current default)
+    #     "none"          - no assets in that class participate
+    #     "elexon_mapped" - only directly BMU-mapped generators participate
+    # Filters are then applied on top:
+    #   min_p_nom_mw, include_carriers, exclude_carriers, include_names, exclude_names
+    # Behaviours for non-participants:
+    #   "priced_out" - keep feasible emergency redispatch, but at penalty prices
+    #   "fixed"      - lock at wholesale position (more realistic, but can be infeasible)
+    participation:
+      generators:
+        mode: "all"
+        behavior: "priced_out"
+        min_p_nom_mw: 0.0
+        include_carriers: []
+        exclude_carriers: []
+        include_names: []
+        exclude_names: []
+        penalty_offer_price: 5000.0
+        penalty_bid_price: 5000.0
+      storage_units:
+        mode: "all"
+        behavior: "priced_out"
+        min_p_nom_mw: 0.0
+        include_carriers: []
+        exclude_carriers: []
+        include_names: []
+        exclude_names: []
+        penalty_offer_price: 5000.0
+        penalty_bid_price: 5000.0
+
     # ── ELEXON source config (only used when bid_offer_source: "elexon") ────
     elexon:
       # {scenario} is expanded at runtime — BOD data stored per-scenario, separate
       # from shared calibration caches in resources/market/elexon/
       data_dir: "resources/market/{scenario}/elexon"  # Where ELEXON BOD CSVs are stored
-      bmu_mapping: "data/generators/bmus_prepared.csv" # BMU ID → generator name mapping
-      fallback: "derived"               # For unmatched generators: "derived" or "zero"
+      bmu_mapping: "resources/generators/{scenario}_bmu_mapping.csv" # BMU ID → generator name mapping
+      # Optional local Power Station Dictionary crosswalk used when building
+      # the BMU mapping. If the file exists, explicit BMU rows and station
+      # aliases are used ahead of prefix heuristics.
+      power_station_dictionary: "data/generators/power_station_dictionary_bmu_crosswalk.csv"
+      fallback: "carrier_average"        # For unmatched generators: "carrier_average", "derived", or "zero"
+      storage_price_aggregation: "median"  # Robust cross-BMU aggregation for storage traces
+      storage_bmu_prefixes:
+        Pumped Storage Hydroelectricity:
+          - "T_CRUA"
+          - "T_CRUAD"
+          - "T_FOYE"
+          - "T_FOYED"
+          - "T_DINO"
+          - "T_FFES"
+          - "T_FFESST"
+        pumped_hydro:
+          - "T_CRUA"
+          - "T_CRUAD"
+          - "T_FOYE"
+          - "T_FOYED"
+          - "T_DINO"
+          - "T_FFES"
+          - "T_FFESST"
 
     # ── CSV source config (only used when bid_offer_source: "csv") ──────────
     csv:
       offer_file: null                   # Path to offer prices CSV (generator × snapshot)
       bid_file: null                     # Path to bid prices CSV (generator × snapshot)
+
+    # ── Calibration scorecard (historical ELEXON scenarios only) ────────────
+    # validate_bm_calibration rule compares per-carrier model effective
+    # bid/offer prices against ELEXON BOD medians, and model redispatch
+    # volumes against BOALF unflagged (constraint-only) volumes. Carriers
+    # with non-trivial volume that drift beyond `tolerance` are flagged.
+    calibration:
+      tolerance: 0.20                    # |ratio - 1| that flags a carrier (0.20 = ±20%)
+      min_volume_mwh: 1000.0             # Carriers below this on either side are skipped
+      fail_on_regression: false          # When true, the rule errors out on any flagged carrier
+
+    # ── Fitted fallback from ELEXON (historical scenarios) ──────────────────
+    # When enabled, fallback pricing for generators without a direct BMU
+    # match is derived from a per-carrier regression against ELEXON-matched
+    # BMUs (offer = α·MC + β, bid = γ·MC + δ). This preserves intra-carrier
+    # MC dispersion that the carrier-median fallback collapses.
+    #
+    # Falls back to the configured `elexon.fallback` (carrier_average/
+    # derived/zero) when a carrier has fewer than `min_matched_gens`
+    # ELEXON matches or the fit R² is below `min_r2`.
+    #
+    # `time_varying_shape` overlays the carrier-mean-normalised ELEXON
+    # hourly profile on unmatched generators, so a generator gets the same
+    # peak-vs-offpeak shape as the matched fleet in its carrier.
+    fitted_fallback:
+      enabled: false                     # Opt-in; leave off until validated per-scenario
+      min_matched_gens: 3                # Minimum ELEXON-matched gens for a carrier fit
+      min_r2: 0.1                        # R² threshold below which the fit is discarded
+      max_price: 500.0                   # Same sanity cap as carrier_average (£/MWh)
+      time_varying_shape: true           # Apply carrier-mean-normalised hourly ELEXON shape
 
   # ── Post-Solve Revenue Tracking ──────────────────────────────────────────
   # Calculates CfD difference payments and ROC income after market solve.
@@ -196,6 +593,31 @@ market:
     include_cfd: true                     # Calculate CfD top-up/clawback payments
     include_roc: true                     # Calculate ROC income
     output_format: "csv"                  # "csv", "json", or "both"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# HYDRO / PUMPED-HYDRO MODEL
+# ──────────────────────────────────────────────────────────────────────────────
+# Large hydro is reservoir-backed rather than fuel-backed. The model therefore
+# uses an hourly power ceiling from the profile plus a cumulative water budget
+# that carries between rolling windows.
+#
+# Pumped hydro is not a generic battery. Reservoir losses are negligible at
+# hourly resolution, and keeping a minimum SOC improves retained flexibility
+# for balancing and fast-response operation.
+hydro:
+  enabled: true
+  large_hydro:
+    reservoir_model: true
+    inflow_profile_factor: 0.55          # Convert p_max_pu profile into effective inflow
+    initial_storage_hours: 48.0          # Water already in reservoir at period start
+    reservoir_capacity_hours: 168.0      # Approximate upper-reservoir energy capacity
+  pumped_hydro:
+    standing_loss: 0.0                   # Reservoir leakage is negligible at hourly scale
+    initial_soc_fraction: 0.65           # Start with the upper reservoir partly full
+    min_soc_fraction: 0.15               # Preserve headroom for redispatch services
+    wholesale_min_soc_fraction: 0.40     # Higher floor in wholesale — preserves SoC for BM increases
+    final_soc_fraction: null             # Optional end-of-horizon reserve target
+    cyclic_state_of_charge: false
 
 # ──────────────────────────────────────────────────────────────────────────────
 # ETYS DATA SOURCE (ETYS network model only)
@@ -262,6 +684,7 @@ spatial_mapping:
     min_preferred_kv: 275         # Preferred minimum connection voltage (kV)
     high_voltage_kv: 400          # 400 kV-only search threshold (kV)
     low_voltage_kv: 33            # Low-voltage threshold (kV)
+    fallback_hv_radius_km: 80     # Max km for post-aggregation nearest HV bus search
 
   # Earth radius for haversine distance calculations
   earth_radius_km: 6371.0
@@ -311,12 +734,32 @@ marginal_costs:
   empirical_calibration:
     enabled: false
     window_days: 7                       # Rolling window half-width for thermal calibration
+    # Additive MC adjustments per carrier (£/MWh), applied AFTER empirical
+    # calibration.  Primary use: widen the coal-gas gap that the switch-on
+    # methodology compresses.  In 2020 the carbon cost differential between
+    # coal (846 kgCO₂/MWh_th ÷ 0.36 eff) and CCGT (488 kgCO₂/MWh_th ÷ 0.49
+    # eff) at ~£25/tCO₂ effective carbon is ~£15-20/MWh, but empirical
+    # calibration yields only ~£1 gap because both turn on at similar prices.
+    carrier_mc_adjustments:
+      coal: 15.0                         # +£15/MWh carbon cost premium
 
   # ── Subsidy-Aware MC (fallback for renewables without empirical data) ──────
   subsidies:
     enabled: false
     cfd_dispatch_cost: 0.0
     roc_buyout_prices:
+      # Historical (Ofgem published obligation period buyout prices, April-March)
+      2010: 36.99
+      2011: 38.69
+      2012: 40.71
+      2013: 42.02
+      2014: 43.30
+      2015: 44.33
+      2016: 44.77
+      2017: 45.58
+      2018: 47.22
+      2019: 48.78
+      2020: 50.05
       2021: 50.05
       2022: 54.73
       2023: 57.47
@@ -334,6 +777,63 @@ marginal_costs:
       2035: 81.99
       2036: 84.45
       2037: 86.98
+
+  # ── Biofuel Subsidy (ROC deduction for biomass/biogas merit order) ──────────
+  # Dedicated biomass, biogas, landfill gas and sewage gas generators hold ROC
+  # accreditation that pays them per MWh generated. This income reduces their
+  # effective wholesale marginal cost below the thermal fuel-cost formula.
+  # Without this deduction, biomass MC = £70-80/MWh (fuel/efficiency) and it
+  # never dispatches; with it, MC ≈ -£5/MWh and it runs as baseload — matching
+  # observed ESPENI dispatch of ~2,200 MW in 2020.
+  #
+  # Waste-to-energy is excluded (gate-fee economics differ from ROC subsidy).
+  biofuel_subsidy:
+    enabled: false
+    # Per-carrier ROC banding (ROC/MWh). Used when the generator's own
+    # ro_banding attribute is missing or zero.
+    default_roc_bandings:
+      biomass: 1.5                   # Ofgem dedicated biomass band
+      advanced_biofuel: 1.5          # Same band as dedicated biomass
+      biogas: 0.5                    # Ofgem standard band for AD biogas
+      landfill_gas: 0.2              # Minimal ROC support (declining sector)
+      sewage_gas: 0.5                # Ofgem standard band for sewage gas
+    # ROC buyout price — if omitted, falls back to subsidies.roc_buyout_prices
+    # roc_buyout_price: 50.05
+    # MC floor: prevents ROC income from making biofuel MC negative (which causes
+    # unconditional 100% dispatch). Set to a small positive value (GBP/MWh).
+    mc_floor: 5.0
+
+# ──────────────────────────────────────────────────────────────────────────────
+# NUCLEAR AVAILABILITY SMOOTHING
+# ──────────────────────────────────────────────────────────────────────────────
+# Controls how ESPENI-derived nuclear availability is smoothed before applying
+# as p_max_pu. "hourly" preserves the raw hourly signal (captures individual
+# plant outages). "monthly" averages to monthly blocks (legacy behaviour,
+# smooths out outage dips but loses temporal accuracy — r ≈ 0.04 vs hourly).
+nuclear_availability_smoothing: "hourly"    # "hourly" | "daily" | "monthly"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# THERMAL AVAILABILITY FACTORS
+# ──────────────────────────────────────────────────────────────────────────────
+# Constrains maximum output of thermal generators to reflect real-world availability.
+# Biomass (Drax, Lynemouth) does not run at 100% due to pellet supply, maintenance.
+# Small biofuel (biogas, LFG, sewage) are CHP plants that follow heat demand.
+# For historical scenarios, factors are calibrated to match ESPENI actual dispatch.
+thermal_availability_factors:
+  enabled: false
+  factors:
+    biomass: 0.53           # 2252/4225 (ESPENI actual / installed)
+    biogas: 0.15            # CHP heat-led, low electrical load factor
+    landfill_gas: 0.15      # Intermittent methane availability
+    sewage_gas: 0.15        # CHP heat-led
+    advanced_biofuel: 0.15  # CHP / small distributed
+    waste_to_energy: 0.80   # More continuous operation
+  # Must-run minimum output (p_min_pu) — ROC/CHP generators that cannot be
+  # turned below this level. Biomass (Drax/Lynemouth) runs continuously for
+  # ROC income; biofuel CHP plants follow heat demand (not dispatchable).
+  min_output:
+    biomass: 0.40           # ROC revenue protection — rarely curtail below 40%
+    waste_to_energy: 0.50   # Continuous waste processing obligation
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SUBSIDY TRACKING (disabled by default)
@@ -414,7 +914,7 @@ subsidy_tracking:
 #   pricing signals for accurate wholesale price reporting.
 interconnectors:
   pricing:
-    source: "derived"                # "derived" | "entsoe" | "csv"
+    source: "entsoe"                 # "derived" | "entsoe" | "csv"
     eur_to_gbp: 0.86                # EUR→GBP conversion rate
     gb_price: 50.0                   # GB wholesale price for price differentials (£/MWh)
     price_floor: 0.0                # Minimum EU price (£/MWh)
@@ -429,6 +929,18 @@ logging:
   level: "INFO"                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
   log_to_file: true
   log_directory: "logs"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEMAND DATA SOURCES
+# ──────────────────────────────────────────────────────────────────────────────
+# Temporal profile source for demand (annual totals always from FES for future scenarios)
+# Options:
+#   "ESPENI"    - Historical half-hourly GB demand (recommended, uses demand_year)
+#   "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
+#   "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
+# 
+# For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
+demand_timeseries: "ESPENI"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # DEMAND DISAGGREGATION (optional, disabled by default)

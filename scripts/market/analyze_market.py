@@ -468,7 +468,11 @@ if __name__ == "__main__":
         constraint_costs = pd.read_csv(
             snakemake.input.constraint_costs_csv, index_col=0
         )
-        congestion = pd.read_csv(snakemake.input.congestion_csv)
+        try:
+            congestion = pd.read_csv(snakemake.input.congestion_csv)
+        except pd.errors.EmptyDataError:
+            logger.warning("Congestion CSV is empty — no congested elements found.")
+            congestion = pd.DataFrame()
         price_comparison = pd.read_csv(
             snakemake.input.price_comparison_csv, index_col=0, parse_dates=True
         )

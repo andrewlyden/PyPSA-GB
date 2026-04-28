@@ -588,6 +588,29 @@ for rid in run_ids:
                 f"{resources_path}/analysis/{rid}_market_summary.json",
                 f"{resources_path}/analysis/{rid}_market_notebook.ipynb",
             ])
+            # BM validation for historical market scenarios
+            modelled_year = scenarios.get(rid, {}).get('modelled_year', 9999)
+            if modelled_year <= 2024:
+                market_targets.extend([
+                    f"{resources_path}/market/{rid}_bm_validation.csv",
+                    f"{resources_path}/analysis/{rid}_bm_validation.html",
+                    f"{resources_path}/market/{rid}_neso_validation.csv",
+                    f"{resources_path}/analysis/{rid}_neso_validation.html",
+                ])
+                # Calibration scorecard: only meaningful when ELEXON BOD data
+                # is in use (auto or explicit). Derived-pricing scenarios have
+                # no ELEXON median to compare against.
+                bid_offer_source = (
+                    scenarios.get(rid, {})
+                    .get('market', {})
+                    .get('balancing', {})
+                    .get('bid_offer_source', 'auto')
+                )
+                if bid_offer_source in ('auto', 'elexon'):
+                    market_targets.extend([
+                        f"{resources_path}/market/{rid}_bm_calibration.csv",
+                        f"{resources_path}/analysis/{rid}_bm_calibration.html",
+                    ])
 
 # --- Analysis Outputs --------------------------------------------------------
 # Consolidated analysis: spatial plots, dashboards, notebooks

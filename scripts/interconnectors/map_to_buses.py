@@ -40,6 +40,9 @@ except ImportError:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         return logging.getLogger(name)
 
+# Module-level logger (configured in main())
+logger = logging.getLogger("map_interconnectors_to_buses")
+
 # Check if running in Snakemake context
 if 'snakemake' in globals():
     SNAKEMAKE_MODE = True
@@ -54,16 +57,14 @@ else:
 def load_bus_mapping(bus_mapping_file: str, target_network_model: str) -> pd.DataFrame:
     """
     Load bus mapping data for the specified network model.
-    
+
     Args:
         bus_mapping_file: Path to bus mapping CSV file
         target_network_model: Network model to filter for (ETYS, Reduced, Zonal)
-        
+
     Returns:
         DataFrame with bus mapping for the target network
     """
-    logger = logging.getLogger(__name__)
-    
     if not Path(bus_mapping_file).exists():
         logger.warning(f"Bus mapping file not found: {bus_mapping_file}")
         return pd.DataFrame()
@@ -120,7 +121,6 @@ def map_landing_points_to_buses(interconnectors_df: pd.DataFrame,
     Returns:
         DataFrame with from_bus and to_bus columns added
     """
-    logger = logging.getLogger(__name__)
     
     # Create output DataFrame with exact required schema
     output_columns = [
@@ -270,7 +270,6 @@ def validate_mapped_data(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Validated DataFrame
     """
-    logger = logging.getLogger(__name__)
     initial_count = len(df)
     
     # Remove records without bus mappings
@@ -334,7 +333,6 @@ def map_by_coordinates(interconnectors_df: pd.DataFrame, bus_mapping_df: pd.Data
     Returns:
         DataFrame with added 'gb_bus' and 'match_distance_km' columns
     """
-    logger = logging.getLogger(__name__)
     
     logger.info("=== Starting Coordinate-Based Bus Mapping ===")
     logger.info(f"Maximum matching distance: {max_distance_km} km")
@@ -428,7 +426,6 @@ def apply_etys_interconnector_voltage_correction(
     Returns:
         DataFrame with corrected bus assignments
     """
-    logger = logging.getLogger(__name__)
     
     # Determine which column contains the GB bus
     bus_col = 'from_bus' if 'from_bus' in interconnectors_df.columns else 'gb_bus'
@@ -508,6 +505,7 @@ def apply_etys_interconnector_voltage_correction(
 
 def main():
     """Main processing function."""
+    global logger
     logger = setup_logging("map_interconnectors_to_buses")
     start_time = time.time()
     

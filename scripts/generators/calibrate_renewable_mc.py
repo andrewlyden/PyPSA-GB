@@ -446,6 +446,16 @@ def fetch_renewable_bids(
             logger.info(f"Loading cached bids from {cache_path}")
             return pd.read_csv(cache_path, parse_dates=['datetime'])
 
+        # Try restoring from compressed archive before hitting the API
+        try:
+            from scripts.utilities.elexon_cache import ensure_cache_for_year
+            year = start.year
+            if ensure_cache_for_year(year, logger=logger) and cache_path.exists():
+                logger.info(f"Restored from archive — loading cached bids for {year}")
+                return pd.read_csv(cache_path, parse_dates=['datetime'])
+        except ImportError:
+            pass  # elexon_cache not available — fall through to API fetch
+
     # Fetch the authoritative set of renewable BMU IDs from ELEXON registry
     registry = fetch_renewable_bmu_registry(cache_dir=output_dir, logger=logger)
     if registry:
@@ -982,20 +992,48 @@ def snakemake_main():
 
     modelled_year = scenario_config.get('modelled_year', 2023)
 
-    # Future scenarios: no ELEXON data, produce empty CSV
-    if modelled_year > 2024:
-        logger.info(f"Future scenario (year {modelled_year}): writing empty renewable MC file")
+    def _write_empty_csv(reason: str) -> None:
+        logger.info(f"{reason}: writing empty renewable MC file")
         empty_df = pd.DataFrame(columns=['generator', 'carrier', 'empirical_mc',
                                           'support_type_inferred', 'n_bmus'])
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         empty_df.to_csv(output_file, index=False)
         logger.info(f"Saved empty CSV -> {output_file}")
+
+    # Future scenarios: no ELEXON data available
+    if modelled_year > 2024:
+        _write_empty_csv(f"Future scenario (year {modelled_year})")
+        return
+
+    # Feature disabled: skip expensive API fetch
+    empirical_enabled = (
+        scenario_config
+        .get('marginal_costs', {})
+        .get('empirical_calibration', {})
+        .get('enabled', False)
+    )
+    if not empirical_enabled:
+        _write_empty_csv("empirical_calibration.enabled: false")
         return
 
     # Historical scenario: calibrate from ELEXON BOD data
     cal_year = modelled_year
-    start_date = f"{cal_year}-01-01"
-    end_date = f"{cal_year}-12-31"
+
+    # Scope fetch to solve period if defined (avoids fetching a full year for short runs)
+    solve_period = scenario_config.get('solve_period', {})
+    if solve_period.get('enabled', False) and solve_period.get('start') and solve_period.get('end'):
+        sp_start = pd.Timestamp(solve_period['start'])
+        sp_end = pd.Timestamp(solve_period['end'])
+        # Use solve period ± 14 days for statistical robustness
+        buffer = pd.Timedelta(days=14)
+        fetch_start = max(sp_start - buffer, pd.Timestamp(f"{cal_year}-01-01"))
+        fetch_end = min(sp_end + buffer, pd.Timestamp(f"{cal_year}-12-31"))
+        start_date = fetch_start.strftime("%Y-%m-%d")
+        end_date = fetch_end.strftime("%Y-%m-%d")
+        logger.info(f"Scoped to solve_period ± 14d: {start_date} to {end_date}")
+    else:
+        start_date = f"{cal_year}-01-01"
+        end_date = f"{cal_year}-12-31"
 
     # Year-specific cache directory so each year fetches its own data
     year_data_dir = str(Path(data_dir) / str(cal_year))

@@ -12,9 +12,38 @@ import pandas as pd
 import numpy as np
 import yaml
 from scripts.utilities.logging_config import setup_logging
+from scripts.solve.hydro_constraints import (
+    build_hydro_constraints_callback,
+    combine_extra_functionalities,
+    log_hydro_constraint_setup,
+)
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+
+
+RENEWABLE_CARRIERS = {
+    "wind",
+    "Wind",
+    "Wind (Onshore)",
+    "Wind (Offshore)",
+    "wind_onshore",
+    "wind_offshore",
+    "solar",
+    "Solar",
+    "solar_pv",
+    "embedded_wind",
+    "embedded_solar",
+    "Hydro",
+    "hydro",
+    "large_hydro",
+    "small_hydro",
+    "tidal_stream",
+    "shoreline_wave",
+    "tidal_lagoon",
+    "marine",
+    "geothermal",
+}
 
 
 def get_solve_mode_from_config() -> str:
@@ -146,19 +175,42 @@ def validate_network_costs(network, logger):
     logger.info(f"  Positive cost: {positive_cost_gens} ({100*positive_cost_gens/total_gens:.1f}%)")
     
     # If too many zero-cost generators (excluding renewables), warn
-    renewable_carriers = ['wind', 'Wind', 'Wind (Onshore)', 'Wind (Offshore)', 
-                         'wind_onshore', 'wind_offshore', 'solar', 'Solar', 'solar_pv',
-                         'Hydro', 'hydro', 'large_hydro', 'small_hydro', 'tidal_stream',
-                         'shoreline_wave', 'geothermal']
-    
-    non_renewable_mask = ~network.generators['carrier'].isin(renewable_carriers)
-    non_renewable_zero_cost = network.generators[non_renewable_mask & (network.generators['marginal_cost'] == 0)]
-    
-    if len(non_renewable_zero_cost) > 0:
-        capacity = non_renewable_zero_cost['p_nom'].sum()
+    non_renewable_mask = ~network.generators["carrier"].isin(RENEWABLE_CARRIERS)
+    zero_cost_mask = network.generators["marginal_cost"] == 0
+
+    zero_cost_fixed_imports = network.generators[
+        (network.generators["carrier"] == "EU_import") & zero_cost_mask
+    ]
+    suspicious_zero_cost = network.generators[
+        non_renewable_mask
+        & zero_cost_mask
+        & (network.generators["carrier"] != "EU_import")
+    ]
+
+    if len(zero_cost_fixed_imports) > 0:
+        capacity = zero_cost_fixed_imports["p_nom"].sum()
+        logger.info(
+            "[OK] Fixed-flow interconnector supply: "
+            f"{len(zero_cost_fixed_imports)} EU_import generators at zero cost "
+            f"({capacity:,.0f} MW). This is expected for historical fixed-link flows."
+        )
+
+    if len(suspicious_zero_cost) > 0:
+        capacity = suspicious_zero_cost["p_nom"].sum()
         if capacity > 1000:  # More than 1 GW
+            carrier_summary = (
+                suspicious_zero_cost.groupby("carrier")["p_nom"]
+                .sum()
+                .sort_values(ascending=False)
+            )
+            carrier_text = ", ".join(
+                f"{carrier} ({cap:,.0f} MW)"
+                for carrier, cap in carrier_summary.items()
+            )
             warnings.append(
-                f"{len(non_renewable_zero_cost)} non-renewable generators have zero cost ({capacity:,.0f} MW)\n"
+                f"{len(suspicious_zero_cost)} non-renewable generators have zero cost "
+                f"({capacity:,.0f} MW)\n"
+                f"  Carriers: {carrier_text}\n"
                 f"  This may indicate missing fuel price mappings."
             )
     
@@ -273,6 +325,887 @@ def apply_transmission_relaxation(network, scenario_config, logger):
     
     logger.info("=" * 80)
     return modifications
+
+
+def apply_line_rating_overrides(network, scenario_config, logger):
+    """Apply per-line s_nom overrides and voltage floor from config.
+
+    Two mechanisms, applied in order:
+
+    1. min_bm_constraint_voltage_kv — set s_nom = 9999 MVA for all lines/transformers
+       with v_nom strictly below this threshold.  Removes sub-transmission loop-flow
+       artefacts caused by the DC power flow distributing currents through incomplete
+       132 kV ring topologies in ETYS.  Set to 0 to disable.
+
+    2. line_rating_overrides — explicit per-component s_nom values.  Applied after
+       the voltage floor so targeted corrections always take precedence.
+    """
+    # Load global defaults
+    defaults_path = Path("config/defaults.yaml")
+    global_transmission = {}
+    if defaults_path.exists():
+        try:
+            with open(defaults_path, 'r', encoding='utf-8') as f:
+                defaults = yaml.safe_load(f)
+            global_transmission = defaults.get('transmission', {})
+        except Exception:
+            pass
+
+    transmission = scenario_config.get('transmission', global_transmission)
+
+    logger.info("=" * 80)
+    logger.info("APPLYING LINE RATING OVERRIDES")
+    logger.info("=" * 80)
+
+    applied = 0
+
+    # ── 1. Voltage floor ─────────────────────────────────────────────────────
+    min_v = float(transmission.get('min_bm_constraint_voltage_kv', 0))
+    if min_v > 0:
+        # Only applies to lines — transformers span two voltage levels so v_nom
+        # is ambiguous, and transformer constraints are not the source of loop-flow
+        # artefacts in the Highland 132 kV network.
+        low_lines = network.lines[network.lines['v_nom'] < min_v]
+        if len(low_lines) > 0:
+            network.lines.loc[low_lines.index, 's_nom'] = 9999.0
+            v_counts = low_lines['v_nom'].value_counts().sort_index()
+            logger.info(
+                f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_lines)} lines "
+                f"({v_counts.to_dict()})"
+            )
+            applied += len(low_lines)
+        else:
+            logger.info(f"  Voltage floor {min_v:.0f} kV: no lines below threshold")
+    else:
+        logger.info("  Voltage floor disabled (min_bm_constraint_voltage_kv=0)")
+
+    # ── 2. Explicit per-line overrides ───────────────────────────────────────
+    overrides = transmission.get('line_rating_overrides', {})
+    for line_id, new_s_nom in overrides.items():
+        new_s_nom = float(new_s_nom)
+        if line_id in network.lines.index:
+            old_val = network.lines.at[line_id, 's_nom']
+            network.lines.at[line_id, 's_nom'] = new_s_nom
+            logger.info(f"  {line_id}: s_nom {old_val:.0f} → {new_s_nom:.0f} MVA")
+            applied += 1
+        elif line_id in network.transformers.index:
+            old_val = network.transformers.at[line_id, 's_nom']
+            network.transformers.at[line_id, 's_nom'] = new_s_nom
+            logger.info(f"  {line_id} (transformer): s_nom {old_val:.0f} → {new_s_nom:.0f} MVA")
+            applied += 1
+        else:
+            logger.warning(f"  {line_id}: not found in network lines or transformers")
+
+    if applied:
+        logger.info(f"Applied {applied} total line/transformer rating changes")
+    return applied > 0
+
+
+def apply_outage_schedule(network, scenario_config, logger):
+    """Apply time-varying transmission outage schedule via s_max_pu.
+
+    Supports three modes configured under ``transmission.outage_schedule``:
+
+    ``csv``
+        Load from a CSV file with columns:
+        component, component_id, start, end, s_max_pu
+
+    ``synthetic``
+        Generate stochastic maintenance outages from parameters
+        (voltage-dependent forced outage rates, seasonal weighting).
+
+    ``neso``
+        Apply NESO day-ahead boundary limits, with configurable gap filling
+        when the published source has missing timestamps.
+
+    The function sets ``network.lines_t.s_max_pu`` (and
+    ``network.transformers_t.s_max_pu``) so that PyPSA reduces the effective
+    line rating at each snapshot.  Values default to 1.0 (fully available).
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    scenario_config : dict
+    logger : logging.Logger
+
+    Returns
+    -------
+    bool  — True if any outages were applied.
+    """
+    defaults_path = Path("config/defaults.yaml")
+    global_transmission = {}
+    if defaults_path.exists():
+        try:
+            with open(defaults_path, 'r', encoding='utf-8') as f:
+                defaults = yaml.safe_load(f)
+            global_transmission = defaults.get('transmission', {})
+        except Exception:
+            pass
+
+    transmission = scenario_config.get('transmission', global_transmission)
+    outage_cfg = transmission.get('outage_schedule', {})
+
+    if not outage_cfg.get('enabled', False):
+        return False
+
+    source = outage_cfg.get('source', 'csv')
+    if not hasattr(network, 'meta') or network.meta is None:
+        network.meta = {}
+    if source == 'neso':
+        network.meta['neso_constraint_mode'] = _get_neso_constraint_mode(outage_cfg)
+    logger.info("=" * 80)
+    logger.info(f"APPLYING OUTAGE SCHEDULE (source={source})")
+    logger.info("=" * 80)
+
+    snapshots = network.snapshots
+    solve_period_cfg = scenario_config.get('solve_period', {})
+    if solve_period_cfg.get('enabled', False) and 'start' in solve_period_cfg and 'end' in solve_period_cfg:
+        solve_start = pd.Timestamp(solve_period_cfg['start'])
+        solve_end = pd.Timestamp(solve_period_cfg['end'])
+        mask = (snapshots >= solve_start) & (snapshots <= solve_end)
+        active_snapshots = snapshots[mask]
+        if len(active_snapshots) > 0:
+            logger.info(
+                f"  Outage schedule using active solve-period snapshots: "
+                f"{active_snapshots[0]} to {active_snapshots[-1]} ({len(active_snapshots)} snapshots)"
+            )
+            snapshots = active_snapshots
+
+    if source == 'csv':
+        return _apply_csv_outage_schedule(network, outage_cfg, snapshots, logger)
+    elif source == 'synthetic':
+        return _apply_synthetic_outage_schedule(network, outage_cfg, snapshots, logger)
+    elif source == 'neso':
+        constraint_mode = _get_neso_constraint_mode(outage_cfg)
+        if constraint_mode == 'aggregate_boundary':
+            logger.info(
+                "  NESO constraint_mode=aggregate_boundary: limits will be enforced "
+                "inside the optimization model, not via line s_max_pu derating"
+            )
+            return False
+        return _apply_neso_boundary_limits(network, outage_cfg, snapshots, logger)
+    else:
+        logger.warning(f"Unknown outage_schedule source '{source}', skipping")
+        return False
+
+
+def _inspect_neso_boundary_coverage(bnd_df, snapshots, tolerance_minutes=45):
+    """Summarise how well a NESO boundary DataFrame covers requested snapshots."""
+    if bnd_df.empty:
+        return {
+            'matched_snapshots': 0,
+            'missing_snapshots': len(snapshots),
+            'missing_days': sorted({ts.date() for ts in snapshots}),
+            'available_start': None,
+            'available_end': None,
+        }
+
+    ts_index = pd.DatetimeIndex(pd.to_datetime(bnd_df['date'])).sort_values()
+    tolerance = pd.Timedelta(minutes=tolerance_minutes)
+    nearest_idx = ts_index.get_indexer(snapshots, method='nearest', tolerance=tolerance)
+    missing_mask = nearest_idx == -1
+    missing_days = sorted({ts.date() for ts in snapshots[missing_mask]})
+    return {
+        'matched_snapshots': int((~missing_mask).sum()),
+        'missing_snapshots': int(missing_mask.sum()),
+        'missing_days': missing_days,
+        'available_start': ts_index.min(),
+        'available_end': ts_index.max(),
+    }
+
+
+def _load_cached_boundary_file(cache_dir, boundary_name, date_tag, snapshots):
+    """Load the best cached NESO boundary file for the requested snapshot window."""
+    exact_file = cache_dir / f"neso_{boundary_name}_{date_tag}.csv"
+    candidates = []
+    if exact_file.exists():
+        candidates.append(exact_file)
+
+    for path in sorted(cache_dir.glob(f"neso_{boundary_name}_*.csv")):
+        if path != exact_file:
+            candidates.append(path)
+
+    best_df = None
+    best_coverage = None
+    best_path = None
+    for cache_file in candidates:
+        bnd_df = pd.read_csv(cache_file, parse_dates=['date'])
+        coverage = _inspect_neso_boundary_coverage(bnd_df, snapshots)
+        if best_coverage is None or coverage['matched_snapshots'] > best_coverage['matched_snapshots']:
+            best_df = bnd_df
+            best_coverage = coverage
+            best_path = cache_file
+        if coverage['missing_snapshots'] == 0:
+            return bnd_df, coverage, cache_file
+
+    return best_df, best_coverage, best_path
+
+
+def _fill_missing_neso_limits(limit_series, bnd_data, gap_fill_mode, total_s_nom, logger, boundary_name):
+    """Fill missing NESO boundary limits according to the configured gap policy."""
+    missing_mask = limit_series.isna()
+    if not missing_mask.any():
+        return limit_series
+
+    missing_snapshots = limit_series.index[missing_mask]
+    missing_days = sorted({ts.date() for ts in missing_snapshots})
+
+    if gap_fill_mode == 'interpolate':
+        filled = limit_series.astype(float).interpolate(method='time').ffill().bfill()
+        if filled.isna().any():
+            raise RuntimeError(
+                f"{boundary_name}: unable to interpolate NESO limits for all missing snapshots"
+            )
+        logger.warning(
+            f"  {boundary_name}: filled {missing_mask.sum()} missing snapshots "
+            f"(days: {missing_days}) using interpolated nearby NESO limits"
+        )
+        return filled
+
+    if gap_fill_mode == 'nearest_available':
+        nearest_idx = bnd_data.index.get_indexer(missing_snapshots, method='nearest')
+        if (nearest_idx < 0).any():
+            raise RuntimeError(
+                f"{boundary_name}: unable to find nearby NESO limits for all missing snapshots"
+            )
+        source_times = bnd_data.index[nearest_idx]
+        filled = limit_series.copy()
+        filled.loc[missing_snapshots] = bnd_data.iloc[nearest_idx]['limit_mw'].to_numpy()
+        source_days = sorted({ts.date() for ts in source_times})
+        logger.warning(
+            f"  {boundary_name}: filled {missing_mask.sum()} missing snapshots "
+            f"(days: {missing_days}) using nearest available NESO limits "
+            f"from {source_days}"
+        )
+        return filled
+
+    if gap_fill_mode == 'unconstrained':
+        logger.warning(
+            f"  {boundary_name}: no nearby NESO limit for {missing_mask.sum()} snapshots "
+            f"(days: {missing_days}); filling with unconstrained total_s_nom={total_s_nom:.0f} MW"
+        )
+        return limit_series.fillna(total_s_nom)
+
+    if gap_fill_mode == 'fail':
+        raise RuntimeError(
+            f"{boundary_name}: NESO limit data missing for {missing_mask.sum()} snapshots "
+            f"(days: {missing_days}) and gap_fill_mode='fail'"
+        )
+
+    raise ValueError(f"Unknown NESO gap_fill_mode '{gap_fill_mode}'")
+
+
+def _get_neso_constraint_mode(outage_cfg):
+    """Return the configured NESO boundary enforcement mode."""
+    neso_cfg = outage_cfg.get('neso', {})
+    return str(neso_cfg.get('constraint_mode', 'uniform_s_max_pu')).strip().lower()
+
+
+def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
+    """Load mapping plus cached/fetched NESO boundary data for the requested snapshots."""
+    import requests
+
+    neso_cfg = outage_cfg.get('neso', {})
+    mapping_path = Path(neso_cfg.get(
+        'boundary_mapping', 'data/network/neso_boundary_mapping.yaml'
+    ))
+    resource_id = neso_cfg.get(
+        'resource_id', '38a18ec1-9e40-465d-93fb-301e80fd1352'
+    )
+    api_base = neso_cfg.get(
+        'api_base', 'https://api.neso.energy/api/3/action/datastore_search_sql'
+    )
+    cache_dir = Path(neso_cfg.get('cache_dir', 'resources/neso_cache'))
+    min_s_max_pu = float(neso_cfg.get('min_s_max_pu', 0.05))
+    tolerance_minutes = int(neso_cfg.get('nearest_tolerance_minutes', 45))
+    gap_fill_mode = str(neso_cfg.get('gap_fill_mode', 'interpolate')).strip().lower()
+
+    if not mapping_path.exists():
+        logger.error(f"Boundary mapping file not found: {mapping_path}")
+        return None
+
+    with open(mapping_path, 'r', encoding='utf-8') as f:
+        mapping = yaml.safe_load(f)
+
+    boundaries = mapping.get('boundaries', {})
+    boundary_include = neso_cfg.get('boundary_include')
+    if boundary_include:
+        include_set = {str(name).strip() for name in boundary_include}
+        boundaries = {
+            name: info for name, info in boundaries.items()
+            if name in include_set
+        }
+    if not boundaries:
+        logger.warning("No boundaries defined in mapping file")
+        return None
+
+    start_date = snapshots[0].strftime('%Y-%m-%dT%H:%M:%S')
+    end_date = (snapshots[-1] + pd.Timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    date_tag = f"{snapshots[0].strftime('%Y%m%d')}_{snapshots[-1].strftime('%Y%m%d')}"
+
+    all_boundary_dfs = []
+    for boundary_name in boundaries:
+        cache_file = cache_dir / f"neso_{boundary_name}_{date_tag}.csv"
+        bnd_df, coverage, loaded_from = _load_cached_boundary_file(
+            cache_dir, boundary_name, date_tag, snapshots
+        )
+
+        if bnd_df is not None and coverage and coverage['missing_snapshots'] == 0:
+            logger.debug(
+                f"  {boundary_name}: loaded {len(bnd_df)} cached records "
+                f"from {loaded_from.name}"
+            )
+        else:
+            if bnd_df is not None and coverage and loaded_from is not None:
+                logger.warning(
+                    f"  {boundary_name}: cached file {loaded_from.name} is incomplete "
+                    f"for requested window ({coverage['matched_snapshots']}/{len(snapshots)} "
+                    f"snapshots matched; missing days: {coverage['missing_days']}) - refreshing"
+                )
+            sql = (
+                f'SELECT "Constraint Group", "Date (GMT/BST)", '
+                f'"Limit (MW)", "Flow (MW)" '
+                f'FROM "{resource_id}" '
+                f"WHERE \"Date (GMT/BST)\" >= '{start_date}' "
+                f"AND \"Date (GMT/BST)\" < '{end_date}' "
+                f"AND \"Constraint Group\" = '{boundary_name}' "
+                f'ORDER BY "Date (GMT/BST)" LIMIT 32000'
+            )
+            try:
+                resp = requests.get(api_base, params={'sql': sql}, timeout=120)
+                resp.raise_for_status()
+                result = resp.json()
+                if not result.get('success'):
+                    logger.warning(f"  {boundary_name}: API error, skipping")
+                    continue
+                records = result['result']['records']
+            except Exception as e:
+                logger.warning(f"  {boundary_name}: fetch failed ({e}), skipping")
+                continue
+
+            if not records:
+                logger.debug(f"  {boundary_name}: no NESO records for this period")
+                if bnd_df is None:
+                    continue
+            else:
+                bnd_df = pd.DataFrame(records)
+                bnd_df.rename(columns={
+                    'Constraint Group': 'boundary',
+                    'Date (GMT/BST)': 'date',
+                    'Limit (MW)': 'limit_mw',
+                    'Flow (MW)': 'flow_mw',
+                }, inplace=True)
+                bnd_df['date'] = pd.to_datetime(bnd_df['date'])
+                bnd_df['limit_mw'] = pd.to_numeric(bnd_df['limit_mw'])
+                bnd_df['flow_mw'] = pd.to_numeric(bnd_df['flow_mw'])
+                bnd_df.to_csv(cache_file, index=False)
+                logger.info(f"  {boundary_name}: fetched {len(bnd_df)} records from NESO API")
+
+            coverage = _inspect_neso_boundary_coverage(
+                bnd_df, snapshots, tolerance_minutes=tolerance_minutes
+            )
+            if coverage['missing_snapshots'] > 0:
+                logger.warning(
+                    f"  {boundary_name}: NESO data still missing "
+                    f"{coverage['missing_snapshots']}/{len(snapshots)} requested snapshots "
+                    f"after refresh (days: {coverage['missing_days']}). "
+                    f"Applying gap_fill_mode='{gap_fill_mode}'."
+                )
+
+        all_boundary_dfs.append(bnd_df)
+
+    if not all_boundary_dfs:
+        logger.warning("No NESO boundary data retrieved for any boundary")
+        return None
+
+    neso_df = pd.concat(all_boundary_dfs, ignore_index=True)
+    logger.info(
+        f"  Total NESO records: {len(neso_df)} across "
+        f"{neso_df['boundary'].nunique()} boundaries"
+    )
+
+    return {
+        'boundaries': boundaries,
+        'neso_df': neso_df,
+        'tolerance_minutes': tolerance_minutes,
+        'gap_fill_mode': gap_fill_mode,
+        'min_s_max_pu': min_s_max_pu,
+    }
+
+
+def _align_neso_boundary_limit_series(
+    bnd_data, snapshots, tolerance_minutes, gap_fill_mode, fallback_limit, logger, boundary_name
+):
+    """Align a boundary's NESO limit time series to model snapshots."""
+    bnd_data = bnd_data.set_index('date').sort_index()
+
+    limit_series = pd.Series(dtype=float, index=snapshots)
+    nearest_idx = bnd_data.index.get_indexer(
+        snapshots,
+        method='nearest',
+        tolerance=pd.Timedelta(minutes=tolerance_minutes),
+    )
+    for i, ts in enumerate(snapshots):
+        idx = nearest_idx[i]
+        if 0 <= idx < len(bnd_data):
+            limit_series.iloc[i] = bnd_data.iloc[idx]['limit_mw']
+
+    return _fill_missing_neso_limits(
+        limit_series=limit_series,
+        bnd_data=bnd_data,
+        gap_fill_mode=gap_fill_mode,
+        total_s_nom=fallback_limit,
+        logger=logger,
+        boundary_name=boundary_name,
+    )
+
+
+def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
+    """Build an extra_functionality callback enforcing NESO limits as aggregate boundary constraints."""
+    defaults_path = Path("config/defaults.yaml")
+    global_transmission = {}
+    if defaults_path.exists():
+        try:
+            with open(defaults_path, 'r', encoding='utf-8') as f:
+                defaults = yaml.safe_load(f)
+            global_transmission = defaults.get('transmission', {})
+        except Exception:
+            pass
+
+    transmission = scenario_config.get('transmission', global_transmission)
+    outage_cfg = transmission.get('outage_schedule', {})
+    if not outage_cfg.get('enabled', False) or outage_cfg.get('source', 'csv') != 'neso':
+        return None
+
+    constraint_mode = _get_neso_constraint_mode(outage_cfg)
+    if constraint_mode != 'aggregate_boundary':
+        return None
+
+    snapshots = network.snapshots
+    neso_inputs = _load_neso_boundary_inputs(outage_cfg, snapshots, logger)
+    if not neso_inputs:
+        return None
+
+    boundaries = neso_inputs['boundaries']
+    neso_df = neso_inputs['neso_df']
+    tolerance_minutes = neso_inputs['tolerance_minutes']
+    gap_fill_mode = neso_inputs['gap_fill_mode']
+
+    specs = []
+    for boundary_name, boundary_def in boundaries.items():
+        line_ids = list(dict.fromkeys(
+            boundary_def.get('lines') or boundary_def.get('constraint_lines', [])
+        ))
+        flow_groups = boundary_def.get('flow_groups', {}) or {}
+        positive = list(dict.fromkeys(flow_groups.get('positive', []) or line_ids))
+        negative = list(dict.fromkeys(flow_groups.get('negative', []) or []))
+        if not positive and not negative:
+            positive = line_ids.copy()
+
+        positive = [lid for lid in positive if lid in network.lines.index]
+        negative = [lid for lid in negative if lid in network.lines.index]
+
+        transformer_ids = list(dict.fromkeys(boundary_def.get('transformers', []) or []))
+        transformer_groups = boundary_def.get('transformer_flow_groups', {}) or {}
+        positive_transformers = list(dict.fromkeys(
+            transformer_groups.get('positive', []) or transformer_ids
+        ))
+        negative_transformers = list(dict.fromkeys(
+            transformer_groups.get('negative', []) or []
+        ))
+        if transformer_ids and not positive_transformers and not negative_transformers:
+            positive_transformers = transformer_ids.copy()
+
+        positive_transformers = [
+            tid for tid in positive_transformers if tid in network.transformers.index
+        ]
+        negative_transformers = [
+            tid for tid in negative_transformers if tid in network.transformers.index
+        ]
+
+        link_entries = []
+        for entry in boundary_def.get('links', []) or []:
+            if isinstance(entry, dict):
+                name = entry.get('name')
+                sign = float(entry.get('sign', 1.0))
+            else:
+                name = entry
+                sign = 1.0
+            if name in network.links.index:
+                link_entries.append({'name': name, 'sign': sign})
+
+        if (
+            not positive
+            and not negative
+            and not positive_transformers
+            and not negative_transformers
+            and not link_entries
+        ):
+            logger.debug(
+                f"  {boundary_name}: no matching lines, transformers, or links "
+                f"for aggregate constraint"
+            )
+            continue
+
+        bnd_data = neso_df[neso_df['boundary'] == boundary_name].copy()
+        if bnd_data.empty:
+            logger.debug(f"  {boundary_name}: no NESO data found for aggregate constraint")
+            continue
+
+        fallback_limit = 0.0
+        used_line_ids = list(dict.fromkeys(positive + negative))
+        used_transformer_ids = list(dict.fromkeys(
+            positive_transformers + negative_transformers
+        ))
+        if used_line_ids:
+            fallback_limit += float(network.lines.loc[used_line_ids, 's_nom'].sum())
+        if used_transformer_ids:
+            fallback_limit += float(
+                network.transformers.loc[used_transformer_ids, 's_nom'].sum()
+            )
+        if link_entries:
+            link_names = [entry['name'] for entry in link_entries]
+            if 'p_nom' in network.links.columns:
+                fallback_limit += float(network.links.loc[link_names, 'p_nom'].abs().sum())
+        fallback_limit = max(fallback_limit, 1.0)
+
+        limit_series = _align_neso_boundary_limit_series(
+            bnd_data=bnd_data,
+            snapshots=snapshots,
+            tolerance_minutes=tolerance_minutes,
+            gap_fill_mode=gap_fill_mode,
+            fallback_limit=fallback_limit,
+            logger=logger,
+            boundary_name=boundary_name,
+        )
+
+        logger.info(
+            f"  {boundary_name}: aggregate boundary constraint prepared with "
+            f"{len(used_line_ids)} lines + {len(used_transformer_ids)} transformers "
+            f"+ {len(link_entries)} links, "
+            f"NESO limit={limit_series.min():.0f}-{limit_series.max():.0f} MW "
+            f"(avg {limit_series.mean():.0f})"
+        )
+
+        specs.append({
+            'boundary_name': boundary_name,
+            'positive_lines': positive,
+            'negative_lines': negative,
+            'positive_transformers': positive_transformers,
+            'negative_transformers': negative_transformers,
+            'links': link_entries,
+            'limit_series': limit_series,
+        })
+
+    if not specs:
+        logger.warning("No aggregate NESO boundary constraints were prepared")
+        return None
+
+    def boundary_extra_functionality(n, snapshots):
+        import xarray as xr
+
+        model = n.model
+        line_var = model.variables["Line-s"] if "Line-s" in model.variables else None
+        transformer_var = (
+            model.variables["Transformer-s"] if "Transformer-s" in model.variables else None
+        )
+        link_var = model.variables["Link-p"] if "Link-p" in model.variables else None
+
+        for spec in specs:
+            expr = None
+
+            if line_var is not None and spec['positive_lines']:
+                expr = line_var.sel({"name": spec['positive_lines']}).sum("name")
+            if line_var is not None and spec['negative_lines']:
+                neg_expr = line_var.sel({"name": spec['negative_lines']}).sum("name")
+                expr = -neg_expr if expr is None else expr - neg_expr
+
+            if transformer_var is not None and spec['positive_transformers']:
+                tf_expr = transformer_var.sel({"name": spec['positive_transformers']}).sum("name")
+                expr = tf_expr if expr is None else expr + tf_expr
+            if transformer_var is not None and spec['negative_transformers']:
+                neg_tf_expr = transformer_var.sel({"name": spec['negative_transformers']}).sum("name")
+                expr = -neg_tf_expr if expr is None else expr - neg_tf_expr
+
+            if link_var is not None and spec['links']:
+                link_names = [entry['name'] for entry in spec['links']]
+                coeffs = xr.DataArray(
+                    [entry['sign'] for entry in spec['links']],
+                    dims=["name"],
+                    coords={"name": pd.Index(link_names, name="name")},
+                )
+                link_expr = (link_var.sel({"name": link_names}) * coeffs).sum("name")
+                expr = link_expr if expr is None else expr + link_expr
+
+            if expr is None:
+                continue
+
+            limit = spec['limit_series'].reindex(snapshots).ffill().bfill()
+            limit_da = xr.DataArray(
+                limit.values,
+                dims=["snapshot"],
+                coords={"snapshot": snapshots},
+            )
+            safe_name = spec['boundary_name'].replace("-", "_").replace("+", "_")
+            model.add_constraints(
+                expr <= limit_da,
+                name=f"NESO_boundary_{safe_name}_upper",
+            )
+            model.add_constraints(
+                -expr <= limit_da,
+                name=f"NESO_boundary_{safe_name}_lower",
+            )
+
+    logger.info(f"Prepared {len(specs)} aggregate NESO boundary constraints")
+    return boundary_extra_functionality
+
+
+def _apply_csv_outage_schedule(network, outage_cfg, snapshots, logger):
+    """Load outage schedule from CSV and apply to network."""
+    csv_path = outage_cfg.get('file')
+    if not csv_path:
+        logger.warning("outage_schedule.file is null — no outages applied")
+        return False
+
+    csv_path = Path(csv_path)
+    if not csv_path.exists():
+        logger.warning(f"Outage schedule file not found: {csv_path}")
+        return False
+
+    df = pd.read_csv(csv_path)
+    required_cols = {'component', 'component_id', 'start', 'end', 's_max_pu'}
+    if not required_cols.issubset(df.columns):
+        logger.error(f"Outage CSV must have columns {required_cols}, got {set(df.columns)}")
+        return False
+
+    df['start'] = pd.to_datetime(df['start'])
+    df['end'] = pd.to_datetime(df['end'])
+
+    # Initialise s_max_pu DataFrames at 1.0
+    lines_smax = pd.DataFrame(1.0, index=snapshots, columns=network.lines.index)
+    xfmr_smax = pd.DataFrame(1.0, index=snapshots, columns=network.transformers.index)
+
+    applied = 0
+    for _, row in df.iterrows():
+        comp_type = str(row['component']).strip().lower()
+        comp_id = str(row['component_id']).strip()
+        s_max_pu = float(row['s_max_pu'])
+        mask = (snapshots >= row['start']) & (snapshots < row['end'])
+
+        if comp_type == 'line' and comp_id in network.lines.index:
+            # Take the minimum if overlapping outages exist
+            lines_smax.loc[mask, comp_id] = np.minimum(
+                lines_smax.loc[mask, comp_id], s_max_pu
+            )
+            applied += 1
+        elif comp_type == 'transformer' and comp_id in network.transformers.index:
+            xfmr_smax.loc[mask, comp_id] = np.minimum(
+                xfmr_smax.loc[mask, comp_id], s_max_pu
+            )
+            applied += 1
+        else:
+            logger.debug(f"Outage row skipped: {comp_type}/{comp_id} not in network")
+
+    # Only set time-varying columns that differ from 1.0
+    affected_lines = lines_smax.columns[lines_smax.min() < 1.0]
+    affected_xfmrs = xfmr_smax.columns[xfmr_smax.min() < 1.0]
+
+    if len(affected_lines) > 0:
+        network.lines_t.s_max_pu = lines_smax[affected_lines]
+    if len(affected_xfmrs) > 0:
+        network.transformers_t.s_max_pu = xfmr_smax[affected_xfmrs]
+
+    total_outage_hours = 0
+    for col in affected_lines:
+        total_outage_hours += (lines_smax[col] < 1.0).sum()
+    for col in affected_xfmrs:
+        total_outage_hours += (xfmr_smax[col] < 1.0).sum()
+
+    logger.info(f"  Loaded {applied} outage events from {csv_path}")
+    logger.info(f"  Affected: {len(affected_lines)} lines, {len(affected_xfmrs)} transformers")
+    logger.info(f"  Total component-hours with reduced capacity: {total_outage_hours:,}")
+    return applied > 0
+
+
+def _apply_neso_boundary_limits(network, outage_cfg, snapshots, logger):
+    """Fetch NESO limits and apply the legacy uniform line-derating interpretation.
+
+    For each NESO constraint boundary, this function:
+    1. Fetches time-varying transfer limits from the NESO API (one boundary per query
+       to avoid the API's ~200-record cap on multi-group queries)
+    2. Maps boundary groups to PyPSA lines via a YAML mapping file
+    3. Computes s_max_pu = NESO_limit / sum(s_nom of boundary lines)
+    4. Applies the resulting time-varying s_max_pu to all lines in each boundary
+
+    When a line appears in multiple boundaries (e.g. SSHARN lines also in ESTEX),
+    the tightest (minimum) s_max_pu across all boundaries is applied.
+
+    The NESO limits already incorporate N-1/N-2 security margins and real
+    transmission outages, so no further outage modelling is needed.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    outage_cfg : dict  — the ``outage_schedule`` config subtree
+    snapshots : pd.DatetimeIndex
+    logger : logging.Logger
+
+    Returns
+    -------
+    bool — True if any boundary limits were applied
+    """
+    neso_inputs = _load_neso_boundary_inputs(outage_cfg, snapshots, logger)
+    if not neso_inputs:
+        return False
+
+    boundaries = neso_inputs['boundaries']
+    neso_df = neso_inputs['neso_df']
+    tolerance_minutes = neso_inputs['tolerance_minutes']
+    gap_fill_mode = neso_inputs['gap_fill_mode']
+    min_s_max_pu = neso_inputs['min_s_max_pu']
+
+    # ── Apply boundary limits to network lines ───────────────────────────
+    lines_smax = pd.DataFrame(1.0, index=snapshots, columns=network.lines.index)
+    applied_boundaries = 0
+
+    for boundary_name, boundary_def in boundaries.items():
+        # Prefer constraint_lines (narrow derating set) over lines (full validation union).
+        # constraint_lines is optional; if absent, fall back to lines.
+        line_ids = boundary_def.get('constraint_lines') or boundary_def.get('lines', [])
+        # Filter to lines that exist in this network
+        valid_lines = [lid for lid in line_ids if lid in network.lines.index]
+        if not valid_lines:
+            logger.debug(f"  {boundary_name}: no matching lines in network, skipping")
+            continue
+
+        total_s_nom = network.lines.loc[valid_lines, 's_nom'].sum()
+        if total_s_nom <= 0:
+            continue
+
+        # Get NESO data for this boundary
+        bnd_data = neso_df[neso_df['boundary'] == boundary_name].copy()
+        if bnd_data.empty:
+            logger.debug(f"  {boundary_name}: no NESO data found, skipping")
+            continue
+
+        limit_series = _align_neso_boundary_limit_series(
+            bnd_data=bnd_data,
+            snapshots=snapshots,
+            tolerance_minutes=tolerance_minutes,
+            gap_fill_mode=gap_fill_mode,
+            fallback_limit=total_s_nom,
+            logger=logger,
+            boundary_name=boundary_name,
+        )
+
+        # Compute s_max_pu for all lines in the boundary
+        # s_max_pu = NESO_limit / total_s_nom (clamped to [min_s_max_pu, 1.0])
+        s_max_pu_series = (limit_series / total_s_nom).clip(min_s_max_pu, 1.0)
+
+        # Apply to all lines in the boundary (minimum across overlapping boundaries)
+        for lid in valid_lines:
+            lines_smax[lid] = np.minimum(lines_smax[lid].values, s_max_pu_series.values)
+
+        avg_limit = limit_series.mean()
+        min_limit = limit_series.min()
+        max_limit = limit_series.max()
+        avg_smax = s_max_pu_series.mean()
+        logger.info(
+            f"  {boundary_name}: {len(valid_lines)} lines, "
+            f"total_s_nom={total_s_nom:.0f} MVA, "
+            f"NESO limit={min_limit:.0f}-{max_limit:.0f} MW (avg {avg_limit:.0f}), "
+            f"avg s_max_pu={avg_smax:.3f}"
+        )
+        applied_boundaries += 1
+
+    # Only set time-varying columns that differ from 1.0
+    affected = lines_smax.columns[lines_smax.min() < 1.0]
+    if len(affected) > 0:
+        network.lines_t.s_max_pu = lines_smax[affected]
+
+    total_constrained_hours = sum((lines_smax[c] < 1.0).sum() for c in affected)
+    logger.info(f"  Applied {applied_boundaries} NESO boundary constraints to "
+                f"{len(affected)} lines ({total_constrained_hours:,} line-hours constrained)")
+    return applied_boundaries > 0
+
+
+def _apply_synthetic_outage_schedule(network, outage_cfg, snapshots, logger):
+    """Generate stochastic maintenance outages from configuration parameters."""
+    synth_cfg = outage_cfg.get('synthetic', {})
+    seed = synth_cfg.get('seed', 42)
+    min_s_nom = synth_cfg.get('min_s_nom_mva', 100)
+    for_rates = synth_cfg.get('forced_outage_rate', {400: 0.03, 275: 0.04, 132: 0.05})
+    maint_hours = synth_cfg.get('maintenance_duration_hours', 168)
+    seasonal_weights = synth_cfg.get('seasonal_weights', {})
+
+    rng = np.random.RandomState(seed)
+    n_snapshots = len(snapshots)
+    hours_per_year = 8760
+
+    # Build seasonal probability array aligned to snapshots
+    seasonal_prob = np.ones(n_snapshots)
+    if seasonal_weights:
+        for i, ts in enumerate(snapshots):
+            month = ts.month
+            seasonal_prob[i] = seasonal_weights.get(month, 1.0)
+        # Normalise so mean = 1.0
+        seasonal_prob = seasonal_prob / seasonal_prob.mean()
+
+    # Process lines and transformers together
+    applied_count = 0
+    for comp_name, comp_df in [('lines', network.lines), ('transformers', network.transformers)]:
+        eligible = comp_df[comp_df['s_nom'] >= min_s_nom].copy()
+        if len(eligible) == 0:
+            continue
+
+        smax = pd.DataFrame(1.0, index=snapshots, columns=eligible.index)
+
+        for comp_id, row in eligible.iterrows():
+            v_nom = row.get('v_nom', 0)
+            # Find matching forced outage rate (nearest voltage level)
+            rate = 0.0
+            for v_level in sorted(for_rates.keys(), key=lambda x: abs(float(x) - v_nom)):
+                rate = for_rates[float(v_level)]
+                break
+
+            if rate <= 0:
+                continue
+
+            # Number of maintenance events = target unavailable hours / duration
+            target_hours = rate * hours_per_year * (n_snapshots / hours_per_year)
+            n_events = max(1, int(round(target_hours / maint_hours)))
+
+            # Place events with seasonal weighting
+            for _ in range(n_events):
+                # Weighted random start hour
+                probs = seasonal_prob.copy()
+                # Can't start so late that the window exceeds snapshots
+                latest_start = max(0, n_snapshots - maint_hours)
+                probs[latest_start:] = 0.0
+                if probs.sum() == 0:
+                    continue
+                probs = probs / probs.sum()
+                start_idx = rng.choice(n_snapshots, p=probs)
+                end_idx = min(start_idx + maint_hours, n_snapshots)
+                smax.iloc[start_idx:end_idx][comp_id] = 0.0
+                applied_count += 1
+
+        affected = smax.columns[smax.min() < 1.0]
+        if len(affected) > 0:
+            if comp_name == 'lines':
+                network.lines_t.s_max_pu = smax[affected]
+            else:
+                network.transformers_t.s_max_pu = smax[affected]
+
+            total_hours = sum((smax[c] < 1.0).sum() for c in affected)
+            logger.info(f"  {comp_name}: {len(affected)} components with outages, "
+                        f"{total_hours:,} total component-hours")
+
+    logger.info(f"  Generated {applied_count} synthetic outage events "
+                f"(seed={seed}, min_s_nom={min_s_nom} MVA)")
+    return applied_count > 0
 
 
 def improve_numerical_conditioning(network, logger):
@@ -638,6 +1571,13 @@ if __name__ == "__main__":
         # This helps feasibility for detailed networks (ETYS) with tight line limits
         apply_transmission_relaxation(network, scenario_config, logger)
         
+        # Apply per-line s_nom overrides (fix known ETYS data errors)
+        apply_line_rating_overrides(network, scenario_config, logger)
+        
+        # Apply transmission outage schedule if configured
+        # (reduces line capacity at specific timesteps via s_max_pu)
+        apply_outage_schedule(network, scenario_config, logger)
+        
         # Improve numerical conditioning by removing tiny components
         # and clamping extreme parameter values (prevents "Numerical trouble" errors)
         improve_numerical_conditioning(network, logger)
@@ -806,9 +1746,18 @@ if __name__ == "__main__":
         
         # Note: skip_objective and track_iterations are PyPSA parameters, NOT solver options
         # They should not be passed in solver_options to avoid Gurobi errors
+        log_hydro_constraint_setup(network, scenario_config, logger)
+        hydro_callback = build_hydro_constraints_callback(network, scenario_config)
+        neso_boundary_callback = _build_neso_boundary_constraints_callback(
+            network, scenario_config, logger
+        )
+
         status, termination_condition = network.optimize(
             solver_name=solver_name,
-            solver_options=solver_options
+            solver_options=solver_options,
+            extra_functionality=combine_extra_functionalities(
+                hydro_callback, neso_boundary_callback
+            ),
         )
         
         solve_time = time.time() - solve_start

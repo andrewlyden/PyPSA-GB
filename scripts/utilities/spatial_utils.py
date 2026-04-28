@@ -59,6 +59,7 @@ _GEN_MIN_PREFERRED_KV: float = 275.0   # Preferred minimum voltage (kV)
 _GEN_HIGH_KV: float = 400.0            # 400 kV-only search threshold (kV)
 _GEN_LOW_KV: float = 33.0              # Low-voltage threshold (kV)
 _EARTH_RADIUS_KM: float = 6371.0       # Earth radius for haversine distance
+_GEN_FALLBACK_HV_RADIUS_KM: float = 80.0  # Max km for post-agg nearest HV bus search
 
 
 def configure_spatial_mapping(cfg: dict) -> None:
@@ -78,7 +79,7 @@ def configure_spatial_mapping(cfg: dict) -> None:
         _GEN_MIN_CHECK_MW, _GEN_VERY_LARGE_MW, _GEN_LARGE_LOW_V_MW, \
         _GEN_MEDIUM_MW, _GEN_MAX_XFMR_RATIO, \
         _GEN_MIN_PREFERRED_KV, _GEN_HIGH_KV, _GEN_LOW_KV, \
-        _EARTH_RADIUS_KM
+        _EARTH_RADIUS_KM, _GEN_FALLBACK_HV_RADIUS_KM
     sm = cfg.get('spatial_mapping', {})
     if not sm:
         return
@@ -110,6 +111,7 @@ def configure_spatial_mapping(cfg: dict) -> None:
     _GEN_LOW_KV = float(gv.get('low_voltage_kv', _GEN_LOW_KV))
 
     _EARTH_RADIUS_KM = float(sm.get('earth_radius_km', _EARTH_RADIUS_KM))
+    _GEN_FALLBACK_HV_RADIUS_KM = float(gv.get('fallback_hv_radius_km', _GEN_FALLBACK_HV_RADIUS_KM))
 
     logger.debug(
         f"Spatial mapping configured: dist_site={_DIST_SITE_TO_BUS_KM}km, "
@@ -899,9 +901,10 @@ def clear_spatial_index_cache():
 
 
 def apply_etys_bmu_mapping(
-    sites_df: pd.DataFrame, 
+    sites_df: pd.DataFrame,
     network: pypsa.Network,
-    gb_network_path: str = "data/network/ETYS/GB_network.xlsx"
+    gb_network_path: str = "data/network/ETYS/GB_network.xlsx",
+    min_check_mw: float = None,
 ) -> pd.DataFrame:
     """
     Apply official ETYS BMU-to-Node mapping to correct generator bus assignments.
@@ -922,7 +925,10 @@ def apply_etys_bmu_mapping(
         sites_df: DataFrame with generator sites (must have 'bus' column)
         network: PyPSA Network to validate bus existence
         gb_network_path: Path to GB_network.xlsx with BMU mappings
-        
+        min_check_mw: Override _GEN_MIN_CHECK_MW threshold. Use a lower value
+            (e.g. 10) for post-aggregation checks where individual small farms
+            have been summed into large aggregate generators.
+
     Returns:
         DataFrame with corrected bus assignments
     """
@@ -944,14 +950,50 @@ def apply_etys_bmu_mapping(
     # ==========================================================================
     bmu_mapping = {}  # station_prefix -> official_node_id
     
+    # Direct bus mappings for large stations with radial topology
+    # These take precedence over prefix matching - maps station name to exact bus ID
+    # Use this for stations where the terminal busbar (e.g. HUNN4A) has insufficient
+    # export capacity compared to the main switching station (e.g. HUNE4-)
+    LARGE_STATION_DIRECT_BUS = {
+        # Thermal stations with radial topology issues
+        'hunterston': 'HUNE4-',  # HUNN4A only has 847 MVA export, HUNE4- is main switching station
+        # Offshore wind farms → onshore 400kV grid connection points
+        # These override nearest-neighbour which places farms at sea coordinates
+        # Traced from ETYS OFTO cable topology (Appendix B sheets B-2-1d, B-3-1d)
+        'triton knoll': 'BICF41',       # Bicker Fen 400kV (via TKNO41/42)
+        'beatrice': 'BLHI4-',           # Blackhillock 400kV (via BEAT4A/4B)
+        'dudgeon': 'NECT41',            # Necton 400kV (via DUDO11/12 transformers)
+        'race bank': 'WALP41',          # Walpole 400kV (via RACO41/42)
+        'sheringham shoal': 'NECT41',   # Necton 400kV (via SSAW/SSBW)
+        'humber gateway': 'HEDO21',     # Hedon 275kV (via HUMO11/12)
+        'westermost rough': 'HEDO21',   # Hedon 275kV (via WERO21/22)
+        'hornsea': 'KILL41',            # Killingholme 400kV (via HOWA41/HOWB41)
+        'london array': 'CLEH41',       # Cleve Hill 400kV (via LONO4A/4B)
+        'thanet': 'CLEH41',             # Cleve Hill 400kV (via THOW11/12)
+        'east anglia': 'BRFO41',        # Bramford 400kV (via BRST41/42)
+        'greater gabbard': 'LEIS4A',    # Leiston/Sizewell 400kV (via GGON)
+        'galloper': 'LEIS4A',           # Leiston/Sizewell 400kV (via GALO)
+        'rampion': 'BOLN41',            # Bolney 400kV (via TWNE41/42)
+        'gwynt y mor': 'BODE41',        # Bodelwyddan 400kV (transformer)
+        'walney extension': 'MIDL41',   # Middleton 400kV (via WOWE41/42)
+        'west of duddon': 'HEYS41',     # Heysham 400kV (via WDSO41/42)
+        'moray east': 'BLHI4-',         # Blackhillock 400kV (via MOWO41/42)
+        'seagreen': 'TEAL2K',           # Tealing 275kV (via SGRX21/22/23)
+        'neart na gaoithe': 'CRYR4-',   # Crystal Rig 400kV (via NNGO41/42)
+        'dogger bank': 'CREB41',        # Creyke Beck 400kV
+        'inner dowsing': 'WALP41',      # Walpole 400kV (via LINO)
+        'lynn': 'WALP41',              # Walpole 400kV (via LINO)
+        'lincs': 'WALP41',             # Walpole 400kV (via LINO41)
+    }
+
     # Known power station name to BMU prefix mappings
     # These are hand-curated to match generator names to ETYS node prefixes
     STATION_TO_BMU_PREFIX = {
         'torness': 'TORN',
-        'hunterston': 'HUNT',
-        'hinkley': 'HINK',
+        'hunterston': 'HUNE',  # Changed: was 'HUNN' (terminal busbar) → 'HUNE' (main switching station)
+        'hinkley': 'HINP',    # Fixed: was 'HINK' but network uses HINP* (Hinkley Point)
         'heysham': 'HEYS',
-        'hartlepool': 'HART',
+        'hartlepool': 'HATL', # Fixed: was 'HART' but network uses HATL* (Hartlepool)
         'sizewell': 'SIZE',
         'dungeness': 'DUNG',
         'pembroke': 'PEMB',
@@ -975,7 +1017,7 @@ def apply_etys_bmu_mapping(
         'cockenzie': 'COCK',
         'longannet': 'LONG',
         'killingholme': 'KILL',
-        'little barford': 'LITB',
+        'little barford': 'WALP',  # Fixed: was 'LITB' (132kV only) - connects via Walpole 400kV
         # 'connah': 'CONN' REMOVED — CONN is Conon Bridge (Scotland), not Connah's Quay (Wales)
         # Connah's Quay is near BODE (Bodelwyddan) — nearest-neighbor handles this correctly
         'carrington': 'CARR',
@@ -983,37 +1025,40 @@ def apply_etys_bmu_mapping(
         'immingham': 'IMMM',
         'enfield': 'ENFI',
         'medway': 'MEDW',
-        'shoreham': 'SHOR',
+        'shoreham': 'BOLN',  # Fixed: was 'SHOR' (doesn't exist) - connects via Bolney 400kV
         'marchwood': 'MARC',
         'coryton': 'CORY',
         'teesside': 'TEES',
         'wilton': 'WILT',
-        'hornsea': 'HORN',
-        'beatrice': 'BEAT',
-        'moray': 'MORA',
-        'triton knoll': 'TRIK',
-        'east anglia': 'EANG',
-        'london array': 'LOAD',
-        'gwynt y mor': 'GWYF',
-        'walney': 'WALN',
-        'rampion': 'RAMP',
-        'race bank': 'RACB',
-        'dudgeon': 'DUDG',
-        'greater gabbard': 'GRGB',
-        'thanet': 'THAN',
-        'sheringham shoal': 'SHER',
-        'westermost rough': 'WEST',
-        'lincs': 'LINC',
-        'humber gateway': 'HUMG',
-        'robin rigg': 'ROBI',
+        'great yarmouth': 'NORM',  # Added: connects at Norwich Main 400kV
+        # Offshore wind — ETYS node prefixes (not Elexon BMU prefixes)
+        # These are backup for Method 1; Method 0 (LARGE_STATION_DIRECT_BUS) handles most
+        'hornsea': 'HOWA',       # Was HORN (BMU); ETYS onshore relay is HOWA/HOWB
+        'beatrice': 'BEAT',      # BEAT4A/4B exist in ETYS
+        'moray': 'MOWO',        # Was MORA (BMU); ETYS onshore is MOWO41/42
+        'triton knoll': 'TKNO', # Was TRIK (BMU); ETYS onshore is TKNO41/42
+        'east anglia': 'BRST',  # Was EANG (BMU); ETYS onshore is BRST21/22→BRFO41
+        'london array': 'LONO', # Was LOAD (BMU); ETYS onshore is LONO4A/4B
+        'gwynt y mor': 'BODE',  # Was GWYF (BMU); connects at Bodelwyddan 400kV
+        'walney': 'WALN',       # WALN matches some ETYS buses
+        'rampion': 'TWNE',      # Was RAMP (BMU); ETYS onshore is TWNE41/42
+        'race bank': 'RACO',    # Was RACB (BMU); ETYS onshore is RACO41/42
+        'dudgeon': 'DUDO',      # Was DUDG (BMU); ETYS onshore is DUDO11/12
+        'greater gabbard': 'GGON', # Was GRGB (BMU); ETYS onshore is GGON11/12/13
+        'thanet': 'THOW',       # Was THAN (BMU); ETYS onshore is THOW11/12
+        'sheringham shoal': 'SSAW', # Was SHER (BMU); ETYS onshore is SSAW/SSBW
+        'westermost rough': 'WERO', # Was WEST (BMU); ETYS onshore is WERO11
+        'lincs': 'LINO',        # Was LINC (BMU); ETYS onshore is LINO13/14
+        'humber gateway': 'HUMO',   # Was HUMG (BMU); ETYS onshore is HUMO11/12
+        'robin rigg': 'RORE',   # Was ROBI (BMU); ETYS onshore is RORE11
         'ormonde': 'ORMO',
-        'burbo bank': 'BURB',
-        'barrow': 'BARR',
-        'gunfleet': 'GUNF',
+        'burbo bank': 'BIRK',   # Was BURB (BMU); connects at Birkenhead 275kV
+        'barrow': 'BOSO',       # Was BARR (BMU); ETYS onshore is BOSO11
+        'gunfleet': 'CLTO',     # Was GUNF (BMU); ETYS onshore is CLTO11
         'kentish flats': 'KENT',
-        'seagreen': 'SGRW',
-        'neart na gaoithe': 'COCK',  # Connects near Cockenzie
-        'dogger bank': 'CREB',       # Connects at Creyke Beck
+        'seagreen': 'SGRO',     # Was SGRW (offshore); ETYS onshore is SGRO21/22
+        'neart na gaoithe': 'NNGO',  # Was COCK; ETYS onshore is NNGO41/42
+        'dogger bank': 'CREB',       # Connects at Creyke Beck (correct)
         # Pumped storage stations
         'cruachan': 'CRUA',
         'foyers': 'FOYE',
@@ -1064,10 +1109,11 @@ def apply_etys_bmu_mapping(
         capacity_mw = row.get('capacity_mw', row.get('p_nom', 0))
         
         # Get generator name for matching
-        gen_name = str(row.get('station_name', row.get('name', row.get('Site Name', '')))).lower()
-        
+        gen_name = str(row.get('station_name', row.get('site_name', row.get('name', row.get('Site Name', ''))))).lower()
+
         # Only check generators above minimum threshold
-        if capacity_mw < _GEN_MIN_CHECK_MW:
+        check_threshold = min_check_mw if min_check_mw is not None else _GEN_MIN_CHECK_MW
+        if capacity_mw < check_threshold:
             continue
         
         # Check transformer capacity from this bus (only real transformers, not links)
@@ -1083,9 +1129,10 @@ def apply_etys_bmu_mapping(
         
         # Flag for voltage-based concern - large generators at low voltage are problematic
         needs_voltage_upgrade = False
-        
-        # Hard rule: Very large generators should ALWAYS be at min_preferred_kv+
-        if capacity_mw >= _GEN_VERY_LARGE_MW and v_nom < _GEN_MIN_PREFERRED_KV:
+
+        # Hard rule: Very large generators (nuclear, large CCGT) should be at 400kV
+        # They're too big for 275kV buses with limited line/transformer capacity
+        if capacity_mw >= _GEN_VERY_LARGE_MW and v_nom < _GEN_HIGH_KV:
             needs_voltage_upgrade = True
         # Hard rule: Large generators at low voltage need to move
         elif capacity_mw >= _GEN_LARGE_LOW_V_MW and v_nom <= _GEN_LOW_KV:
@@ -1099,35 +1146,48 @@ def apply_etys_bmu_mapping(
         
         if not needs_voltage_upgrade:
             continue
-        
+
         # Try to find correct bus using station name matching
         new_bus = None
         match_method = None
-        
-        # Method 1: Match generator name to known station prefixes
-        for station_pattern, bmu_prefix in STATION_TO_BMU_PREFIX.items():
+
+        # Method 0: Direct bus mapping for large stations with radial topology
+        # These have been manually identified as needing the main switching station
+        # rather than a terminal busbar with insufficient export capacity
+        for station_pattern, direct_bus in LARGE_STATION_DIRECT_BUS.items():
             if station_pattern in gen_name:
-                if bmu_prefix in bmu_mapping:
-                    candidate_bus = bmu_mapping[bmu_prefix]
-                    if candidate_bus in network.buses.index and candidate_bus != bus:
-                        # Accept station-matched buses at or above preferred voltage
-                        candidate_v = bus_v_nom.get(candidate_bus, 0)
-                        if candidate_v >= _GEN_MIN_PREFERRED_KV:
-                            new_bus = candidate_bus
-                            match_method = 'station_name'
-                            break
-                else:
-                    # Fallback: look for any 275kV+ bus with this prefix (prefer 400kV)
-                    potential_buses = [
-                        b for b in network.buses.index
-                        if b.startswith(bmu_prefix) and bus_v_nom.get(b, 0) >= _GEN_MIN_PREFERRED_KV
-                    ]
-                    if potential_buses:
-                        # Sort by voltage (prefer higher voltage)
-                        potential_buses.sort(key=lambda b: -bus_v_nom.get(b, 0))
-                        new_bus = potential_buses[0]
-                        match_method = 'station_prefix'
+                if direct_bus in network.buses.index and direct_bus != bus:
+                    candidate_v = bus_v_nom.get(direct_bus, 0)
+                    if candidate_v >= _GEN_MIN_PREFERRED_KV:
+                        new_bus = direct_bus
+                        match_method = 'direct_bus'
                         break
+
+        # Method 1: Match generator name to known station prefixes
+        if new_bus is None:
+            for station_pattern, bmu_prefix in STATION_TO_BMU_PREFIX.items():
+                if station_pattern in gen_name:
+                    if bmu_prefix in bmu_mapping:
+                        candidate_bus = bmu_mapping[bmu_prefix]
+                        if candidate_bus in network.buses.index and candidate_bus != bus:
+                            # Accept station-matched buses at or above preferred voltage
+                            candidate_v = bus_v_nom.get(candidate_bus, 0)
+                            if candidate_v >= _GEN_MIN_PREFERRED_KV:
+                                new_bus = candidate_bus
+                                match_method = 'station_name'
+                                break
+                    else:
+                        # Fallback: look for any 275kV+ bus with this prefix (prefer 400kV)
+                        potential_buses = [
+                            b for b in network.buses.index
+                            if b.startswith(bmu_prefix) and bus_v_nom.get(b, 0) >= _GEN_MIN_PREFERRED_KV
+                        ]
+                        if potential_buses:
+                            # Sort by voltage (prefer higher voltage)
+                            potential_buses.sort(key=lambda b: -bus_v_nom.get(b, 0))
+                            new_bus = potential_buses[0]
+                            match_method = 'station_prefix'
+                            break
         
         # Method 2: Try same prefix as current bus but at 400kV
         if new_bus is None and v_nom < _GEN_HIGH_KV:
@@ -1139,18 +1199,54 @@ def apply_etys_bmu_mapping(
             if potential_400kv_buses:
                 new_bus = potential_400kv_buses[0]
                 match_method = 'prefix_heuristic'
-        
-        # Note: Method 3 (nearest 400kV bus search) was removed because it moved
-        # generators too far from their correct locations (e.g., Seagreen 75km to KINT4J).
-        # Methods 1 and 2 handle the important cases; remaining generators stay at
-        # their nearest-neighbor bus which is geographically correct.
+
+        # Method 3: Nearest high-voltage bus within radius (post-aggregation only)
+        # This was previously removed for pre-aggregation because it moved generators
+        # too far (e.g., Seagreen 75km to KINT4J). For post-aggregation, it's essential
+        # because aggregated wind farms at 33kV/132kV radial buses have no prefix-matched
+        # 400kV alternative. Guard rails: only fires when min_check_mw override is set
+        # (post-aggregation), bus voltage is sub-preferred (<275kV), and Methods 0/1/2 all failed.
+        is_post_aggregation = min_check_mw is not None
+        if new_bus is None and is_post_aggregation and v_nom < _GEN_MIN_PREFERRED_KV:
+            # Get coordinates of current bus (OSGB36 meters)
+            if bus in network.buses.index:
+                bus_x = network.buses.at[bus, 'x']
+                bus_y = network.buses.at[bus, 'y']
+                if pd.notna(bus_x) and pd.notna(bus_y):
+                    # Find all buses with v_nom >= 275kV
+                    hv_buses = network.buses[
+                        network.buses['v_nom'] >= _GEN_MIN_PREFERRED_KV
+                    ]
+                    if not hv_buses.empty:
+                        # Calculate Euclidean distance (OSGB36 is in meters)
+                        hv_x = hv_buses['x'].values
+                        hv_y = hv_buses['y'].values
+                        distances_m = np.sqrt((hv_x - bus_x)**2 + (hv_y - bus_y)**2)
+                        distances_km = distances_m / 1000.0
+
+                        # Find nearest within radius
+                        radius_km = _GEN_FALLBACK_HV_RADIUS_KM
+                        within_radius = distances_km <= radius_km
+                        if within_radius.any():
+                            # Sort by (voltage descending, distance ascending)
+                            candidates = pd.DataFrame({
+                                'bus': hv_buses.index[within_radius],
+                                'v_nom': hv_buses['v_nom'].values[within_radius],
+                                'dist_km': distances_km[within_radius],
+                            })
+                            candidates = candidates.sort_values(
+                                by=['v_nom', 'dist_km'],
+                                ascending=[False, True]
+                            )
+                            new_bus = candidates.iloc[0]['bus']
+                            match_method = f'nearest_hv_{candidates.iloc[0]["dist_km"]:.0f}km'
         
         # Apply correction if we found a better bus
         if new_bus and new_bus != bus:
             old_bus = bus
             sites_df.at[idx, 'bus'] = new_bus
             corrections_made += 1
-            
+
             corrections_log.append({
                 'generator': gen_name,
                 'capacity_mw': capacity_mw,
@@ -1161,6 +1257,11 @@ def apply_etys_bmu_mapping(
                 'new_v_nom': bus_v_nom.get(new_bus, 0),
                 'match_method': match_method
             })
+        elif needs_voltage_upgrade:
+            logger.debug(
+                f"  No 400kV bus found for {gen_name} ({capacity_mw:.0f} MW) at {bus} "
+                f"({v_nom:.0f}kV) - left at current bus"
+            )
     
     if corrections_made > 0:
         logger.info(f"ETYS BMU Mapping: Corrected {corrections_made} generator bus assignments")

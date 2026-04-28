@@ -249,5 +249,5 @@ def main():
     )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "snakemake" not in dir():
     main()

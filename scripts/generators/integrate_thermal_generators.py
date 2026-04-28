@@ -1664,7 +1664,12 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
             gen_attrs['region'] = 'north' if float(row['lat']) > 55.5 else 'south'
         if 'lon' in row and pd.notna(row['lon']):
             gen_attrs['lon'] = float(row['lon'])
-        
+
+        # Skip if generator already exists (avoid PyPSA print warning)
+        if gen_name in network.generators.index:
+            logger.debug(f"Skipping duplicate generator: {gen_name}")
+            continue
+
         try:
             network.add("Generator", gen_name, **gen_attrs)
             generators_added += 1
@@ -2196,12 +2201,19 @@ def main():
                             # Clip to 0-1 range to handle any data issues
                             availability = (nuclear_output / installed_capacity).clip(0, 1)
                             
-                            # Resample to monthly averages to smooth out individual
-                            # plant outages that are unrealistically applied fleet-wide.
-                            # Planned outages at one plant shouldn't constrain all plants.
-                            monthly_avg = availability.resample('MS').mean()
-                            availability = monthly_avg.reindex(availability.index, method='ffill')
-                            logger.info(f"  Smoothed to monthly averages (removes individual outage dips)")
+                            # Optional smoothing controlled by config
+                            # "hourly" = raw signal, "daily" = daily average, "monthly" = legacy
+                            smoothing = scenario_config.get('nuclear_availability_smoothing', 'hourly')
+                            if smoothing == 'monthly':
+                                monthly_avg = availability.resample('MS').mean()
+                                availability = monthly_avg.reindex(availability.index, method='ffill')
+                                logger.info(f"  Smoothed to monthly averages (legacy mode)")
+                            elif smoothing == 'daily':
+                                daily_avg = availability.resample('D').mean()
+                                availability = daily_avg.reindex(availability.index, method='ffill')
+                                logger.info(f"  Smoothed to daily averages")
+                            else:
+                                logger.info(f"  Using hourly availability (no smoothing)")
                             
                             # Resample to match network snapshots
                             # Network snapshots may be half-hourly or hourly
@@ -2243,7 +2255,73 @@ def main():
             stage_times['4c. Nuclear availability'] = time.time() - stage_start
         else:
             logger.info("Future scenario - using FES nuclear availability (no ESPENI constraints)")
-        
+
+        # =====================================================================
+        # STAGE 4d: THERMAL AVAILABILITY FACTORS
+        # =====================================================================
+        # Constrains biomass/biofuel generators to reflect real-world availability.
+        # Biomass (Drax, Lynemouth) does not run at 100% CF due to pellet supply
+        # logistics and planned maintenance. Small biofuel (biogas, LFG, sewage)
+        # are CHP plants that follow heat demand, not wholesale price signals.
+        avail_config = scenario_config.get('thermal_availability_factors', {})
+        if avail_config.get('enabled', False):
+            stage_start = time.time()
+            logger.info("-" * 80)
+            logger.info("APPLYING THERMAL AVAILABILITY FACTORS")
+            logger.info("-" * 80)
+
+            avail_factors = avail_config.get('factors', {})
+            corrections = 0
+            for carrier, factor in avail_factors.items():
+                factor = float(factor)
+                if factor <= 0.0 or factor >= 1.0:
+                    logger.warning(f"  Skipping {carrier}: factor {factor} out of range (0, 1)")
+                    continue
+                gens = network.generators[network.generators['carrier'] == carrier]
+                if gens.empty:
+                    continue
+                for gen_name in gens.index:
+                    # If already has a time-varying p_max_pu, scale it; else set static
+                    if gen_name in network.generators_t.p_max_pu.columns:
+                        network.generators_t.p_max_pu[gen_name] = (
+                            network.generators_t.p_max_pu[gen_name] * factor
+                        ).clip(upper=1.0)
+                    else:
+                        network.generators.at[gen_name, 'p_max_pu'] = factor
+                    corrections += 1
+                total_mw = gens['p_nom'].sum()
+                logger.info(
+                    f"  {carrier}: {len(gens)} generators, {total_mw:.0f} MW, "
+                    f"p_max_pu capped at {factor:.2f} ({total_mw * factor:.0f} MW effective)"
+                )
+            logger.info(f"Applied availability factors to {corrections} generators")
+
+            # ── Must-run minimum output (p_min_pu) ──────────────────────────
+            # For carriers with must-run obligations (biomass CHP, ROC revenue
+            # protection), set p_min_pu so they can't be turned below a floor.
+            min_output = avail_config.get('min_output', {})
+            min_corrections = 0
+            for carrier, min_pu in min_output.items():
+                min_pu = float(min_pu)
+                if min_pu <= 0.0 or min_pu > 1.0:
+                    logger.warning(f"  Skipping min_output {carrier}: {min_pu} out of range (0, 1]")
+                    continue
+                gens = network.generators[network.generators['carrier'] == carrier]
+                if gens.empty:
+                    continue
+                for gen_name in gens.index:
+                    network.generators.at[gen_name, 'p_min_pu'] = min_pu
+                    min_corrections += 1
+                total_mw = gens['p_nom'].sum()
+                logger.info(
+                    f"  {carrier}: {len(gens)} generators, {total_mw:.0f} MW, "
+                    f"p_min_pu set to {min_pu:.2f} ({total_mw * min_pu:.0f} MW must-run)"
+                )
+            if min_corrections:
+                logger.info(f"Applied must-run min_output to {min_corrections} generators")
+
+            stage_times['4d. Thermal availability'] = time.time() - stage_start
+
         # =====================================================================
         # STAGE 5: CREATE SUMMARY
         # =====================================================================

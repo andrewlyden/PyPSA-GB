@@ -9,6 +9,10 @@ separate bid/offer prices, mimicking the GB Balancing Mechanism.
 The optimisation minimises total redispatch cost:
     min  Σ_{g,t}  offer_price[g] · increase[g,t] + bid_price[g] · decrease[g,t]
 
+where bid_price is always in "ESO cost" convention: positive means it costs
+the ESO money to turn the generator down.  ELEXON raw bids (negative = ESO
+pays generator) are negated at load time in market_utils._load_elexon_bid_offer.
+
 Subject to:
     p[g,t] = p_wholesale[g,t] + increase[g,t] - decrease[g,t]   ∀ g,t
     increase[g,t] ≥ 0,  decrease[g,t] ≥ 0                        ∀ g,t
@@ -21,6 +25,7 @@ Inputs:
 Outputs:
   - Solved balancing network: {scenario}_balancing.nc
   - Balancing dispatch CSV: {scenario}_balancing_dispatch.csv
+  - Balancing storage CSV: {scenario}_balancing_storage.csv
   - Redispatch summary CSV: {scenario}_redispatch_summary.csv
   - Constraint costs CSV: {scenario}_constraint_costs.csv
   - Congestion CSV: {scenario}_congestion.csv
@@ -44,6 +49,9 @@ from scripts.utilities.network_io import load_network, save_network
 from scripts.solve.solve_network import (
     validate_network_costs,
     apply_transmission_relaxation,
+    apply_line_rating_overrides,
+    apply_outage_schedule,
+    _build_neso_boundary_constraints_callback,
     improve_numerical_conditioning,
     configure_solver,
     get_solve_mode_from_config,
@@ -54,6 +62,13 @@ from scripts.market.market_utils import (
     identify_congested_boundaries,
 )
 from scripts.market.solve_wholesale import apply_solve_period
+from scripts.solve.hydro_constraints import (
+    build_hydro_constraints_callback,
+    combine_extra_functionalities,
+    initialise_large_hydro_storage_state,
+    log_hydro_constraint_setup,
+    update_large_hydro_storage_state,
+)
 
 
 def _build_balancing_extra_functionality(
@@ -66,6 +81,14 @@ def _build_balancing_extra_functionality(
     su_bid_prices: pd.Series,
     fix_interconnectors: bool,
     logger: logging.Logger,
+    gen_offer_tv: pd.DataFrame = None,
+    gen_bid_tv: pd.DataFrame = None,
+    su_offer_tv: pd.DataFrame = None,
+    su_bid_tv: pd.DataFrame = None,
+    participating_generators=None,
+    fixed_generators=None,
+    participating_storage_units=None,
+    fixed_storage_units=None,
 ):
     """
     Build the ``extra_functionality`` callback for PyPSA's ``network.optimize()``.
@@ -99,7 +122,6 @@ def _build_balancing_extra_functionality(
         Function with signature ``extra_functionality(network, snapshots)``
         suitable for ``network.optimize(extra_functionality=...)``.
     """
-
     def extra_functionality(network, snapshots):
         """Inject BM redispatch variables, constraints, and objective."""
         import linopy
@@ -128,7 +150,18 @@ def _build_balancing_extra_functionality(
             )
 
         # ── 1. Generator increase/decrease variables ─────────────────────
-        gen_names = [g for g in wholesale_gen.columns if g in network.generators.index]
+        # Generator participation is configurable. Non-participants can either
+        # be priced out upstream or fixed at wholesale position here.
+        all_gen_names = [g for g in wholesale_gen.columns if g in network.generators.index]
+        participant_gen_set = set(
+            all_gen_names if participating_generators is None else participating_generators
+        )
+        fixed_gen_set = set([] if fixed_generators is None else fixed_generators)
+        gen_names = [g for g in all_gen_names if g in participant_gen_set]
+        fixed_gen_names = [
+            g for g in all_gen_names if g in fixed_gen_set and g not in participant_gen_set
+        ]
+
         if gen_names:
             lower_gen = _zero_lower(snapshots, gen_names)
 
@@ -186,9 +219,29 @@ def _build_balancing_extra_functionality(
             logger.info(
                 f"Added BM variables + anchor constraints for {len(gen_names)} generators"
             )
+        if fixed_gen_names:
+            gen_p_fixed = model.variables["Generator-p"].sel({"name": fixed_gen_names})
+            ws_gen_fixed = wholesale_gen[fixed_gen_names].reindex(snapshots).values
+            model.add_constraints(
+                gen_p_fixed == ws_gen_fixed,
+                name="Generator-bm_fix_nonparticipant",
+            )
+            logger.info(
+                f"Fixed {len(fixed_gen_names)} non-participating generators "
+                "at wholesale positions"
+            )
 
         # ── 2. Storage unit increase/decrease variables ──────────────────
-        su_names = [s for s in wholesale_su.columns if s in network.storage_units.index]
+        all_su_names = [s for s in wholesale_su.columns if s in network.storage_units.index]
+        participant_su_set = set(
+            all_su_names
+            if participating_storage_units is None else participating_storage_units
+        )
+        fixed_su_set = set([] if fixed_storage_units is None else fixed_storage_units)
+        su_names = [s for s in all_su_names if s in participant_su_set]
+        fixed_su_names = [
+            s for s in all_su_names if s in fixed_su_set and s not in participant_su_set
+        ]
         if su_names:
             lower_su = _zero_lower(snapshots, su_names)
 
@@ -226,6 +279,18 @@ def _build_balancing_extra_functionality(
 
             logger.info(
                 f"Added BM variables + anchor constraints for {len(su_names)} storage units"
+            )
+        if fixed_su_names:
+            su_p_fixed = model.variables["StorageUnit-p_dispatch"].sel({"name": fixed_su_names})
+            su_store_fixed = model.variables["StorageUnit-p_store"].sel({"name": fixed_su_names})
+            ws_su_fixed = wholesale_su[fixed_su_names].reindex(snapshots).values
+            model.add_constraints(
+                su_p_fixed - su_store_fixed == ws_su_fixed,
+                name="StorageUnit-bm_fix_nonparticipant",
+            )
+            logger.info(
+                f"Fixed {len(fixed_su_names)} non-participating storage units "
+                "at wholesale positions"
             )
 
         # ── 3. Fix interconnector flows (if configured) ──────────────────
@@ -268,13 +333,25 @@ def _build_balancing_extra_functionality(
             gen_inc = model.variables["Generator-increase"]
             gen_dec = model.variables["Generator-decrease"]
 
-            # Build offer/bid coefficient arrays (snapshots × generators)
-            offer_coeffs = np.tile(
-                gen_offer_prices.reindex(gen_names).values, (n_snapshots, 1)
-            )
-            bid_coeffs = np.tile(
-                gen_bid_prices.reindex(gen_names).values, (n_snapshots, 1)
-            )
+            # Build offer/bid coefficient arrays (snapshots × generators).
+            # Use per-snapshot time-varying prices if available (ELEXON),
+            # otherwise broadcast static prices across all snapshots.
+            if gen_offer_tv is not None and gen_bid_tv is not None:
+                offer_coeffs = (
+                    gen_offer_tv.reindex(index=snapshots, columns=gen_names)
+                    .fillna(0.0).values
+                )
+                bid_coeffs = (
+                    gen_bid_tv.reindex(index=snapshots, columns=gen_names)
+                    .fillna(0.0).values
+                )
+            else:
+                offer_coeffs = np.tile(
+                    gen_offer_prices.reindex(gen_names).values, (n_snapshots, 1)
+                )
+                bid_coeffs = np.tile(
+                    gen_bid_prices.reindex(gen_names).values, (n_snapshots, 1)
+                )
 
             gen_obj = (gen_inc * offer_coeffs).sum() + (gen_dec * bid_coeffs).sum()
             obj_expr = gen_obj
@@ -283,12 +360,22 @@ def _build_balancing_extra_functionality(
             su_inc = model.variables["StorageUnit-increase"]
             su_dec = model.variables["StorageUnit-decrease"]
 
-            su_offer_coeffs = np.tile(
-                su_offer_prices.reindex(su_names).values, (n_snapshots, 1)
-            )
-            su_bid_coeffs = np.tile(
-                su_bid_prices.reindex(su_names).values, (n_snapshots, 1)
-            )
+            if su_offer_tv is not None and su_bid_tv is not None:
+                su_offer_coeffs = (
+                    su_offer_tv.reindex(index=snapshots, columns=su_names)
+                    .fillna(0.0).values
+                )
+                su_bid_coeffs = (
+                    su_bid_tv.reindex(index=snapshots, columns=su_names)
+                    .fillna(0.0).values
+                )
+            else:
+                su_offer_coeffs = np.tile(
+                    su_offer_prices.reindex(su_names).values, (n_snapshots, 1)
+                )
+                su_bid_coeffs = np.tile(
+                    su_bid_prices.reindex(su_names).values, (n_snapshots, 1)
+                )
 
             su_obj = (su_inc * su_offer_coeffs).sum() + (su_dec * su_bid_coeffs).sum()
             obj_expr = obj_expr + su_obj if obj_expr is not None else su_obj
@@ -303,6 +390,276 @@ def _build_balancing_extra_functionality(
             )
 
     return extra_functionality
+
+
+def solve_rolling_balancing(
+    network,
+    wholesale_gen,
+    wholesale_su,
+    wholesale_links,
+    gen_offer,
+    gen_bid,
+    su_offer,
+    su_bid,
+    balancing_config,
+    solver_name,
+    solver_options,
+    scenario_config,
+    logger,
+    gen_offer_tv=None,
+    gen_bid_tv=None,
+    su_offer_tv=None,
+    su_bid_tv=None,
+    participating_generators=None,
+    fixed_generators=None,
+    participating_storage_units=None,
+    fixed_storage_units=None,
+):
+    """
+    Solve balancing mechanism in rolling windows.
+
+    Each window (default 1 hour = per-timestep) is solved independently
+    with full network constraints, anchored to the wholesale positions
+    for that window.  Storage state-of-charge carries between windows.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+        Full network with original transmission constraints and snapshots set.
+    wholesale_gen, wholesale_su, wholesale_links : pd.DataFrame
+        Wholesale dispatch positions from Stage 1 (snapshots x components).
+    gen_offer, gen_bid, su_offer, su_bid : pd.Series
+        Per-component bid/offer prices.
+    balancing_config : dict
+        Balancing config with ``window_hours``.
+    solver_name : str
+    solver_options : dict
+    scenario_config : dict
+    logger : logging.Logger
+
+    Returns
+    -------
+    physical_gen : pd.DataFrame
+        Concatenated physical generator dispatch.
+    physical_su : pd.DataFrame
+        Concatenated physical storage dispatch.
+    all_nodal_prices : pd.DataFrame
+        Concatenated bus marginal prices.
+    objective_total : float
+        Sum of BM objectives across all windows.
+    """
+    # Configure a silent logger for subsequent windows to avoid log spam.
+    # First window uses the main logger so messages appear once.
+    bm_quiet = logging.getLogger("bm_quiet")
+    bm_quiet.propagate = False
+    if not bm_quiet.handlers:
+        bm_quiet.addHandler(logging.NullHandler())
+
+    window_hours = int(balancing_config.get("window_hours", 1))
+    fix_ics = balancing_config.get("fix_interconnectors", True)
+
+    all_snapshots = network.snapshots.copy()
+    n_total = len(all_snapshots)
+
+    # Determine timestep resolution
+    if n_total > 1:
+        dt_hours = (all_snapshots[1] - all_snapshots[0]).total_seconds() / 3600
+    else:
+        dt_hours = 1.0
+    steps_per_window = max(1, int(round(window_hours / dt_hours)))
+
+    # Build windows
+    windows = []
+    for start_idx in range(0, n_total, steps_per_window):
+        end_idx = min(start_idx + steps_per_window, n_total)
+        windows.append(all_snapshots[start_idx:end_idx])
+
+    logger.info(
+        f"Rolling BM: {len(windows)} windows × {window_hours}h "
+        f"({steps_per_window} timesteps each, {dt_hours}h resolution)"
+    )
+
+    gen_dispatches = []
+    su_dispatches = []
+    price_dfs = []
+    line_flow_dfs = []
+    link_flow_dfs = []
+    objective_total = 0.0
+    prev_final_soc = None
+    large_hydro_state = initialise_large_hydro_storage_state(
+        network, scenario_config.get("hydro", {})
+    )
+    log_hydro_constraint_setup(network, scenario_config, logger, context="Balancing hydro")
+    neso_boundary_callback = _build_neso_boundary_constraints_callback(
+        network, scenario_config, logger
+    )
+
+    for i, window_snaps in enumerate(windows):
+        window_start = window_snaps[0]
+        window_end = window_snaps[-1]
+
+        if (i + 1) % 100 == 0 or i == 0 or i == len(windows) - 1:
+            logger.info(
+                f"BM window {i + 1}/{len(windows)}: "
+                f"{window_start} → {window_end} ({len(window_snaps)} snapshots)"
+            )
+
+        # Create a copy restricted to this window
+        win_net = network.copy()
+        win_net.set_snapshots(window_snaps)
+
+        # Carry over SoC from previous window
+        if prev_final_soc is not None:
+            for su_name, soc in prev_final_soc.items():
+                if su_name in win_net.storage_units.index:
+                    win_net.storage_units.loc[su_name, "state_of_charge_initial"] = soc
+
+        # Build extra_functionality for this window's wholesale positions
+        ws_gen_window = wholesale_gen.reindex(window_snaps).reindex(
+            columns=[
+                g for g in wholesale_gen.columns if g in win_net.generators.index
+            ],
+            fill_value=0.0,
+        )
+        ws_su_window = wholesale_su.reindex(window_snaps).reindex(
+            columns=[
+                s for s in wholesale_su.columns if s in win_net.storage_units.index
+            ],
+            fill_value=0.0,
+        )
+        ws_links_window = wholesale_links.reindex(window_snaps).reindex(
+            columns=[
+                lk for lk in wholesale_links.columns if lk in win_net.links.index
+            ],
+            fill_value=0.0,
+        )
+
+        # Slice time-varying prices to this window's snapshots
+        win_offer_tv = None
+        win_bid_tv = None
+        if gen_offer_tv is not None and gen_bid_tv is not None:
+            win_offer_tv = gen_offer_tv.reindex(index=window_snaps).fillna(0.0)
+            win_bid_tv = gen_bid_tv.reindex(index=window_snaps).fillna(0.0)
+
+        win_su_offer_tv = None
+        win_su_bid_tv = None
+        if su_offer_tv is not None and su_bid_tv is not None:
+            win_su_offer_tv = su_offer_tv.reindex(index=window_snaps).fillna(0.0)
+            win_su_bid_tv = su_bid_tv.reindex(index=window_snaps).fillna(0.0)
+
+        extra_func = _build_balancing_extra_functionality(
+            wholesale_gen=ws_gen_window,
+            wholesale_su=ws_su_window,
+            wholesale_links=ws_links_window,
+            gen_offer_prices=gen_offer,
+            gen_bid_prices=gen_bid,
+            su_offer_prices=su_offer,
+            su_bid_prices=su_bid,
+            fix_interconnectors=fix_ics,
+            logger=logger if i == 0 else logging.getLogger("bm_quiet"),
+            gen_offer_tv=win_offer_tv,
+            gen_bid_tv=win_bid_tv,
+            su_offer_tv=win_su_offer_tv,
+            su_bid_tv=win_su_bid_tv,
+            participating_generators=participating_generators,
+            fixed_generators=fixed_generators,
+            participating_storage_units=participating_storage_units,
+            fixed_storage_units=fixed_storage_units,
+        )
+        hydro_callback = build_hydro_constraints_callback(
+            win_net,
+            scenario_config,
+            large_hydro_storage_state=large_hydro_state,
+        )
+        # Solve
+        status, cond = win_net.optimize(
+            solver_name=solver_name,
+            solver_options=solver_options,
+            extra_functionality=combine_extra_functionalities(
+                extra_func, hydro_callback, neso_boundary_callback
+            ),
+        )
+
+        if status != "ok":
+            logger.error(
+                f"BM window {i + 1} ({window_start}) failed: {status} ({cond})"
+            )
+            raise RuntimeError(
+                f"BM window {i + 1} ({window_start}) failed: {status} ({cond})"
+            )
+
+        objective_total += win_net.objective
+
+        # Collect physical dispatch
+        gen_dispatches.append(win_net.generators_t.p.copy())
+        if len(win_net.storage_units_t.p) > 0:
+            su_dispatches.append(win_net.storage_units_t.p.copy())
+
+        # Collect nodal prices
+        if len(win_net.buses_t.marginal_price) > 0:
+            price_dfs.append(win_net.buses_t.marginal_price.copy())
+
+        # Collect line flows for congestion analysis
+        if hasattr(win_net, "lines_t") and len(win_net.lines_t.p0) > 0:
+            line_flow_dfs.append(win_net.lines_t.p0.copy())
+
+        # Collect link flows (HVDC, etc.)
+        if hasattr(win_net, "links_t") and len(win_net.links_t.p0) > 0:
+            link_flow_dfs.append(win_net.links_t.p0.copy())
+
+        # Save final SoC for next window
+        if len(win_net.storage_units) > 0:
+            if (
+                hasattr(win_net, "storage_units_t")
+                and len(win_net.storage_units_t.state_of_charge) > 0
+            ):
+                prev_final_soc = (
+                    win_net.storage_units_t.state_of_charge.iloc[-1].to_dict()
+                )
+
+        large_hydro_state = update_large_hydro_storage_state(
+            win_net,
+            window_snaps,
+            scenario_config,
+            large_hydro_state,
+        )
+
+    # Concatenate
+    physical_gen = pd.concat(gen_dispatches) if gen_dispatches else pd.DataFrame()
+    physical_su = pd.concat(su_dispatches) if su_dispatches else pd.DataFrame()
+    all_nodal_prices = pd.concat(price_dfs) if price_dfs else pd.DataFrame()
+    all_line_flows = pd.concat(line_flow_dfs) if line_flow_dfs else pd.DataFrame()
+    all_link_flows = pd.concat(link_flow_dfs) if link_flow_dfs else pd.DataFrame()
+
+    # Write results back to the main network so the saved .nc file
+    # contains solve outputs (dispatch, prices, line flows, link flows).
+    if not physical_gen.empty:
+        network.generators_t.p = physical_gen.reindex(
+            columns=network.generators.index, fill_value=0.0
+        )
+    if not physical_su.empty:
+        network.storage_units_t.p = physical_su.reindex(
+            columns=network.storage_units.index, fill_value=0.0
+        )
+    if not all_nodal_prices.empty:
+        network.buses_t.marginal_price = all_nodal_prices.reindex(
+            columns=network.buses.index, fill_value=0.0
+        )
+    if not all_line_flows.empty:
+        network.lines_t.p0 = all_line_flows.reindex(
+            columns=network.lines.index, fill_value=0.0
+        )
+    if not all_link_flows.empty:
+        network.links_t.p0 = all_link_flows.reindex(
+            columns=network.links.index, fill_value=0.0
+        )
+
+    logger.info(
+        f"Rolling BM complete: {len(windows)} windows, "
+        f"total BM cost £{objective_total:,.2f}"
+    )
+
+    return physical_gen, physical_su, all_nodal_prices, objective_total
 
 
 if __name__ == "__main__":
@@ -329,6 +686,13 @@ if __name__ == "__main__":
         network = load_network(input_path, custom_logger=logger)
 
         scenario_config = snakemake.params.scenario_config
+
+        # Apply per-line s_nom overrides (fix known ETYS data errors)
+        apply_line_rating_overrides(network, scenario_config, logger)
+
+        # Apply transmission outage schedule (if enabled)
+        apply_outage_schedule(network, scenario_config, logger)
+
         market_config = scenario_config.get("market", {})
         balancing_config = market_config.get("balancing", {})
         solver_name = snakemake.params.solver
@@ -403,74 +767,222 @@ if __name__ == "__main__":
             network.generators["p_min_pu"] = 0.0
             logger.info("Removed must-run constraints (p_min_pu = 0)")
 
+        # ── Apply MC floors for zero-cost dispatchable generators ────────
+        # Generators with MC=0 that should have non-zero costs create
+        # unrealistic dispatch in both wholesale and BM stages.
+        mc_floors = balancing_config.get("mc_floors", {})
+        if mc_floors:
+            total_fixed = 0
+            for carrier, floor_mc in mc_floors.items():
+                if floor_mc <= 0:
+                    continue
+                mask = (
+                    (network.generators["carrier"] == carrier)
+                    & (network.generators["marginal_cost"] <= 0)
+                )
+                n_fixed = mask.sum()
+                if n_fixed > 0:
+                    network.generators.loc[mask, "marginal_cost"] = floor_mc
+                    cap_mw = network.generators.loc[mask, "p_nom"].sum()
+                    logger.info(
+                        f"  MC floor: {carrier}: {n_fixed} generators "
+                        f"({cap_mw:.0f} MW) set to £{floor_mc:.1f}/MWh"
+                    )
+                    total_fixed += n_fixed
+            if total_fixed > 0:
+                logger.info(
+                    f"MC floors applied to {total_fixed} zero-cost generators"
+                )
+
         # ── Calculate bid/offer prices ───────────────────────────────────
         logger.info("=" * 80)
         logger.info("CALCULATING BID/OFFER PRICES")
         logger.info("=" * 80)
         gen_offer, gen_bid, su_offer, su_bid = calculate_bid_offer_prices(
-            network, market_config, logger, scenario_id=scenario_id
+            network, market_config, logger, scenario_id=scenario_id,
+            time_varying=True,
         )
 
-        # ── Build extra_functionality callback ───────────────────────────
-        fix_ics = balancing_config.get("fix_interconnectors", True)
-        extra_func = _build_balancing_extra_functionality(
-            wholesale_gen=wholesale_gen,
-            wholesale_su=wholesale_su,
-            wholesale_links=wholesale_links,
-            gen_offer_prices=gen_offer,
-            gen_bid_prices=gen_bid,
-            su_offer_prices=su_offer,
-            su_bid_prices=su_bid,
-            fix_interconnectors=fix_ics,
-            logger=logger,
+        # Retrieve time-varying DataFrames (set by calculate_bid_offer_prices
+        # when time_varying=True and ELEXON data is available)
+        gen_offer_tv = getattr(network, "_bm_offer_tv", None)
+        gen_bid_tv = getattr(network, "_bm_bid_tv", None)
+        su_offer_tv = getattr(network, "_bm_su_offer_tv", None)
+        su_bid_tv = getattr(network, "_bm_su_bid_tv", None)
+        participating_generators = getattr(
+            network, "_bm_participating_generators", network.generators.index
         )
+        fixed_generators = getattr(network, "_bm_fixed_generators", pd.Index([]))
+        participating_storage_units = getattr(
+            network, "_bm_participating_storage_units", network.storage_units.index
+        )
+        fixed_storage_units = getattr(network, "_bm_fixed_storage_units", pd.Index([]))
+        if gen_offer_tv is not None:
+            logger.info(
+                f"Time-varying bid/offer prices: "
+                f"{gen_offer_tv.shape[1]} generators × {gen_offer_tv.shape[0]} snapshots"
+            )
+        if su_offer_tv is not None:
+            logger.info(
+                f"Time-varying storage bid/offer prices: "
+                f"{su_offer_tv.shape[1]} units × {su_offer_tv.shape[0]} snapshots"
+            )
 
         # ── Configure solver ─────────────────────────────────────────────
         solver_name, solver_options = configure_solver(
             network, solver_name, solver_options, logger
         )
 
-        # ── Optimize ─────────────────────────────────────────────────────
-        logger.info("Starting BM optimization (full network constraints)...")
+        # ── Dispatch based on balancing mode ─────────────────────────────
+        bm_mode = balancing_config.get("mode", "full_period")
+        logger.info(f"Balancing mode: {bm_mode}")
+
         solve_start = time.time()
 
-        status, termination_condition = network.optimize(
-            solver_name=solver_name,
-            solver_options=solver_options,
-            extra_functionality=extra_func,
-        )
-
-        solve_time = time.time() - solve_start
-        logger.info(f"BM solve completed in {solve_time:.2f}s")
-        logger.info(f"Status: {status}, Condition: {termination_condition}")
-
-        if status != "ok":
-            raise RuntimeError(
-                f"BM optimization failed: {status} ({termination_condition})"
+        if bm_mode == "rolling":
+            # ── Rolling BM: solve in windows ─────────────────────────────
+            logger.info("Starting rolling BM optimization...")
+            physical_gen, physical_su, nodal_prices_all, bm_cost = (
+                solve_rolling_balancing(
+                    network=network,
+                    wholesale_gen=wholesale_gen,
+                    wholesale_su=wholesale_su,
+                    wholesale_links=wholesale_links,
+                    gen_offer=gen_offer,
+                    gen_bid=gen_bid,
+                    su_offer=su_offer,
+                    su_bid=su_bid,
+                    balancing_config=balancing_config,
+                    solver_name=solver_name,
+                    solver_options=solver_options,
+                    scenario_config=scenario_config,
+                    logger=logger,
+                    gen_offer_tv=gen_offer_tv,
+                    gen_bid_tv=gen_bid_tv,
+                    su_offer_tv=su_offer_tv,
+                    su_bid_tv=su_bid_tv,
+                    participating_generators=participating_generators,
+                    fixed_generators=fixed_generators,
+                    participating_storage_units=participating_storage_units,
+                    fixed_storage_units=fixed_storage_units,
+                )
             )
 
-        bm_cost = network.objective
-        logger.info(f"Total BM redispatch cost: £{bm_cost:,.2f}")
+            solve_time = time.time() - solve_start
+            logger.info(f"Rolling BM solve completed in {solve_time:.2f}s")
+            logger.info(f"Total BM redispatch cost: £{bm_cost:,.2f}")
 
-        # ── Export BM dispatch ───────────────────────────────────────────
-        physical_gen = network.generators_t.p.copy()
-        physical_gen.to_csv(snakemake.output.balancing_dispatch_csv)
-        logger.info(f"Saved: {snakemake.output.balancing_dispatch_csv}")
+            # Export BM dispatch (generators)
+            physical_gen.to_csv(snakemake.output.balancing_dispatch_csv)
+            logger.info(f"Saved: {snakemake.output.balancing_dispatch_csv}")
 
-        physical_su = network.storage_units_t.p.copy() if len(network.storage_units_t.p) > 0 else pd.DataFrame(index=network.snapshots)
+            if physical_su.empty:
+                physical_su = pd.DataFrame(
+                    index=physical_gen.index if len(physical_gen) > 0
+                    else network.snapshots
+                )
+
+            # Export BM dispatch (storage)
+            physical_su.to_csv(snakemake.output.balancing_storage_csv)
+            logger.info(f"Saved: {snakemake.output.balancing_storage_csv}")
+
+        else:
+            # ── Full-period solve (original behaviour) ───────────────────
+            fix_ics = balancing_config.get("fix_interconnectors", True)
+            extra_func = _build_balancing_extra_functionality(
+                wholesale_gen=wholesale_gen,
+                wholesale_su=wholesale_su,
+                wholesale_links=wholesale_links,
+                gen_offer_prices=gen_offer,
+                gen_bid_prices=gen_bid,
+                su_offer_prices=su_offer,
+                su_bid_prices=su_bid,
+                fix_interconnectors=fix_ics,
+                logger=logger,
+                gen_offer_tv=gen_offer_tv,
+                gen_bid_tv=gen_bid_tv,
+                su_offer_tv=su_offer_tv,
+                su_bid_tv=su_bid_tv,
+                participating_generators=participating_generators,
+                fixed_generators=fixed_generators,
+                participating_storage_units=participating_storage_units,
+                fixed_storage_units=fixed_storage_units,
+            )
+            log_hydro_constraint_setup(
+                network,
+                scenario_config,
+                logger,
+                context="Balancing hydro",
+            )
+            hydro_callback = build_hydro_constraints_callback(
+                network,
+                scenario_config,
+            )
+            neso_boundary_callback = _build_neso_boundary_constraints_callback(
+                network, scenario_config, logger
+            )
+
+            logger.info("Starting BM optimization (full network constraints)...")
+
+            status, termination_condition = network.optimize(
+                solver_name=solver_name,
+                solver_options=solver_options,
+                extra_functionality=combine_extra_functionalities(
+                    extra_func, hydro_callback, neso_boundary_callback
+                ),
+            )
+
+            solve_time = time.time() - solve_start
+            logger.info(f"BM solve completed in {solve_time:.2f}s")
+            logger.info(f"Status: {status}, Condition: {termination_condition}")
+
+            if status != "ok":
+                raise RuntimeError(
+                    f"BM optimization failed: "
+                    f"{status} ({termination_condition})"
+                )
+
+            bm_cost = network.objective
+            logger.info(f"Total BM redispatch cost: £{bm_cost:,.2f}")
+
+            # Export BM dispatch (generators)
+            physical_gen = network.generators_t.p.copy()
+            physical_gen.to_csv(snakemake.output.balancing_dispatch_csv)
+            logger.info(f"Saved: {snakemake.output.balancing_dispatch_csv}")
+
+            # Export BM dispatch (storage)
+            physical_su = (
+                network.storage_units_t.p.copy()
+                if len(network.storage_units_t.p) > 0
+                else pd.DataFrame(index=network.snapshots)
+            )
+            physical_su.to_csv(snakemake.output.balancing_storage_csv)
+            logger.info(f"Saved: {snakemake.output.balancing_storage_csv}")
+
+            nodal_prices_all = (
+                network.buses_t.marginal_price.copy()
+                if len(network.buses_t.marginal_price) > 0
+                else pd.DataFrame()
+            )
 
         # ── Compute redispatch summary ───────────────────────────────────
         logger.info("=" * 80)
         logger.info("COMPUTING REDISPATCH VOLUMES AND COSTS")
         logger.info("=" * 80)
 
-        # Align wholesale dispatch to current snapshots
-        ws_gen_aligned = wholesale_gen.reindex(network.snapshots).reindex(
+        # Use physical_gen index as the canonical snapshot index
+        snaps = physical_gen.index if len(physical_gen) > 0 else network.snapshots
+
+        ws_gen_aligned = wholesale_gen.reindex(snaps).reindex(
             columns=physical_gen.columns, fill_value=0.0
         )
-        ws_su_aligned = wholesale_su.reindex(network.snapshots).reindex(
-            columns=physical_su.columns, fill_value=0.0
-        ) if len(physical_su.columns) > 0 else pd.DataFrame(index=network.snapshots)
+        ws_su_aligned = (
+            wholesale_su.reindex(snaps).reindex(
+                columns=physical_su.columns, fill_value=0.0
+            )
+            if len(physical_su.columns) > 0
+            else pd.DataFrame(index=snaps)
+        )
 
         gen_summary, su_summary = compute_redispatch_volumes(
             wholesale_gen=ws_gen_aligned,
@@ -483,9 +995,12 @@ if __name__ == "__main__":
             su_bid_prices=su_bid,
             network=network,
             logger=logger,
+            gen_offer_prices_tv=gen_offer_tv,
+            gen_bid_prices_tv=gen_bid_tv,
+            su_offer_prices_tv=su_offer_tv,
+            su_bid_prices_tv=su_bid_tv,
         )
 
-        # Combine and save redispatch summary
         redispatch_summary = pd.concat([gen_summary, su_summary], ignore_index=True)
         redispatch_summary.to_csv(snakemake.output.redispatch_summary_csv, index=False)
         logger.info(f"Saved: {snakemake.output.redispatch_summary_csv}")
@@ -519,58 +1034,67 @@ if __name__ == "__main__":
             logger.warning("No redispatch — zero constraint costs")
 
         # ── Congestion analysis ──────────────────────────────────────────
-        congestion = identify_congested_boundaries(network, threshold=0.95, logger=logger)
+        # In rolling mode, results are written back to the network object
+        # after the rolling solve completes, so congestion analysis works.
+        congestion = identify_congested_boundaries(
+            network, threshold=0.95, logger=logger
+        )
         congestion.to_csv(snakemake.output.congestion_csv, index=False)
         logger.info(f"Saved: {snakemake.output.congestion_csv}")
 
         # ── Price comparison ─────────────────────────────────────────────
-        if len(network.buses_t.marginal_price) > 0:
-            nodal_prices = network.buses_t.marginal_price
-
-            # Filter to GB-only demand (load) buses.
-            # Exclude non-GB external buses (HVDC_External_*) that carry
-            # EU_demand loads — these have extreme shadow prices when
-            # historical p_set forces GB exports to an unsinkable node.
+        if len(nodal_prices_all) > 0:
+            # Filter to GB-only demand (load) buses
             load_buses = set(network.loads["bus"].unique())
             if "country" in network.buses.columns:
-                gb_buses = set(network.buses.index[network.buses["country"] == "GB"])
+                gb_buses = set(
+                    network.buses.index[network.buses["country"] == "GB"]
+                )
                 demand_cols = [
-                    c for c in nodal_prices.columns
+                    c
+                    for c in nodal_prices_all.columns
                     if c in load_buses and c in gb_buses
                 ]
             else:
-                demand_cols = [c for c in nodal_prices.columns if c in load_buses]
+                demand_cols = [
+                    c for c in nodal_prices_all.columns if c in load_buses
+                ]
             if demand_cols:
-                nodal_prices_demand = nodal_prices[demand_cols]
+                nodal_prices_demand = nodal_prices_all[demand_cols]
                 logger.info(
-                    f"BM nodal price computed from {len(demand_cols)} GB demand buses "
-                    f"(of {len(nodal_prices.columns)} total)"
+                    f"BM nodal price computed from {len(demand_cols)} "
+                    f"GB demand buses (of {len(nodal_prices_all.columns)} total)"
                 )
             else:
-                nodal_prices_demand = nodal_prices
+                nodal_prices_demand = nodal_prices_all
                 logger.warning(
                     "No GB demand buses found in BM marginal_price; "
-                    "using all buses (spread may be inflated)"
+                    "using all buses"
                 )
 
             mean_nodal = nodal_prices_demand.mean(axis=1)
-            price_spread = nodal_prices_demand.max(axis=1) - nodal_prices_demand.min(axis=1)
-
-            ws_price_aligned = wholesale_price["wholesale_price"].reindex(
-                network.snapshots, fill_value=np.nan
+            price_spread = (
+                nodal_prices_demand.max(axis=1) - nodal_prices_demand.min(axis=1)
             )
 
-            price_comparison = pd.DataFrame({
-                "wholesale_price": ws_price_aligned,
-                "mean_nodal_price": mean_nodal,
-                "min_nodal_price": nodal_prices_demand.min(axis=1),
-                "max_nodal_price": nodal_prices_demand.max(axis=1),
-                "nodal_spread": price_spread,
-            })
+            ws_price_aligned = wholesale_price["wholesale_price"].reindex(
+                mean_nodal.index, fill_value=np.nan
+            )
+
+            price_comparison = pd.DataFrame(
+                {
+                    "wholesale_price": ws_price_aligned,
+                    "mean_nodal_price": mean_nodal,
+                    "min_nodal_price": nodal_prices_demand.min(axis=1),
+                    "max_nodal_price": nodal_prices_demand.max(axis=1),
+                    "nodal_spread": price_spread,
+                }
+            )
             price_comparison.to_csv(snakemake.output.price_comparison_csv)
             logger.info(f"Saved: {snakemake.output.price_comparison_csv}")
             logger.info(
-                f"Price comparison: wholesale mean £{ws_price_aligned.mean():.2f}/MWh, "
+                f"Price comparison: wholesale mean "
+                f"£{ws_price_aligned.mean():.2f}/MWh, "
                 f"nodal mean £{mean_nodal.mean():.2f}/MWh, "
                 f"max spread £{price_spread.max():.2f}/MWh"
             )

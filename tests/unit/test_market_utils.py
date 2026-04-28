@@ -141,8 +141,8 @@ class TestCalculateBidOfferPrices:
         # Wind: mc=0.5, offer_markup=0.0 → offer=0.5
         assert gen_offer["wind_1"] == pytest.approx(0.5)
 
-    def test_bid_floor_for_zero_cost(self, market_network, default_market_config):
-        """Bid price has a minimum floor (MIN_BID_FLOOR=0.50) for near-zero mc assets."""
+    def test_bid_price_is_not_floored(self, market_network, default_market_config):
+        """Near-zero marginal-cost assets keep their derived bid without a floor."""
         import logging
 
         logger = logging.getLogger("test_market")
@@ -150,8 +150,8 @@ class TestCalculateBidOfferPrices:
             market_network, default_market_config, logger
         )
 
-        # Wind: mc=0.5, bid_discount=0.05 → 0.5*0.95=0.475, but floor=0.50
-        assert gen_bid["wind_1"] >= 0.50
+        # Wind: mc=0.5, bid_discount=0.05 → 0.5*0.95=0.475
+        assert gen_bid["wind_1"] == pytest.approx(0.475)
 
     def test_storage_prices(self, market_network, default_market_config):
         """Storage units receive bid/offer prices."""
@@ -176,6 +176,91 @@ class TestCalculateBidOfferPrices:
         }
         with pytest.raises(ValueError, match="csv"):
             calculate_bid_offer_prices(market_network, bad_config, logger)
+
+    def test_generator_participation_priced_out(self, market_network, default_market_config):
+        """Non-participants can be priced out instead of acting like normal BM units."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "participation": {
+                    "generators": {
+                        "mode": "all",
+                        "exclude_carriers": ["wind_onshore"],
+                        "behavior": "priced_out",
+                        "penalty_offer_price": 5000.0,
+                        "penalty_bid_price": 4000.0,
+                    }
+                },
+            },
+        }
+        logger = logging.getLogger("test_market")
+        gen_offer, gen_bid, _, _ = calculate_bid_offer_prices(
+            market_network, cfg, logger
+        )
+
+        assert gen_offer["wind_1"] == pytest.approx(5000.0)
+        assert gen_bid["wind_1"] == pytest.approx(4000.0)
+        assert gen_offer["ccgt_1"] == pytest.approx(55.0)
+        assert "wind_1" in market_network._bm_participating_generators
+        assert "wind_1" not in market_network._bm_eligible_generators
+        assert len(market_network._bm_fixed_generators) == 0
+
+    def test_generator_participation_fixed(self, market_network, default_market_config):
+        """Strict non-participants are tagged for fixing at wholesale in BM solve."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "participation": {
+                    "generators": {
+                        "mode": "all",
+                        "exclude_carriers": ["wind_onshore"],
+                        "behavior": "fixed",
+                    }
+                },
+            },
+        }
+        logger = logging.getLogger("test_market")
+        gen_offer, gen_bid, _, _ = calculate_bid_offer_prices(
+            market_network, cfg, logger
+        )
+
+        assert gen_offer["wind_1"] == pytest.approx(0.5)
+        assert gen_bid["wind_1"] == pytest.approx(0.475)
+        assert "wind_1" in market_network._bm_fixed_generators
+        assert "wind_1" not in market_network._bm_participating_generators
+
+    def test_generator_participation_elexon_mapped_mode(
+        self, market_network, default_market_config
+    ):
+        """elexon_mapped mode can restrict BM access to directly matched units."""
+        import logging
+
+        market_network._bm_direct_matched_generators = pd.Index(["ccgt_1"])
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "participation": {
+                    "generators": {
+                        "mode": "elexon_mapped",
+                        "behavior": "fixed",
+                    }
+                },
+            },
+        }
+        logger = logging.getLogger("test_market")
+        calculate_bid_offer_prices(market_network, cfg, logger)
+
+        assert list(market_network._bm_eligible_generators) == ["ccgt_1"]
+        assert list(market_network._bm_participating_generators) == ["ccgt_1"]
+        assert "wind_1" in market_network._bm_fixed_generators
+        assert "nuclear_1" in market_network._bm_fixed_generators
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -297,6 +382,52 @@ class TestComputeRedispatchVolumes:
         assert ccgt_row["increase_MWh"] == pytest.approx(300.0)
         assert ccgt_row["decrease_MWh"] == pytest.approx(0.0)
         assert ccgt_row["offer_cost"] == pytest.approx(16500.0)
+
+    def test_time_varying_prices_override_static_costs(self, market_network):
+        """Time-varying BM prices should drive redispatch cost accounting when provided."""
+        import logging
+
+        logger = logging.getLogger("test_market")
+
+        snapshots = market_network.snapshots
+        dispatch_ws = pd.DataFrame(
+            {"wind_1": [100.0] * 6, "ccgt_1": [200.0] * 6}, index=snapshots
+        )
+        dispatch_phys = pd.DataFrame(
+            {"wind_1": [50.0] * 6, "ccgt_1": [250.0] * 6}, index=snapshots
+        )
+
+        offer = pd.Series({"wind_1": 0.5, "ccgt_1": 55.0})
+        bid = pd.Series({"wind_1": 0.5, "ccgt_1": 45.0})
+        offer_tv = pd.DataFrame(
+            {"ccgt_1": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]}, index=snapshots
+        )
+        bid_tv = pd.DataFrame(
+            {"wind_1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=snapshots
+        )
+
+        gen_summary, _ = compute_redispatch_volumes(
+            wholesale_gen=dispatch_ws,
+            physical_gen=dispatch_phys,
+            wholesale_su=pd.DataFrame(index=snapshots),
+            physical_su=pd.DataFrame(index=snapshots),
+            gen_offer_prices=offer,
+            gen_bid_prices=bid,
+            su_offer_prices=pd.Series(dtype=float),
+            su_bid_prices=pd.Series(dtype=float),
+            network=market_network,
+            logger=logger,
+            gen_offer_prices_tv=offer_tv,
+            gen_bid_prices_tv=bid_tv,
+        )
+
+        wind_row = gen_summary[gen_summary["component"] == "wind_1"].iloc[0]
+        ccgt_row = gen_summary[gen_summary["component"] == "ccgt_1"].iloc[0]
+
+        # 50 MW decrease each hour * sum([1,2,3,4,5,6]) = 50 * 21 = 1050
+        assert wind_row["bid_cost"] == pytest.approx(1050.0)
+        # 50 MW increase each hour * sum([10,20,30,40,50,60]) = 50 * 210 = 10500
+        assert ccgt_row["offer_cost"] == pytest.approx(10500.0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -269,7 +269,8 @@ rule build_base_demand:
         network_model=lambda wildcards: scenarios[wildcards.scenario]["network_model"],
         timestep_minutes=lambda wildcards: scenarios[wildcards.scenario].get("timestep_minutes", 60),
         scenario=lambda wildcards: wildcards.scenario,
-        is_historical=lambda wildcards: scenario_is_historical(wildcards.scenario)
+        is_historical=lambda wildcards: scenario_is_historical(wildcards.scenario),
+        embedded_generation=lambda wildcards: scenarios[wildcards.scenario].get("embedded_generation", config.get("embedded_generation", {})),
     message:
         "Building base demand for {wildcards.scenario} (Year: {params.demand_year}, Source: {params.demand_timeseries})"
     benchmark:

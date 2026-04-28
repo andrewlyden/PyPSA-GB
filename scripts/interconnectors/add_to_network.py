@@ -410,6 +410,31 @@ def _apply_time_varying_mc(
         back-filled, then filled with the series mean.
     logger : logging.Logger
     """
+    # Align year if ENTSO-E data year differs from network snapshot year
+    # (e.g. future scenarios use 2023 weather-year prices for 2035 snapshots)
+    snap_year = network.snapshots[0].year
+    price_year = hourly_prices.index[0].year
+    if snap_year != price_year:
+        logger.debug(
+            f"  {gen_name}: shifting ENTSO-E price index "
+            f"{price_year} → {snap_year}"
+        )
+        import calendar
+
+        target_is_leap = calendar.isleap(snap_year)
+
+        def _shift_ts(ts):
+            if ts.month == 2 and ts.day == 29 and not target_is_leap:
+                # Feb 29 doesn't exist in target year — map to Feb 28
+                return ts.replace(year=snap_year, day=28)
+            return ts.replace(year=snap_year)
+
+        shifted_index = pd.DatetimeIndex([_shift_ts(ts) for ts in hourly_prices.index])
+        # Remove any duplicates introduced by the Feb-28/29 collapse
+        hourly_prices = hourly_prices.copy()
+        hourly_prices.index = shifted_index
+        hourly_prices = hourly_prices[~hourly_prices.index.duplicated(keep="first")]
+
     # Reindex to network snapshots
     prices = hourly_prices.reindex(network.snapshots)
 
@@ -1113,7 +1138,7 @@ def add_historical_interconnector_links(network: pypsa.Network,
                     abs(flows_before_clip.max()) - capacity_mw if flows_before_clip.max() > capacity_mw else 0,
                     abs(flows_before_clip.min()) - capacity_mw if flows_before_clip.min() < -capacity_mw else 0
                 )
-                logger.warning(
+                logger.debug(
                     f"  {ic_name}: Clipped {clipped_count} flow values exceeding capacity of {capacity_mw:.0f} MW. "
                     f"Max exceedance: {max_exceed:.1f} MW ({max_exceed/capacity_mw*100:.1f}% over capacity)"
                 )

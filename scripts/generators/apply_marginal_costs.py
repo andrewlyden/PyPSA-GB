@@ -41,6 +41,16 @@ RENEWABLE_CARRIERS = {
     'shoreline_wave', 'tidal_lagoon', 'marine',
 }
 
+# Biofuel carriers eligible for ROC subsidy deduction from their thermal MC.
+# Dedicated biomass receives 1.5 ROC/MWh under Ofgem banding; biogas/landfill/
+# sewage gas and advanced biofuels may also hold ROC accreditation.
+# Waste-to-energy is excluded (gate-fee economics differ from ROC subsidy).
+BIOFUEL_CARRIERS = {
+    'biomass', 'Biomass', 'Biomass (dedicated)', 'Biomass (co-firing)',
+    'Bioenergy', 'advanced_biofuel', 'biogas',
+    'landfill_gas', 'sewage_gas',
+}
+
 
 
 # Carbon emission factors (kg CO2/MWh_thermal)
@@ -49,10 +59,10 @@ CARBON_EMISSION_FACTORS = {
     'gas': 488, 'Gas': 488, 'CCGT': 488, 'OCGT': 488, 'CHP': 488, 'micro_CHP': 488,
     'gas_engine': 600,
     'oil': 533, 'Oil': 533,
-    'biomass': 120, 'Biomass': 120, 'Biomass (dedicated)': 120, 'Biomass (co-firing)': 120,
-    'Bioenergy': 120, 'advanced_biofuel': 120,
+    'biomass': 0, 'Biomass': 0, 'Biomass (dedicated)': 0, 'Biomass (co-firing)': 0,
+    'Bioenergy': 0, 'advanced_biofuel': 0,
     'waste': 180, 'Waste': 180, 'waste_to_energy': 180,
-    'landfill_gas': 240, 'sewage_gas': 240, 'biogas': 240,
+    'landfill_gas': 0, 'sewage_gas': 0, 'biogas': 0,
     'nuclear': 12, 'Nuclear': 12, 'PWR': 12, 'AGR': 12,
     'hydro': 24, 'Hydro': 24, 'Large Hydro': 24, 'large_hydro': 24,
     'Small Hydro': 24, 'small_hydro': 24, 'Hydro / pumped storage': 24,
@@ -528,6 +538,24 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
         roc_buyout = _get_roc_buyout_price(buyout_prices, modelled_year)
         logger.info(f"Subsidies enabled: CfD={cfd_dispatch_cost}, ROC buyout={roc_buyout:.2f}")
 
+    # Biofuel subsidy config — deducts ROC income from thermal MC for biomass/biogas
+    # carriers. Separate from the renewable subsidy toggle because biomass is thermal.
+    biofuel_cfg = mc_config.get('biofuel_subsidy', {})
+    biofuel_subsidy_enabled = biofuel_cfg.get('enabled', False)
+    biofuel_roc_buyout = 0.0
+    biofuel_default_bandings = {}
+    biofuel_mc_floor = biofuel_cfg.get('mc_floor', 5.0)  # Prevent negative MC from ROC income
+    if biofuel_subsidy_enabled:
+        # Use explicit buyout price if given, else fall back to the renewable ROC table
+        if 'roc_buyout_price' in biofuel_cfg:
+            biofuel_roc_buyout = float(biofuel_cfg['roc_buyout_price'])
+        else:
+            buyout_prices = sub_config.get('roc_buyout_prices', {})
+            biofuel_roc_buyout = _get_roc_buyout_price(buyout_prices, modelled_year)
+        biofuel_default_bandings = biofuel_cfg.get('default_roc_bandings', {})
+        logger.info(f"Biofuel subsidy enabled: ROC buyout={biofuel_roc_buyout:.2f}, "
+                    f"bandings={biofuel_default_bandings}")
+
     # Normalize unclassified carriers
     if 'carrier' in network.generators.columns:
         mask = network.generators['carrier'] == 'unclassified'
@@ -569,12 +597,25 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
             mc = formula_mc * factor
             source = f'formula*{factor:.3f}' if factor != 1.0 else 'formula'
 
-        # 5. Renewable with empirical MC (from ELEXON bids)
-        elif gen_name in renewable_mc_lookup:
-            mc = renewable_mc_lookup[gen_name]
-            source = 'renewable_empirical'
+            # 4b. Biofuel ROC subsidy deduction — biomass/biogas plants receive
+            # ROC income per MWh that reduces their effective wholesale MC.
+            if biofuel_subsidy_enabled and carrier in BIOFUEL_CARRIERS:
+                ro_banding = gen.get('ro_banding', None)
+                if pd.isna(ro_banding) or ro_banding is None or ro_banding == 0:
+                    ro_banding = biofuel_default_bandings.get(carrier, 0.0)
+                if ro_banding and biofuel_roc_buyout > 0:
+                    subsidy_income = float(ro_banding) * biofuel_roc_buyout
+                    mc = mc - subsidy_income
+                    # Floor: prevent ROC income making biomass cost-free/negative to the system
+                    # Negative MC causes unconditional 100% dispatch which is unrealistic
+                    mc = max(mc, biofuel_mc_floor)
+                    source = f'{source}_ROC({ro_banding:.1f}x{biofuel_roc_buyout:.0f})'
 
-        # 6. Renewable subsidy fallback
+        # 5. Renewable — subsidy type takes priority, then empirical fallback
+        #    CfD generators always get cfd_dispatch_cost (typically £0) because
+        #    their ELEXON BM bid prices reflect CfD opportunity cost, not SRMC.
+        #    ROC generators always get negative MC from banding × buyout.
+        #    Empirical MC only applies to merchant/unclassified renewables.
         elif carrier in RENEWABLE_CARRIERS:
             support_type = gen.get('support_type', None)
             if subsidy_enabled and support_type == 'CfD':
@@ -588,6 +629,9 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
                 else:
                     mc = 0.0
                     source = 'renewable_default'
+            elif gen_name in renewable_mc_lookup:
+                mc = renewable_mc_lookup[gen_name]
+                source = 'renewable_empirical'
             else:
                 mc = 0.0
                 source = 'renewable_default'
@@ -699,6 +743,30 @@ def apply_time_varying_mc(network, scenario_config, daily_mc_file=None):
                 logger.info(f"  Preserved nuclear_override for {skipped_nuclear} nuclear generators")
     except Exception as e:
         logger.warning(f"  Failed to load daily MCs: {e}")
+
+    # ── Carrier MC adjustments ───────────────────────────────────────────────
+    # Additive corrections per carrier applied AFTER empirical calibration.
+    # Primary use: widen coal-gas gap that empirical switch-on methodology
+    # compresses (both fuels turn on at similar wholesale prices, but coal has
+    # higher CO₂ costs that the switch-on method does not capture).
+    adjustments = emp_cfg.get('carrier_mc_adjustments', {})
+    if adjustments:
+        gen_carriers = network.generators['carrier']
+        adj_count = 0
+        for carrier, adj_value in adjustments.items():
+            adj_value = float(adj_value)
+            carrier_mask = gen_carriers == carrier
+            if not carrier_mask.any():
+                continue
+            carrier_gens = gen_carriers[carrier_mask].index
+            mc_t[carrier_gens] = mc_t[carrier_gens] + adj_value
+            adj_count += len(carrier_gens)
+            logger.info(
+                f"  MC adjustment: {carrier} += {adj_value:+.1f} £/MWh "
+                f"({len(carrier_gens)} generators)"
+            )
+        if adj_count:
+            logger.info(f"  Applied MC adjustments to {adj_count} generators")
 
     network.generators_t['marginal_cost'] = mc_t
     logger.info(f"  Result: {mc_t.shape[0]} snapshots x {mc_t.shape[1]} generators")

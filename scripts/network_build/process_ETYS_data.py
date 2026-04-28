@@ -221,6 +221,256 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
     return df, offshore_wf_buses
 
 
+def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file: str,
+                                    logger: Optional[logging.Logger] = None) -> pd.DataFrame:
+    """
+    Detect disconnected components and repair them using GB_network.xlsx AC sheet.
+
+    The ETYS Appendix B data is split by operator (SHE/SPT/NGET/OFTO) and
+    occasionally has naming inconsistencies between circuit and transformer
+    sheets — e.g. Norfolk circuits use NORW* bus names while NGET transformers
+    use NORM* names for the same substation.  GB_network.xlsx contains a
+    consolidated AC sheet with the complete network, which we use as the
+    authoritative reference for missing connections.
+
+    For islands that cannot be repaired from existing data (e.g. buses awaiting
+    future upgrade connections), the function logs a warning and the island
+    buses remain in the dataset but disconnected.
+
+    Args:
+        df_components: Components DataFrame with bus0, bus1, component, etc.
+        gb_network_file: Path to GB_network.xlsx
+        logger: Optional logger instance
+
+    Returns:
+        Updated components DataFrame with repair connections appended.
+    """
+    import networkx as nx
+
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    # Build graph from components
+    G = nx.Graph()
+    all_buses = set(df_components['bus0'].unique()) | set(df_components['bus1'].unique())
+    G.add_nodes_from(all_buses)
+    for _, row in df_components.iterrows():
+        G.add_edge(row['bus0'], row['bus1'])
+
+    components = list(nx.connected_components(G))
+    if len(components) == 1:
+        logger.info("Connectivity check: network is fully connected — no repair needed")
+        return df_components
+
+    main_component = max(components, key=len)
+    islands = [c for c in components if c != main_component]
+    logger.warning(f"Connectivity check: found {len(islands)} disconnected islands — attempting repair")
+
+    # Load GB_network.xlsx AC sheet as authoritative reference
+    try:
+        ac = pd.read_excel(gb_network_file, sheet_name='AC')
+        logger.info(f"Loaded GB_network.xlsx AC sheet: {len(ac)} entries")
+    except Exception as e:
+        logger.error(f"Failed to load GB_network.xlsx AC sheet: {e}")
+        return df_components
+
+    added = []
+    repaired_islands = 0
+
+    for island in islands:
+        island_buses = set(island)
+        found_bridge = False
+
+        # Search AC sheet for connections between island buses and main network
+        for _, row in ac.iterrows():
+            n1 = str(row.get('Node 1', '')).strip()
+            n2 = str(row.get('Node 2', '')).strip()
+            if not n1 or not n2 or n1 == 'nan' or n2 == 'nan':
+                continue
+
+            bridges_island = (
+                (n1 in island_buses and n2 in main_component) or
+                (n2 in island_buses and n1 in main_component)
+            )
+            if not bridges_island:
+                continue
+
+            # Check if this connection already exists in components
+            existing = df_components[
+                ((df_components['bus0'] == n1) & (df_components['bus1'] == n2)) |
+                ((df_components['bus0'] == n2) & (df_components['bus1'] == n1))
+            ]
+            if len(existing) > 0:
+                continue
+
+            # Determine component type from 'Circuit Type' column
+            circuit_type = str(row.get('Circuit Type', '')).lower()
+            if 'transformer' in circuit_type:
+                comp_type = 'transformer'
+                defaults = ELECTRICAL_DEFAULTS['transformer']
+            elif 'cable' in circuit_type:
+                comp_type = 'line'
+                defaults = ELECTRICAL_DEFAULTS['cable']
+            else:
+                comp_type = 'line'
+                defaults = ELECTRICAL_DEFAULTS['line']
+
+            # Extract electrical parameters (% on 100 MVA → per-unit)
+            r = row.get('R (% on 100 MVA)', 0)
+            x = row.get('X (% on 100 MVA)', 0)
+            b = row.get('B (% on 100 MVA)', 0)
+            s_nom = row.get('Winter Rating (MVA)', 500)
+
+            r = (r / 100.0) if pd.notna(r) and r != 0 else defaults['r']
+            x = (x / 100.0) if pd.notna(x) and x != 0 else defaults['x']
+            b = (b / 100.0) if pd.notna(b) else defaults['b']
+            s_nom = s_nom if pd.notna(s_nom) and s_nom > 0 else 500
+
+            length_km = 0
+            for col in ['OHL Length (km)', 'Cable Length (km)']:
+                if col in row.index and pd.notna(row[col]):
+                    length_km += row[col]
+
+            # Generate unique component ID
+            comp_id = f"{n1}_{n2}_repair_{len(added)}"
+
+            new_comp = {
+                'component': comp_type,
+                'carrier': 'AC',
+                'bus0': n1,
+                'bus1': n2,
+                'r': r,
+                'x': x,
+                'b': b,
+                's_nom': s_nom,
+                'length_km': length_km,
+            }
+            added.append((comp_id, new_comp))
+
+            # Update main_component so subsequent bridges can find extended reach
+            main_component = main_component | island_buses
+            found_bridge = True
+
+            logger.info(f"  Repair: adding {comp_type} {n1} → {n2} "
+                        f"(s_nom={s_nom:.0f} MVA, r={r:.4f}, x={x:.4f})")
+
+        if found_bridge:
+            repaired_islands += 1
+        else:
+            logger.warning(f"  Unrepaired island ({len(island_buses)} buses): "
+                           f"{sorted(island_buses)} — no bridging connection found "
+                           f"in GB_network.xlsx")
+
+    # Append repair components
+    if added:
+        new_rows = pd.DataFrame(
+            [v for _, v in added],
+            index=[k for k, _ in added]
+        )
+        new_rows.index.name = 'name'
+        df_components = pd.concat([df_components, new_rows])
+        logger.info(f"Connectivity repair pass 1 (GB_network.xlsx): added {len(added)} components, "
+                    f"repaired {repaired_islands}/{len(islands)} islands")
+    else:
+        logger.warning(f"Connectivity repair pass 1: could not repair any of {len(islands)} islands")
+
+    # ── Pass 2: Same-substation bus section inference ──
+    # For remaining islands, check if an island bus shares a 4-char substation
+    # prefix (or known alias) with a bus at the same voltage level in the main
+    # network.  If so, add a bus section coupler (short, high-capacity line).
+    # This handles ETYS naming inconsistencies where circuit sheets use one name
+    # (e.g. NORW12) while transformer sheets use another (e.g. NORM12) for buses
+    # at the same physical substation.
+    G2 = nx.Graph()
+    all_buses2 = set(df_components['bus0'].unique()) | set(df_components['bus1'].unique())
+    G2.add_nodes_from(all_buses2)
+    for _, row in df_components.iterrows():
+        G2.add_edge(row['bus0'], row['bus1'])
+    components2 = list(nx.connected_components(G2))
+
+    if len(components2) > 1:
+        main2 = max(components2, key=len)
+        islands2 = [c for c in components2 if c != main2]
+
+        # Build voltage lookup for all buses
+        bus_voltages = {}
+        for bus_name in all_buses2:
+            if len(bus_name) >= 5:
+                digit = bus_name[4]
+                bus_voltages[bus_name] = VOLTAGE_LEVELS.get(digit, 400)
+            else:
+                bus_voltages[bus_name] = 400
+
+        # Main network buses grouped by (prefix[:4], voltage)
+        main_by_prefix = {}
+        for bus in main2:
+            prefix = bus[:4] if len(bus) >= 4 else bus
+            v = bus_voltages.get(bus, 0)
+            key = (prefix, v)
+            main_by_prefix.setdefault(key, []).append(bus)
+
+        added2 = []
+        for island in islands2:
+            island_buses = set(island)
+            found = False
+            for ibus in sorted(island_buses):
+                prefix = ibus[:4] if len(ibus) >= 4 else ibus
+                v = bus_voltages.get(ibus, 0)
+                key = (prefix, v)
+                if key in main_by_prefix:
+                    # Found a same-prefix, same-voltage bus in the main network
+                    target = main_by_prefix[key][0]
+                    comp_id = f"{ibus}_{target}_coupler_{len(added2)}"
+                    new_comp = {
+                        'component': 'line',
+                        'carrier': 'AC',
+                        'bus0': ibus,
+                        'bus1': target,
+                        'r': ELECTRICAL_DEFAULTS['line']['r'],
+                        'x': ELECTRICAL_DEFAULTS['line']['x'],
+                        'b': ELECTRICAL_DEFAULTS['line']['b'],
+                        's_nom': 500,  # Conservative bus section coupler rating
+                        'length_km': 0.1,
+                    }
+                    added2.append((comp_id, new_comp))
+                    main2 = main2 | island_buses
+                    found = True
+                    logger.info(f"  Repair (bus section): adding coupler {ibus} → {target} "
+                                f"(same substation prefix '{prefix}', {v}kV)")
+                    break
+            if not found:
+                logger.warning(f"  Unrepaired island ({len(island_buses)} buses): "
+                               f"{sorted(island_buses)}")
+
+        if added2:
+            new_rows2 = pd.DataFrame(
+                [v for _, v in added2],
+                index=[k for k, _ in added2]
+            )
+            new_rows2.index.name = 'name'
+            df_components = pd.concat([df_components, new_rows2])
+            logger.info(f"Connectivity repair pass 2 (bus section inference): "
+                        f"added {len(added2)} couplers")
+
+    # Verify final repair result
+    G3 = nx.Graph()
+    all_buses3 = set(df_components['bus0'].unique()) | set(df_components['bus1'].unique())
+    G3.add_nodes_from(all_buses3)
+    for _, row in df_components.iterrows():
+        G3.add_edge(row['bus0'], row['bus1'])
+    remaining = list(nx.connected_components(G3))
+    if len(remaining) == 1:
+        logger.info("Connectivity repair successful — network is fully connected")
+    else:
+        still_islands = len(remaining) - 1
+        main_final = max(remaining, key=len)
+        for comp in remaining:
+            if comp != main_final:
+                logger.warning(f"After all repairs: island still disconnected: {sorted(comp)}")
+
+    return df_components
+
+
 def buses_from_line_data(df: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pd.DataFrame:
     """Extract unique buses from network component data and add voltage levels."""
     if logger is None:
@@ -458,6 +708,9 @@ if __name__ == "__main__":
 
         logger.info("Step 1: Processing raw ETYS data")
         df_components, offshore_wf_buses = sort_raw_ETYS_data(etys_file, gb_network_file, logger)
+
+        logger.info("Step 1b: Repairing disconnected components")
+        df_components = repair_disconnected_components(df_components, gb_network_file, logger)
 
         logger.info("Step 2: Extracting buses from line data")
         df_buses = buses_from_line_data(df_components, logger)

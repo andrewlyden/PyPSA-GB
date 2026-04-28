@@ -89,23 +89,45 @@ _market_scenario_ids = [rid for rid in _run_ids if _is_market_enabled(rid)]
 MARKET_SCENARIO_REGEX = _regex_from_list(_market_scenario_ids)
 
 
-def _is_historical_market_elexon(scenario_id):
-    """Check if scenario uses ELEXON bid/offer source."""
+def _effective_bid_offer_source(scenario_id):
+    """Resolve the effective bid/offer source for a scenario."""
+    sc = _scenarios.get(scenario_id, {})
+    if not sc.get("market", {}).get("enabled", False):
+        return None
+
+    source = (
+        sc.get("market", {})
+        .get("balancing", {})
+        .get("bid_offer_source", "auto")
+    )
+    if source != "auto":
+        return source
+
+    modelled_year = sc.get("modelled_year", 9999)
+    return "elexon" if modelled_year <= 2024 else "derived"
+
+
+def _uses_elexon_bid_offer_data(scenario_id):
+    """Check if scenario should retrieve/use ELEXON bid/offer data."""
     sc = _scenarios.get(scenario_id, {})
     if not sc.get("market", {}).get("enabled", False):
         return False
-    source = sc.get("market", {}).get("balancing", {}).get("bid_offer_source", "derived")
-    return source == "elexon"
+
+    modelled_year = sc.get("modelled_year", 9999)
+    if modelled_year > 2024:
+        return False
+
+    return _effective_bid_offer_source(scenario_id) == "elexon"
 
 
-_elexon_scenario_ids = [rid for rid in _run_ids if _is_historical_market_elexon(rid)]
+_elexon_scenario_ids = [rid for rid in _run_ids if _uses_elexon_bid_offer_data(rid)]
 ELEXON_SCENARIO_REGEX = _regex_from_list(_elexon_scenario_ids) if _elexon_scenario_ids else r"(?!x)x"
 
 
 def _balancing_extra_inputs(wildcards):
     """Return additional input files for ELEXON scenarios (BMU mapping + data)."""
     sid = wildcards.scenario
-    if _is_historical_market_elexon(sid):
+    if _uses_elexon_bid_offer_data(sid):
         return {
             "elexon_offers": f"{resources_path}/market/{sid}/elexon/elexon_offers.csv",
             "elexon_bids": f"{resources_path}/market/{sid}/elexon/elexon_bids.csv",
@@ -141,6 +163,8 @@ rule build_bmu_mapping:
         scenario=ELEXON_SCENARIO_REGEX
     params:
         etys_path="data/network/ETYS/GB_network.xlsx",
+        elexon_offers_path=lambda wildcards: f"{resources_path}/market/{wildcards.scenario}/elexon/elexon_offers.csv",
+        power_station_dictionary_path="data/generators/power_station_dictionary_bmu_crosswalk.csv",
     script:
         "../scripts/generators/build_bmu_mapping.py"
 
@@ -244,6 +268,7 @@ rule solve_balancing_mechanism:
     Output:
       - Balancing solved network: {scenario}_balancing.nc
       - Physical dispatch: {scenario}_balancing_dispatch.csv
+      - Physical storage dispatch: {scenario}_balancing_storage.csv
       - Redispatch summary: {scenario}_redispatch_summary.csv
       - Constraint costs: {scenario}_constraint_costs.csv
       - Congestion analysis: {scenario}_congestion.csv
@@ -251,6 +276,7 @@ rule solve_balancing_mechanism:
     """
     input:
         unpack(_balancing_extra_inputs),
+        boundary_mapping_yaml="data/network/neso_boundary_mapping.yaml",
         network=f"{resources_path}/network/{{scenario}}.nc",
         wholesale_dispatch_csv=f"{resources_path}/market/{{scenario}}_wholesale_dispatch.csv",
         wholesale_storage_csv=f"{resources_path}/market/{{scenario}}_wholesale_storage.csv",
@@ -259,6 +285,7 @@ rule solve_balancing_mechanism:
     output:
         network=f"{resources_path}/market/{{scenario}}_balancing.nc",
         balancing_dispatch_csv=f"{resources_path}/market/{{scenario}}_balancing_dispatch.csv",
+        balancing_storage_csv=f"{resources_path}/market/{{scenario}}_balancing_storage.csv",
         redispatch_summary_csv=f"{resources_path}/market/{{scenario}}_redispatch_summary.csv",
         constraint_costs_csv=f"{resources_path}/market/{{scenario}}_constraint_costs.csv",
         congestion_csv=f"{resources_path}/market/{{scenario}}_congestion.csv",
@@ -323,6 +350,162 @@ rule analyze_market_results:
         scenario_config=lambda wildcards: {**_cfg, **_scenarios.get(wildcards.scenario, {})},
     script:
         "../scripts/market/analyze_market.py"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BM VALIDATION: COMPARE MODEL vs ELEXON ACTUALS (HISTORICAL ONLY)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _is_historical_market(scenario_id):
+    """Check if scenario is a historical market scenario (year ≤ 2024)."""
+    sc = _scenarios.get(scenario_id, {})
+    if not sc.get("market", {}).get("enabled", False):
+        return False
+    year = sc.get("modelled_year", 9999)
+    return year <= 2024
+
+
+_historical_market_ids = [rid for rid in _run_ids if _is_historical_market(rid)]
+HISTORICAL_MARKET_REGEX = _regex_from_list(_historical_market_ids) if _historical_market_ids else r"(?!x)x"
+
+
+rule validate_bm_results:
+    """
+    Validate BM results against ELEXON actuals for historical scenarios.
+
+    Fetches (or loads cached) ELEXON BOALF, system prices, and full B1610
+    generation data and compares against model redispatch volumes, constraint
+    costs, prices, and dispatch levels.
+
+    Output:
+      - Validation report CSV: per-metric model vs ELEXON comparison
+      - Validation dashboard HTML: multi-panel interactive comparison
+            - BOALF flag split CSV: flagged vs unflagged BM acceptance volumes
+            - DISBSAD summary CSV: non-BM balancing-service adjustment totals
+    """
+    input:
+        wholesale_dispatch_csv=f"{resources_path}/market/{{scenario}}_wholesale_dispatch.csv",
+        balancing_dispatch_csv=f"{resources_path}/market/{{scenario}}_balancing_dispatch.csv",
+        redispatch_summary_csv=f"{resources_path}/market/{{scenario}}_redispatch_summary.csv",
+        constraint_costs_csv=f"{resources_path}/market/{{scenario}}_constraint_costs.csv",
+        price_comparison_csv=f"{resources_path}/market/{{scenario}}_price_comparison.csv",
+    output:
+        validation_csv=f"{resources_path}/market/{{scenario}}_bm_validation.csv",
+        validation_html=f"{resources_path}/analysis/{{scenario}}_bm_validation.html",
+        boalf_by_flag_csv=f"{resources_path}/market/{{scenario}}_boalf_by_flag.csv",
+        disbsad_summary_csv=f"{resources_path}/market/{{scenario}}_disbsad_summary.csv",
+    log:
+        "logs/market/validate_bm_{scenario}.log"
+    benchmark:
+        "benchmarks/market/validate_bm_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario=HISTORICAL_MARKET_REGEX
+    params:
+        scenario_config=lambda wildcards: {
+            **_cfg,
+            **_scenarios.get(wildcards.scenario, {}),
+            "scenario_id": wildcards.scenario,
+        },
+    script:
+        "../scripts/market/validate_bm.py"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BM CALIBRATION SCORECARD: PER-CARRIER MODEL vs ELEXON PRICES + VOLUMES
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+rule validate_bm_calibration:
+    """
+    Per-carrier scorecard comparing model effective bid/offer prices against
+    ELEXON BOD medians and model redispatch volumes against BOALF unflagged
+    acceptance volumes. Flags carriers that drift beyond the configured
+    tolerance (default ±20%) and optionally fails the rule.
+
+    Only runs for scenarios that actually consume ELEXON data (historical
+    scenarios with bid_offer_source resolving to "elexon"), since the
+    scorecard requires the BMU mapping + BOD CSVs.
+
+    Output:
+      - Calibration CSV: per-carrier ratios and volumes
+      - Calibration dashboard HTML: 4-panel ratio bars + regression flags
+    """
+    input:
+        redispatch_summary_csv=f"{resources_path}/market/{{scenario}}_redispatch_summary.csv",
+        boalf_by_flag_csv=f"{resources_path}/market/{{scenario}}_boalf_by_flag.csv",
+        network=f"{resources_path}/network/{{scenario}}.nc",
+        elexon_offers=f"{resources_path}/market/{{scenario}}/elexon/elexon_offers.csv",
+        elexon_bids=f"{resources_path}/market/{{scenario}}/elexon/elexon_bids.csv",
+        bmu_mapping=f"{resources_path}/generators/{{scenario}}_bmu_mapping.csv",
+    output:
+        calibration_csv=f"{resources_path}/market/{{scenario}}_bm_calibration.csv",
+        calibration_html=f"{resources_path}/analysis/{{scenario}}_bm_calibration.html",
+    log:
+        "logs/market/validate_bm_calibration_{scenario}.log"
+    benchmark:
+        "benchmarks/market/validate_bm_calibration_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario=ELEXON_SCENARIO_REGEX
+    params:
+        scenario_config=lambda wildcards: {
+            **_cfg,
+            **_scenarios.get(wildcards.scenario, {}),
+            "scenario_id": wildcards.scenario,
+        },
+    script:
+        "../scripts/market/bm_calibration_scorecard.py"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NESO CONSTRAINT VALIDATION: MODEL vs NESO THERMAL COSTS & DA FLOWS
+# ══════════════════════════════════════════════════════════════════════════════
+
+rule validate_neso_constraints:
+    """
+    Validate model BM results against NESO published constraint data.
+
+    Compares model boundary flows and total BM cost against:
+      - NESO Thermal Constraint Costs (daily, by boundary)
+      - NESO Day-Ahead Constraint Flows & Limits (half-hourly, by boundary)
+
+    Downloads NESO data from the API on first run and caches in data/validation/.
+    Uses the boundary-to-line mapping in data/network/neso_boundary_mapping.yaml
+    to aggregate model line flows into NESO-comparable boundary transfers.
+
+    Output:
+      - Validation CSV: per-metric model vs NESO comparison
+      - Validation dashboard HTML: 6-panel interactive comparison
+    """
+    input:
+        balancing_network=f"{resources_path}/market/{{scenario}}_balancing.nc",
+        constraint_costs_csv=f"{resources_path}/market/{{scenario}}_constraint_costs.csv",
+        congestion_csv=f"{resources_path}/market/{{scenario}}_congestion.csv",
+        boundary_mapping_yaml="data/network/neso_boundary_mapping.yaml",
+    output:
+        validation_csv=f"{resources_path}/market/{{scenario}}_neso_validation.csv",
+        validation_html=f"{resources_path}/analysis/{{scenario}}_neso_validation.html",
+    log:
+        "logs/market/validate_neso_{scenario}.log"
+    benchmark:
+        "benchmarks/market/validate_neso_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario=HISTORICAL_MARKET_REGEX
+    params:
+        scenario_config=lambda wildcards: {
+            **_cfg,
+            **_scenarios.get(wildcards.scenario, {}),
+            "scenario_id": wildcards.scenario,
+        },
+        boundary_mapping_path="data/network/neso_boundary_mapping.yaml",
+        cache_dir="data/validation",
+    script:
+        "../scripts/market/validate_neso_constraints.py"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
