@@ -118,8 +118,8 @@ For years outside 2010-2024 or if you prefer direct ERA5 download:
 
 1. **Configure CDS API** (one-time setup):
    ```bash
-   # Register at: https://cds.climate.copernicus.eu/user/register
-   # Get your API key from: https://cds.climate.copernicus.eu/api-how-to
+   # Register at: [https://cds.climate.copernicus.eu/](https://cds.climate.copernicus.eu/)
+   # Get your API key from: [https://cds.climate.copernicus.eu/how-to-api](https://cds.climate.copernicus.eu/how-to-api)
    # Create ~/.cdsapirc with your credentials
    ```
 
