@@ -25,6 +25,7 @@ import pypsa
 import logging
 import time
 import yaml
+import warnings
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -33,6 +34,7 @@ from scripts.utilities.logging_config import setup_logging
 from scripts.utilities.network_io import load_network, save_network
 from scripts.solve.solve_network import (
     validate_network_costs,
+    apply_load_shedding_limits,
     improve_numerical_conditioning,
     configure_solver,
     get_solve_mode_from_config,
@@ -238,6 +240,225 @@ def apply_solve_period(network, scenario_config, logger):
     return True
 
 
+def _normalise_ramp_limit(value, default):
+    """Return a PyPSA ramp limit fraction, accepting either percent or pu."""
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return default
+    value = float(value)
+    if value > 1.0:
+        value = value / 100.0
+    return max(0.0, min(value, 1.0))
+
+
+def _commitment_initial_state(network, eligible, uc_config, carrier_params, logger):
+    """Set generator initial up/down state for wholesale unit commitment."""
+    mode = str(uc_config.get("initial_status", "off")).lower()
+    if "up_time_before" not in network.generators.columns:
+        network.generators["up_time_before"] = 0
+    if "down_time_before" not in network.generators.columns:
+        network.generators["down_time_before"] = 0
+
+    if mode == "on":
+        network.generators.loc[eligible, ["up_time_before", "down_time_before"]] = 0
+        for carrier, params in carrier_params.items():
+            carrier_mask = eligible & (network.generators["carrier"] == carrier)
+            min_up = int(params.get("min_up_time", 0))
+            network.generators.loc[carrier_mask, "up_time_before"] = max(min_up, 1)
+        logger.info("Wholesale UC initial status: all committed units initially on")
+    elif mode == "preserve":
+        logger.info("Wholesale UC initial status: preserving network up/down state")
+    else:
+        network.generators.loc[eligible, ["up_time_before", "down_time_before"]] = 0
+        for carrier, params in carrier_params.items():
+            carrier_mask = eligible & (network.generators["carrier"] == carrier)
+            min_down = int(params.get("min_down_time", 0))
+            network.generators.loc[carrier_mask, "down_time_before"] = max(min_down, 1)
+        logger.info("Wholesale UC initial status: all committed units initially off")
+
+
+def apply_wholesale_unit_commitment(network, wholesale_config, logger):
+    """
+    Configure unit commitment for the wholesale stage only.
+
+    The base network is normally built in LP mode, so thermal generators arrive
+    with ``committable=False`` and no ramp/start parameters.  This helper applies
+    a market-stage UC overlay immediately before the wholesale solve without
+    changing the balancing-stage input network.
+    """
+    uc_config = wholesale_config.get("unit_commitment", {})
+    enabled = bool(uc_config.get("enabled", False))
+
+    if "committable" not in network.generators.columns:
+        network.generators["committable"] = False
+
+    if not enabled:
+        n_before = int(network.generators["committable"].sum())
+        network.generators["committable"] = False
+        logger.info(
+            "Wholesale unit commitment disabled"
+            + (f" ({n_before} committable flags cleared)" if n_before else "")
+        )
+        return False
+
+    params_by_carrier = uc_config.get("carrier_parameters", {})
+    if not params_by_carrier:
+        raise ValueError(
+            "market.wholesale.unit_commitment.enabled is true but no "
+            "carrier_parameters are configured"
+        )
+
+    logger.info("=" * 80)
+    logger.info("APPLYING WHOLESALE UNIT COMMITMENT OVERLAY")
+    logger.info("=" * 80)
+
+    # Start from a clean slate so renewables/load shedding never inherit stale
+    # committable flags from input data.
+    network.generators["committable"] = False
+
+    min_p_nom_mw = float(uc_config.get("min_p_nom_mw", 50.0))
+    exclude_carriers = set(uc_config.get("exclude_carriers", []))
+    default_ramp_up = _normalise_ramp_limit(
+        uc_config.get("default_ramp_limit_up", 1.0), 1.0
+    )
+    default_ramp_down = _normalise_ramp_limit(
+        uc_config.get("default_ramp_limit_down", 1.0), 1.0
+    )
+    default_start_ramp = _normalise_ramp_limit(
+        uc_config.get("default_ramp_limit_start_up", 1.0), 1.0
+    )
+    default_shut_ramp = _normalise_ramp_limit(
+        uc_config.get("default_ramp_limit_shut_down", 1.0), 1.0
+    )
+
+    required_cols = [
+        "p_min_pu",
+        "min_up_time",
+        "min_down_time",
+        "start_up_cost",
+        "shut_down_cost",
+        "ramp_limit_up",
+        "ramp_limit_down",
+        "ramp_limit_start_up",
+        "ramp_limit_shut_down",
+    ]
+    for col in required_cols:
+        if col not in network.generators.columns:
+            network.generators[col] = np.nan if col.startswith("ramp_") else 0.0
+
+    if "active" in network.generators.columns:
+        active = network.generators["active"].astype(bool)
+    else:
+        active = pd.Series(True, index=network.generators.index)
+    if "p_nom_extendable" in network.generators.columns:
+        extendable = network.generators["p_nom_extendable"].astype(bool)
+    else:
+        extendable = pd.Series(False, index=network.generators.index)
+
+    eligible_any = pd.Series(False, index=network.generators.index)
+    applied_params = {}
+
+    for carrier, params in params_by_carrier.items():
+        if not params or not bool(params.get("enabled", True)):
+            continue
+        if carrier in exclude_carriers:
+            continue
+
+        mask = (
+            (network.generators["carrier"] == carrier)
+            & (network.generators["p_nom"].astype(float) >= min_p_nom_mw)
+            & active
+            & ~extendable
+        )
+        if not mask.any():
+            logger.info(f"Wholesale UC carrier {carrier}: no eligible generators")
+            continue
+
+        p_min_pu = float(params.get("p_min_pu", 0.0))
+        min_up = int(round(float(params.get("min_up_time", 0))))
+        min_down = int(round(float(params.get("min_down_time", 0))))
+        ramp_up = _normalise_ramp_limit(params.get("ramp_limit_up"), default_ramp_up)
+        ramp_down = _normalise_ramp_limit(
+            params.get("ramp_limit_down"), default_ramp_down
+        )
+        start_ramp = _normalise_ramp_limit(
+            params.get("ramp_limit_start_up"), default_start_ramp
+        )
+        shut_ramp = _normalise_ramp_limit(
+            params.get("ramp_limit_shut_down"), default_shut_ramp
+        )
+        start_cost_per_mw = float(params.get("start_up_cost_per_mw", 0.0))
+        shut_cost_per_mw = float(params.get("shut_down_cost_per_mw", 0.0))
+
+        network.generators.loc[mask, "committable"] = True
+        network.generators.loc[mask, "p_min_pu"] = p_min_pu
+        network.generators.loc[mask, "min_up_time"] = min_up
+        network.generators.loc[mask, "min_down_time"] = min_down
+        network.generators.loc[mask, "ramp_limit_up"] = ramp_up
+        network.generators.loc[mask, "ramp_limit_down"] = ramp_down
+        network.generators.loc[mask, "ramp_limit_start_up"] = start_ramp
+        network.generators.loc[mask, "ramp_limit_shut_down"] = shut_ramp
+        network.generators.loc[mask, "start_up_cost"] = (
+            start_cost_per_mw * network.generators.loc[mask, "p_nom"].astype(float)
+        )
+        network.generators.loc[mask, "shut_down_cost"] = (
+            shut_cost_per_mw * network.generators.loc[mask, "p_nom"].astype(float)
+        )
+
+        eligible_any |= mask
+        applied_params[carrier] = {"min_up_time": min_up, "min_down_time": min_down}
+        logger.info(
+            f"Wholesale UC carrier {carrier}: {int(mask.sum())} generators, "
+            f"{network.generators.loc[mask, 'p_nom'].sum():,.0f} MW, "
+            f"p_min_pu={p_min_pu:.2f}, min_up={min_up}h, min_down={min_down}h, "
+            f"ramp={ramp_up:.2f}/{ramp_down:.2f}"
+        )
+
+    if not eligible_any.any():
+        raise ValueError("Wholesale unit commitment enabled but no generators matched")
+
+    _commitment_initial_state(
+        network, eligible_any, uc_config, applied_params, logger
+    )
+
+    n_committable = int(network.generators["committable"].sum())
+    capacity_committable = network.generators.loc[
+        network.generators["committable"], "p_nom"
+    ].sum()
+    logger.info(
+        f"Wholesale UC enabled: {n_committable} generators, "
+        f"{capacity_committable:,.0f} MW. Problem is now MILP for Stage 1."
+    )
+    logger.info("=" * 80)
+    return True
+
+
+def apply_wholesale_solver_overrides(solver_options, wholesale_config, logger):
+    """Apply optional wholesale-stage solver overrides."""
+    overrides = wholesale_config.get("solver_options", {})
+    if not overrides:
+        return solver_options
+
+    merged = dict(solver_options or {})
+    merged.update(overrides)
+    logger.info(f"Applied wholesale solver option overrides: {overrides}")
+    return merged
+
+
+def _optimize_wholesale(network, **kwargs):
+    """Run PyPSA optimize while hiding a known Linopy/xarray UC warning."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=(
+                "In a future version of xarray the default value for join "
+                "will change from join='outer' to join='exact'.*"
+            ),
+            category=FutureWarning,
+            module=r"linopy\.expressions",
+        )
+        return network.optimize(**kwargs)
+
+
 def solve_rolling_day_ahead(
     network, wholesale_config, solver_name, solver_options, scenario_config, logger
 ):
@@ -349,7 +570,8 @@ def solve_rolling_day_ahead(
         )
 
         # Solve
-        status, cond = day_net.optimize(
+        status, cond = _optimize_wholesale(
+            day_net,
             solver_name=solver_name,
             solver_options=solver_options,
             extra_functionality=combine_extra_functionalities(
@@ -481,6 +703,7 @@ if __name__ == "__main__":
 
         # ── Apply solve period ───────────────────────────────────────────
         apply_solve_period(network, scenario_config, logger)
+        apply_load_shedding_limits(network, logger)
 
         logger.info(
             f"Optimization will run for {len(network.snapshots)} snapshots "
@@ -491,10 +714,14 @@ if __name__ == "__main__":
         global_solve_mode = get_solve_mode_from_config()
         logger.info(f"Solve mode: {global_solve_mode}")
 
-        if global_solve_mode == "LP":
-            if "committable" in network.generators.columns:
-                network.generators["committable"] = False
-            logger.info("LP mode: unit commitment disabled")
+        wholesale_uc_enabled = apply_wholesale_unit_commitment(
+            network, wholesale_config, logger
+        )
+        if wholesale_uc_enabled and global_solve_mode == "LP":
+            logger.info(
+                "Global solve_mode is LP, but wholesale unit commitment is "
+                "enabled explicitly for Stage 1"
+            )
 
         # Remove must-run if configured
         remove_must_run = scenario_config.get("optimization", {}).get("remove_must_run", False)
@@ -505,6 +732,9 @@ if __name__ == "__main__":
         # ── Configure solver ─────────────────────────────────────────────
         solver_name, solver_options = configure_solver(
             network, solver_name, solver_options, logger
+        )
+        solver_options = apply_wholesale_solver_overrides(
+            solver_options, wholesale_config, logger
         )
 
         # ── Dispatch based on wholesale mode ─────────────────────────────
@@ -609,7 +839,8 @@ if __name__ == "__main__":
                 pumped_min_soc_override=ws_min_soc_single,
             )
 
-            status, termination_condition = network.optimize(
+            status, termination_condition = _optimize_wholesale(
+                network,
                 solver_name=solver_name,
                 solver_options=solver_options,
                 extra_functionality=combine_extra_functionalities(

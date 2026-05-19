@@ -27,6 +27,7 @@ import logging
 import argparse
 import os
 import re
+import math
 from pathlib import Path
 
 try:
@@ -315,6 +316,16 @@ _PSD_COLUMN_ALIASES = {
         "node",
         "bus",
     ],
+    "latitude": [
+        "latitude",
+        "Latitude",
+        "lat",
+    ],
+    "longitude": [
+        "longitude",
+        "Longitude",
+        "lon",
+    ],
 }
 
 
@@ -396,6 +407,7 @@ def _load_power_station_dictionary(
         c for c in [
             "bmu_id", "station_name", "generator_name", "fuel",
             "plant_type", "installed_capacity_mw", "node_id",
+            "latitude", "longitude",
         ] if c in df.columns
     ]
     df = df[keep_cols].copy()
@@ -408,6 +420,9 @@ def _load_power_station_dictionary(
         df["installed_capacity_mw"] = pd.to_numeric(
             df["installed_capacity_mw"], errors="coerce"
         )
+    for coord in ["latitude", "longitude"]:
+        if coord in df.columns:
+            df[coord] = pd.to_numeric(df[coord], errors="coerce")
 
     df = df.dropna(subset=["bmu_id"])
     df = df[df["bmu_id"] != ""]
@@ -461,6 +476,35 @@ def _fuel_to_carrier_candidates(
     return carriers
 
 
+def _station_from_bmu_prefix(bmu_id: str) -> str | None:
+    """Infer a station name from a settlement BMU prefix."""
+    core = str(bmu_id).strip()
+    for prefix_strip in ['T_', 'E_', 'M_', '2_']:
+        if core.startswith(prefix_strip):
+            core = core[len(prefix_strip):]
+            break
+
+    for prefix_len in [4, 5, 3]:
+        candidate_prefix = core[:prefix_len].upper()
+        if candidate_prefix in BMU_PREFIX_TO_STATION:
+            return BMU_PREFIX_TO_STATION[candidate_prefix]
+    return None
+
+
+def _haversine_km(lat1, lon1, lat2, lon2) -> float:
+    """Great-circle distance between two WGS84 points."""
+    radius_km = 6371.0
+    phi1 = math.radians(float(lat1))
+    phi2 = math.radians(float(lat2))
+    d_phi = math.radians(float(lat2) - float(lat1))
+    d_lambda = math.radians(float(lon2) - float(lon1))
+    a = (
+        math.sin(d_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
+    )
+    return 2 * radius_km * math.asin(math.sqrt(a))
+
+
 def _build_component_lookup(network) -> tuple[pd.DataFrame, dict]:
     """Build a lookup table of generators/storage units for station matching."""
     rows = []
@@ -482,6 +526,8 @@ def _build_component_lookup(network) -> tuple[pd.DataFrame, dict]:
                     "carrier": row.get("carrier", ""),
                     "p_nom": pd.to_numeric(row.get("p_nom", np.nan), errors="coerce"),
                     "bus": row.get("bus", ""),
+                    "lat": pd.to_numeric(row.get("lat", np.nan), errors="coerce"),
+                    "lon": pd.to_numeric(row.get("lon", np.nan), errors="coerce"),
                     "component_type": component_type,
                     "data_source": row.get("data_source", ""),
                 }
@@ -501,6 +547,8 @@ def _select_generator_match(
     expected_carriers: set[str] | None = None,
     expected_bus: str | None = None,
     expected_capacity_mw: float | None = None,
+    expected_latitude: float | None = None,
+    expected_longitude: float | None = None,
 ) -> tuple[str | None, str]:
     """Choose the best network component for a station using scored matching."""
     if lookup_df.empty:
@@ -509,6 +557,14 @@ def _select_generator_match(
     station_norm = _normalise_station_name(station_name)
     if not station_norm:
         return None, "unmatched"
+    if expected_bus is not None and pd.isna(expected_bus):
+        expected_bus = None
+    if isinstance(expected_bus, str) and not expected_bus.strip():
+        expected_bus = None
+    if expected_latitude is not None and pd.isna(expected_latitude):
+        expected_latitude = None
+    if expected_longitude is not None and pd.isna(expected_longitude):
+        expected_longitude = None
 
     if explicit_generator_name:
         explicit_norm = _normalise_station_name(explicit_generator_name)
@@ -520,6 +576,7 @@ def _select_generator_match(
         expected_carriers
         or expected_bus
         or (expected_capacity_mw is not None and not pd.isna(expected_capacity_mw))
+        or (expected_latitude is not None and expected_longitude is not None)
     )
     pseudo_carriers = {"load_shedding", "EU_import", "embedded_solar", "embedded_wind"}
     named_lookup_df = lookup_df[
@@ -561,7 +618,12 @@ def _select_generator_match(
             return candidates.iloc[0]["name"], "partial"
         return None, "unmatched"
 
-    candidates = lookup_df.copy()
+    candidates = lookup_df[
+        ~lookup_df["carrier"].isin(pseudo_carriers)
+        & ~lookup_df["name"].astype(str).str.startswith("gen_")
+    ].copy()
+    if candidates.empty:
+        candidates = named_lookup_df.copy()
     candidates["score"] = 0.0
 
     exact = candidates["name_norm"] == station_norm
@@ -572,13 +634,31 @@ def _select_generator_match(
     ) | candidates["name_norm"].map(lambda v: station_norm in v if isinstance(v, str) else False)
     candidates.loc[contains, "score"] += 60
 
-    station_tokens = set(station_norm.split())
+    weak_station_tokens = {
+        "energy", "farm", "windfarm", "wind", "generator", "generation",
+        "power", "plant", "project", "the", "of", "and", "at", "site",
+        "district", "extension", "phase",
+    }
+    station_tokens = set(station_norm.split()).difference(weak_station_tokens)
     if station_tokens:
         overlap = candidates["name_norm"].map(
-            lambda name: len(station_tokens.intersection(set(name.split())))
+            lambda name: len(
+                station_tokens.intersection(
+                    set(str(name).split()).difference(weak_station_tokens)
+                )
+            )
             if isinstance(name, str) else 0
         )
         candidates["score"] += overlap * 8
+    else:
+        overlap = pd.Series(0, index=candidates.index)
+    token_evidence = overlap >= min(2, len(station_tokens)) if station_tokens else False
+
+    # Do not let carrier/capacity metadata alone force a closed or absent plant
+    # onto an unrelated generator.  The dictionary is an identifier crosswalk;
+    # it should improve name disambiguation, not invent a station match where
+    # the model has no plausible named asset.
+    candidates["_name_evidence"] = exact | contains | token_evidence
 
     if expected_carriers:
         candidates.loc[candidates["carrier"].isin(expected_carriers), "score"] += 80
@@ -586,6 +666,7 @@ def _select_generator_match(
 
     if expected_bus:
         candidates.loc[candidates["bus"] == expected_bus, "score"] += 45
+    candidates["_bus_evidence"] = bool(expected_bus) & candidates["bus"].eq(expected_bus)
 
     if expected_capacity_mw is not None and not pd.isna(expected_capacity_mw):
         delta = (candidates["p_nom"] - expected_capacity_mw).abs()
@@ -600,15 +681,69 @@ def _select_generator_match(
     # De-prioritise pseudo-generators when a real plant is available.
     candidates.loc[candidates["carrier"].isin(pseudo_carriers), "score"] -= 100
 
+    renewable_spatial_carriers = {
+        "wind_onshore", "wind_offshore", "solar_pv", "large_hydro", "small_hydro",
+        "tidal_stream", "shoreline_wave", "tidal_lagoon",
+    }
+    can_spatial_match = (
+        expected_latitude is not None
+        and expected_longitude is not None
+        and expected_carriers
+        and expected_carriers.issubset(renewable_spatial_carriers)
+        and "lat" in candidates.columns
+        and "lon" in candidates.columns
+    )
+    if can_spatial_match:
+        def _distance(row):
+            if pd.isna(row.get("lat")) or pd.isna(row.get("lon")):
+                return np.nan
+            return _haversine_km(
+                expected_latitude, expected_longitude, row["lat"], row["lon"]
+            )
+
+        candidates["_distance_km"] = candidates.apply(_distance, axis=1)
+        nearest = candidates["_distance_km"]
+        max_distance = 65.0 if "wind_offshore" in expected_carriers else 20.0
+        candidates["_spatial_evidence"] = nearest <= max_distance
+        candidates.loc[candidates["_spatial_evidence"], "score"] += (
+            70 - nearest.clip(lower=0, upper=max_distance)
+        )
+        if expected_capacity_mw is not None and not pd.isna(expected_capacity_mw):
+            min_plausible = min(100.0, float(expected_capacity_mw) * 0.25)
+            if (
+                "wind_onshore" in expected_carriers
+                and float(expected_capacity_mw) >= 200.0
+            ):
+                min_plausible = max(min_plausible, float(expected_capacity_mw) * 0.5)
+            candidates.loc[candidates["p_nom"] < min_plausible, "_spatial_evidence"] = False
+            candidates.loc[candidates["p_nom"] < min_plausible, "score"] -= 80
+    else:
+        candidates["_spatial_evidence"] = False
+
+    if can_spatial_match and not candidates["_name_evidence"].any() and not candidates["_bus_evidence"].any():
+        spatial = candidates[candidates["_spatial_evidence"]].copy()
+        if not spatial.empty:
+            spatial = spatial.sort_values(["_distance_km", "p_nom"], ascending=[True, False])
+            return spatial.iloc[0]["name"], "spatial"
+
     candidates = candidates.sort_values(
         ["score", "component_type", "p_nom"],
         ascending=[False, True, False],
     )
     best = candidates.iloc[0]
+    if (
+        not bool(best.get("_name_evidence", False))
+        and not bool(best.get("_bus_evidence", False))
+        and not bool(best.get("_spatial_evidence", False))
+    ):
+        return None, "unmatched"
     if best["score"] <= 0:
         return None, "unmatched"
 
-    match_method = "direct" if best["name_norm"] == station_norm else "partial"
+    if bool(best.get("_spatial_evidence", False)) and not bool(best.get("_name_evidence", False)):
+        match_method = "spatial"
+    else:
+        match_method = "direct" if best["name_norm"] == station_norm else "partial"
     return best["name"], match_method
 
 
@@ -714,21 +849,12 @@ def build_bmu_mapping(
             psd_row.get("fuel"), psd_row.get("plant_type")
         )
         expected_capacity = psd_row.get("installed_capacity_mw")
+        expected_latitude = psd_row.get("latitude")
+        expected_longitude = psd_row.get("longitude")
 
         station_name = psd_row.get("station_name")
         if not station_name:
-            # Extract prefix: strip T_/E_/M_ prefix, then take first 4 chars before - or digit
-            core = bmu_clean
-            for prefix_strip in ['T_', 'E_', 'M_', '2_']:
-                if core.startswith(prefix_strip):
-                    core = core[len(prefix_strip):]
-                    break
-
-            for prefix_len in [4, 5, 3]:
-                candidate_prefix = core[:prefix_len].upper()
-                if candidate_prefix in BMU_PREFIX_TO_STATION:
-                    station_name = BMU_PREFIX_TO_STATION[candidate_prefix]
-                    break
+            station_name = _station_from_bmu_prefix(bmu_clean)
 
         if station_name is None:
             # No station match — skip (will fall back to derived pricing)
@@ -747,7 +873,23 @@ def build_bmu_mapping(
                 expected_carriers=expected_carriers,
                 expected_bus=expected_bus,
                 expected_capacity_mw=expected_capacity,
+                expected_latitude=expected_latitude,
+                expected_longitude=expected_longitude,
             )
+            if not generator_name and psd_row:
+                fallback_station_name = _station_from_bmu_prefix(bmu_clean)
+                if (
+                    fallback_station_name
+                    and _normalise_station_name(fallback_station_name)
+                    != _normalise_station_name(station_name)
+                ):
+                    generator_name, match_method = _select_generator_match(
+                        station_name=fallback_station_name,
+                        lookup_df=component_lookup_df,
+                    )
+                    if generator_name:
+                        station_name = fallback_station_name
+                        match_method = "prefix_fallback_after_dictionary"
             if generator_name:
                 carrier = gen_carrier_lookup.get(generator_name, '')
                 if psd_row and match_method in {"direct", "partial"}:
@@ -792,14 +934,11 @@ def build_bmu_mapping(
                 psd_row.get("fuel"), psd_row.get("plant_type")
             )
             expected_capacity = psd_row.get("installed_capacity_mw")
+            expected_latitude = psd_row.get("latitude")
+            expected_longitude = psd_row.get("longitude")
             station_name = psd_row.get("station_name")
             if not station_name:
-                core = bmu_id[2:]  # Strip T_/E_/M_
-                for prefix_len in [4, 5, 3]:
-                    candidate_prefix = core[:prefix_len].upper()
-                    if candidate_prefix in BMU_PREFIX_TO_STATION:
-                        station_name = BMU_PREFIX_TO_STATION[candidate_prefix]
-                        break
+                station_name = _station_from_bmu_prefix(bmu_id)
             if station_name is None:
                 continue
 
@@ -818,7 +957,23 @@ def build_bmu_mapping(
                         or (bmu_node_lookup.get(bmu_id) if psd_row else None)
                     ),
                     expected_capacity_mw=expected_capacity,
+                    expected_latitude=expected_latitude,
+                    expected_longitude=expected_longitude,
                 )
+                if not generator_name and psd_row:
+                    fallback_station_name = _station_from_bmu_prefix(bmu_id)
+                    if (
+                        fallback_station_name
+                        and _normalise_station_name(fallback_station_name)
+                        != _normalise_station_name(station_name)
+                    ):
+                        generator_name, generator_match_method = _select_generator_match(
+                            station_name=fallback_station_name,
+                            lookup_df=component_lookup_df,
+                        )
+                        if generator_name:
+                            station_name = fallback_station_name
+                            generator_match_method = "prefix_fallback_after_dictionary"
                 if generator_name:
                     carrier = gen_carrier_lookup.get(generator_name, '')
                     if psd_row:

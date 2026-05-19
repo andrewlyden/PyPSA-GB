@@ -236,6 +236,84 @@ def validate_network_costs(network, logger):
     logger.info("=" * 80)
 
 
+def apply_load_shedding_limits(network, logger):
+    """
+    Cap load-shedding generators to same-bus demand at each snapshot.
+
+    Load shedding is modelled as high-cost generation so the LP remains
+    feasible, but it should behave like local demand interruption. Without a
+    time-varying cap these units can produce more than the local load and
+    export through the network, which turns them into emergency generators.
+    """
+    if len(network.generators) == 0 or len(network.snapshots) == 0:
+        return False
+
+    load_shedding_carriers = ["load_shedding", "load shedding", "voll", "VOLL"]
+    ls_mask = network.generators["carrier"].isin(load_shedding_carriers)
+    ls_gens = network.generators[ls_mask]
+
+    if ls_gens.empty:
+        return False
+
+    pmax = network.generators_t.p_max_pu.copy()
+    if pmax.empty:
+        pmax = pd.DataFrame(index=network.snapshots)
+    else:
+        pmax = pmax.reindex(index=network.snapshots)
+
+    if network.loads.empty or network.loads_t.p_set.empty:
+        logger.warning(
+            "Load shedding demand caps skipped: no load time series available"
+        )
+        return False
+
+    load_p_set = network.loads_t.p_set.reindex(index=network.snapshots).fillna(0.0)
+    no_load_bus_count = 0
+
+    for gen_name, gen in ls_gens.iterrows():
+        bus = gen["bus"]
+        p_nom = float(gen.get("p_nom", 0.0) or 0.0)
+
+        if p_nom <= 0:
+            pmax[gen_name] = 0.0
+            continue
+
+        load_names = network.loads.index[network.loads["bus"] == bus]
+        if len(load_names) == 0:
+            local_load = pd.Series(0.0, index=network.snapshots)
+            no_load_bus_count += 1
+        else:
+            local_load = (
+                load_p_set.reindex(columns=load_names)
+                .fillna(0.0)
+                .sum(axis=1)
+                .clip(lower=0.0)
+            )
+
+        pmax[gen_name] = (local_load / p_nom).clip(lower=0.0, upper=1.0)
+
+    network.generators_t.p_max_pu = pmax
+
+    ls_caps = (
+        pmax.reindex(columns=ls_gens.index)
+        .fillna(0.0)
+        .mul(ls_gens["p_nom"], axis=1)
+        .sum(axis=1)
+    )
+    static_capacity = float(ls_gens["p_nom"].sum())
+    logger.info(
+        "Applied load shedding demand caps: "
+        f"{len(ls_gens)} generators, static capacity {static_capacity:,.0f} MW, "
+        f"hourly cap max {ls_caps.max():,.0f} MW, mean {ls_caps.mean():,.0f} MW"
+    )
+    if no_load_bus_count:
+        logger.info(
+            f"Load shedding capped to zero at {no_load_bus_count} buses with no load"
+        )
+
+    return True
+
+
 def apply_transmission_relaxation(network, scenario_config, logger):
     """
     Apply transmission constraint relaxation for feasibility.
@@ -380,7 +458,13 @@ def apply_line_rating_overrides(network, scenario_config, logger):
         logger.info("  Voltage floor disabled (min_bm_constraint_voltage_kv=0)")
 
     # ── 2. Explicit per-line overrides ───────────────────────────────────────
-    overrides = transmission.get('line_rating_overrides', {})
+    overrides = transmission.get('line_rating_overrides', {}) or {}
+    if not isinstance(overrides, dict):
+        logger.warning(
+            "  Ignoring line_rating_overrides because it is not a mapping "
+            f"({type(overrides).__name__})"
+        )
+        overrides = {}
     for line_id, new_s_nom in overrides.items():
         new_s_nom = float(new_s_nom)
         if line_id in network.lines.index:
@@ -627,14 +711,31 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
     with open(mapping_path, 'r', encoding='utf-8') as f:
         mapping = yaml.safe_load(f)
 
-    boundaries = mapping.get('boundaries', {})
+    raw_boundaries = mapping.get('boundaries', {})
     boundary_include = neso_cfg.get('boundary_include')
     if boundary_include:
         include_set = {str(name).strip() for name in boundary_include}
-        boundaries = {
-            name: info for name, info in boundaries.items()
-            if name in include_set
-        }
+        boundaries = {}
+        for name, info in raw_boundaries.items():
+            if name in include_set:
+                boundary_info = dict(info)
+                boundary_info.setdefault('neso_boundary', name)
+                boundaries[name] = boundary_info
+            for sub_name, sub_info in (info.get('subconstraints') or {}).items():
+                flat_name = f"{name}::{sub_name}"
+                if flat_name in include_set:
+                    boundary_info = dict(sub_info)
+                    boundary_info['neso_boundary'] = name
+                    boundary_info['parent_boundary'] = name
+                    boundaries[flat_name] = boundary_info
+    else:
+        # Subconstraints are diagnostic variants. Only enforce them when a
+        # scenario explicitly asks for the flattened NAME::SUBCONSTRAINT key.
+        boundaries = {}
+        for name, info in raw_boundaries.items():
+            boundary_info = dict(info)
+            boundary_info.setdefault('neso_boundary', name)
+            boundaries[name] = boundary_info
     if not boundaries:
         logger.warning("No boundaries defined in mapping file")
         return None
@@ -646,21 +747,27 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
     date_tag = f"{snapshots[0].strftime('%Y%m%d')}_{snapshots[-1].strftime('%Y%m%d')}"
 
     all_boundary_dfs = []
-    for boundary_name in boundaries:
-        cache_file = cache_dir / f"neso_{boundary_name}_{date_tag}.csv"
+    fetched_boundary_names = set()
+    for boundary_name, boundary_def in boundaries.items():
+        neso_boundary_name = str(boundary_def.get('neso_boundary', boundary_name))
+        if neso_boundary_name in fetched_boundary_names:
+            continue
+        fetched_boundary_names.add(neso_boundary_name)
+
+        cache_file = cache_dir / f"neso_{neso_boundary_name}_{date_tag}.csv"
         bnd_df, coverage, loaded_from = _load_cached_boundary_file(
-            cache_dir, boundary_name, date_tag, snapshots
+            cache_dir, neso_boundary_name, date_tag, snapshots
         )
 
         if bnd_df is not None and coverage and coverage['missing_snapshots'] == 0:
             logger.debug(
-                f"  {boundary_name}: loaded {len(bnd_df)} cached records "
+                f"  {neso_boundary_name}: loaded {len(bnd_df)} cached records "
                 f"from {loaded_from.name}"
             )
         else:
             if bnd_df is not None and coverage and loaded_from is not None:
                 logger.warning(
-                    f"  {boundary_name}: cached file {loaded_from.name} is incomplete "
+                    f"  {neso_boundary_name}: cached file {loaded_from.name} is incomplete "
                     f"for requested window ({coverage['matched_snapshots']}/{len(snapshots)} "
                     f"snapshots matched; missing days: {coverage['missing_days']}) - refreshing"
                 )
@@ -670,7 +777,7 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
                 f'FROM "{resource_id}" '
                 f"WHERE \"Date (GMT/BST)\" >= '{start_date}' "
                 f"AND \"Date (GMT/BST)\" < '{end_date}' "
-                f"AND \"Constraint Group\" = '{boundary_name}' "
+                f"AND \"Constraint Group\" = '{neso_boundary_name}' "
                 f'ORDER BY "Date (GMT/BST)" LIMIT 32000'
             )
             try:
@@ -678,15 +785,15 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
                 resp.raise_for_status()
                 result = resp.json()
                 if not result.get('success'):
-                    logger.warning(f"  {boundary_name}: API error, skipping")
+                    logger.warning(f"  {neso_boundary_name}: API error, skipping")
                     continue
                 records = result['result']['records']
             except Exception as e:
-                logger.warning(f"  {boundary_name}: fetch failed ({e}), skipping")
+                logger.warning(f"  {neso_boundary_name}: fetch failed ({e}), skipping")
                 continue
 
             if not records:
-                logger.debug(f"  {boundary_name}: no NESO records for this period")
+                logger.debug(f"  {neso_boundary_name}: no NESO records for this period")
                 if bnd_df is None:
                     continue
             else:
@@ -701,14 +808,14 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
                 bnd_df['limit_mw'] = pd.to_numeric(bnd_df['limit_mw'])
                 bnd_df['flow_mw'] = pd.to_numeric(bnd_df['flow_mw'])
                 bnd_df.to_csv(cache_file, index=False)
-                logger.info(f"  {boundary_name}: fetched {len(bnd_df)} records from NESO API")
+                logger.info(f"  {neso_boundary_name}: fetched {len(bnd_df)} records from NESO API")
 
             coverage = _inspect_neso_boundary_coverage(
                 bnd_df, snapshots, tolerance_minutes=tolerance_minutes
             )
             if coverage['missing_snapshots'] > 0:
                 logger.warning(
-                    f"  {boundary_name}: NESO data still missing "
+                    f"  {neso_boundary_name}: NESO data still missing "
                     f"{coverage['missing_snapshots']}/{len(snapshots)} requested snapshots "
                     f"after refresh (days: {coverage['missing_days']}). "
                     f"Applying gap_fill_mode='{gap_fill_mode}'."
@@ -740,6 +847,14 @@ def _align_neso_boundary_limit_series(
 ):
     """Align a boundary's NESO limit time series to model snapshots."""
     bnd_data = bnd_data.set_index('date').sort_index()
+    bnd_data['limit_mw'] = pd.to_numeric(bnd_data['limit_mw'], errors='coerce')
+    negative_limits = bnd_data['limit_mw'] < 0
+    if negative_limits.any():
+        logger.warning(
+            f"  {boundary_name}: interpreting {int(negative_limits.sum())} signed "
+            "negative NESO limit values as transfer-capacity magnitudes"
+        )
+        bnd_data['limit_mw'] = bnd_data['limit_mw'].abs()
 
     limit_series = pd.Series(dtype=float, index=snapshots)
     nearest_idx = bnd_data.index.get_indexer(
@@ -792,9 +907,14 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
     neso_df = neso_inputs['neso_df']
     tolerance_minutes = neso_inputs['tolerance_minutes']
     gap_fill_mode = neso_inputs['gap_fill_mode']
+    neso_cfg = outage_cfg.get('neso', {}) or {}
+    soft_boundary_cfg = neso_cfg.get('soft_boundaries', {}) or {}
+    if not isinstance(soft_boundary_cfg, dict):
+        soft_boundary_cfg = {}
 
     specs = []
     for boundary_name, boundary_def in boundaries.items():
+        neso_boundary_name = str(boundary_def.get('neso_boundary', boundary_name))
         line_ids = list(dict.fromkeys(
             boundary_def.get('lines') or boundary_def.get('constraint_lines', [])
         ))
@@ -849,9 +969,12 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
             )
             continue
 
-        bnd_data = neso_df[neso_df['boundary'] == boundary_name].copy()
+        bnd_data = neso_df[neso_df['boundary'] == neso_boundary_name].copy()
         if bnd_data.empty:
-            logger.debug(f"  {boundary_name}: no NESO data found for aggregate constraint")
+            logger.debug(
+                f"  {boundary_name}: no NESO data found for aggregate constraint "
+                f"(source {neso_boundary_name})"
+            )
             continue
 
         fallback_limit = 0.0
@@ -878,15 +1001,44 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
             gap_fill_mode=gap_fill_mode,
             fallback_limit=fallback_limit,
             logger=logger,
-            boundary_name=boundary_name,
+            boundary_name=neso_boundary_name,
         )
+
+        soft_cfg = None
+        for cfg_key in (boundary_name, neso_boundary_name):
+            candidate = soft_boundary_cfg.get(cfg_key)
+            if isinstance(candidate, dict) and candidate.get('enabled', True):
+                soft_cfg = candidate
+                break
+
+        soft_penalty = None
+        soft_max_violation = None
+        if soft_cfg is not None:
+            soft_penalty = float(soft_cfg.get('penalty_gbp_per_mwh', 1000.0))
+            soft_max_violation = soft_cfg.get('max_violation_mw')
+            if soft_max_violation is None:
+                soft_max_violation = np.inf
+            else:
+                soft_max_violation = max(0.0, float(soft_max_violation))
 
         logger.info(
             f"  {boundary_name}: aggregate boundary constraint prepared with "
             f"{len(used_line_ids)} lines + {len(used_transformer_ids)} transformers "
             f"+ {len(link_entries)} links, "
-            f"NESO limit={limit_series.min():.0f}-{limit_series.max():.0f} MW "
+            f"NESO source={neso_boundary_name}, "
+            f"limit={limit_series.min():.0f}-{limit_series.max():.0f} MW "
             f"(avg {limit_series.mean():.0f})"
+            + (
+                f", soft slack penalty={soft_penalty:.0f} GBP/MWh, "
+                f"max_violation={soft_max_violation:.0f} MW"
+                if soft_cfg is not None and np.isfinite(soft_max_violation)
+                else (
+                    f", soft slack penalty={soft_penalty:.0f} GBP/MWh, "
+                    "max_violation=unbounded"
+                    if soft_cfg is not None
+                    else ""
+                )
+            )
         )
 
         specs.append({
@@ -897,6 +1049,8 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
             'negative_transformers': negative_transformers,
             'links': link_entries,
             'limit_series': limit_series,
+            'soft_penalty_gbp_per_mwh': soft_penalty,
+            'soft_max_violation_mw': soft_max_violation,
         })
 
     if not specs:
@@ -948,15 +1102,81 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
                 dims=["snapshot"],
                 coords={"snapshot": snapshots},
             )
-            safe_name = spec['boundary_name'].replace("-", "_").replace("+", "_")
+            safe_name = (
+                spec['boundary_name']
+                .replace("-", "_")
+                .replace("+", "_")
+                .replace(":", "_")
+            )
+            if spec['soft_penalty_gbp_per_mwh'] is None:
+                model.add_constraints(
+                    expr <= limit_da,
+                    name=f"NESO_boundary_{safe_name}_upper",
+                )
+                model.add_constraints(
+                    -expr <= limit_da,
+                    name=f"NESO_boundary_{safe_name}_lower",
+                )
+                continue
+
+            upper_bound = spec['soft_max_violation_mw']
+            if upper_bound is None or not np.isfinite(upper_bound):
+                slack_upper = np.inf
+            else:
+                slack_upper = float(upper_bound)
+            slack_upper_da = xr.DataArray(
+                np.full(len(snapshots), slack_upper),
+                dims=["snapshot"],
+                coords={"snapshot": snapshots},
+            )
+            slack_lower_da = xr.zeros_like(slack_upper_da)
+
+            model.add_variables(
+                lower=slack_lower_da,
+                upper=slack_upper_da,
+                name=f"NESO_boundary_{safe_name}_upper_slack",
+            )
+            model.add_variables(
+                lower=slack_lower_da,
+                upper=slack_upper_da,
+                name=f"NESO_boundary_{safe_name}_lower_slack",
+            )
+            upper_slack = model.variables[f"NESO_boundary_{safe_name}_upper_slack"]
+            lower_slack = model.variables[f"NESO_boundary_{safe_name}_lower_slack"]
+
             model.add_constraints(
-                expr <= limit_da,
+                expr - upper_slack <= limit_da,
                 name=f"NESO_boundary_{safe_name}_upper",
             )
             model.add_constraints(
-                -expr <= limit_da,
+                -expr - lower_slack <= limit_da,
                 name=f"NESO_boundary_{safe_name}_lower",
             )
+
+            snapshot_hours = pd.Series(1.0, index=pd.Index(snapshots))
+            if len(snapshot_hours) > 1:
+                inferred_hours = (
+                    pd.Index(snapshots)
+                    .to_series()
+                    .diff()
+                    .dt.total_seconds()
+                    .dropna()
+                    .median()
+                    / 3600
+                )
+                if pd.notna(inferred_hours) and inferred_hours > 0:
+                    snapshot_hours.iloc[:] = float(inferred_hours)
+            snapshot_hours_da = xr.DataArray(
+                snapshot_hours.values,
+                dims=["snapshot"],
+                coords={"snapshot": snapshots},
+            )
+            slack_cost = (
+                (upper_slack + lower_slack)
+                * float(spec['soft_penalty_gbp_per_mwh'])
+                * snapshot_hours_da
+            ).sum()
+            model.objective = model.objective + slack_cost
 
     logger.info(f"Prepared {len(specs)} aggregate NESO boundary constraints")
     return boundary_extra_functionality
@@ -1662,6 +1882,8 @@ if __name__ == "__main__":
         else:
             logger.info("Solving full year (no period restriction)")
         
+        apply_load_shedding_limits(network, logger)
+
         logger.info(f"Optimization will run for: {len(network.snapshots)} snapshots")
         
         # Get solve mode from global config

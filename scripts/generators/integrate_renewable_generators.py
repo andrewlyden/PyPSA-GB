@@ -1678,6 +1678,36 @@ def main():
                             sites_df = filter_sites_by_year(sites_df, modelled_year, logger,
                                                             start_date=sim_start_date)
 
+                        # ESPENI separates transmission-metered wind (ELEX_WIND)
+                        # from embedded wind (NGEM_EMBEDDED_WIND). REPD includes
+                        # small distribution-connected onshore sites, so validation
+                        # scenarios can exclude that subset from wind_onshore and
+                        # let the ESPENI-derived embedded_wind generator represent it.
+                        emb_cfg = scenario_config.get('embedded_generation', {})
+                        overlap_cfg = emb_cfg.get('wind_overlap_exclusion', {})
+                        if (
+                            is_historical
+                            and technology == 'wind_onshore'
+                            and emb_cfg.get('enabled', False)
+                            and emb_cfg.get('wind', False)
+                            and overlap_cfg.get('enabled', False)
+                        ):
+                            max_capacity_mw = float(overlap_cfg.get('max_capacity_mw', 0.0) or 0.0)
+                            if max_capacity_mw > 0 and 'capacity_mw' in sites_df.columns:
+                                capacity = pd.to_numeric(sites_df['capacity_mw'], errors='coerce')
+                                overlap_mask = capacity <= max_capacity_mw
+                                excluded_count = int(overlap_mask.sum())
+                                excluded_capacity = float(capacity[overlap_mask].sum())
+                                if excluded_count:
+                                    logger.info(
+                                        "Excluding %d small onshore wind sites (%.1f MW <= %.1f MW) "
+                                        "from wind_onshore; ESPENI embedded_wind will represent this output",
+                                        excluded_count,
+                                        excluded_capacity,
+                                        max_capacity_mw,
+                                    )
+                                    sites_df = sites_df.loc[~overlap_mask].copy()
+
                         if len(sites_df) > 0:
                             renewable_sites_list.append(sites_df)
                             log_dataframe_info(sites_df, logger, f"{technology} sites (after filtering)")

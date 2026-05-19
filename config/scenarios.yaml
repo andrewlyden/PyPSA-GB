@@ -882,13 +882,14 @@ Test_Market:
   market:
     enabled: true
 
-# Quick test: rolling day-ahead wholesale + per-timestep BM (48h, Reduced network)
+# Quick test: rolling day-ahead wholesale + per-timestep BM (48h, ETYS)
 # Purpose: fast validation of rolling market dispatch modes
-Test_Rolling_Market:
-  description: "Rolling market test - 24h, day-ahead wholesale + per-timestep BM"
+Test_Rolling_Market: &test_rolling_market_base
+  description: "Rolling market test - 24h, day-ahead wholesale + per-timestep BM at 30-minute resolution"
   modelled_year: 2020
   renewables_year: 2020
   demand_year: 2020
+  timestep_minutes: 30
   network_model: "ETYS"
   renewable_aggregation:
     enabled: true
@@ -899,7 +900,7 @@ Test_Rolling_Market:
   solve_period:
     enabled: true
     start: "2020-01-07 00:00"
-    end: "2020-01-07 23:00"       # 24 hours = 1 day-ahead windows
+    end: "2020-01-07 23:30"       # 24 hours = 48 half-hour timesteps
   subsidy_tracking:
     enabled: true
     roc_eligibility_years: 20
@@ -923,18 +924,22 @@ Test_Rolling_Market:
       carry_soc: true
     balancing:
       mode: "rolling"
-      window_hours: 1             # Per-timestep (hourly)
+      window_hours: 0.5           # Per-timestep at 30-minute resolution
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
       participation:
         generators:
           mode: "elexon_mapped"
-          behavior: "priced_out"
+          behavior: "fallback_priced"
           min_p_nom_mw: 50.0
           exclude_carriers:
             - "load_shedding"
             - "embedded_solar"
             - "embedded_wind"
-          penalty_offer_price: 5000.0
-          penalty_bid_price: 5000.0
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
         storage_units:
           mode: "all"
           behavior: "priced_out"
@@ -965,71 +970,18 @@ Test_Rolling_Market:
         boundary_include:
           - SCOTEX
           - SSE-SP
-          - SSHARN
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
           - ESTEX
           - SEIMP
           - SWALEX
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MONTH-LONG VALIDATION (January 2020)
-# Full month with rolling day-ahead wholesale + per-timestep BM.
-# Use for systematic comparison against ESPENI generation and ELEXON BM data.
-# ══════════════════════════════════════════════════════════════════════════════
-Validation_Jan2020:
-  description: "January 2020 full month - rolling market validation against ESPENI/ELEXON"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-31 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN
-          - ESTEX
-          - SEIMP
-          - SWALEX
+Test_BM_Window_0p5h:
+  <<: *test_rolling_market_base
+  description: "BM window comparison - Jan 7 2020 with half-hour balancing windows"
+
+Test_BM_Window_24h:
+  <<: *test_rolling_market_base
+  description: "BM window comparison - Jan 7 2020 with one 24-hour balancing optimisation"
   market:
     enabled: true
     wholesale:
@@ -1038,81 +990,41 @@ Validation_Jan2020:
       carry_soc: true
     balancing:
       mode: "rolling"
-      window_hours: 1
+      window_hours: 24
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
       participation:
         generators:
-          mode: "all"
-          behavior: "priced_out"
-          min_p_nom_mw: 0.0
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
           exclude_carriers:
             - "load_shedding"
             - "embedded_solar"
             - "embedded_wind"
-          penalty_offer_price: 5000.0
-          penalty_bid_price: 5000.0
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
         storage_units:
           mode: "all"
           behavior: "priced_out"
+
+Test_Rolling_Market_WindOnshoreUplift:
+  <<: *test_rolling_market_base
+  description: "Rolling market test - 24h Jan 2020 with onshore wind availability uplift"
   renewable_performance_factors:
     enabled: true
-  thermal_availability_factors:
-    enabled: true
+    factors:
+      # Flat factors replace the stacked defaults, so keep offshore/solar at
+      # their current default products and uplift only onshore wind.
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8938550
 
-Validation_Jun2020:
-  description: "June 2020 full month - rolling market validation against ESPENI/ELEXON"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-06-01 00:00"
-    end: "2020-06-30 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN
-          - ESTEX
-          - SEIMP
-          - SWALEX
+Test_Rolling_Market_StrictBM:
+  <<: *test_rolling_market_base
+  description: "Rolling market test - 24h, 30-minute BM with non-mapped generators priced out"
   market:
     enabled: true
     wholesale:
@@ -1121,7 +1033,11 @@ Validation_Jun2020:
       carry_soc: true
     balancing:
       mode: "rolling"
-      window_hours: 1
+      window_hours: 0.5
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
       participation:
         generators:
           mode: "elexon_mapped"
@@ -1131,15 +1047,1406 @@ Validation_Jun2020:
             - "load_shedding"
             - "embedded_solar"
             - "embedded_wind"
-          penalty_offer_price: 5000.0
-          penalty_bid_price: 5000.0
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+
+Test_Rolling_Market_StrictBM_WestRelax:
+  <<: *test_rolling_market_base
+  description: "Rolling market test - strict BM participation with west-side clamp removed"
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 0.5
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "priced_out"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  transmission:
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+
+Test_Rolling_Market_StrictBM_WestRelax_Fixed:
+  <<: *test_rolling_market_base
+  description: "Rolling market test - strict BM participation, west-side clamp removed, non-mapped generators fixed"
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 0.5
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fixed"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  transmission:
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+
+Test_SSHARN_Sparse_Gate:
+  description: "Quick SSHARN sparse-gate solver test - Jan 13 2020 high-SSHARN day"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-01-13 00:00"
+    end: "2020-01-13 23:00"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 1
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
         storage_units:
           mode: "all"
           behavior: "priced_out"
   renewable_performance_factors:
     enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
   thermal_availability_factors:
     enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MONTH-LONG VALIDATION (January 2020)
+# Full month with rolling day-ahead wholesale + per-timestep BM.
+# Use for systematic comparison against ESPENI generation and ELEXON BM data.
+# ══════════════════════════════════════════════════════════════════════════════
+Validation_Jan2020_0p5hLegacy: &validation_jan_2020_base
+  description: "January 2020 full month - rolling market validation against ESPENI/ELEXON"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  timestep_minutes: 30
+  network_model: "ETYS"
+  embedded_generation:
+    enabled: true
+    solar: true
+    wind: true
+    wind_overlap_exclusion:
+      enabled: true
+      max_capacity_mw: 10.0
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-31 23:30"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 0.5
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
+  thermal_availability_factors:
+    enabled: true
+
+Validation_Jan2020_WindOnshoreUplift:
+  <<: *validation_jan_2020_base
+  description: "January 2020 full month - onshore wind availability uplift sensitivity"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
+
+Validation_Jan2020_BM24h:
+  <<: *validation_jan_2020_base
+  description: "January 2020 full month - sensitivity with one 24-hour BM optimisation per day"
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 24
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+
+Validation_Jan2020: &validation_2020_bm24_softseimp_base
+  <<: *validation_jan_2020_base
+  description: "January 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 24
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6388580
+      wind_onshore: 0.8404980
+      solar_pv: 0.6787250
+
+Validation_Feb2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "February 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-02-01 00:00"
+    end: "2020-02-29 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6237140
+      wind_onshore: 0.8205750
+      solar_pv: 0.7353290
+
+Validation_Jan2020_NoLineOverrides:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "January 2020 full month - 24-hour BM + NESO aggregate boundaries, no static line-rating overrides"
+  transmission:
+    line_rating_overrides: {}
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+
+Validation_Feb2020_NoLineOverrides:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "February 2020 full month - 24-hour BM + NESO aggregate boundaries, no static line-rating overrides"
+  solve_period:
+    enabled: true
+    start: "2020-02-01 00:00"
+    end: "2020-02-29 23:30"
+  transmission:
+    line_rating_overrides: {}
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6237140
+      wind_onshore: 0.8205750
+      solar_pv: 0.7353290
+
+Validation_Jan2020_NoLineOverrides_SSESPStrict:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "January 2020 no line-rating overrides + strict SSE-SP bus-area cut"
+  transmission:
+    line_rating_overrides: {}
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+
+Validation_Feb2020_NoLineOverrides_SSESPStrict: &validation_feb_2020_no_line_overrides_ssesp_strict
+  <<: *validation_2020_bm24_softseimp_base
+  description: "February 2020 no line-rating overrides + strict SSE-SP bus-area cut"
+  solve_period:
+    enabled: true
+    start: "2020-02-01 00:00"
+    end: "2020-02-29 23:30"
+  transmission:
+    line_rating_overrides: {}
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6237140
+      wind_onshore: 0.8205750
+      solar_pv: 0.7353290
+
+Validation_Feb23_2020_NoLineOverrides_SSESPStrict:
+  <<: *validation_feb_2020_no_line_overrides_ssesp_strict
+  description: "Quick one-day SSE-SP strict-cut smoke test - 23 February 2020"
+  solve_period:
+    enabled: true
+    start: "2020-02-23 00:00"
+    end: "2020-02-23 23:30"
+
+Validation_Mar2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "March 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-03-01 00:00"
+    end: "2020-03-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6583380
+      wind_onshore: 0.8661270
+      solar_pv: 0.8220860
+
+Validation_Apr2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "April 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-04-01 00:00"
+    end: "2020-04-30 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6842010
+      wind_onshore: 0.9001530
+      solar_pv: 0.8517150
+
+Validation_May2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "May 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-05-01 00:00"
+    end: "2020-05-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6563030
+      wind_onshore: 0.8634490
+      solar_pv: 0.8575040
+
+Validation_Jun2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "June 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-06-01 00:00"
+    end: "2020-06-30 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460010
+      wind_onshore: 0.9013970
+      solar_pv: 0.8566660
+
+Validation_Jul2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "July 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-07-01 00:00"
+    end: "2020-07-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6262290
+      wind_onshore: 0.8238840
+      solar_pv: 0.8587200
+
+Validation_Aug2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "August 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-08-01 00:00"
+    end: "2020-08-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6425350
+      wind_onshore: 0.8453360
+      solar_pv: 0.8447640
+
+Validation_Sep2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "September 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-09-01 00:00"
+    end: "2020-09-30 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6350170
+      wind_onshore: 0.8354440
+      solar_pv: 0.8297940
+
+Validation_Oct2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "October 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-10-01 00:00"
+    end: "2020-10-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6426060
+      wind_onshore: 0.8454290
+      solar_pv: 0.7714130
+
+Validation_Nov2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "November 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-11-01 00:00"
+    end: "2020-11-30 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.5984440
+      wind_onshore: 0.7873290
+      solar_pv: 0.7113920
+
+Validation_Dec2020:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "December 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-12-01 00:00"
+    end: "2020-12-31 23:30"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6487520
+      wind_onshore: 0.8845250
+      solar_pv: 0.6603980
+
+Validation_Jan2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "January 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-01-01 00:00"
+    end: "2020-01-31 23:30"
+  transmission: &uniform_network_baseline_transmission
+    min_bm_constraint_voltage_kv: 220
+    line_rating_overrides:
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
+        constraint_mode: "aggregate_boundary"
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6388580
+      wind_onshore: 0.8404980
+      solar_pv: 0.6787250
+
+Validation_Feb2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "February 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-02-01 00:00"
+    end: "2020-02-29 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6237140
+      wind_onshore: 0.8205750
+      solar_pv: 0.7353290
+
+Validation_Mar2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "March 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-03-01 00:00"
+    end: "2020-03-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6583380
+      wind_onshore: 0.8661270
+      solar_pv: 0.8220860
+
+Validation_Apr2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "April 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-04-01 00:00"
+    end: "2020-04-30 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6842010
+      wind_onshore: 0.9001530
+      solar_pv: 0.8517150
+
+Validation_May2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "May 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-05-01 00:00"
+    end: "2020-05-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6563030
+      wind_onshore: 0.8634490
+      solar_pv: 0.8575040
+
+Validation_Jun2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "June 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-06-01 00:00"
+    end: "2020-06-30 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460010
+      wind_onshore: 0.9013970
+      solar_pv: 0.8566660
+
+Validation_Jul2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "July 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-07-01 00:00"
+    end: "2020-07-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6262290
+      wind_onshore: 0.8238840
+      solar_pv: 0.8587200
+
+Validation_Aug2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "August 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-08-01 00:00"
+    end: "2020-08-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6425350
+      wind_onshore: 0.8453360
+      solar_pv: 0.8447640
+
+Validation_Sep2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "September 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-09-01 00:00"
+    end: "2020-09-30 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6350170
+      wind_onshore: 0.8354440
+      solar_pv: 0.8297940
+
+Validation_Oct2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "October 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-10-01 00:00"
+    end: "2020-10-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6426060
+      wind_onshore: 0.8454290
+      solar_pv: 0.7714130
+
+Validation_Nov2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "November 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-11-01 00:00"
+    end: "2020-11-30 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.5984440
+      wind_onshore: 0.7873290
+      solar_pv: 0.7113920
+
+Validation_Dec2020_UniformNetworkBaseline:
+  <<: *validation_2020_bm24_softseimp_base
+  description: "December 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
+  solve_period:
+    enabled: true
+    start: "2020-12-01 00:00"
+    end: "2020-12-31 23:30"
+  transmission: *uniform_network_baseline_transmission
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6487520
+      wind_onshore: 0.8845250
+      solar_pv: 0.6603980
+
+Validation_Feb2020_1hLegacy: &validation_2020_month_base
+  description: "February 2020 full month - winter rolling market validation"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  embedded_generation:
+    enabled: true
+    solar: true
+    wind: true
+    wind_overlap_exclusion:
+      enabled: true
+      max_capacity_mw: 10.0
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-02-01 00:00"
+    end: "2020-02-29 23:00"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 1
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
+  thermal_availability_factors:
+    enabled: true
+
+Validation_Mar2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "March 2020 full month - spring transition rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-03-01 00:00"
+    end: "2020-03-31 23:00"
+
+Validation_Apr2020_1hLegacy:
+  description: "April 2020 full month - spring/COVID low-demand rolling market validation"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  embedded_generation:
+    enabled: true
+    solar: true
+    wind: true
+    wind_overlap_exclusion:
+      enabled: true
+      max_capacity_mw: 10.0
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-04-01 00:00"
+    end: "2020-04-30 23:00"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 1
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
+  thermal_availability_factors:
+    enabled: true
+
+Validation_May2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "May 2020 full month - spring rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-05-01 00:00"
+    end: "2020-05-31 23:00"
+
+Validation_Jun2020_0p5hLegacy:
+  description: "June 2020 full month - rolling market validation against ESPENI/ELEXON"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  timestep_minutes: 30
+  network_model: "ETYS"
+  embedded_generation:
+    enabled: true
+    solar: true
+    wind: true
+    wind_overlap_exclusion:
+      enabled: true
+      max_capacity_mw: 10.0
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-06-01 00:00"
+    end: "2020-06-30 23:30"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 0.5
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6579000
+      wind_onshore: 0.9180000
+      solar_pv: 0.8617000
+  thermal_availability_factors:
+    enabled: true
+
+Validation_Jul2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "July 2020 full month - summer rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-07-01 00:00"
+    end: "2020-07-31 23:00"
+
+Validation_Aug2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "August 2020 full month - summer rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-08-01 00:00"
+    end: "2020-08-31 23:00"
+
+Validation_Sep2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "September 2020 full month - autumn transition rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-09-01 00:00"
+    end: "2020-09-30 23:00"
+
+Validation_Oct2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "October 2020 full month - autumn rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-10-01 00:00"
+    end: "2020-10-31 23:00"
+
+Validation_Nov2020_1hLegacy:
+  description: "November 2020 full month - late-autumn/winter rolling market validation"
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "ETYS"
+  embedded_generation:
+    enabled: true
+    solar: true
+    wind: true
+    wind_overlap_exclusion:
+      enabled: true
+      max_capacity_mw: 10.0
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2020-11-01 00:00"
+    end: "2020-11-30 23:00"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    empirical_calibration:
+      enabled: true
+    subsidies:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 1
+      elexon:
+        fallback: "carrier_average"
+        price_ladders:
+          enabled: true
+      participation:
+        generators:
+          mode: "elexon_mapped"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+            - "embedded_solar"
+            - "embedded_wind"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
+  thermal_availability_factors:
+    enabled: true
+
+Validation_Dec2020_1hLegacy:
+  <<: *validation_2020_month_base
+  description: "December 2020 full month - winter rolling market validation"
+  solve_period:
+    enabled: true
+    start: "2020-12-01 00:00"
+    end: "2020-12-31 23:00"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6469000
+      wind_onshore: 0.8820000
+      solar_pv: 0.8616000
+
+Validation_Dec2020_NoSEIMP:
+  <<: *validation_2020_month_base
+  description: "December 2020 full month - sensitivity with SEIMP aggregate boundary excluded"
+  solve_period:
+    enabled: true
+    start: "2020-12-01 00:00"
+    end: "2020-12-31 23:00"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6469000
+      wind_onshore: 0.8820000
+      solar_pv: 0.8616000
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SWALEX
+
+Validation_Dec2020_SoftSEIMP:
+  <<: *validation_2020_month_base
+  description: "December 2020 full month - SEIMP represented as a soft aggregate boundary"
+  solve_period:
+    enabled: true
+    start: "2020-12-01 00:00"
+    end: "2020-12-31 23:00"
+  renewable_performance_factors:
+    enabled: true
+    factors:
+      wind_offshore: 0.6469000
+      wind_onshore: 0.8820000
+      solar_pv: 0.8616000
+  transmission:
+    line_rating_overrides:
+      CLUN1T_ERRO1J_0: 180
+      ERRO1T_KIIN1-_0: 180
+      INVR1C_KIIN1-_0: 120
+      INVR1A_INVR1C_0: 120
+      INVR1-_INVR1A_0: 120
+      INVR1-_SLOY1K_0: 120
+      GARB1T_SLOY1K_1: 120
+      GARB1T_GARE1T_0: 120
+      GARE1T_WIYH1-_0: 120
+      BIHI1R_COUA1R_0: 180
+      BIHI1R_TEAL1-_0: 120
+    outage_schedule:
+      enabled: true
+      source: "neso"
+      neso:
+        boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+        soft_boundaries:
+          SEIMP:
+            enabled: true
+            penalty_gbp_per_mwh: 1000.0
+            max_violation_mw: 2500.0
 
 Validation_2020:
   description: "Full year 2020 - rolling market validation against ESPENI/ELEXON (8784h)"
@@ -1187,6 +2494,10 @@ Validation_2020:
       window_hours: 1
   renewable_performance_factors:
     enabled: true
+    factors:
+      wind_offshore: 0.6460803
+      wind_onshore: 0.8500000
+      solar_pv: 0.8612621
   thermal_availability_factors:
     enabled: true
 
@@ -1677,6 +2988,65 @@ HT35_wholesale_only:
     wholesale_only: true              # Skip balancing mechanism + market analysis
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Two-step dispatch test - Reduced network, 24 hours, wholesale + balancing mechanism
+# Uses the rolling validation market shape, with future-safe derived BM prices.
+HT35_two_step_dispatch_1day:
+  description: "HT 2035 Reduced - Two-step dispatch (wholesale + BM, 24h)"
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: "Holistic Transition"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: "Reduced"
+  renewable_aggregation:
+    enabled: true
+  component_aggregation:
+    enabled: true
+    include_storage_units: true
+    include_loads: true
+  solve_period:
+    enabled: true
+    start: "2035-01-07 00:00"
+    end: "2035-01-07 23:00"
+  subsidy_tracking:
+    enabled: true
+    roc_eligibility_years: 20
+    fes_cfd_fractions:
+      wind_offshore: 1.0
+      wind_onshore: 0.3
+      solar_pv: 0.5
+  marginal_costs:
+    nuclear_mc: 10.0
+    carrier_correction_factors:
+      enabled: true
+      file: "data/market/historical_carrier_correction_factors.csv"
+      source_year: "closest"
+    subsidies:
+      enabled: true
+  market:
+    enabled: true
+    wholesale_only: false
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+      carry_soc: true
+    balancing:
+      mode: "rolling"
+      window_hours: 24
+      bid_offer_source: "derived"
+      participation:
+        generators:
+          mode: "all"
+          behavior: "fallback_priced"
+          min_p_nom_mw: 50.0
+          exclude_carriers:
+            - "load_shedding"
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          mode: "all"
+          behavior: "priced_out"
+
 # TEMPLATES (copy and modify for new scenarios)
 # ══════════════════════════════════════════════════════════════════════════════
 #

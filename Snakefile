@@ -593,6 +593,8 @@ for rid in run_ids:
             if modelled_year <= 2024:
                 market_targets.extend([
                     f"{resources_path}/market/{rid}_bm_validation.csv",
+                    f"{resources_path}/market/{rid}_boav_by_carrier.csv",
+                    f"{resources_path}/market/{rid}_redispatch_mapped_unmapped.csv",
                     f"{resources_path}/analysis/{rid}_bm_validation.html",
                     f"{resources_path}/market/{rid}_neso_validation.csv",
                     f"{resources_path}/analysis/{rid}_neso_validation.html",

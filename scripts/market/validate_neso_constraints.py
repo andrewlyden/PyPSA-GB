@@ -3,8 +3,9 @@ NESO Constraint Validation — Compare Model BM vs NESO Thermal Constraints
 
 Compares PyPSA-GB two-stage market results against NESO published data:
   1. Thermal Constraint Costs  — model total BM cost vs NESO boundary costs
-  2. Day-Ahead Constraint Flows — model boundary flows vs NESO DA flows/limits
-  3. Boundary congestion hours  — model congested hours vs NESO at-limit hours
+  2. Constraint Breakdown       — model BM volumes vs NESO thermal constraint volume
+  3. Day-Ahead Constraint Flows — model boundary flows vs NESO DA flows/limits
+  4. Boundary congestion hours  — model congested hours vs NESO at-limit hours
 
 Data sources:
   - NESO Thermal Constraint Costs: https://www.neso.energy/data-portal/thermal-constraint-costs
@@ -23,6 +24,7 @@ Called by Snakemake rule `validate_neso_constraints` in rules/market.smk.
 """
 
 import io
+import json
 import logging
 import time
 from pathlib import Path
@@ -52,6 +54,8 @@ logger = setup_logging("validate_neso")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 NESO_THERMAL_DATASET_ID = "thermal-constraint-costs"
+NESO_CONSTRAINT_BREAKDOWN_DATASET_ID = "constraint-breakdown"
+NESO_CONSTRAINT_BREAKDOWN_RESOURCE_ID = "87088ac4-72d5-48ff-9ee1-f2a99e18277a"
 NESO_DA_FLOWS_DATASET_ID = "day-ahead-constraint-flows-and-limits"
 NESO_DA_FLOWS_RESOURCE_ID = "38a18ec1-9e40-465d-93fb-301e80fd1352"
 
@@ -188,6 +192,125 @@ def _load_thermal_costs(start_date, end_date, cache_dir, logger):
     return filtered
 
 
+def _load_constraint_breakdown(start_date, end_date, cache_dir, logger):
+    """
+    Load NESO daily constraint breakdown data for a date range.
+
+    Returns daily costs and signed volumes for thermal, voltage, and inertia
+    categories. The thermal volume column is signed in the NESO source, so
+    downstream comparisons should keep both signed and absolute totals.
+    """
+    cache_dir = Path(cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fy_labels = _financial_years_for_range(start_date, end_date)
+    resources = None
+    frames = []
+
+    for fy in fy_labels:
+        fy_start, fy_end = _FY_RESOURCE_NAMES[fy]
+        full_label = f"{fy_start}-{fy_end}"
+        legacy_json_path = cache_dir / "constraint_breakdown_2020_2021.json"
+        csv_path = cache_dir / f"constraint_breakdown_{fy}.csv"
+        full_csv_path = cache_dir / f"constraint_breakdown_{full_label}.csv"
+
+        if fy == "20-21" and legacy_json_path.exists():
+            logger.info(f"Loading cached constraint breakdown: {legacy_json_path.name}")
+            with open(legacy_json_path, "r", encoding="utf-8-sig") as f:
+                payload = json.load(f)
+            records = payload.get("result", {}).get("records", [])
+            frames.append(pd.DataFrame(records))
+            continue
+        if csv_path.exists():
+            logger.info(f"Loading cached constraint breakdown: {csv_path.name}")
+            frames.append(pd.read_csv(csv_path))
+            continue
+        if full_csv_path.exists():
+            logger.info(f"Loading cached constraint breakdown: {full_csv_path.name}")
+            frames.append(pd.read_csv(full_csv_path))
+            continue
+
+        if resources is None:
+            resources = _get_neso_resource_urls(
+                NESO_CONSTRAINT_BREAKDOWN_DATASET_ID,
+                logger,
+            )
+        downloaded = False
+        for res in resources:
+            if full_label in res["name"]:
+                logger.info(f"  Fetching: {res['name']} [{res['format']}]")
+                resp = requests.get(res["path"], timeout=120)
+                resp.raise_for_status()
+                full_csv_path.write_bytes(resp.content)
+                frames.append(pd.read_csv(full_csv_path))
+                downloaded = True
+                break
+        if not downloaded and fy == "20-21":
+            logger.info("Downloading NESO 2020-2021 constraint breakdown from datastore API...")
+            url = (
+                "https://api.neso.energy/api/3/action/datastore_search"
+                f"?resource_id={NESO_CONSTRAINT_BREAKDOWN_RESOURCE_ID}&limit=5000"
+            )
+            resp = requests.get(url, timeout=120)
+            resp.raise_for_status()
+            legacy_json_path.write_bytes(resp.content)
+            payload = resp.json()
+            frames.append(pd.DataFrame(payload.get("result", {}).get("records", [])))
+            downloaded = True
+        if not downloaded:
+            logger.warning(f"  Constraint breakdown FY {fy} not found; skipping")
+
+    df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+    if df.empty:
+        logger.warning("No NESO constraint breakdown data loaded")
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "thermal_cost_gbp",
+                "thermal_volume_mwh",
+                "voltage_cost_gbp",
+                "voltage_volume_mwh",
+                "largest_loss_cost_gbp",
+                "largest_loss_volume_mwh",
+                "inertia_cost_gbp",
+                "inertia_volume_mwh",
+            ]
+        )
+
+    rename = {
+        "Date": "date",
+        "Thermal constraints cost": "thermal_cost_gbp",
+        "Thermal constraints volume": "thermal_volume_mwh",
+        "Voltage constraints cost": "voltage_cost_gbp",
+        "Voltage constraints volume": "voltage_volume_mwh",
+        "Reducing largest loss cost": "largest_loss_cost_gbp",
+        "Reducing largest loss volume": "largest_loss_volume_mwh",
+        "Increasing system inertia cost": "inertia_cost_gbp",
+        "Increasing system inertia volume": "inertia_volume_mwh",
+    }
+    df = df.rename(columns=rename)
+    keep_cols = [c for c in rename.values() if c in df.columns]
+    df = df[keep_cols].copy()
+    df["date"] = pd.to_datetime(df["date"], format="mixed", errors="coerce").dt.normalize()
+    for col in [c for c in df.columns if c != "date"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+    start_day = pd.Timestamp(start_date).normalize()
+    end_day = pd.Timestamp(end_date).normalize()
+    filtered = df[(df["date"] >= start_day) & (df["date"] <= end_day)].copy()
+    if filtered.empty:
+        logger.warning(
+            f"Constraint breakdown has no records for {start_day.date()} to "
+            f"{end_day.date()}"
+        )
+    else:
+        logger.info(
+            f"  Constraint breakdown: {len(filtered)} daily records in range "
+            f"({filtered['date'].min().date()} to {filtered['date'].max().date()})"
+        )
+    return filtered
+
+
 def _load_da_flows(start_date, end_date, cache_dir, logger):
     """
     Load NESO Day-Ahead constraint flows for a date range.
@@ -260,6 +383,77 @@ def _load_da_flows(start_date, end_date, cache_dir, logger):
     return filtered
 
 
+def _align_neso_limit_series(nf, target_index, neso_cfg, logger, boundary):
+    """Align NESO limit data to model snapshots using the solve-time gap policy."""
+    target_index = pd.DatetimeIndex(target_index)
+    empty = pd.Series(index=target_index, dtype=float)
+    if nf.empty or len(target_index) == 0:
+        return empty, pd.Series(False, index=target_index)
+
+    tolerance_minutes = int(neso_cfg.get("nearest_tolerance_minutes", 45))
+    gap_fill_mode = str(neso_cfg.get("gap_fill_mode", "interpolate")).strip().lower()
+
+    work = nf.copy()
+    work["datetime"] = pd.to_datetime(work["datetime"], errors="coerce")
+    work["limit_mw"] = pd.to_numeric(work["limit_mw"], errors="coerce").abs()
+    work = (
+        work.dropna(subset=["datetime", "limit_mw"])
+        .drop_duplicates(subset=["datetime"], keep="last")
+        .set_index("datetime")
+        .sort_index()
+    )
+    if work.empty:
+        return empty, pd.Series(False, index=target_index)
+
+    aligned = pd.Series(index=target_index, dtype=float)
+    direct = pd.Series(False, index=target_index)
+    nearest_idx = work.index.get_indexer(
+        target_index,
+        method="nearest",
+        tolerance=pd.Timedelta(minutes=tolerance_minutes),
+    )
+    for i, idx in enumerate(nearest_idx):
+        if idx >= 0:
+            aligned.iloc[i] = float(work.iloc[idx]["limit_mw"])
+            direct.iloc[i] = True
+
+    missing = aligned.isna()
+    if not missing.any():
+        return aligned, direct
+
+    missing_days = sorted({ts.date() for ts in target_index[missing]})
+    if gap_fill_mode == "interpolate":
+        filled = aligned.astype(float).interpolate(method="time").ffill().bfill()
+        if filled.isna().any():
+            logger.warning(
+                f"  {boundary}: unable to fill all missing NESO limit snapshots "
+                "for validation"
+            )
+        else:
+            logger.warning(
+                f"  {boundary}: validation filled {int(missing.sum())} missing "
+                f"limit snapshots (days: {missing_days}) using interpolated "
+                "nearby NESO limits"
+            )
+        return filled, direct
+
+    if gap_fill_mode == "nearest_available":
+        nearest_missing = work.index.get_indexer(target_index[missing], method="nearest")
+        filled = aligned.copy()
+        valid = nearest_missing >= 0
+        if valid.any():
+            filled.loc[target_index[missing][valid]] = work.iloc[nearest_missing[valid]][
+                "limit_mw"
+            ].to_numpy()
+        return filled, direct
+
+    if gap_fill_mode == "unconstrained":
+        filled = aligned.fillna(float(work["limit_mw"].max()))
+        return filled, direct
+
+    return aligned, direct
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # BOUNDARY MAPPING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -290,9 +484,8 @@ def _load_boundary_mapping(mapping_path, logger, boundary_include=None):
         include_set = {str(name).strip() for name in boundary_include}
 
     boundaries = {}
-    for name, info in data.get("boundaries", {}).items():
-        if include_set is not None and name not in include_set:
-            continue
+
+    def _add_boundary(mapping_name, info, neso_boundary):
         lines = list(dict.fromkeys(info.get("lines", [])))
         flow_groups = info.get("flow_groups", {}) or {}
         positive = list(dict.fromkeys(flow_groups.get("positive", [])))
@@ -319,7 +512,7 @@ def _load_boundary_mapping(mapping_path, logger, boundary_include=None):
                 transformers = list(dict.fromkeys(transformers + transformer_union))
 
         if not lines and not transformers:
-            continue
+            return
 
         if not positive and not negative:
             positive = lines.copy()
@@ -328,7 +521,8 @@ def _load_boundary_mapping(mapping_path, logger, boundary_include=None):
 
         link_defs = list(info.get("links", []))  # list of {name, sign} dicts
 
-        boundaries[name] = {
+        boundaries[mapping_name] = {
+            "neso_boundary": neso_boundary,
             "lines": lines,
             "transformers": transformers,
             "flow_groups": {
@@ -342,11 +536,20 @@ def _load_boundary_mapping(mapping_path, logger, boundary_include=None):
             "links": link_defs,
         }
         logger.info(
-            f"  Boundary {name}: {len(lines)} lines + {len(transformers)} transformers "
+            f"  Boundary {mapping_name}: {len(lines)} lines + {len(transformers)} transformers "
             f"+ {len(link_defs)} links "
-            f"(signed lines +{len(positive)} / -{len(negative)}, "
+            f"(NESO source={neso_boundary}; "
+            f"signed lines +{len(positive)} / -{len(negative)}, "
             f"transformers +{len(positive_transformers)} / -{len(negative_transformers)})"
         )
+
+    for name, info in data.get("boundaries", {}).items():
+        if include_set is None or name in include_set:
+            _add_boundary(name, info, name)
+        for sub_name, sub_info in (info.get("subconstraints") or {}).items():
+            flat_name = f"{name}::{sub_name}"
+            if include_set is not None and flat_name in include_set:
+                _add_boundary(flat_name, sub_info, name)
     return boundaries
 
 
@@ -503,7 +706,14 @@ def _compute_model_boundary_flows(network, boundary_mapping, logger):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def _compare_costs(model_costs_csv, neso_costs, start_date, end_date, logger):
+def _compare_costs(
+    model_costs_csv,
+    neso_costs,
+    start_date,
+    end_date,
+    logger,
+    constraint_breakdown=None,
+):
     """
     Compare model total BM cost vs NESO thermal constraint costs.
 
@@ -517,8 +727,43 @@ def _compare_costs(model_costs_csv, neso_costs, start_date, end_date, logger):
     else:
         model_total = total_row["net_cost"].values[0]
 
+    if {"increase_MWh", "decrease_MWh"}.issubset(model_costs.columns):
+        if total_row.empty:
+            model_increase_mwh = float(model_costs["increase_MWh"].sum())
+            model_decrease_mwh = float(model_costs["decrease_MWh"].sum())
+        else:
+            model_increase_mwh = float(total_row["increase_MWh"].values[0])
+            model_decrease_mwh = float(total_row["decrease_MWh"].values[0])
+    else:
+        model_increase_mwh = float("nan")
+        model_decrease_mwh = float("nan")
+    model_gross_redispatch_mwh = model_increase_mwh + model_decrease_mwh
+    model_one_sided_redispatch_mwh = model_gross_redispatch_mwh / 2.0
+
     # NESO total thermal cost
     neso_total = neso_costs["daily_cost_gbp"].sum()
+    if constraint_breakdown is not None and not constraint_breakdown.empty:
+        neso_breakdown_thermal_cost = float(
+            constraint_breakdown["thermal_cost_gbp"].sum()
+        )
+        neso_thermal_volume_signed = float(
+            constraint_breakdown["thermal_volume_mwh"].sum()
+        )
+        neso_thermal_volume_abs_daily = float(
+            constraint_breakdown["thermal_volume_mwh"].abs().sum()
+        )
+        neso_thermal_volume_positive = float(
+            constraint_breakdown["thermal_volume_mwh"].clip(lower=0.0).sum()
+        )
+        neso_thermal_volume_negative_abs = abs(
+            float(constraint_breakdown["thermal_volume_mwh"].clip(upper=0.0).sum())
+        )
+    else:
+        neso_breakdown_thermal_cost = float("nan")
+        neso_thermal_volume_signed = float("nan")
+        neso_thermal_volume_abs_daily = float("nan")
+        neso_thermal_volume_positive = float("nan")
+        neso_thermal_volume_negative_abs = float("nan")
 
     # NESO by boundary
     neso_by_boundary = (
@@ -536,13 +781,49 @@ def _compare_costs(model_costs_csv, neso_costs, start_date, end_date, logger):
         "period_days": n_days,
         "model_total_bm_cost_gbp": model_total,
         "neso_total_thermal_cost_gbp": neso_total,
+        "neso_breakdown_thermal_cost_gbp": neso_breakdown_thermal_cost,
         "model_neso_ratio": ratio,
+        "model_neso_breakdown_cost_ratio": (
+            model_total / neso_breakdown_thermal_cost
+            if neso_breakdown_thermal_cost > 0
+            else float("nan")
+        ),
+        "model_increase_mwh": model_increase_mwh,
+        "model_decrease_mwh": model_decrease_mwh,
+        "model_gross_redispatch_mwh": model_gross_redispatch_mwh,
+        "model_one_sided_redispatch_mwh": model_one_sided_redispatch_mwh,
+        "neso_thermal_volume_signed_mwh": neso_thermal_volume_signed,
+        "neso_thermal_volume_abs_daily_mwh": neso_thermal_volume_abs_daily,
+        "neso_thermal_volume_positive_mwh": neso_thermal_volume_positive,
+        "neso_thermal_volume_negative_abs_mwh": neso_thermal_volume_negative_abs,
+        "model_gross_vs_neso_abs_thermal_volume_ratio": (
+            model_gross_redispatch_mwh / neso_thermal_volume_abs_daily
+            if neso_thermal_volume_abs_daily > 0
+            else float("nan")
+        ),
+        "model_one_sided_vs_neso_abs_thermal_volume_ratio": (
+            model_one_sided_redispatch_mwh / neso_thermal_volume_abs_daily
+            if neso_thermal_volume_abs_daily > 0
+            else float("nan")
+        ),
         "neso_by_boundary": neso_by_boundary.to_dict(),
     }
 
     logger.info(f"  Model total BM cost:  £{model_total / 1e6:,.1f}M")
     logger.info(f"  NESO thermal cost:    £{neso_total / 1e6:,.1f}M")
     logger.info(f"  Model/NESO ratio:     {ratio:.2f}x")
+    if not np.isnan(neso_thermal_volume_abs_daily):
+        logger.info(
+            "  Model BM redispatch: "
+            f"increase={model_increase_mwh:,.0f} MWh, "
+            f"decrease={model_decrease_mwh:,.0f} MWh, "
+            f"gross={model_gross_redispatch_mwh:,.0f} MWh"
+        )
+        logger.info(
+            "  NESO thermal volume: "
+            f"signed={neso_thermal_volume_signed:,.0f} MWh, "
+            f"absolute-daily={neso_thermal_volume_abs_daily:,.0f} MWh"
+        )
     for b, v in neso_by_boundary.items():
         pct = v / neso_total * 100 if neso_total > 0 else 0
         logger.info(f"    {b}: £{v / 1e6:,.1f}M ({pct:.0f}%)")
@@ -559,9 +840,10 @@ def _compare_boundary_flows(model_flows, neso_da_flows, boundary_mapping, logger
     records = []
     boundaries_in_neso = neso_da_flows["constraint_group"].unique()
 
-    for boundary in boundary_mapping:
-        rec = {"boundary": boundary}
-        nf = neso_da_flows[neso_da_flows["constraint_group"] == boundary]
+    for boundary, boundary_def in boundary_mapping.items():
+        neso_boundary = boundary_def.get("neso_boundary", boundary)
+        rec = {"boundary": boundary, "neso_boundary": neso_boundary}
+        nf = neso_da_flows[neso_da_flows["constraint_group"] == neso_boundary]
         compare_times = None
         if len(nf) > 0:
             compare_times = pd.DatetimeIndex(
@@ -582,7 +864,7 @@ def _compare_boundary_flows(model_flows, neso_da_flows, boundary_mapping, logger
             rec["model_hours"] = 0
 
         # NESO stats
-        if boundary in boundaries_in_neso:
+        if neso_boundary in boundaries_in_neso:
             rec["neso_mean_flow_mw"] = nf["flow_mw"].mean()
             rec["neso_max_flow_mw"] = nf["flow_mw"].max()
             rec["neso_mean_limit_mw"] = nf["limit_mw"].mean()
@@ -621,7 +903,7 @@ def _compare_boundary_flows(model_flows, neso_da_flows, boundary_mapping, logger
         records.append(rec)
         logger.info(
             f"  {boundary}: model mean={rec['model_mean_flow_mw']:.0f} MW, "
-            f"NESO mean={rec.get('neso_mean_flow_mw', float('nan')):.0f} MW, "
+            f"NESO {neso_boundary} mean={rec.get('neso_mean_flow_mw', float('nan')):.0f} MW, "
             f"NESO util={rec.get('neso_mean_utilisation', float('nan')):.1%}"
         )
 
@@ -629,7 +911,13 @@ def _compare_boundary_flows(model_flows, neso_da_flows, boundary_mapping, logger
 
 
 def _compare_congestion_hours(
-    model_congestion_csv, model_flows, boundary_mapping, neso_da_flows, network, logger
+    model_congestion_csv,
+    model_flows,
+    boundary_mapping,
+    neso_da_flows,
+    network,
+    logger,
+    neso_cfg=None,
 ):
     """
     Compare model congestion hours on boundary lines vs NESO at-limit hours.
@@ -638,12 +926,14 @@ def _compare_congestion_hours(
     """
     model_cong = pd.read_csv(model_congestion_csv)
     records = []
+    neso_cfg = neso_cfg or {}
 
     for boundary, boundary_def in boundary_mapping.items():
-        rec = {"boundary": boundary}
+        neso_boundary = boundary_def.get("neso_boundary", boundary)
+        rec = {"boundary": boundary, "neso_boundary": neso_boundary}
         line_ids = _get_boundary_lines(boundary_def)
         valid_lines = [lid for lid in line_ids if lid in network.lines.index]
-        nf = neso_da_flows[neso_da_flows["constraint_group"] == boundary]
+        nf = neso_da_flows[neso_da_flows["constraint_group"] == neso_boundary]
         compare_times = None
         if len(nf) > 0:
             compare_times = pd.DatetimeIndex(
@@ -695,25 +985,34 @@ def _compare_congestion_hours(
         # boundary-constraint modes.
         if boundary in model_flows.columns:
             mf = model_flows[boundary]
-            if compare_times is not None and len(compare_times) > 0:
-                mf = mf.reindex(compare_times).dropna()
             if len(nf) > 0 and len(mf) > 0:
-                limit_series = (
-                    nf.assign(datetime=pd.to_datetime(nf["datetime"]))
-                    .dropna(subset=["datetime"])
-                    .drop_duplicates(subset=["datetime"], keep="last")
-                    .set_index("datetime")["limit_mw"]
-                    .sort_index()
+                limit_series, direct_limit = _align_neso_limit_series(
+                    nf,
+                    mf.index,
+                    neso_cfg,
+                    logger,
+                    boundary,
                 )
-                limit_series = limit_series.reindex(mf.index).dropna()
+                limit_series = limit_series.dropna()
                 mf_aligned = mf.reindex(limit_series.index).dropna()
                 if len(mf_aligned) > 0:
-                    loading = mf_aligned / limit_series.clip(lower=1e-9)
+                    limit_aligned = limit_series.reindex(mf_aligned.index).clip(lower=1e-9)
+                    loading = mf_aligned / limit_aligned
+                    exceed = (mf_aligned - limit_aligned).clip(lower=0.0)
+                    direct_aligned = direct_limit.reindex(mf_aligned.index).fillna(False)
                     rec["model_boundary_mean_loading"] = float(loading.mean())
                     rec["model_boundary_hours_above_90"] = int((loading >= 0.9).sum())
+                    rec["model_boundary_limit_direct_snapshots"] = int(direct_aligned.sum())
+                    rec["model_boundary_limit_filled_snapshots"] = int((~direct_aligned).sum())
+                    rec["model_boundary_limit_exceed_hours"] = int((exceed > 1e-6).sum())
+                    rec["model_boundary_max_limit_exceed_mw"] = float(exceed.max())
                 else:
                     rec["model_boundary_mean_loading"] = 0.0
                     rec["model_boundary_hours_above_90"] = 0
+                    rec["model_boundary_limit_direct_snapshots"] = 0
+                    rec["model_boundary_limit_filled_snapshots"] = 0
+                    rec["model_boundary_limit_exceed_hours"] = 0
+                    rec["model_boundary_max_limit_exceed_mw"] = 0.0
             elif valid_lines:
                 s_nom = network.lines.loc[valid_lines, "s_nom"].astype(float)
                 s_max_pu = pd.DataFrame(1.0, index=mf.index, columns=valid_lines)
@@ -786,10 +1085,43 @@ def _build_validation_csv(cost_comparison, flow_comparison, congestion_compariso
     rows.append(
         {
             "category": "total_cost",
+            "metric": "neso_breakdown_thermal_cost_gbp",
+            "value": cost_comparison.get("neso_breakdown_thermal_cost_gbp", np.nan),
+        }
+    )
+    rows.append(
+        {
+            "category": "total_cost",
             "metric": "model_neso_ratio",
             "value": cost_comparison["model_neso_ratio"],
         }
     )
+    rows.append(
+        {
+            "category": "total_cost",
+            "metric": "model_neso_breakdown_cost_ratio",
+            "value": cost_comparison.get("model_neso_breakdown_cost_ratio", np.nan),
+        }
+    )
+    for metric_name in [
+        "model_increase_mwh",
+        "model_decrease_mwh",
+        "model_gross_redispatch_mwh",
+        "model_one_sided_redispatch_mwh",
+        "neso_thermal_volume_signed_mwh",
+        "neso_thermal_volume_abs_daily_mwh",
+        "neso_thermal_volume_positive_mwh",
+        "neso_thermal_volume_negative_abs_mwh",
+        "model_gross_vs_neso_abs_thermal_volume_ratio",
+        "model_one_sided_vs_neso_abs_thermal_volume_ratio",
+    ]:
+        rows.append(
+            {
+                "category": "thermal_volume",
+                "metric": metric_name,
+                "value": cost_comparison.get(metric_name, np.nan),
+            }
+        )
 
     # NESO cost by boundary
     for boundary, cost in cost_comparison["neso_by_boundary"].items():
@@ -830,6 +1162,10 @@ def _build_validation_csv(cost_comparison, flow_comparison, congestion_compariso
             "model_mean_loading",
             "model_boundary_mean_loading",
             "model_boundary_hours_above_90",
+            "model_boundary_limit_direct_snapshots",
+            "model_boundary_limit_filled_snapshots",
+            "model_boundary_limit_exceed_hours",
+            "model_boundary_max_limit_exceed_mw",
             "neso_hours_above_90",
         ]:
             if key in cc:
@@ -1116,6 +1452,11 @@ def validate_neso_constraints(
     logger.info("Loading NESO thermal constraint costs...")
     neso_costs = _load_thermal_costs(start_date, end_date, cache_dir, logger)
 
+    logger.info("Loading NESO constraint breakdown volumes...")
+    constraint_breakdown = _load_constraint_breakdown(
+        start_date, end_date, cache_dir, logger
+    )
+
     logger.info("Loading NESO DA constraint flows...")
     neso_da_flows = _load_da_flows(start_date, end_date, cache_dir, logger)
 
@@ -1143,7 +1484,12 @@ def validate_neso_constraints(
     logger.info("COST COMPARISON")
     logger.info("=" * 60)
     cost_comparison = _compare_costs(
-        constraint_costs_csv, neso_costs, start_date, end_date, logger
+        constraint_costs_csv,
+        neso_costs,
+        start_date,
+        end_date,
+        logger,
+        constraint_breakdown=constraint_breakdown,
     )
 
     logger.info("=" * 60)
@@ -1157,7 +1503,13 @@ def validate_neso_constraints(
     logger.info("CONGESTION HOURS COMPARISON")
     logger.info("=" * 60)
     congestion_comparison = _compare_congestion_hours(
-        congestion_csv, model_flows, boundary_mapping, neso_da_flows, network, logger
+        congestion_csv,
+        model_flows,
+        boundary_mapping,
+        neso_da_flows,
+        network,
+        logger,
+        neso_cfg=neso_cfg,
     )
 
     # ── Write outputs ───────────────────────────────────────────────────────

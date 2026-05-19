@@ -5,8 +5,7 @@ Produces a single per-carrier table that compares:
   1. Model effective offer/bid price (from redispatch_summary)
      vs ELEXON median offer/bid (from raw BOD data, matched BMUs only).
   2. Model redispatch volumes (increase/decrease MWh)
-     vs BOALF **unflagged** acceptance volumes
-     (unflagged = constraint management; flagged includes reserve/response).
+     vs ELEXON BOAV accepted bid/offer volumes.
 
 Outputs a CSV scorecard and an HTML dashboard. Optionally fails the rule
 when any carrier with non-trivial volume drifts outside a configured
@@ -83,7 +82,7 @@ def _load_elexon_prices(
 def _build_scorecard(
     network,
     redispatch: pd.DataFrame,
-    boalf_by_flag: pd.DataFrame,
+    boav_by_carrier: pd.DataFrame,
     offers_mapped: pd.DataFrame,
     bids_mapped: pd.DataFrame,
     mapped_gen_names: set,
@@ -110,13 +109,10 @@ def _build_scorecard(
         / model_by_carrier["decrease_MWh"].replace(0, np.nan)
     )
 
-    # BOALF unflagged (constraint management only, reserve/response stripped)
-    boalf_uf = boalf_by_flag[
-        (boalf_by_flag["scope"] == "carrier")
-        & (boalf_by_flag["group"] == "unflagged")
-    ].set_index("carrier")
-    boalf_inc = boalf_uf["increase_mwh"] if "increase_mwh" in boalf_uf.columns else pd.Series(dtype=float)
-    boalf_dec = boalf_uf["decrease_mwh"] if "decrease_mwh" in boalf_uf.columns else pd.Series(dtype=float)
+    # BOAV accepted volumes are the settlement benchmark for BM volume.
+    boav = boav_by_carrier.set_index("carrier") if not boav_by_carrier.empty else pd.DataFrame()
+    boav_inc = boav["increase_mwh"] if "increase_mwh" in boav.columns else pd.Series(dtype=float)
+    boav_dec = boav["decrease_mwh"] if "decrease_mwh" in boav.columns else pd.Series(dtype=float)
 
     rows = []
     for carrier in sorted(gens["carrier"].unique()):
@@ -145,11 +141,11 @@ def _build_scorecard(
         inc_mwh_model = float(model_row["increase_MWh"]) if model_row is not None else 0.0
         dec_mwh_model = float(model_row["decrease_MWh"]) if model_row is not None else 0.0
 
-        # BOALF uses BMU-inferred carriers, which match PyPSA names exactly for
+        # BOAV uses BMU-inferred carriers, which match PyPSA names exactly for
         # the carriers in BMU_PREFIX_FUEL. Others (embedded_*, small_hydro,
         # waste_to_energy, etc.) have no BOALF counterpart — left as NaN.
-        boalf_inc_mwh = float(boalf_inc.get(carrier, np.nan))
-        boalf_dec_mwh = float(boalf_dec.get(carrier, np.nan))
+        boav_inc_mwh = float(boav_inc.get(carrier, np.nan))
+        boav_dec_mwh = float(boav_dec.get(carrier, np.nan))
 
         def _ratio(num, denom):
             if denom is None or not np.isfinite(denom) or denom == 0:
@@ -173,10 +169,10 @@ def _build_scorecard(
             "bid_ratio": _ratio(eff_bid_model, median_bid_elexon),
             "model_inc_MWh": inc_mwh_model,
             "model_dec_MWh": dec_mwh_model,
-            "boalf_uf_inc_MWh": boalf_inc_mwh,
-            "boalf_uf_dec_MWh": boalf_dec_mwh,
-            "inc_ratio": _ratio(inc_mwh_model, boalf_inc_mwh),
-            "dec_ratio": _ratio(dec_mwh_model, boalf_dec_mwh),
+            "boav_inc_MWh": boav_inc_mwh,
+            "boav_dec_MWh": boav_dec_mwh,
+            "inc_ratio": _ratio(inc_mwh_model, boav_inc_mwh),
+            "dec_ratio": _ratio(dec_mwh_model, boav_dec_mwh),
         })
 
     return pd.DataFrame(rows).sort_values("capacity_MW", ascending=False)
@@ -249,8 +245,8 @@ def _build_dashboard(
         subplot_titles=[
             "Offer price ratio (model / ELEXON median)",
             "Bid price ratio (model / ELEXON median)",
-            "Increase volume ratio (model / BOALF unflagged)",
-            "Decrease volume ratio (model / BOALF unflagged)",
+            "Increase volume ratio (model / BOAV offers)",
+            "Decrease volume ratio (model / BOAV bids)",
         ],
         horizontal_spacing=0.14,
         vertical_spacing=0.16,
@@ -307,7 +303,7 @@ def _build_dashboard(
 def run_scorecard(
     scenario_id: str,
     redispatch_csv: Path,
-    boalf_by_flag_csv: Path,
+    boav_by_carrier_csv: Path,
     network_path: Path,
     elexon_offers_path: Path,
     elexon_bids_path: Path,
@@ -325,11 +321,15 @@ def run_scorecard(
 
     network = pypsa.Network(str(network_path))
     redispatch = pd.read_csv(redispatch_csv)
-    boalf_by_flag = pd.read_csv(boalf_by_flag_csv) if boalf_by_flag_csv.exists() else pd.DataFrame()
+    boav_by_carrier = (
+        pd.read_csv(boav_by_carrier_csv)
+        if boav_by_carrier_csv.exists()
+        else pd.DataFrame()
+    )
 
-    if boalf_by_flag.empty:
+    if boav_by_carrier.empty:
         logger.warning(
-            f"BOALF-by-flag CSV is empty or missing ({boalf_by_flag_csv}); "
+            f"BOAV-by-carrier CSV is empty or missing ({boav_by_carrier_csv}); "
             "volume ratios will be NaN."
         )
 
@@ -339,7 +339,7 @@ def run_scorecard(
     mapped_gen_names = set(bmu_to_gen.values())
 
     scorecard = _build_scorecard(
-        network, redispatch, boalf_by_flag,
+        network, redispatch, boav_by_carrier,
         offers_mapped, bids_mapped, mapped_gen_names,
     )
 
@@ -401,7 +401,7 @@ if __name__ == "__main__":
     run_scorecard(
         scenario_id=scenario_id,
         redispatch_csv=Path(snakemake.input.redispatch_summary_csv),
-        boalf_by_flag_csv=Path(snakemake.input.boalf_by_flag_csv),
+        boav_by_carrier_csv=Path(snakemake.input.boav_by_carrier_csv),
         network_path=Path(snakemake.input.network),
         elexon_offers_path=Path(snakemake.input.elexon_offers),
         elexon_bids_path=Path(snakemake.input.elexon_bids),

@@ -20,6 +20,8 @@
 # Network diagrams:
 #   England & Wales: FLOWSTH, GM+SNOW5A, HARSPNBLY, SEIMPPR23, SSHARN3
 #   Scotland: ERROEX, GALLEX, NKILGRMO, SCOTEX, SSE+SP2, SSEN-S
+# Circuit-level audit trail for image-backed/proxy mappings:
+#   data/network/neso_boundary_circuit_crosswalk.csv
 # ══════════════════════════════════════════════════════════════════════════════
 
 boundaries:
@@ -91,121 +93,348 @@ boundaries:
         - BRCW2J_KINA2K_0
         - GLRB2-_TEAL2K_0
 
-  # ── SSHARN: South of SHARN (Norfolk/Suffolk export boundary) ───────────────
-  # Two separate line sets serve different purposes:
+  # ── SSHARN: SHARN / northern England constraint family ─────────────────────
+  # The NESO diagram places SSHARN1/3/7 across northern England around the
+  # Harker, Penwortham, Washway/Heysham, Norton, Greystones, and Keadby/Drax
+  # corridors. The old Norfolk/Suffolk interpretation overlapped ESTEX and
+  # could make the model appear to match SSHARN for the wrong physical reason.
   #
-  #   constraint_lines  — used by solve_network.py for per-line s_max_pu derating.
-  #     The 5 direct export-corridor lines (Bramford→Frieston ×3 + Burwell→Walpole ×2)
-  #     form the physical chokepoint.  Total s_nom = 14,989 MVA, giving
-  #     s_max_pu ≈ 0.43 for a 6,500 MW NESO limit (vs 0.18 with all 13 lines).
-  #
-  #   lines / flow_groups — used by validate_neso_constraints.py for flow reconstruction.
-  #     The full 13-line figure-backed union with signed groups correctly captures
-  #     the aggregate boundary transfer for comparison against NESO DA flows.
-  #
-  # TODO: Replace the per-line s_max_pu approach with a proper aggregate boundary
-  #       constraint: sum(flow[line] for line in constraint_lines) <= NESO_limit[t].
-  #       Until then, constraint_lines is an approximation.
+  # This is a first image-backed ETYS approximation to the SHARN family rather
+  # than a Norfolk/East Anglia export loop. Positive means transfer from the
+  # northern side of the SHARN cut toward the south.
   SSHARN:
-    description: "South of SHARN (figure-backed East Anglia export loop with signed groups)."
-    constraint_lines:
-      - BRFO41_FRIS4A_0   # 2779 MVA — Bramford to Frieston
-      - BRFO41_FRIS4B_0   # 2779 MVA — parallel circuit
-      - BRFO41_FRIS4D_0   # 2779 MVA — parallel circuit
-      - BURW41_WALP41_0   # 3326 MVA — Burwell to Walpole
-      - BURW41_WALP41_1   # 3326 MVA — parallel circuit
+    description: "SHARN northern England constraint family. Image-backed first ETYS approximation."
     lines:
-      - BRFO41_DISS4A_0   # 3326 MVA — Bramford to Diss
-      - BRFO41_DISS4B_0   # 3326 MVA — parallel circuit
-      - BRFO41_FRIS4A_0   # 2779 MVA — Bramford to Frieston
-      - BRFO41_FRIS4B_0   # 2779 MVA — parallel circuit
-      - BRFO41_FRIS4D_0   # 2779 MVA — parallel circuit
-      - BURW41_WALP41_0   # 3326 MVA — Burwell to Walpole
-      - BURW41_WALP41_1   # 3326 MVA — parallel circuit
-      - DISS4A_YAXL41_0   # 3326 MVA — Diss to Yaxley (400kV)
-      - DISS4B_YAXL41_0   # 3326 MVA — parallel circuit
-      - NECT4A_WALP41_0   # 3326 MVA — Necton to Walpole (400kV)
-      - NECT4B_WALP41_0   # 3326 MVA — parallel circuit
-      - BICF41_WALP41_0   # 3189 MVA — Bicker Fen to Walpole
-      - SPLN41_WALP41_0   # 3189 MVA — Spalding to Walpole
+      - CARR41_PEWO4A_0
+      - DRAX41_FENW4A_0
+      - DRAX42_THOM41_0
+      - EGGB41_ROCH4A_0
+      - EGGB41_THOM41_0
+      - EGGB42_STSB4B_0
+      - ELLA21_STAL21_0
+      - GART4A_HUMR41_0
+      - GART4A_KEAD43_0
+      - GART4B_KEAD41_0
+      - GART4B_KILL41_0
+      - GRST2A_LACK2A_0
+      - GRST2A_LACK2B_0
+      - GRST2B_LACK2B_0
+      - GRST2B_LACK2C_0
+      - HEYS41_MIDL41_0
+      - KEAR41_PADI41_0
+      - KILL41_HOWA41_0
+      - KILL41_HOWA41_1
+      - MIDL41_QUER4A_0
+      - PEWO2C_WASF2A_0
+      - PEWO2D_WASF2B_0
     flow_groups:
-      # Positive means export across the full SSHARN loop toward the south/east
-      # side of the figure. The Burwell/Necton/Diss/Bramford group needs a sign
-      # flip relative to the Bicker Fen / Spalding approaches.
+      # Signs are oriented so positive is transfer from the northern side of
+      # the SHARN cut toward the south.
       positive:
-        - BICF41_WALP41_0
-        - SPLN41_WALP41_0
+        - DRAX41_FENW4A_0
+        - DRAX42_THOM41_0
+        - EGGB41_ROCH4A_0
+        - EGGB41_THOM41_0
+        - EGGB42_STSB4B_0
+        - ELLA21_STAL21_0
+        - GART4A_HUMR41_0
+        - GART4A_KEAD43_0
+        - GART4B_KEAD41_0
+        - GART4B_KILL41_0
+        - HEYS41_MIDL41_0
+        - PEWO2C_WASF2A_0
+        - PEWO2D_WASF2B_0
       negative:
-        - BRFO41_DISS4A_0
-        - BRFO41_DISS4B_0
-        - BRFO41_FRIS4A_0
-        - BRFO41_FRIS4B_0
-        - BRFO41_FRIS4D_0
-        - BURW41_WALP41_0
-        - BURW41_WALP41_1
-        - DISS4A_YAXL41_0
-        - DISS4B_YAXL41_0
-        - NECT4A_WALP41_0
-        - NECT4B_WALP41_0
+        - CARR41_PEWO4A_0
+        - GRST2A_LACK2A_0
+        - GRST2A_LACK2B_0
+        - GRST2B_LACK2B_0
+        - GRST2B_LACK2C_0
+        - KEAR41_PADI41_0
+        - KILL41_HOWA41_0
+        - KILL41_HOWA41_1
+        - MIDL41_QUER4A_0
+    subconstraints:
+      # Validation-only splits from the NESO diagram. The solver currently
+      # enforces the top-level SSHARN aggregate above; diagnostics compare
+      # these subconstraints to the same NESO SSHARN DA series to identify which
+      # part of the SHARN family the model is actually reproducing.
+      SSHARN3:
+        description: "Washway / Penwortham / Heysham / Middleton SHARN3 proxy."
+        lines:
+          - KIBY21_WASF2A_0
+          - KIBY21_WASF2B_0
+          - CARR41_PEWO4A_0
+          - HAMB4A_HEYS41_0
+          - HAMB4B_HEYS41_0
+          - HEYS41_MIDL41_0
+          - HEYS41_QUER4B_0
+          - MIDL41_QUER4A_0
+          - PEWO41_QUER4A_0
+          - PEWO41_QUER4B_0
+          - PEWO2C_WASF2A_0
+          - PEWO2D_WASF2B_0
+        flow_groups:
+          positive:
+            - KIBY21_WASF2A_0
+            - KIBY21_WASF2B_0
+            - HAMB4A_HEYS41_0
+            - HAMB4B_HEYS41_0
+            - HEYS41_MIDL41_0
+            - HEYS41_QUER4B_0
+            - PEWO2C_WASF2A_0
+            - PEWO2D_WASF2B_0
+          negative:
+            - CARR41_PEWO4A_0
+            - MIDL41_QUER4A_0
+            - PEWO41_QUER4A_0
+            - PEWO41_QUER4B_0
+      SSHARN7:
+        description: "Harker / Norton / Greystones northern SHARN7 proxy."
+        lines:
+          - HARK41_HUTT41_0
+          - HARK41_HUTT43_0
+          - HUTT41_QUER4A_0
+          - HUTT41_QUER4B_0
+          - HAWP4A_NORT41_0
+          - LACK41_THTO41_0
+          - LACK41_THTO42_0
+          - NORT41_OSBA41_0
+          - NORT41_OSBA42_0
+          - NORT41_SPEN41_0
+          - NORT41_SPEN42_0
+          - OSBA41_THTO43_0
+          - OSBA42_THTO41_0
+        flow_groups:
+          positive:
+            - HARK41_HUTT41_0
+            - HARK41_HUTT43_0
+            - HUTT41_QUER4A_0
+            - HUTT41_QUER4B_0
+            - HAWP4A_NORT41_0
+            - NORT41_OSBA41_0
+            - NORT41_OSBA42_0
+            - NORT41_SPEN41_0
+            - NORT41_SPEN42_0
+          negative:
+            - LACK41_THTO41_0
+            - LACK41_THTO42_0
+            - OSBA41_THTO43_0
+            - OSBA42_THTO41_0
+      SSHARN_YORKSHIRE_HUMBER:
+        description: "Expanded Norton / Greystones / Drax / Keadby / Cottam Yorkshire-Humber diagnostic proxy."
+        lines:
+          - DRAX41_FENW4A_0
+          - DRAX41_EGGB42_0
+          - DRAX41_THTO42_0
+          - DRAX42_EGGB41_0
+          - DRAX42_THOM41_0
+          - DRAX42_THTO41_0
+          - EGGB41_ROCH4A_0
+          - EGGB41_THOM41_0
+          - EGGB42_STSB4B_0
+          - FENW4A_KEAD42_0
+          - FENW4A_THOM42_0
+          - GART4A_HUMR41_0
+          - GART4A_KEAD43_0
+          - GART4B_KEAD41_0
+          - GART4B_KILL41_0
+          - COTT41_KEAD4C_0
+          - COTT41_KEAD4D_0
+          - COTT41_STAY41_0
+          - COTT42_STAY41_0
+          - KEAD42_WBUR42_0
+          - KEAD43_WBUR41_0
+          - KEAD43_KILL41_0
+          - NORT41_OSBA41_0
+          - NORT41_OSBA42_0
+          - GRST2A_LACK2A_0
+          - GRST2A_LACK2B_0
+          - GRST2B_LACK2B_0
+          - GRST2B_LACK2C_0
+          - KILL41_HOWA41_0
+          - KILL41_HOWA41_1
+          - OSBA41_THTO43_0
+          - OSBA42_THTO41_0
+        flow_groups:
+          positive:
+            - DRAX41_FENW4A_0
+            - DRAX41_EGGB42_0
+            - DRAX42_THOM41_0
+            - EGGB41_ROCH4A_0
+            - EGGB41_THOM41_0
+            - EGGB42_STSB4B_0
+            - FENW4A_KEAD42_0
+            - GART4A_HUMR41_0
+            - GART4A_KEAD43_0
+            - GART4B_KEAD41_0
+            - GART4B_KILL41_0
+            - COTT42_STAY41_0
+            - KEAD42_WBUR42_0
+            - KEAD43_WBUR41_0
+            - NORT41_OSBA41_0
+            - NORT41_OSBA42_0
+          negative:
+            - DRAX41_THTO42_0
+            - DRAX42_EGGB41_0
+            - DRAX42_THTO41_0
+            - FENW4A_THOM42_0
+            - COTT41_KEAD4C_0
+            - COTT41_KEAD4D_0
+            - COTT41_STAY41_0
+            - KEAD43_KILL41_0
+            - GRST2A_LACK2A_0
+            - GRST2A_LACK2B_0
+            - GRST2B_LACK2B_0
+            - GRST2B_LACK2C_0
+            - KILL41_HOWA41_0
+            - KILL41_HOWA41_1
+            - OSBA41_THTO43_0
+            - OSBA42_THTO41_0
+      SSHARN_SPARSE_GATE_FIT:
+        description: "Validation-only sparse Yorkshire/Humber transfer gate fitted against January and June NESO SSHARN high-hour magnitudes."
+        lines:
+          - NORT41_OSBA42_0
+          - COTT42_STAY41_0
+          - DRAX41_FENW4A_0
+          - COTT41_STAY41_0
+          - EGGB41_THOM41_0
+          - DRAX42_THOM41_0
+        flow_groups:
+          positive:
+            - NORT41_OSBA42_0
+            - COTT42_STAY41_0
+            - DRAX41_FENW4A_0
+            - EGGB41_THOM41_0
+            - DRAX42_THOM41_0
+          negative:
+            - COTT41_STAY41_0
 
   # ── ESTEX: East Export boundary ────────────────────────────────────────────
-  # Aggregate East Anglia export boundary. This overlaps with SSHARN, but the
-  # aggregate-boundary formulation can now represent both without the old
-  # uniform-s_max_pu overlap problem.
+  # Wider East / South-East export area cut. The previous first-pass definition
+  # used the Norfolk/Bramford internal export loop and isolated too small an
+  # area relative to NESO ESTEX flows. This cut was rebuilt as a topology-based
+  # area boundary around East Anglia, Essex, Kent, and the Thames corridor.
+  # Positive means export from the East / South-East area toward the rest of GB.
   ESTEX:
-    description: "East Export boundary. Wider East Anglia export loop around Bramford/Diss/Necton."
+    description: "East Export boundary. Wider East/South-East export area cut."
     lines:
-      - BRFO41_DISS4A_0   # 3326 MVA — Bramford to Diss
-      - BRFO41_DISS4B_0   # 3326 MVA — parallel
-      - BRFO41_FRIS4A_0   # 2779 MVA — Bramford to Frieston
-      - BRFO41_FRIS4B_0   # 2779 MVA — parallel
-      - BRFO41_FRIS4D_0   # 2779 MVA — parallel
-      - DISS4A_YAXL41_0   # 3326 MVA — Diss to Yaxley
-      - DISS4B_YAXL41_0   # 3326 MVA — parallel
-      - NECT4A_WALP41_0   # 3326 MVA — Necton to Walpole
-      - NECT4B_WALP41_0   # 3326 MVA — parallel
+      - BARK21_REBR22_0
+      - BARK22_REBR21_0
+      - BARK41_WHAM41_0
+      - BARK41_WHAM41_1
+      - BICF41_WALP41_0
+      - BOLN41_NINF41_0
+      - BOLN41_NINF41_1
+      - CAMA11_IROA13_0
+      - CAMA12_IROA12_0
+      - DISS4A_YAXL41_0
+      - DISS4B_YAXL41_0
+      - HOWW33_HOWA21_0
+      - HOWW34_HOWA21_0
+      - HOWW35_HOWA21_0
+      - HOWW36_HOWA21_0
+      - LINO13_LINS11_0
+      - LINO14_LINS12_0
+      - LOFI4A_ROWD4A_0
+      - LOFI4B_ROWD4B_0
+      - PELH41_RYEH4A_0
+      - PELH41_RYEH4B_0
+      - PELH41_SUND42_0
+      - PELH41_WYMO41_0
+      - SPLN41_WALP41_0
     flow_groups:
-      # First-pass aggregate export direction from the inland Bramford/Necton
-      # side toward the eastern/southern boundary edge.
+      # Signs are oriented so positive is export from the East / South-East
+      # area toward the rest of GB.
       positive:
-        - BRFO41_DISS4A_0
-        - BRFO41_DISS4B_0
-        - BRFO41_FRIS4A_0
-        - BRFO41_FRIS4B_0
-        - BRFO41_FRIS4D_0
+        - BARK21_REBR22_0
+        - BARK22_REBR21_0
+        - BARK41_WHAM41_0
+        - BARK41_WHAM41_1
+        - CAMA11_IROA13_0
+        - CAMA12_IROA12_0
         - DISS4A_YAXL41_0
         - DISS4B_YAXL41_0
-        - NECT4A_WALP41_0
-        - NECT4B_WALP41_0
+        - HOWW33_HOWA21_0
+        - HOWW34_HOWA21_0
+        - HOWW35_HOWA21_0
+        - HOWW36_HOWA21_0
+        - LOFI4A_ROWD4A_0
+        - LOFI4B_ROWD4B_0
+        - PELH41_RYEH4A_0
+        - PELH41_RYEH4B_0
+        - PELH41_SUND42_0
+        - PELH41_WYMO41_0
+      negative:
+        - BICF41_WALP41_0
+        - BOLN41_NINF41_0
+        - BOLN41_NINF41_1
+        - LINO13_LINS11_0
+        - LINO14_LINS12_0
+        - SPLN41_WALP41_0
 
   # ── SEIMP: South East Import boundary ─────────────────────────────────────
-  # Provisional aggregate cut built from the SEIMPPR23 diagram. This is a
-  # first-pass set of 400 kV inflow corridors into the South East / London
-  # area from the Bramley, Cowley, Pelham, and Essex sides.
+  # Revised South-East import area cut. The previous first-pass line list was
+  # too local and did not reproduce NESO high-utilisation periods. This cut
+  # follows the south-east import area around London, Essex, Kent, and the
+  # East Anglia approaches. Positive means import into the South-East area.
   SEIMP:
-    description: "South East Import boundary. First-pass ETYS cut from Bramley/Cowley/Pelham/Essex into the South East."
+    description: "South East Import boundary. Revised London/South-East import area cut."
     lines:
-      - BRAI4A_BULL41_0   # 3066 MVA — Braintree to Bulls Lodge
-      - BRAI4B_PELH41_0   # 2779 MVA — Braintree to Pelham
-      - BRAI4B_RAYL41_0   # 2779 MVA — Braintree to Rayleigh
-      - BULL41_RAYL41_0   # 2779 MVA — Bulls Lodge to Rayleigh
-      - PELH41_WYMO41_0   # 2771 MVA — Pelham to Wymondley
-      - BRLE41_WWEY4A_0   # 2199 MVA — Bramley to West Weybridge
-      - BRLE41_WWEY4B_0   # 2199 MVA — parallel
-      - COWL41_MITY41_0   # 1180 MVA — Cowley to Minety
-      - COWL41_WALH41_0   # 1180 MVA — Cowley to Walham
+      - AMEM4A_IVER4A_0
+      - AMEM4B_IVER4B_0
+      - BIGG41_WYMO41_0
+      - BOLN41_LOVE41_0
+      - BOLN41_LOVE41_1
+      - BRAI4A_BRFO41_0
+      - BRFO41_PELH41_0
+      - BRLE41_WWEY4A_0
+      - BRLE41_WWEY4B_0
+      - BURW41_PELH41_0
+      - BURW41_PELH41_1
+      - EASO4B_WYMO41_0
+      - GALO11_GANW11_0
+      - GALO12_GANW12_0
+      - GANW31_LEIS4A_0
+      - GREG11_GGON11_0
+      - GREG12_GGON12_0
+      - GREG13_GGON13_0
+      - GREG31_LEIS4A_0
+      - GREG32_LEIS4A_0
+      - GREG33_LEIS4A_0
+      - LEIB4A_SUND42_0
+      - LEIB4B_SUND41_0
+      - MARV4A_SUND41_0
+      - MARV4B_SUND42_0
     flow_groups:
-      # First-pass import direction toward the South East / London side.
+      # Signs are oriented so positive is import into the South-East area.
       positive:
-        - BRAI4A_BULL41_0
-        - BRAI4B_PELH41_0
-        - BRAI4B_RAYL41_0
-        - BULL41_RAYL41_0
-        - PELH41_WYMO41_0
+        - BOLN41_LOVE41_0
+        - BOLN41_LOVE41_1
+        - BRAI4A_BRFO41_0
+        - GANW31_LEIS4A_0
+        - GREG11_GGON11_0
+        - GREG12_GGON12_0
+        - GREG13_GGON13_0
+        - GREG31_LEIS4A_0
+        - GREG32_LEIS4A_0
+        - GREG33_LEIS4A_0
+      negative:
+        - AMEM4A_IVER4A_0
+        - AMEM4B_IVER4B_0
+        - BIGG41_WYMO41_0
+        - BRFO41_PELH41_0
         - BRLE41_WWEY4A_0
         - BRLE41_WWEY4B_0
-        - COWL41_MITY41_0
-        - COWL41_WALH41_0
+        - BURW41_PELH41_0
+        - BURW41_PELH41_1
+        - EASO4B_WYMO41_0
+        - GALO11_GANW11_0
+        - GALO12_GANW12_0
+        - LEIB4A_SUND42_0
+        - LEIB4B_SUND41_0
+        - MARV4A_SUND41_0
+        - MARV4B_SUND42_0
 
   # ── SWALEX: South Wales export boundary ───────────────────────────────────
   # Provisional aggregate cut from the SWALEX / RIGLOSLEX diagram around the

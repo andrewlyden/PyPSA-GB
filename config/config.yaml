@@ -24,12 +24,6 @@ run_scenarios:
   # - Historical_2020_ETYS         # Full ETYS with demand redistribution (no scaling)
   # - Historical_2020_clustered     # ETYS clustered to GSP zones (test feasibility)
 
-  # ─── Test: 2019 with different network configurations ───
-  # - Historical_2019_zonal       # Start with Zonal (17 zones, fastest)
-  # - Historical_2019_reduced     # Then Reduced (32 buses)
-  # - Historical_2019_ETYS         # Full ETYS with demand redistribution (no scaling)
-  # - Historical_2019_clustered     # ETYS clustered to GSP zones (test feasibility)
-
   # ─── Other Historical (2010-2020 - cutouts available) ───
   # - Historical_2010_reduced
   # - Historical_2011_reduced
@@ -43,7 +37,7 @@ run_scenarios:
   # - Historical_2019_reduced
   # - Historical_2020_reduced
 
-  # ─── Future (FES 2024 - Holistic Transition 2035) ───
+  # ─── Future ───
   # - HT35
   # - HT35_year
   # - HT35_reduced_eload
@@ -61,41 +55,33 @@ run_scenarios:
   # - HT35_clustered
   # - EE50_clustered
 
-  # ─── Aggregation test (run both to compare generator/component counts) ───
-  # - Test_Agg_Historical        # REPD path: renewable + component agg ON
-  # - Test_NoAgg_Historical      # REPD path: both OFF (baseline)
-  # - Test_Agg_Future              # FES path:  renewable + component agg ON
-  # - Test_NoAgg_Future            # FES path:  both OFF (baseline)
-
   # ─── Market simulation (two-stage dispatch: wholesale + BM) ───
-  # - HT35_market                    # Full ETYS, 1 week, ELEXON-calibrated MCs
-  # - Test_Market                  # Reduced network, 6 hours (fast smoke test)
-  # - Historical_2020_ETYS_market
-  # - Test_BM_Historical             # BM test: 2020 historical, Reduced, 24h
-  # - Test_BM_Future                 # BM test: HT 2035,        Reduced, 24h
-  # - Historical_2024_market         # Rolling day-ahead + per-timestep BM, full year 2024
-  # - Test_Rolling_Market          # Rolling day-ahead + per-timestep BM, 2020 historical, Reduced, 24h
-  - Validation_Jan2020            # Full January 2020 - month-long validation against ESPENI/ELEXON
-  # - Validation_Jun2020            # Full June 2020 - month-long validation against ESPENI/ELEXON
-  # - Validation_2020               # Full year 2020 - rolling 24h DA + 1h BM, ETYS network (8784h)
 
-  # ─── Subsidy-aware scenarios (new functionality) ───
-  # subsidy_tracking → subsidy MC → market dispatch → revenue tracking
-  # - Test_Subsidy_Historical        # 2024 winter: ELEXON BM bids, ETYS network
-  # - Test_Subsidy_Future          # HT 2035: FES CfD fractions, 6h faster test
+  # - Test_Rolling_Market          # Rolling day-ahead + per-timestep BM, 2020 historical, ETYS, 24h
+    - HT35_two_step_dispatch_1day      # Reduced network, 24h, wholesale + BM
+  # - Validation_Jan2020_UniformNetworkBaseline # Uniform baseline: January
+  # - Validation_Feb2020_UniformNetworkBaseline # Uniform baseline: February
+  # - Validation_Mar2020_UniformNetworkBaseline # Uniform baseline: March
+  # - Validation_Apr2020_UniformNetworkBaseline # Uniform baseline: April
+  # - Validation_May2020_UniformNetworkBaseline # Uniform baseline: May
+  # - Validation_Jun2020_UniformNetworkBaseline # Uniform baseline: June
+  # - Validation_Jul2020_UniformNetworkBaseline # Uniform baseline: July
+  # - Validation_Aug2020_UniformNetworkBaseline # Uniform baseline: August
+  # - Validation_Sep2020_UniformNetworkBaseline # Uniform baseline: September
+  # - Validation_Oct2020_UniformNetworkBaseline # Uniform baseline: October
+  # - Validation_Nov2020_UniformNetworkBaseline # Uniform baseline: November
+  # - Validation_Dec2020_UniformNetworkBaseline # Uniform baseline: December
 
-  # ─── Contrasting system conditions (one per year, complement to lowwind) ───
+  # ─── Contrasting system conditions ───
   # - Historical_2021_highdemand        # 2021 cold snap, Jan 8-14 — high demand, thermal-dominant
   # - Historical_2022_highdemand        # 2022 energy crisis winter peak, Dec 12-18 — high SMP
   # - Historical_2023_highsolar         # 2023 spring renewable surge, May 15-21 — low demand/prices
   # - Historical_2024_highwind          # 2024 Storm Isha/Jocelyn, Jan 21-27 — peak wind output
   # - Historical_2024_fullyear          # 2024 full year (8784h), Reduced + aggregation, wholesale market
 
-  # ─── Wholesale market investigation (lowwind baseline — already run) ───
+  # ─── Wholesale market investigation ───
   # - Historical_2021_lowwind           # Historical 2021, low-wind Mar 2-8, wholesale only
   # - Historical_2022_lowwind           # Historical 2022, low-wind Mar 22-28, wholesale only
   # - Historical_2023_lowwind           # Historical 2023, low-wind Feb 27 - Mar 5
   # - Historical_2024_lowwind           # Historical 2024, low-wind Jan 6-12, wholesale only
-  # - HT35_lowwind                      # FES HT 2035, low-wind (2023 weather proxy)
-  # - HT35_dunkelflaute                 # FES HT 2035, dunkelflaute (2021 weather Dec 16-22)
   # - HT35_wholesale_only              # Reduced network, 24h, wholesale only

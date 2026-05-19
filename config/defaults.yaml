@@ -174,6 +174,9 @@ embedded_generation:
   enabled: true                   # Set true to activate
   solar: true                      # Include embedded solar from ESPENI
   wind: true                      # Include embedded wind from ESPENI
+  wind_overlap_exclusion:
+    enabled: false                 # Validation option: exclude small REPD onshore wind from ELEX_WIND bucket
+    max_capacity_mw: 10.0          # Sites <= this are represented by ESPENI embedded_wind instead
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SOLVE PERIOD (full year by default)
@@ -259,6 +262,11 @@ transmission:
       gap_fill_mode: "interpolate"        # "interpolate" | "nearest_available" | "unconstrained" | "fail"
                                           # interpolate = use surrounding NESO data, then edge-fill if needed
       min_s_max_pu: 0.05                  # Uniform mode only: floor to prevent near-zero line capacity
+      soft_boundaries: {}                 # Optional aggregate-boundary slack, keyed by boundary name:
+                                          #   SEIMP:
+                                          #     enabled: true
+                                          #     penalty_gbp_per_mwh: 1000
+                                          #     max_violation_mw: 2500
 
     # ── Synthetic mode ────────────────────────────────────────────────────────
     # Generates random maintenance outages based on typical GB transmission patterns.
@@ -318,6 +326,63 @@ market:
     # s_nom value (MVA) applied to ALL lines and transformers to create
     # copperplate (unconstrained) dispatch. Must be >> max line flow.
     transmission_relaxation: 1.0e6
+
+    # Optional Stage 1 unit commitment overlay. This is independent of the
+    # global solve_mode so the wholesale schedule can be MILP while BM remains
+    # an anchored LP. Disabled by default because it is slower.
+    unit_commitment:
+      enabled: false
+      min_p_nom_mw: 50.0
+      initial_status: "off"              # "off" | "on" | "preserve"
+      default_ramp_limit_up: 1.0
+      default_ramp_limit_down: 1.0
+      default_ramp_limit_start_up: 1.0
+      default_ramp_limit_shut_down: 1.0
+      exclude_carriers:
+        - "load_shedding"
+        - "EU_import"
+        - "wind_onshore"
+        - "wind_offshore"
+        - "solar_pv"
+        - "embedded_solar"
+        - "embedded_wind"
+      carrier_parameters:
+        CCGT:
+          enabled: true
+          p_min_pu: 0.35
+          min_up_time: 4
+          min_down_time: 3
+          ramp_limit_up: 0.50
+          ramp_limit_down: 0.50
+          start_up_cost_per_mw: 45.0
+          shut_down_cost_per_mw: 0.0
+        OCGT:
+          enabled: true
+          p_min_pu: 0.20
+          min_up_time: 1
+          min_down_time: 1
+          ramp_limit_up: 1.0
+          ramp_limit_down: 1.0
+          start_up_cost_per_mw: 20.0
+          shut_down_cost_per_mw: 0.0
+        coal:
+          enabled: true
+          p_min_pu: 0.40
+          min_up_time: 8
+          min_down_time: 6
+          ramp_limit_up: 0.35
+          ramp_limit_down: 0.35
+          start_up_cost_per_mw: 80.0
+          shut_down_cost_per_mw: 0.0
+        oil:
+          enabled: true
+          p_min_pu: 0.25
+          min_up_time: 2
+          min_down_time: 2
+          ramp_limit_up: 0.80
+          ramp_limit_down: 0.80
+          start_up_cost_per_mw: 30.0
+          shut_down_cost_per_mw: 0.0
 
   # ── Stage 2: Balancing Mechanism ───────────────────────────────────────────
   balancing:
@@ -496,8 +561,9 @@ market:
     # Filters are then applied on top:
     #   min_p_nom_mw, include_carriers, exclude_carriers, include_names, exclude_names
     # Behaviours for non-participants:
-    #   "priced_out" - keep feasible emergency redispatch, but at penalty prices
-    #   "fixed"      - lock at wholesale position (more realistic, but can be infeasible)
+    #   "priced_out"       - keep feasible emergency redispatch, but at penalty prices
+    #   "fallback_priced"  - keep feasible redispatch at the normal derived/ELEXON fallback prices
+    #   "fixed"            - lock at wholesale position (more realistic, but can be infeasible)
     participation:
       generators:
         mode: "all"
@@ -525,6 +591,11 @@ market:
       # {scenario} is expanded at runtime — BOD data stored per-scenario, separate
       # from shared calibration caches in resources/market/elexon/
       data_dir: "resources/market/{scenario}/elexon"  # Where ELEXON BOD CSVs are stored
+      raw_bod_cache_dir: "data/market/elexon_bod" # Persistent raw daily BOD cache, shared across scenarios
+      processed_bod_cache_dir: "data/market/elexon_processed" # Reusable processed range cache shared across scenarios
+      raw_bod_cache_format: "parquet" # Prefer compact, faster daily BOD cache files; legacy CSV is still read
+      convert_legacy_csv: true        # Write Parquet beside existing CSV daily caches after reading them
+      parallel_days: 4                # Parallel daily aggregation when all raw BOD days are already cached
       bmu_mapping: "resources/generators/{scenario}_bmu_mapping.csv" # BMU ID → generator name mapping
       # Optional local Power Station Dictionary crosswalk used when building
       # the BMU mapping. If the file exists, explicit BMU rows and station
@@ -532,6 +603,13 @@ market:
       power_station_dictionary: "data/generators/power_station_dictionary_bmu_crosswalk.csv"
       fallback: "carrier_average"        # For unmatched generators: "carrier_average", "derived", or "zero"
       storage_price_aggregation: "median"  # Robust cross-BMU aggregation for storage traces
+      price_ladders:
+        enabled: false                   # Opt-in: use BOD price/volume blocks in BM solve
+        offer_file: "elexon_offer_ladders.csv"
+        bid_file: "elexon_bid_ladders.csv"
+        max_blocks_per_side: 10          # Keep cheapest N-1 blocks, aggregate the tail into block N
+        missing_hour_fallback: true      # Use the averaged ELEXON price if a mapped BMU has no ladder row in an hour
+        fallback_volume_mw: 1000000.0    # Non-binding fallback block volume; inc/dec variables remain physically bounded
       storage_bmu_prefixes:
         Pumped Storage Hydroelectricity:
           - "T_CRUA"

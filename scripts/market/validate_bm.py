@@ -335,6 +335,128 @@ def _aggregate_boalf_by_carrier(boalf_df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def _normalise_boav_dataframe(boav_df: pd.DataFrame) -> pd.DataFrame:
+    """Standardise BOAV accepted-volume columns."""
+    if boav_df.empty:
+        return boav_df.copy()
+
+    df = boav_df.copy()
+    rename_map = {
+        "bmUnit": "bmu_id",
+        "settlementDate": "settlement_date",
+        "settlementPeriod": "settlement_period",
+        "acceptanceId": "acceptance_id",
+        "acceptanceDuration": "acceptance_duration",
+        "totalVolumeAccepted": "accepted_volume_mwh",
+        "startTime": "start_time",
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+
+    if "accepted_volume_mwh" in df.columns:
+        df["accepted_volume_mwh"] = pd.to_numeric(
+            df["accepted_volume_mwh"], errors="coerce"
+        ).fillna(0.0)
+    else:
+        df["accepted_volume_mwh"] = 0.0
+
+    if "side" in df.columns:
+        df["side"] = df["side"].astype(str).str.lower().str.strip()
+    else:
+        df["side"] = np.where(df["accepted_volume_mwh"] < 0, "bid", "offer")
+
+    if "datetime" in df.columns:
+        df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
+    elif "settlement_date" in df.columns and "settlement_period" in df.columns:
+        df["datetime"] = pd.to_datetime(df["settlement_date"], errors="coerce") + pd.to_timedelta(
+            (
+                pd.to_numeric(df["settlement_period"], errors="coerce")
+                .fillna(1)
+                .astype(int)
+                - 1
+            )
+            * 30,
+            unit="min",
+        )
+    elif "start_time" in df.columns:
+        df["datetime"] = pd.to_datetime(df["start_time"], utc=True, errors="coerce").dt.tz_localize(None)
+
+    if "carrier" in df.columns:
+        df["carrier"] = df["carrier"].fillna("unknown")
+    elif "bmu_id" in df.columns:
+        df["carrier"] = df["bmu_id"].astype(str).apply(_classify_bmu_carrier)
+    else:
+        df["carrier"] = "unknown"
+
+    df["increase_mwh"] = np.where(
+        df["side"].eq("offer"),
+        df["accepted_volume_mwh"].abs(),
+        0.0,
+    )
+    df["decrease_mwh"] = np.where(
+        df["side"].eq("bid"),
+        df["accepted_volume_mwh"].abs(),
+        0.0,
+    )
+    return df
+
+
+def aggregate_boav_by_carrier(boav_df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate BOAV accepted bid/offer volumes by inferred carrier."""
+    df = _normalise_boav_dataframe(boav_df)
+    columns = [
+        "carrier", "increase_mwh", "decrease_mwh", "n_records", "n_bmus",
+    ]
+    if df.empty:
+        return pd.DataFrame(columns=columns)
+
+    result = (
+        df.groupby("carrier", dropna=False)
+        .agg(
+            increase_mwh=("increase_mwh", "sum"),
+            decrease_mwh=("decrease_mwh", "sum"),
+            n_records=("accepted_volume_mwh", "count"),
+            n_bmus=("bmu_id", "nunique") if "bmu_id" in df.columns else ("carrier", "count"),
+        )
+        .reset_index()
+    )
+    return result[columns]
+
+
+def _apply_bmu_carrier_mapping(
+    df: pd.DataFrame,
+    bmu_mapping_path: str | Path,
+    logger: logging.Logger,
+) -> pd.DataFrame:
+    """Override inferred BMU carriers with the scenario BMU mapping when available."""
+    if df.empty or "bmu_id" not in df.columns:
+        return df
+
+    path = Path(bmu_mapping_path)
+    if not path.exists():
+        return df
+
+    try:
+        mapping = pd.read_csv(path, usecols=["bmu_id", "carrier"])
+    except Exception as e:
+        logger.warning(f"Failed to load BMU carrier mapping {path}: {e}")
+        return df
+
+    mapping = mapping.dropna(subset=["bmu_id", "carrier"]).drop_duplicates("bmu_id")
+    if mapping.empty:
+        return df
+
+    out = df.copy()
+    mapped = out["bmu_id"].map(dict(zip(mapping["bmu_id"], mapping["carrier"])))
+    before_unknown = int(out.get("carrier", pd.Series(index=out.index, dtype=object)).eq("unknown").sum())
+    out["carrier"] = mapped.fillna(out.get("carrier", "unknown"))
+    after_unknown = int(out["carrier"].eq("unknown").sum())
+    logger.info(
+        f"Applied BMU carrier mapping from {path}: "
+        f"{mapped.notna().sum()} rows mapped, unknown rows {before_unknown}->{after_unknown}"
+    )
+    return out
+
+
 def create_boalf_flag_summary(boalf_df: pd.DataFrame) -> pd.DataFrame:
     """Summarise BOALF acceptance volumes for flagged and unflagged subsets."""
     acc_df = _prepare_boalf_acceptance_records(boalf_df)
@@ -440,6 +562,58 @@ def create_disbsad_summary(disbsad_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def create_mapped_redispatch_summary(
+    model_redispatch: pd.DataFrame,
+    bmu_mapping_path: Path,
+    logger: logging.Logger,
+) -> pd.DataFrame:
+    """
+    Split model redispatch into ELEXON BMU-mapped and unmapped model assets.
+
+    BOAV/BOALF are BMU datasets. This diagnostic prevents non-BMU REPD,
+    embedded, or synthetic model assets being silently mixed into the primary
+    BM volume benchmark.
+    """
+    columns = [
+        "carrier", "type", "elexon_mapped", "n_components",
+        "increase_MWh", "decrease_MWh", "offer_cost", "bid_cost", "net_cost",
+    ]
+    if model_redispatch.empty or "component" not in model_redispatch.columns:
+        return pd.DataFrame(columns=columns)
+
+    mapped_components: set[str] = set()
+    if bmu_mapping_path.exists():
+        try:
+            mapping = pd.read_csv(bmu_mapping_path)
+            if "generator_name" in mapping.columns:
+                mapped_components = set(
+                    mapping["generator_name"].dropna().astype(str)
+                )
+        except Exception as exc:
+            logger.warning(f"Failed to load BMU mapping {bmu_mapping_path}: {exc}")
+    else:
+        logger.warning(
+            f"BMU mapping not found for mapped/unmapped diagnostic: {bmu_mapping_path}"
+        )
+
+    work = model_redispatch.copy()
+    work["elexon_mapped"] = work["component"].astype(str).isin(mapped_components)
+    summary = (
+        work.groupby(["carrier", "type", "elexon_mapped"], dropna=False)
+        .agg(
+            n_components=("component", "nunique"),
+            increase_MWh=("increase_MWh", "sum"),
+            decrease_MWh=("decrease_MWh", "sum"),
+            offer_cost=("offer_cost", "sum"),
+            bid_cost=("bid_cost", "sum"),
+            net_cost=("net_cost", "sum"),
+        )
+        .reset_index()
+        .sort_values(["decrease_MWh", "increase_MWh"], ascending=False)
+    )
+    return summary.reindex(columns=columns)
+
+
 def _load_or_fetch_validation_data(
     start_date: str,
     end_date: str,
@@ -455,6 +629,7 @@ def _load_or_fetch_validation_data(
     cache_path.mkdir(parents=True, exist_ok=True)
 
     files = {
+        "boav": cache_path / "boav_data.csv",
         "boalf": cache_path / "boalf_data.csv",
         "system_prices": cache_path / "system_prices.csv",
         "b1610": cache_path / "b1610_actual.csv",
@@ -498,6 +673,7 @@ def _load_or_fetch_validation_data_checked(
     meta_path = cache_path / "coverage_meta.json"
 
     files = {
+        "boav": cache_path / "boav_data.csv",
         "boalf": cache_path / "boalf_data.csv",
         "system_prices": cache_path / "system_prices.csv",
         "b1610": cache_path / "b1610_actual.csv",
@@ -508,7 +684,10 @@ def _load_or_fetch_validation_data_checked(
 
     def _extract_coverage(kind: str, path: Path):
         try:
-            if kind == "boalf":
+            if kind == "boav":
+                df = pd.read_csv(path, usecols=["datetime"])
+                ts = pd.to_datetime(df["datetime"], errors="coerce")
+            elif kind == "boalf":
                 df = pd.read_csv(path, usecols=["timeFrom", "timeTo"])
                 ts_from = pd.to_datetime(
                     df["timeFrom"], utc=True, errors="coerce"
@@ -646,11 +825,13 @@ def create_validation_report(
     model_prices: pd.DataFrame,
     model_wholesale_dispatch: pd.DataFrame,
     model_balancing_dispatch: pd.DataFrame,
+    boav_df: pd.DataFrame,
     boalf_df: pd.DataFrame,
     disbsad_df: pd.DataFrame,
     system_prices: pd.DataFrame,
     b1610_df: pd.DataFrame,
     mid_prices: pd.Series,
+    mapped_redispatch: pd.DataFrame,
     scenario_id: str,
     modelled_year: int,
     logger: logging.Logger,
@@ -695,17 +876,18 @@ def create_validation_report(
     model_inc = model_redispatch["increase_MWh"].sum() if "increase_MWh" in model_redispatch.columns else 0
     model_dec = model_redispatch["decrease_MWh"].sum() if "decrease_MWh" in model_redispatch.columns else 0
 
-    boalf_summary = create_boalf_flag_summary(boalf_df)
-    if not boalf_df.empty:
-        boalf_agg = _aggregate_boalf_by_carrier(boalf_df)
-        elexon_inc = boalf_agg["increase_MW"].sum()  # MW-level, convert approx to MWh
-        elexon_dec = boalf_agg["decrease_MW"].sum()
-        # BOALF level changes are MW at each SP (not energy); approximate MWh as MW * 0.5h
-        elexon_inc_mwh = elexon_inc * 0.5
-        elexon_dec_mwh = elexon_dec * 0.5
+    boav_agg = aggregate_boav_by_carrier(boav_df)
+    if not boav_agg.empty:
+        elexon_inc_mwh = float(boav_agg["increase_mwh"].sum())
+        elexon_dec_mwh = float(boav_agg["decrease_mwh"].sum())
     else:
         elexon_inc_mwh = None
         elexon_dec_mwh = None
+
+    boalf_summary = create_boalf_flag_summary(boalf_df)
+    if not boalf_df.empty:
+        boalf_agg = _aggregate_boalf_by_carrier(boalf_df)
+    else:
         boalf_agg = pd.DataFrame()
 
     rows.append({
@@ -714,7 +896,7 @@ def create_validation_report(
         "elexon_value": f"{elexon_inc_mwh:,.0f}" if elexon_inc_mwh is not None else "N/A",
         "unit": "MWh",
         "ratio": f"{model_inc / elexon_inc_mwh:.2f}" if elexon_inc_mwh else "—",
-        "note": "BOALF acceptance-level increases (approx MWh)",
+        "note": "ELEXON BOAV accepted offer volumes (real BM turn-up)",
     })
     rows.append({
         "metric": "Total decrease volume",
@@ -722,8 +904,32 @@ def create_validation_report(
         "elexon_value": f"{elexon_dec_mwh:,.0f}" if elexon_dec_mwh is not None else "N/A",
         "unit": "MWh",
         "ratio": f"{model_dec / elexon_dec_mwh:.2f}" if elexon_dec_mwh else "—",
-        "note": "BOALF acceptance-level decreases (approx MWh)",
+        "note": "ELEXON BOAV accepted bid volumes (real BM turn-down)",
     })
+
+    if not mapped_redispatch.empty and "elexon_mapped" in mapped_redispatch.columns:
+        mapped_rows = mapped_redispatch[
+            (mapped_redispatch["elexon_mapped"].astype(bool))
+            & (mapped_redispatch["type"] == "generator")
+        ]
+        mapped_inc = float(mapped_rows["increase_MWh"].sum())
+        mapped_dec = float(mapped_rows["decrease_MWh"].sum())
+        rows.append({
+            "metric": "BMU-mapped generator increase volume",
+            "model_value": f"{mapped_inc:,.0f}",
+            "elexon_value": f"{elexon_inc_mwh:,.0f}" if elexon_inc_mwh is not None else "N/A",
+            "unit": "MWh",
+            "ratio": f"{mapped_inc / elexon_inc_mwh:.2f}" if elexon_inc_mwh else "-",
+            "note": "Mapped model generators only; excludes non-BMU/embedded model assets",
+        })
+        rows.append({
+            "metric": "BMU-mapped generator decrease volume",
+            "model_value": f"{mapped_dec:,.0f}",
+            "elexon_value": f"{elexon_dec_mwh:,.0f}" if elexon_dec_mwh is not None else "N/A",
+            "unit": "MWh",
+            "ratio": f"{mapped_dec / elexon_dec_mwh:.2f}" if elexon_dec_mwh else "-",
+            "note": "Mapped model generators only; excludes non-BMU/embedded model assets",
+        })
 
     if not boalf_summary.empty:
         total_rows = boalf_summary[boalf_summary["scope"] == "total"].set_index("group")
@@ -956,14 +1162,14 @@ def create_validation_report(
         })
 
     # ── 6. Per-carrier redispatch comparison ─────────────────────────────
-    if not boalf_agg.empty and "carrier" in model_redispatch.columns:
+    if not boav_agg.empty and "carrier" in model_redispatch.columns:
         model_by_carrier = model_redispatch.groupby("carrier")[["increase_MWh", "decrease_MWh"]].sum()
 
-        for carrier in boalf_agg["carrier"].unique():
+        for carrier in boav_agg["carrier"].unique():
             if carrier == "unknown":
                 continue
-            elexon_row = boalf_agg[boalf_agg["carrier"] == carrier]
-            elexon_inc_c = elexon_row["increase_MW"].values[0] * 0.5 if len(elexon_row) else 0
+            elexon_row = boav_agg[boav_agg["carrier"] == carrier]
+            elexon_inc_c = elexon_row["increase_mwh"].values[0] if len(elexon_row) else 0
             model_inc_c = model_by_carrier.loc[carrier, "increase_MWh"] if carrier in model_by_carrier.index else 0
 
             if elexon_inc_c > 10 or model_inc_c > 10:
@@ -973,7 +1179,19 @@ def create_validation_report(
                     "elexon_value": f"{elexon_inc_c:,.0f}",
                     "unit": "MWh",
                     "ratio": f"{model_inc_c / elexon_inc_c:.2f}" if elexon_inc_c > 0 else "—",
-                    "note": "Per-carrier BOALF comparison",
+                    "note": "Per-carrier ELEXON BOAV offer-volume comparison",
+                })
+
+            elexon_dec_c = elexon_row["decrease_mwh"].values[0] if len(elexon_row) else 0
+            model_dec_c = model_by_carrier.loc[carrier, "decrease_MWh"] if carrier in model_by_carrier.index else 0
+            if elexon_dec_c > 10 or model_dec_c > 10:
+                rows.append({
+                    "metric": f"Decrease volume: {carrier}",
+                    "model_value": f"{model_dec_c:,.0f}",
+                    "elexon_value": f"{elexon_dec_c:,.0f}",
+                    "unit": "MWh",
+                    "ratio": f"{model_dec_c / elexon_dec_c:.2f}" if elexon_dec_c > 0 else "â€”",
+                    "note": "Per-carrier ELEXON BOAV bid-volume comparison",
                 })
 
     # ── 7. Per-carrier B1610 actual generation vs model dispatch ──────────
@@ -1079,6 +1297,7 @@ def create_validation_dashboard(
     model_redispatch: pd.DataFrame,
     model_prices: pd.DataFrame,
     model_balancing_dispatch: pd.DataFrame,
+    boav_df: pd.DataFrame,
     boalf_df: pd.DataFrame,
     system_prices: pd.DataFrame,
     b1610_df: pd.DataFrame,
@@ -1108,7 +1327,7 @@ def create_validation_dashboard(
         rows=3, cols=2,
         subplot_titles=[
             "Price Duration Curve: Model vs ELEXON",
-            "Redispatch Volumes by Carrier: Model vs BOALF",
+            "Redispatch Volumes by Carrier: Model vs BOAV",
             "Price Time Series: Model Nodal vs ELEXON SBP",
             "Total Dispatch: Model vs B1610",
             "Per-Carrier Generation: Model vs B1610",
@@ -1149,25 +1368,25 @@ def create_validation_dashboard(
     fig.update_yaxes(title_text="£/MWh", row=1, col=1)
 
     # ── Panel 2: Redispatch by carrier comparison ────────────────────────
-    if not boalf_df.empty and "carrier" in model_redispatch.columns:
-        boalf_agg = _aggregate_boalf_by_carrier(boalf_df)
+    if not boav_df.empty and "carrier" in model_redispatch.columns:
+        boav_agg = aggregate_boav_by_carrier(boav_df)
         model_by_c = model_redispatch.groupby("carrier")["increase_MWh"].sum()
 
         # Merge on common carriers
-        carriers = sorted(set(boalf_agg["carrier"].unique()) | set(model_by_c.index))
+        carriers = sorted(set(boav_agg["carrier"].unique()) | set(model_by_c.index))
         carriers = [c for c in carriers if c != "unknown"]
         model_vals = [model_by_c.get(c, 0) for c in carriers]
         elexon_vals = []
         for c in carriers:
-            row = boalf_agg[boalf_agg["carrier"] == c]
-            elexon_vals.append(row["increase_MW"].values[0] * 0.5 if len(row) else 0)
+            row = boav_agg[boav_agg["carrier"] == c]
+            elexon_vals.append(row["increase_mwh"].values[0] if len(row) else 0)
 
         fig.add_trace(
             go.Bar(x=carriers, y=model_vals, name="Model (MWh)", marker_color="#1f77b4"),
             row=1, col=2,
         )
         fig.add_trace(
-            go.Bar(x=carriers, y=elexon_vals, name="BOALF (approx MWh)", marker_color="#ff7f0e"),
+            go.Bar(x=carriers, y=elexon_vals, name="ELEXON BOAV offers (MWh)", marker_color="#ff7f0e"),
             row=1, col=2,
         )
         fig.update_yaxes(title_text="MWh", row=1, col=2)
@@ -1313,8 +1532,10 @@ def validate_bm_results(
     balancing_dispatch_csv: str,
     output_csv: str,
     output_html: str,
+    boav_by_carrier_csv: str,
     boalf_by_flag_csv: str,
     disbsad_summary_csv: str,
+    mapped_redispatch_csv: str,
     logger: logging.Logger,
 ):
     """
@@ -1339,8 +1560,10 @@ def validate_bm_results(
         logger.info(f"Future scenario (year {modelled_year}) — ELEXON BM validation not available")
         pd.DataFrame([{"metric": "Status", "model_value": "Future scenario",
                         "elexon_value": "N/A", "unit": "", "ratio": "", "note": "No ELEXON data for future years"}]).to_csv(output_csv, index=False)
+        pd.DataFrame().to_csv(boav_by_carrier_csv, index=False)
         pd.DataFrame().to_csv(boalf_by_flag_csv, index=False)
         pd.DataFrame().to_csv(disbsad_summary_csv, index=False)
+        pd.DataFrame().to_csv(mapped_redispatch_csv, index=False)
         Path(output_html).write_text(
             f"<html><body><h1>BM Validation: {scenario_id}</h1>"
             f"<p>Future scenario ({modelled_year}) — no ELEXON data available for validation.</p></body></html>"
@@ -1360,12 +1583,40 @@ def validate_bm_results(
     end_date = solve_period.get("end", "2020-01-07 23:00")[:10]
 
     # Load or fetch ELEXON validation data
-    cache_dir = f"resources/market/elexon/validation/{modelled_year}"
+    cache_dir = f"resources/market/elexon/validation/{modelled_year}/{scenario_id}"
     data = _load_or_fetch_validation_data_checked(
         start_date, end_date, cache_dir, logger
     )
     start_ts = pd.Timestamp(start_date)
     end_ts = pd.Timestamp(end_date) + pd.Timedelta(hours=23)
+
+    # Load BOAV accepted volumes (primary BM volume benchmark)
+    boav_path = data.get("boav_file", "")
+    boav_df = pd.DataFrame()
+    if boav_path and Path(boav_path).exists():
+        try:
+            boav_df = pd.read_csv(boav_path)
+            boav_df = _normalise_boav_dataframe(boav_df)
+            if "datetime" in boav_df.columns:
+                boav_df = boav_df[
+                    (boav_df["datetime"] >= start_ts)
+                    & (boav_df["datetime"] <= end_ts + pd.Timedelta(minutes=59))
+                ]
+            logger.info(f"Loaded BOAV: {len(boav_df)} accepted-volume records")
+        except Exception as e:
+            logger.warning(f"Failed to load BOAV: {e}")
+
+    bmu_mapping_path = Path(f"resources/generators/{scenario_id}_bmu_mapping.csv")
+    boav_df = _apply_bmu_carrier_mapping(boav_df, bmu_mapping_path, logger)
+
+    mapped_redispatch = create_mapped_redispatch_summary(
+        model_redispatch, bmu_mapping_path, logger
+    )
+    mapped_redispatch.to_csv(mapped_redispatch_csv, index=False)
+    logger.info(
+        f"Mapped/unmapped redispatch summary: {mapped_redispatch_csv} "
+        f"({len(mapped_redispatch)} rows)"
+    )
 
     # Load BOALF
     boalf_path = data.get("boalf_file", "")
@@ -1426,6 +1677,10 @@ def validate_bm_results(
         except Exception as e:
             logger.warning(f"Failed to load DISBSAD: {e}")
 
+    boav_by_carrier = aggregate_boav_by_carrier(boav_df)
+    boav_by_carrier.to_csv(boav_by_carrier_csv, index=False)
+    logger.info(f"BOAV carrier summary: {boav_by_carrier_csv} ({len(boav_by_carrier)} rows)")
+
     boalf_flag_summary = create_boalf_flag_summary(boalf_df)
     boalf_flag_summary.to_csv(boalf_by_flag_csv, index=False)
     logger.info(f"BOALF flag summary: {boalf_by_flag_csv} ({len(boalf_flag_summary)} rows)")
@@ -1460,11 +1715,13 @@ def validate_bm_results(
         model_prices=model_prices,
         model_wholesale_dispatch=model_wholesale,
         model_balancing_dispatch=model_balancing,
+        boav_df=boav_df,
         boalf_df=boalf_df,
         disbsad_df=disbsad_df,
         system_prices=sys_prices,
         b1610_df=b1610_df,
         mid_prices=mid_prices,
+        mapped_redispatch=mapped_redispatch,
         scenario_id=scenario_id,
         modelled_year=modelled_year,
         logger=logger,
@@ -1478,6 +1735,7 @@ def validate_bm_results(
         model_redispatch=model_redispatch,
         model_prices=model_prices,
         model_balancing_dispatch=model_balancing,
+        boav_df=boav_df,
         boalf_df=boalf_df,
         system_prices=sys_prices,
         b1610_df=b1610_df,
@@ -1518,8 +1776,10 @@ if __name__ == "__main__":
             balancing_dispatch_csv=snakemake.input.balancing_dispatch_csv,
             output_csv=snakemake.output.validation_csv,
             output_html=snakemake.output.validation_html,
+            boav_by_carrier_csv=snakemake.output.boav_by_carrier_csv,
             boalf_by_flag_csv=snakemake.output.boalf_by_flag_csv,
             disbsad_summary_csv=snakemake.output.disbsad_summary_csv,
+            mapped_redispatch_csv=snakemake.output.mapped_redispatch_csv,
             logger=logger,
         )
 

@@ -23,6 +23,8 @@ import pandas as pd
 import numpy as np
 import logging
 import time
+import shutil
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
@@ -41,6 +43,51 @@ ELEXON_API_BASE = "https://data.elexon.co.uk/bmrs/api/v1"
 
 # Rate limiting: max requests per second
 ELEXON_RATE_LIMIT = 2.0  # conservative
+
+DEFAULT_BOD_CACHE_DIR = Path("data/market/elexon_bod")
+DEFAULT_PROCESSED_BOD_CACHE_DIR = Path("data/market/elexon_processed")
+DEFAULT_RAW_BOD_CACHE_FORMAT = "parquet"
+
+
+def _processed_bod_cache_path(
+    cache_dir: Path,
+    start_date: str,
+    end_date: str,
+    build_ladders: bool,
+    max_ladder_blocks: int,
+) -> Path:
+    """Return the reusable processed-output cache directory for a date range."""
+    ladder_tag = f"ladders-{int(bool(build_ladders))}"
+    block_tag = f"blocks-{int(max_ladder_blocks)}" if build_ladders else "blocks-0"
+    return cache_dir / f"{start_date}_to_{end_date}_{ladder_tag}_{block_tag}"
+
+
+def _processed_bod_files(path: Path) -> dict[str, Path]:
+    """Return expected processed BOD files for a cache/output directory."""
+    return {
+        "offers_file": path / "elexon_offers.csv",
+        "bids_file": path / "elexon_bids.csv",
+        "offer_ladders_file": path / "elexon_offer_ladders.csv",
+        "bid_ladders_file": path / "elexon_bid_ladders.csv",
+    }
+
+
+def _processed_bod_cache_complete(path: Path) -> bool:
+    """Check whether the processed cache has the files needed by this run."""
+    files = _processed_bod_files(path)
+    required = files.keys()
+    return all(files[key].exists() and files[key].stat().st_size > 0 for key in required)
+
+
+def _copy_processed_bod_files(source_dir: Path, target_dir: Path) -> dict[str, str]:
+    """Copy processed BOD cache files into the Snakemake output directory."""
+    target_dir.mkdir(parents=True, exist_ok=True)
+    source_files = _processed_bod_files(source_dir)
+    target_files = _processed_bod_files(target_dir)
+    for key, source in source_files.items():
+        if source.exists():
+            shutil.copy2(source, target_files[key])
+    return {key: str(path) for key, path in target_files.items()}
 
 
 def _check_requests_available():
@@ -116,6 +163,95 @@ def fetch_bod_data(
     return df
 
 
+def _bod_cache_path(cache_dir: Path, date: str, cache_format: str = "csv") -> Path:
+    """Return the local raw BOD cache path for one settlement date."""
+    year = pd.Timestamp(date).year
+    suffix = ".parquet" if str(cache_format).lower() == "parquet" else ".csv"
+    return cache_dir / str(year) / f"bod_{date}{suffix}"
+
+
+def _read_bod_cache(path: Path) -> pd.DataFrame:
+    """Read a raw daily BOD cache file in CSV or Parquet format."""
+    if path.suffix.lower() == ".parquet":
+        return pd.read_parquet(path)
+    return pd.read_csv(path, low_memory=False)
+
+
+def _write_bod_cache(df: pd.DataFrame, path: Path) -> None:
+    """Write a raw daily BOD cache file in CSV or Parquet format."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix.lower() == ".parquet":
+        try:
+            df.to_parquet(path, compression="zstd", index=False)
+        except (ImportError, ValueError) as exc:
+            fallback = path.with_suffix(".csv")
+            logger.warning(
+                f"  Could not write Parquet cache {path}: {exc}; "
+                f"writing CSV cache {fallback}"
+            )
+            df.to_csv(fallback, index=False)
+    else:
+        df.to_csv(path, index=False)
+
+
+def _load_or_fetch_bod_data(
+    date: str,
+    cache_dir: Path | None,
+    logger: logging.Logger = logger,
+    raw_cache_format: str = DEFAULT_RAW_BOD_CACHE_FORMAT,
+    convert_legacy_csv: bool = True,
+) -> tuple[pd.DataFrame, bool]:
+    """
+    Load a raw daily BOD frame from cache, or fetch and persist it.
+
+    Returns
+    -------
+    (dataframe, from_cache)
+    """
+    raw_cache_format = str(raw_cache_format or "csv").lower()
+    if raw_cache_format not in {"csv", "parquet"}:
+        logger.warning(
+            f"  Unsupported raw BOD cache format {raw_cache_format!r}; using parquet"
+        )
+        raw_cache_format = "parquet"
+
+    cache_path = _bod_cache_path(cache_dir, date, raw_cache_format) if cache_dir else None
+    legacy_csv_path = _bod_cache_path(cache_dir, date, "csv") if cache_dir else None
+    candidate_paths = []
+    if cache_path:
+        candidate_paths.append(cache_path)
+    if legacy_csv_path and legacy_csv_path != cache_path:
+        candidate_paths.append(legacy_csv_path)
+
+    for candidate in candidate_paths:
+        if candidate.exists() and candidate.stat().st_size > 0:
+            try:
+                cached = _read_bod_cache(candidate)
+                if not cached.empty:
+                    if (
+                        convert_legacy_csv
+                        and cache_path
+                        and cache_path.suffix.lower() == ".parquet"
+                        and candidate.suffix.lower() == ".csv"
+                        and not cache_path.exists()
+                    ):
+                        try:
+                            _write_bod_cache(cached, cache_path)
+                        except Exception as exc:
+                            logger.warning(
+                                f"  Could not convert cached BOD {candidate} to "
+                                f"{cache_path}: {exc}"
+                            )
+                    return cached, True
+            except Exception as exc:
+                logger.warning(f"  Could not read cached BOD {candidate}: {exc}; refetching")
+
+    bod = fetch_bod_data(date, logger=logger)
+    if cache_path:
+        _write_bod_cache(bod, cache_path)
+    return bod, False
+
+
 def aggregate_bod_to_hourly(
     bod_df: pd.DataFrame,
     date: str,
@@ -152,8 +288,12 @@ def aggregate_bod_to_hourly(
             bod_df["level_from"], errors="coerce"
         ).abs()
 
-    offers = bod_df[bod_df["offer_price"].notna()].copy()
-    bids = bod_df[bod_df["bid_price"].notna()].copy()
+    offers = _bod_side_rows(bod_df, "offer_price", "offer")
+    bids = _bod_side_rows(bod_df, "bid_price", "bid")
+    if not offers.empty:
+        offers["offer_volume"] = _bod_pair_band_volume(offers, "offer")
+    if not bids.empty:
+        bids["bid_volume"] = _bod_pair_band_volume(bids, "bid")
 
     def _weighted_avg(group, price_col, vol_col):
         if vol_col not in group.columns:
@@ -197,11 +337,239 @@ def aggregate_bod_to_hourly(
     return offer_prices, bid_prices
 
 
+def _bod_block_volume(df: pd.DataFrame, side: str) -> pd.Series:
+    """Return per-row ladder volume in MW using the best available BOD fields."""
+    if {"level_from", "level_to"}.issubset(df.columns):
+        level_from = pd.to_numeric(df["level_from"], errors="coerce")
+        level_to = pd.to_numeric(df["level_to"], errors="coerce")
+        volume = (level_to - level_from).abs()
+    else:
+        volume = pd.Series(np.nan, index=df.index, dtype=float)
+
+    explicit_col = f"{side}_volume"
+    if explicit_col in df.columns:
+        explicit = pd.to_numeric(df[explicit_col], errors="coerce").abs()
+        volume = volume.where(volume.notna() & (volume > 0), explicit)
+
+    fallback_col = "level_to" if side == "offer" else "level_from"
+    if fallback_col in df.columns:
+        fallback = pd.to_numeric(df[fallback_col], errors="coerce").abs()
+        volume = volume.where(volume.notna() & (volume > 0), fallback)
+
+    return volume.fillna(0.0).clip(lower=0.0)
+
+
+def _bod_side_rows(bod_df: pd.DataFrame, price_col: str, side: str) -> pd.DataFrame:
+    """
+    Return BOD rows for the primary side of each bid-offer pair.
+
+    Every BOD row has both a bid and offer price. The opposite-side price is
+    the undo price for an already accepted action, not the primary price for a
+    new movement away from FPN. For this market model we approximate wholesale
+    dispatch as the FPN, so offers should use positive pair IDs and bids should
+    use negative pair IDs.
+    """
+    side_df = bod_df[bod_df[price_col].notna()].copy()
+    if "pair_id" not in side_df.columns:
+        return side_df
+
+    pair_id = pd.to_numeric(side_df["pair_id"], errors="coerce")
+    if side == "offer":
+        return side_df[pair_id > 0].copy()
+    if side == "bid":
+        return side_df[pair_id < 0].copy()
+    return side_df
+
+
+def _bod_pair_band_volume(df: pd.DataFrame, side: str) -> pd.Series:
+    """
+    Estimate BOD pair band widths in MW from cumulative pair levels.
+
+    ELEXON BOD stream rows provide the level for each pair. The usable band
+    width for pair 1 is the distance from FPN to pair 1; for pair 2 it is the
+    distance between pair 1 and pair 2, and so on. Falling back to absolute
+    levels double-counts deeper pairs and overstates cheap ladder volume.
+    """
+    required = {"bmu_id", "settlement_period", "pair_id", "level_from", "level_to"}
+    if not required.issubset(df.columns):
+        return _bod_block_volume(df, side)
+
+    work = df.copy()
+    work["_pair_id"] = pd.to_numeric(work["pair_id"], errors="coerce")
+    work["_pair_rank"] = work["_pair_id"].abs()
+    level_from = pd.to_numeric(work["level_from"], errors="coerce").abs()
+    level_to = pd.to_numeric(work["level_to"], errors="coerce").abs()
+    work["_level_abs"] = pd.concat([level_from, level_to], axis=1).max(axis=1)
+
+    group_cols = ["bmu_id", "settlement_period"]
+    for optional_col in ["time_from", "time_to"]:
+        if optional_col in work.columns:
+            group_cols.append(optional_col)
+
+    ordered = work.sort_values(group_cols + ["_pair_rank"], kind="mergesort")
+    grouped_levels = ordered.groupby(group_cols, sort=False)["_level_abs"]
+    previous_level = grouped_levels.cummax().groupby(
+        [ordered[col] for col in group_cols], sort=False
+    ).shift(fill_value=0.0)
+    volume = (ordered["_level_abs"] - previous_level).clip(lower=0.0)
+    volume = volume.reindex(work.index)
+
+    fallback = _bod_block_volume(df, side)
+    volume = volume.where(volume > 0, fallback)
+    return volume.fillna(0.0).clip(lower=0.0)
+
+
+def build_bod_ladders_hourly(
+    bod_df: pd.DataFrame,
+    date: str,
+    max_blocks_per_side: int = 10,
+    logger: logging.Logger = logger,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Convert raw BOD rows into hourly bid/offer price ladders.
+
+    BOD is half-hourly, while the market model is hourly. Volumes are converted
+    to hourly-average MW by multiplying each settlement-period row by 0.5 before
+    combining the two periods in an hour.
+    """
+    cols = ["datetime", "bmu_id", "block", "price", "volume_mw"]
+    if bod_df.empty:
+        return pd.DataFrame(columns=cols), pd.DataFrame(columns=cols)
+
+    max_blocks = max(1, int(max_blocks_per_side or 1))
+    base = pd.Timestamp(date)
+    work = bod_df.copy()
+    work["datetime"] = (
+        base
+        + pd.to_timedelta(
+            (pd.to_numeric(work["settlement_period"], errors="coerce") - 1) * 30,
+            unit="m",
+        )
+    ).dt.floor("h")
+
+    def _build_side(price_col: str, side: str) -> pd.DataFrame:
+        side_df = _bod_side_rows(work, price_col, side)
+        if side_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        side_df["price"] = pd.to_numeric(side_df[price_col], errors="coerce")
+        if side == "bid":
+            # Convert ELEXON raw bids to the model's ESO-cost convention.
+            side_df["price"] = -side_df["price"]
+        side_df["volume_mw"] = _bod_pair_band_volume(side_df, side) * 0.5
+        side_df = side_df[
+            side_df["bmu_id"].notna()
+            & side_df["datetime"].notna()
+            & side_df["price"].notna()
+            & (side_df["volume_mw"] > 0)
+        ].copy()
+        if side_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        grouped = (
+            side_df.groupby(["datetime", "bmu_id", "price"], as_index=False)[
+                "volume_mw"
+            ]
+            .sum()
+            .sort_values(["datetime", "bmu_id", "price"])
+        )
+
+        records = []
+        for (dt, bmu_id), group in grouped.groupby(["datetime", "bmu_id"], sort=False):
+            group = group.sort_values("price")
+            if len(group) > max_blocks:
+                head = group.iloc[: max_blocks - 1].copy()
+                tail = group.iloc[max_blocks - 1 :].copy()
+                tail_volume = tail["volume_mw"].sum()
+                tail_price = (
+                    (tail["price"] * tail["volume_mw"]).sum() / tail_volume
+                    if tail_volume > 0
+                    else tail["price"].mean()
+                )
+                group = pd.concat(
+                    [
+                        head,
+                        pd.DataFrame(
+                            {
+                                "datetime": [dt],
+                                "bmu_id": [bmu_id],
+                                "price": [tail_price],
+                                "volume_mw": [tail_volume],
+                            }
+                        ),
+                    ],
+                    ignore_index=True,
+                )
+
+            for block, row in enumerate(group.itertuples(index=False), start=1):
+                records.append(
+                    {
+                        "datetime": dt,
+                        "bmu_id": bmu_id,
+                        "block": block,
+                        "price": float(row.price),
+                        "volume_mw": float(row.volume_mw),
+                    }
+                )
+
+        return pd.DataFrame.from_records(records, columns=cols)
+
+    return _build_side("offer_price", "offer"), _build_side("bid_price", "bid")
+
+
+def _process_bod_day(task: dict) -> dict:
+    """Load/fetch and process one settlement day of BOD data."""
+    date_str = task["date"]
+    cache_dir = Path(task["cache_dir"]) if task.get("cache_dir") else None
+    bod, from_cache = _load_or_fetch_bod_data(
+        date_str,
+        cache_dir=cache_dir,
+        logger=logger,
+        raw_cache_format=task.get("raw_cache_format", DEFAULT_RAW_BOD_CACHE_FORMAT),
+        convert_legacy_csv=bool(task.get("convert_legacy_csv", True)),
+    )
+
+    result = {
+        "date": date_str,
+        "from_cache": from_cache,
+        "rows": len(bod),
+        "offers": pd.DataFrame(),
+        "bids": pd.DataFrame(),
+        "offer_ladders": pd.DataFrame(),
+        "bid_ladders": pd.DataFrame(),
+    }
+    if bod.empty:
+        return result
+
+    offers, bids = aggregate_bod_to_hourly(bod, date_str, logger=logger)
+    result["offers"] = offers
+    result["bids"] = bids
+
+    if task.get("build_ladders", True):
+        offer_ladders, bid_ladders = build_bod_ladders_hourly(
+            bod,
+            date_str,
+            max_blocks_per_side=int(task.get("max_ladder_blocks", 10)),
+            logger=logger,
+        )
+        result["offer_ladders"] = offer_ladders
+        result["bid_ladders"] = bid_ladders
+
+    return result
+
+
 def retrieve_elexon_market_data(
     start_date: str,
     end_date: str,
     output_dir: str,
     logger: logging.Logger = logger,
+    max_ladder_blocks: int = 10,
+    raw_bod_cache_dir: str | Path | None = DEFAULT_BOD_CACHE_DIR,
+    processed_bod_cache_dir: str | Path | None = DEFAULT_PROCESSED_BOD_CACHE_DIR,
+    build_ladders: bool = True,
+    parallel_days: int = 1,
+    raw_bod_cache_format: str = DEFAULT_RAW_BOD_CACHE_FORMAT,
+    convert_legacy_csv: bool = True,
 ) -> dict:
     """
     Fetch ELEXON bid/offer data for a date range and save to CSV.
@@ -224,42 +592,155 @@ def retrieve_elexon_market_data(
 
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
+    cache_dir = Path(raw_bod_cache_dir) if raw_bod_cache_dir else None
+    processed_cache_dir = (
+        Path(processed_bod_cache_dir) if processed_bod_cache_dir else None
+    )
 
     start = pd.Timestamp(start_date)
     end = pd.Timestamp(end_date)
     dates = pd.date_range(start, end, freq="D")
 
+    output_files = _processed_bod_files(out_path)
+    offers_path = output_files["offers_file"]
+    bids_path = output_files["bids_file"]
+    offer_ladders_path = output_files["offer_ladders_file"]
+    bid_ladders_path = output_files["bid_ladders_file"]
+    processed_cache_path = None
+    if processed_cache_dir:
+        processed_cache_path = _processed_bod_cache_path(
+            processed_cache_dir,
+            start_date,
+            end_date,
+            build_ladders=build_ladders,
+            max_ladder_blocks=max_ladder_blocks,
+        )
+        if _processed_bod_cache_complete(processed_cache_path):
+            logger.info(f"Using processed ELEXON BOD cache: {processed_cache_path}")
+            return _copy_processed_bod_files(processed_cache_path, out_path)
+
     logger.info(f"Fetching ELEXON BOD data: {start_date} to {end_date} ({len(dates)} days)")
+    if cache_dir:
+        logger.info(f"Raw daily BOD cache: {cache_dir}")
+        logger.info(f"Raw daily BOD cache format: {raw_bod_cache_format}")
+    if processed_cache_path:
+        logger.info(f"Processed BOD cache target: {processed_cache_path}")
+    if not build_ladders:
+        logger.info("Price ladders disabled; skipping expensive BOD ladder construction")
+    parallel_days = max(1, int(parallel_days or 1))
 
     all_offers = []
     all_bids = []
+    all_offer_ladders = []
+    all_bid_ladders = []
+    n_cached = 0
+    n_fetched = 0
 
-    for i, date in enumerate(dates):
-        date_str = date.strftime("%Y-%m-%d")
-        if (i + 1) % 5 == 0 or i == 0:
-            logger.info(f"  Day {i + 1}/{len(dates)}: {date_str}")
+    def _raw_cache_exists(date_str: str) -> bool:
+        if not cache_dir:
+            return False
+        preferred = _bod_cache_path(cache_dir, date_str, raw_bod_cache_format)
+        legacy_csv = _bod_cache_path(cache_dir, date_str, "csv")
+        return (
+            preferred.exists() and preferred.stat().st_size > 0
+        ) or (
+            legacy_csv.exists() and legacy_csv.stat().st_size > 0
+        )
 
+    date_strings = [date.strftime("%Y-%m-%d") for date in dates]
+    all_raw_cached = all(_raw_cache_exists(date_str) for date_str in date_strings)
+    use_parallel = parallel_days > 1 and all_raw_cached and len(date_strings) > 1
+    if parallel_days > 1 and not use_parallel:
+        logger.info(
+            "Parallel day processing deferred until all raw daily BOD files are cached; "
+            "fetching missing days sequentially to respect the ELEXON rate limit"
+        )
+    if use_parallel:
+        logger.info(f"Processing cached daily BOD data with {parallel_days} workers")
+
+    tasks = [
+        {
+            "date": date_str,
+            "cache_dir": str(cache_dir) if cache_dir else None,
+            "build_ladders": build_ladders,
+            "max_ladder_blocks": max_ladder_blocks,
+            "raw_cache_format": raw_bod_cache_format,
+            "convert_legacy_csv": convert_legacy_csv,
+        }
+        for date_str in date_strings
+    ]
+
+    def _consume_day_result(result: dict):
+        nonlocal n_cached, n_fetched
+        date_str = result["date"]
+        if result["from_cache"]:
+            n_cached += 1
+            logger.info(f"    loaded cached BOD rows: {result['rows']:,}")
+        else:
+            n_fetched += 1
+            logger.info(f"    fetched BOD rows: {result['rows']:,}")
+        if result["rows"] == 0:
+            logger.warning(f"  No BOD data for {date_str}")
+            return
+        if not result["offers"].empty:
+            all_offers.append(result["offers"])
+        if not result["bids"].empty:
+            all_bids.append(result["bids"])
+        if build_ladders:
+            if not result["offer_ladders"].empty:
+                all_offer_ladders.append(result["offer_ladders"])
+            if not result["bid_ladders"].empty:
+                all_bid_ladders.append(result["bid_ladders"])
+
+    if use_parallel:
         try:
-            bod = fetch_bod_data(date_str, logger=logger)
-            if bod.empty:
-                logger.warning(f"  No BOD data for {date_str}")
+            executor_cls = ProcessPoolExecutor
+            with executor_cls(max_workers=parallel_days) as executor:
+                future_to_date = {
+                    executor.submit(_process_bod_day, task): task["date"]
+                    for task in tasks
+                }
+                for future in as_completed(future_to_date):
+                    date_str = future_to_date[future]
+                    try:
+                        logger.info(f"  Day complete: {date_str}")
+                        _consume_day_result(future.result())
+                    except Exception as e:
+                        logger.error(f"  Failed to process {date_str}: {e}")
+        except (OSError, PermissionError) as exc:
+            logger.warning(
+                "Process-based parallelism is unavailable; falling back to "
+                f"threaded day processing ({exc})"
+            )
+            with ThreadPoolExecutor(max_workers=parallel_days) as executor:
+                future_to_date = {
+                    executor.submit(_process_bod_day, task): task["date"]
+                    for task in tasks
+                }
+                for future in as_completed(future_to_date):
+                    date_str = future_to_date[future]
+                    try:
+                        logger.info(f"  Day complete: {date_str}")
+                        _consume_day_result(future.result())
+                    except Exception as e:
+                        logger.error(f"  Failed to process {date_str}: {e}")
+    else:
+        for i, task in enumerate(tasks):
+            date_str = task["date"]
+            logger.info(f"  Day {i + 1}/{len(tasks)}: {date_str}")
+            try:
+                result = _process_bod_day(task)
+                _consume_day_result(result)
+            except Exception as e:
+                logger.error(f"  Failed to fetch {date_str}: {e}")
                 continue
 
-            offers, bids = aggregate_bod_to_hourly(bod, date_str, logger=logger)
-            if not offers.empty:
-                all_offers.append(offers)
-            if not bids.empty:
-                all_bids.append(bids)
+            if not result["from_cache"]:
+                time.sleep(1.0 / ELEXON_RATE_LIMIT)
 
-        except Exception as e:
-            logger.error(f"  Failed to fetch {date_str}: {e}")
-            continue
-
-        time.sleep(1.0 / ELEXON_RATE_LIMIT)
-
-    # Combine all days
-    offers_path = out_path / "elexon_offers.csv"
-    bids_path = out_path / "elexon_bids.csv"
+    logger.info(
+        f"BOD source summary: {n_cached} days from cache, {n_fetched} days fetched"
+    )
 
     if all_offers:
         combined_offers = pd.concat(all_offers, axis=0).sort_index()
@@ -277,7 +758,49 @@ def retrieve_elexon_market_data(
         pd.DataFrame().to_csv(bids_path)
         logger.warning("No bid data collected")
 
-    return {"offers_file": str(offers_path), "bids_file": str(bids_path)}
+    ladder_cols = ["datetime", "bmu_id", "block", "price", "volume_mw"]
+    if not build_ladders:
+        pd.DataFrame(columns=ladder_cols).to_csv(offer_ladders_path, index=False)
+        pd.DataFrame(columns=ladder_cols).to_csv(bid_ladders_path, index=False)
+        logger.info("Saved empty ladder files because price ladders are disabled")
+    elif all_offer_ladders:
+        combined_offer_ladders = pd.concat(all_offer_ladders, ignore_index=True)
+        combined_offer_ladders.sort_values(
+            ["datetime", "bmu_id", "block"]
+        ).to_csv(offer_ladders_path, index=False)
+        logger.info(
+            f"Saved offer ladders: {combined_offer_ladders.shape} to {offer_ladders_path}"
+        )
+    else:
+        pd.DataFrame(columns=ladder_cols).to_csv(offer_ladders_path, index=False)
+        logger.warning("No offer ladder data collected")
+
+    if not build_ladders:
+        pass
+    elif all_bid_ladders:
+        combined_bid_ladders = pd.concat(all_bid_ladders, ignore_index=True)
+        combined_bid_ladders.sort_values(
+            ["datetime", "bmu_id", "block"]
+        ).to_csv(bid_ladders_path, index=False)
+        logger.info(
+            f"Saved bid ladders: {combined_bid_ladders.shape} to {bid_ladders_path}"
+        )
+    else:
+        pd.DataFrame(columns=ladder_cols).to_csv(bid_ladders_path, index=False)
+        logger.warning("No bid ladder data collected")
+
+    if processed_cache_path:
+        processed_cache_path.mkdir(parents=True, exist_ok=True)
+        for key, path in output_files.items():
+            shutil.copy2(path, _processed_bod_files(processed_cache_path)[key])
+        logger.info(f"Saved processed ELEXON BOD cache: {processed_cache_path}")
+
+    return {
+        "offers_file": str(offers_path),
+        "bids_file": str(bids_path),
+        "offer_ladders_file": str(offer_ladders_path),
+        "bid_ladders_file": str(bid_ladders_path),
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -967,6 +1490,104 @@ def fetch_boalf_bulk(
     return df
 
 
+def fetch_boav_range(
+    start_date: str,
+    end_date: str,
+    logger: logging.Logger = logger,
+) -> pd.DataFrame:
+    """
+    Fetch accepted bid/offer volumes (BOAV) for a date range.
+
+    BOAV is the settlement accepted-volume dataset and is the preferred
+    benchmark for BM volume validation. Bid rows are accepted decrease volumes
+    and offer rows are accepted increase volumes. The raw API returns bid
+    volumes as negative MWh and offer volumes as positive MWh.
+    """
+    _check_requests_available()
+
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date)
+    dates = pd.date_range(start, end, freq="D")
+
+    all_records = []
+    fetch_start = time.time()
+    for i, date in enumerate(dates, start=1):
+        date_str = date.strftime("%Y-%m-%d")
+        for side in ["bid", "offer"]:
+            url = (
+                f"{ELEXON_API_BASE}/balancing/settlement/"
+                f"acceptance/volumes/all/{side}/{date_str}"
+            )
+            try:
+                resp = requests.get(url, params={"format": "json"}, timeout=120)
+                resp.raise_for_status()
+                payload = resp.json()
+                if isinstance(payload, list):
+                    records = payload
+                elif isinstance(payload, dict):
+                    records = payload.get("data", [])
+                else:
+                    records = []
+
+                for rec in records:
+                    rec = dict(rec)
+                    rec["side"] = side
+                    all_records.append(rec)
+            except Exception as e:
+                logger.warning(f"  BOAV {side} fetch failed for {date_str}: {e}")
+
+            time.sleep(1.0 / ELEXON_RATE_LIMIT)
+
+        if i == 1 or i % 7 == 0 or i == len(dates):
+            elapsed = time.time() - fetch_start
+            logger.info(
+                f"  BOAV fetched through {date_str} "
+                f"({i}/{len(dates)} days, {elapsed:.0f}s elapsed)"
+            )
+
+    if not all_records:
+        logger.warning("No BOAV data returned")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_records)
+    col_map = {
+        "bmUnit": "bmu_id",
+        "settlementDate": "settlement_date",
+        "settlementPeriod": "settlement_period",
+        "acceptanceId": "acceptance_id",
+        "acceptanceDuration": "acceptance_duration",
+        "totalVolumeAccepted": "accepted_volume_mwh",
+        "startTime": "start_time",
+        "nationalGridBmUnit": "national_grid_bmu",
+        "bmUnitType": "bmu_type",
+        "leadPartyName": "lead_party_name",
+    }
+    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
+
+    if "accepted_volume_mwh" in df.columns:
+        df["accepted_volume_mwh"] = pd.to_numeric(
+            df["accepted_volume_mwh"], errors="coerce"
+        ).fillna(0.0)
+
+    if "settlement_date" in df.columns and "settlement_period" in df.columns:
+        df["datetime"] = pd.to_datetime(df["settlement_date"], errors="coerce") + pd.to_timedelta(
+            (
+                pd.to_numeric(df["settlement_period"], errors="coerce")
+                .fillna(1)
+                .astype(int)
+                - 1
+            )
+            * 30,
+            unit="min",
+        )
+    elif "start_time" in df.columns:
+        df["datetime"] = pd.to_datetime(df["start_time"], utc=True, errors="coerce").dt.tz_localize(None)
+
+    elapsed = time.time() - fetch_start
+    logger.info(f"  BOAV fetch complete: {len(df)} records in {elapsed:.0f}s")
+    return df
+
+
 def fetch_disbsad_range(
     start_date: str,
     end_date: str,
@@ -1188,6 +1809,22 @@ def retrieve_bm_validation_data(
 
     # ── 1. Fetch BOALF (BM acceptances) ──────────────────────────────
     logger.info("\n── Stage 1: BOALF (BM Acceptances) ──")
+    logger.info("\nStage 1: BOAV accepted BM volumes")
+    boav = fetch_boav_range(start_date, end_date, logger=logger)
+    boav_path = out_path / "boav_data.csv"
+    if not boav.empty:
+        boav.to_csv(boav_path, index=False)
+        logger.info(f"Saved BOAV: {len(boav)} records -> {boav_path}")
+    else:
+        if boav_path.exists() and boav_path.stat().st_size >= 100:
+            logger.warning(
+                "No BOAV data collected; preserving existing cached file "
+                f"{boav_path}"
+            )
+        else:
+            logger.warning("No BOAV data collected")
+
+    logger.info("\nStage 2: BOALF acceptance profiles")
     boalf = fetch_boalf_bulk(start_date, end_date, logger=logger)
     boalf_path = out_path / "boalf_data.csv"
     if not boalf.empty:
@@ -1245,6 +1882,7 @@ def retrieve_bm_validation_data(
     logger.info("=" * 70)
 
     return {
+        "boav_file": str(boav_path),
         "boalf_file": str(boalf_path),
         "system_prices_file": str(sys_prices_path),
         "b1610_file": str(b1610_path),
@@ -1270,12 +1908,36 @@ def main():
     end_date = solve_period.get("end", "2023-01-07 23:00")[:10]
 
     output_dir = str(Path(snakemake.output.offers_file).parent)
+    ladder_cfg = (
+        scenario_config.get("market", {})
+        .get("balancing", {})
+        .get("elexon", {})
+        .get("price_ladders", {})
+    )
+    elexon_cfg = (
+        scenario_config.get("market", {})
+        .get("balancing", {})
+        .get("elexon", {})
+    )
 
     results = retrieve_elexon_market_data(
         start_date=start_date,
         end_date=end_date,
         output_dir=output_dir,
         logger=logger,
+        max_ladder_blocks=int(ladder_cfg.get("max_blocks_per_side", 10)),
+        raw_bod_cache_dir=elexon_cfg.get(
+            "raw_bod_cache_dir", str(DEFAULT_BOD_CACHE_DIR)
+        ),
+        processed_bod_cache_dir=elexon_cfg.get(
+            "processed_bod_cache_dir", str(DEFAULT_PROCESSED_BOD_CACHE_DIR)
+        ),
+        build_ladders=bool(ladder_cfg.get("enabled", False)),
+        parallel_days=int(elexon_cfg.get("parallel_days", 1)),
+        raw_bod_cache_format=elexon_cfg.get(
+            "raw_bod_cache_format", DEFAULT_RAW_BOD_CACHE_FORMAT
+        ),
+        convert_legacy_csv=bool(elexon_cfg.get("convert_legacy_csv", True)),
     )
 
     logger.info("=" * 80)

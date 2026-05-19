@@ -176,6 +176,79 @@ def _resolve_bid_offer_source(
     return "derived"
 
 
+def _price_ladders_enabled(balancing: dict) -> bool:
+    """Return True when ELEXON price-ladder dispatch is enabled."""
+    return bool(
+        balancing.get("elexon", {})
+        .get("price_ladders", {})
+        .get("enabled", False)
+    )
+
+
+def _load_elexon_ladder_file(
+    path: Path,
+    bmu_to_gen: dict,
+    generator_index: pd.Index,
+    logger: logging.Logger,
+    label: str,
+) -> pd.DataFrame:
+    """
+    Load a long-format ELEXON ladder file and map BMUs to model generators.
+
+    Output columns: snapshot, generator, block, price, volume_mw.
+    If multiple BMUs map to the same generator, their blocks are stacked and
+    re-ranked by price for each generator-hour.
+    """
+    cols = ["snapshot", "generator", "block", "price", "volume_mw"]
+    if not path.exists():
+        logger.warning(f"ELEXON {label} ladder file not found: {path}")
+        return pd.DataFrame(columns=cols)
+
+    ladders = pd.read_csv(path)
+    if ladders.empty:
+        return pd.DataFrame(columns=cols)
+
+    required = {"datetime", "bmu_id", "price", "volume_mw"}
+    missing = required.difference(ladders.columns)
+    if missing:
+        raise ValueError(
+            f"ELEXON {label} ladder file {path} is missing columns: {sorted(missing)}"
+        )
+
+    ladders["snapshot"] = pd.to_datetime(ladders["datetime"])
+    ladders["generator"] = ladders["bmu_id"].map(bmu_to_gen)
+    ladders["price"] = pd.to_numeric(ladders["price"], errors="coerce")
+    ladders["volume_mw"] = pd.to_numeric(ladders["volume_mw"], errors="coerce")
+    ladders = ladders[
+        ladders["generator"].isin(generator_index)
+        & ladders["snapshot"].notna()
+        & ladders["price"].notna()
+        & ladders["volume_mw"].notna()
+        & (ladders["volume_mw"] > 0)
+    ].copy()
+    if ladders.empty:
+        logger.warning(f"ELEXON {label} ladders loaded but no rows mapped to generators")
+        return pd.DataFrame(columns=cols)
+
+    # Merge identical price blocks after BMU->generator mapping, then re-rank.
+    ladders = (
+        ladders.groupby(["snapshot", "generator", "price"], as_index=False)[
+            "volume_mw"
+        ]
+        .sum()
+        .sort_values(["snapshot", "generator", "price"])
+    )
+    ladders["block"] = (
+        ladders.groupby(["snapshot", "generator"]).cumcount() + 1
+    ).astype(int)
+
+    logger.info(
+        f"Loaded ELEXON {label} ladders: {len(ladders):,} blocks, "
+        f"{ladders['generator'].nunique()} generators"
+    )
+    return ladders[cols]
+
+
 def _resolve_component_participants(
     components: pd.DataFrame,
     participation_cfg: dict,
@@ -190,10 +263,10 @@ def _resolve_component_participants(
     penalty_offer = float(cfg.get("penalty_offer_price", 5000.0))
     penalty_bid = float(cfg.get("penalty_bid_price", 5000.0))
 
-    if behavior not in {"priced_out", "fixed"}:
+    if behavior not in {"priced_out", "fixed", "fallback_priced"}:
         raise ValueError(
             f"Unsupported {component_label} participation behavior='{behavior}'. "
-            "Use 'priced_out' or 'fixed'."
+            "Use 'priced_out', 'fixed', or 'fallback_priced'."
         )
 
     component_index = components.index
@@ -285,6 +358,27 @@ def _apply_participation_policy(
         "generator",
     )
 
+    gen_penalty_override = pd.Index([])
+    if gen_behavior == "fixed" and "carrier" in network.generators.columns:
+        gen_penalty_override = gen_non_participants.intersection(
+            network.generators.index[
+                network.generators["carrier"] == "load_shedding"
+            ]
+        )
+        if len(gen_penalty_override) > 0:
+            gen_participants = pd.Index(
+                [
+                    name
+                    for name in network.generators.index
+                    if name in set(gen_participants).union(gen_penalty_override)
+                ]
+            )
+            gen_non_participants = gen_non_participants.difference(gen_penalty_override)
+            logger.info(
+                f"Keeping {len(gen_penalty_override)} load-shedding generators "
+                "available as priced-out feasibility slack"
+            )
+
     su_cfg = participation_cfg.get("storage_units", {}) or {}
     (
         su_participants,
@@ -302,14 +396,18 @@ def _apply_participation_policy(
 
     network._bm_eligible_generators = gen_participants
     network._bm_participating_generators = (
-        network.generators.index if gen_behavior == "priced_out" else gen_participants
+        network.generators.index
+        if gen_behavior in {"priced_out", "fallback_priced"}
+        else gen_participants
     )
     network._bm_fixed_generators = (
         gen_non_participants if gen_behavior == "fixed" else pd.Index([])
     )
     network._bm_eligible_storage_units = su_participants
     network._bm_participating_storage_units = (
-        network.storage_units.index if su_behavior == "priced_out" else su_participants
+        network.storage_units.index
+        if su_behavior in {"priced_out", "fallback_priced"}
+        else su_participants
     )
     network._bm_fixed_storage_units = (
         su_non_participants if su_behavior == "fixed" else pd.Index([])
@@ -324,6 +422,34 @@ def _apply_participation_policy(
             network._bm_offer_tv.loc[:, gen_non_participants] = gen_penalty_offer
         if hasattr(network, "_bm_bid_tv") and network._bm_bid_tv is not None:
             network._bm_bid_tv.loc[:, gen_non_participants] = gen_penalty_bid
+        if hasattr(network, "_bm_offer_ladders") and network._bm_offer_ladders is not None:
+            network._bm_offer_ladders = network._bm_offer_ladders[
+                ~network._bm_offer_ladders["generator"].isin(gen_non_participants)
+            ].copy()
+        if hasattr(network, "_bm_bid_ladders") and network._bm_bid_ladders is not None:
+            network._bm_bid_ladders = network._bm_bid_ladders[
+                ~network._bm_bid_ladders["generator"].isin(gen_non_participants)
+            ].copy()
+    elif gen_behavior == "fixed" and len(gen_penalty_override) > 0:
+        gen_offer.loc[gen_penalty_override] = gen_penalty_offer
+        gen_bid.loc[gen_penalty_override] = gen_penalty_bid
+        if hasattr(network, "_bm_offer_tv") and network._bm_offer_tv is not None:
+            network._bm_offer_tv.loc[:, gen_penalty_override] = gen_penalty_offer
+        if hasattr(network, "_bm_bid_tv") and network._bm_bid_tv is not None:
+            network._bm_bid_tv.loc[:, gen_penalty_override] = gen_penalty_bid
+        if hasattr(network, "_bm_offer_ladders") and network._bm_offer_ladders is not None:
+            network._bm_offer_ladders = network._bm_offer_ladders[
+                ~network._bm_offer_ladders["generator"].isin(gen_penalty_override)
+            ].copy()
+        if hasattr(network, "_bm_bid_ladders") and network._bm_bid_ladders is not None:
+            network._bm_bid_ladders = network._bm_bid_ladders[
+                ~network._bm_bid_ladders["generator"].isin(gen_penalty_override)
+            ].copy()
+    elif gen_behavior == "fallback_priced" and len(gen_non_participants) > 0:
+        logger.info(
+            f"Keeping fallback bid/offer prices for {len(gen_non_participants)} "
+            "non-eligible generators"
+        )
 
     if su_behavior == "priced_out" and len(su_non_participants) > 0:
         su_offer.loc[su_non_participants] = su_penalty_offer
@@ -332,6 +458,11 @@ def _apply_participation_policy(
             network._bm_su_offer_tv.loc[:, su_non_participants] = su_penalty_offer
         if hasattr(network, "_bm_su_bid_tv") and network._bm_su_bid_tv is not None:
             network._bm_su_bid_tv.loc[:, su_non_participants] = su_penalty_bid
+    elif su_behavior == "fallback_priced" and len(su_non_participants) > 0:
+        logger.info(
+            f"Keeping fallback bid/offer prices for {len(su_non_participants)} "
+            "non-eligible storage units"
+        )
 
     logger.info(
         f"BM generator participation: {len(gen_participants)}/{len(network.generators)} "
@@ -584,6 +715,43 @@ def _load_elexon_bid_offer(
             direct_matched_generators.append(gen_name)
 
     network._bm_direct_matched_generators = pd.Index(direct_matched_generators)
+
+    ladder_cfg = elexon_cfg.get("price_ladders", {}) or {}
+    if bool(ladder_cfg.get("enabled", False)):
+        offer_ladder_file = Path(
+            ladder_cfg.get("offer_file", data_dir / "elexon_offer_ladders.csv")
+        )
+        bid_ladder_file = Path(
+            ladder_cfg.get("bid_file", data_dir / "elexon_bid_ladders.csv")
+        )
+        if not offer_ladder_file.is_absolute() and offer_ladder_file.parent == Path("."):
+            offer_ladder_file = data_dir / offer_ladder_file
+        if not bid_ladder_file.is_absolute() and bid_ladder_file.parent == Path("."):
+            bid_ladder_file = data_dir / bid_ladder_file
+
+        network._bm_offer_ladders = _load_elexon_ladder_file(
+            offer_ladder_file,
+            bmu_to_gen,
+            network.generators.index,
+            logger,
+            label="offer",
+        )
+        network._bm_bid_ladders = _load_elexon_ladder_file(
+            bid_ladder_file,
+            bmu_to_gen,
+            network.generators.index,
+            logger,
+            label="bid",
+        )
+        network._bm_ladder_fallback_volume_mw = float(
+            ladder_cfg.get("fallback_volume_mw", 1.0e6)
+        )
+        network._bm_ladder_missing_hour_fallback = int(
+            bool(ladder_cfg.get("missing_hour_fallback", True))
+        )
+    else:
+        network._bm_offer_ladders = None
+        network._bm_bid_ladders = None
 
     # ── Fitted fallback (opt-in) ──────────────────────────────────────────
     # Fit per-carrier offer/bid = α·MC + β, γ·MC + δ from ELEXON-matched
@@ -998,6 +1166,8 @@ def compute_redispatch_volumes(
     gen_bid_prices_tv: pd.DataFrame | None = None,
     su_offer_prices_tv: pd.DataFrame | None = None,
     su_bid_prices_tv: pd.DataFrame | None = None,
+    gen_offer_ladders: pd.DataFrame | None = None,
+    gen_bid_ladders: pd.DataFrame | None = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute per-asset redispatch volumes and costs.
@@ -1029,6 +1199,59 @@ def compute_redispatch_volumes(
         Per-storage-unit summary with same columns.
     """
 
+    def _snapshot_hours(index: pd.Index) -> pd.Series:
+        """Return per-snapshot durations in hours for MW-to-MWh conversion."""
+        if len(index) == 0:
+            return pd.Series(dtype=float, index=index)
+        if len(index) == 1:
+            return pd.Series(1.0, index=index, dtype=float)
+
+        dt = pd.Series(index=index, data=index.to_series().diff().dt.total_seconds() / 3600)
+        inferred = dt.dropna().median()
+        if not np.isfinite(inferred) or inferred <= 0:
+            inferred = 1.0
+        dt.iloc[0] = inferred
+        dt = dt.fillna(inferred).clip(lower=0.0)
+        return dt.astype(float)
+
+    def _ladder_cost(
+        volume: float,
+        snapshot,
+        component: str,
+        ladder_lookup: dict | None,
+        fallback_price: float,
+    ) -> float:
+        if volume <= 0 or not ladder_lookup:
+            return volume * fallback_price
+        blocks = ladder_lookup.get((snapshot, component))
+        if blocks is None or len(blocks) == 0:
+            return volume * fallback_price
+
+        remaining = float(volume)
+        cost = 0.0
+        for price, volume_mw in blocks:
+            take = min(remaining, float(volume_mw))
+            if take > 0:
+                cost += take * float(price)
+                remaining -= take
+            if remaining <= 1.0e-9:
+                break
+        if remaining > 1.0e-9:
+            cost += remaining * fallback_price
+        return cost
+
+    def _prepare_ladder_lookup(ladders: pd.DataFrame | None) -> dict:
+        if ladders is None or ladders.empty:
+            return {}
+        lookup = {}
+        for key, group in ladders.groupby(["snapshot", "generator"], sort=False):
+            blocks = (
+                group.sort_values("price")[["price", "volume_mw"]]
+                .to_numpy(dtype=float)
+            )
+            lookup[key] = blocks
+        return lookup
+
     def _summarize(
         wholesale_df,
         physical_df,
@@ -1038,10 +1261,13 @@ def compute_redispatch_volumes(
         component_type,
         offer_prices_tv=None,
         bid_prices_tv=None,
+        offer_ladders=None,
+        bid_ladders=None,
     ):
         records = []
         # Align columns
         common = wholesale_df.columns.intersection(physical_df.columns)
+        snapshot_hours = _snapshot_hours(wholesale_df.index)
 
         offer_prices_tv_aligned = None
         bid_prices_tv_aligned = None
@@ -1053,21 +1279,61 @@ def compute_redispatch_volumes(
             bid_prices_tv_aligned = bid_prices_tv.reindex(
                 index=wholesale_df.index, columns=common
             )
+        offer_ladder_lookup = _prepare_ladder_lookup(offer_ladders)
+        bid_ladder_lookup = _prepare_ladder_lookup(bid_ladders)
 
         for name in common:
             diff = physical_df[name] - wholesale_df[name]  # MW per snapshot
-            increase_series = diff.clip(lower=0)
-            decrease_series = (-diff).clip(lower=0)
-            increase = increase_series.sum()  # MWh (hourly snapshots)
+            increase_mw = diff.clip(lower=0)
+            decrease_mw = (-diff).clip(lower=0)
+            increase_series = increase_mw * snapshot_hours  # MWh per snapshot
+            decrease_series = decrease_mw * snapshot_hours
+            increase = increase_series.sum()
             decrease = decrease_series.sum()
 
-            if offer_prices_tv_aligned is not None and name in offer_prices_tv_aligned:
-                offer_cost = (increase_series * offer_prices_tv_aligned[name].fillna(0.0)).sum()
+            if offer_ladder_lookup:
+                if offer_prices_tv_aligned is not None and name in offer_prices_tv_aligned:
+                    fallback_offer = offer_prices_tv_aligned[name].fillna(
+                        offer_prices.get(name, 0.0)
+                    )
+                else:
+                    fallback_offer = pd.Series(
+                        offer_prices.get(name, 0.0), index=increase_series.index
+                    )
+                offer_cost = sum(
+                    _ladder_cost(
+                        mw, snap, name, offer_ladder_lookup, fallback_offer.loc[snap]
+                    )
+                    * snapshot_hours.loc[snap]
+                    for snap, mw in increase_mw.items()
+                )
+            elif offer_prices_tv_aligned is not None and name in offer_prices_tv_aligned:
+                offer_cost = (
+                    increase_series * offer_prices_tv_aligned[name].fillna(0.0)
+                ).sum()
             else:
                 offer_cost = increase * offer_prices.get(name, 0.0)
 
-            if bid_prices_tv_aligned is not None and name in bid_prices_tv_aligned:
-                bid_cost = (decrease_series * bid_prices_tv_aligned[name].fillna(0.0)).sum()
+            if bid_ladder_lookup:
+                if bid_prices_tv_aligned is not None and name in bid_prices_tv_aligned:
+                    fallback_bid = bid_prices_tv_aligned[name].fillna(
+                        bid_prices.get(name, 0.0)
+                    )
+                else:
+                    fallback_bid = pd.Series(
+                        bid_prices.get(name, 0.0), index=decrease_series.index
+                    )
+                bid_cost = sum(
+                    _ladder_cost(
+                        mw, snap, name, bid_ladder_lookup, fallback_bid.loc[snap]
+                    )
+                    * snapshot_hours.loc[snap]
+                    for snap, mw in decrease_mw.items()
+                )
+            elif bid_prices_tv_aligned is not None and name in bid_prices_tv_aligned:
+                bid_cost = (
+                    decrease_series * bid_prices_tv_aligned[name].fillna(0.0)
+                ).sum()
             else:
                 bid_cost = decrease * bid_prices.get(name, 0.0)
 
@@ -1088,6 +1354,8 @@ def compute_redispatch_volumes(
         network.generators, "generator",
         offer_prices_tv=gen_offer_prices_tv,
         bid_prices_tv=gen_bid_prices_tv,
+        offer_ladders=gen_offer_ladders,
+        bid_ladders=gen_bid_ladders,
     )
     logger.info(
         f"Generator redispatch: "

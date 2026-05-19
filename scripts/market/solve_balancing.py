@@ -48,6 +48,7 @@ from scripts.utilities.logging_config import setup_logging
 from scripts.utilities.network_io import load_network, save_network
 from scripts.solve.solve_network import (
     validate_network_costs,
+    apply_load_shedding_limits,
     apply_transmission_relaxation,
     apply_line_rating_overrides,
     apply_outage_schedule,
@@ -71,6 +72,18 @@ from scripts.solve.hydro_constraints import (
 )
 
 
+def _clear_runtime_bm_attrs(network):
+    """Remove transient BM helper attributes before exporting the network."""
+    for attr in [
+        "_bm_offer_ladders",
+        "_bm_bid_ladders",
+        "_bm_ladder_fallback_volume_mw",
+        "_bm_ladder_missing_hour_fallback",
+    ]:
+        if hasattr(network, attr):
+            delattr(network, attr)
+
+
 def _build_balancing_extra_functionality(
     wholesale_gen: pd.DataFrame,
     wholesale_su: pd.DataFrame,
@@ -85,6 +98,10 @@ def _build_balancing_extra_functionality(
     gen_bid_tv: pd.DataFrame = None,
     su_offer_tv: pd.DataFrame = None,
     su_bid_tv: pd.DataFrame = None,
+    gen_offer_ladders: pd.DataFrame = None,
+    gen_bid_ladders: pd.DataFrame = None,
+    ladder_fallback_volume_mw: float = 1.0e6,
+    ladder_missing_hour_fallback: bool = True,
     participating_generators=None,
     fixed_generators=None,
     participating_storage_units=None,
@@ -132,22 +149,80 @@ def _build_balancing_extra_functionality(
 
         logger.info("Injecting BM extra_functionality into optimisation model...")
 
-        # Helper to create a zero lower-bound DataArray with correct dims.
-        # PyPSA's linopy model uses ('snapshot', 'name') for all component
-        # variables, so custom variables must match to allow arithmetic.
-        def _zero_lower(sns, names):
-            idx = pd.Index(names, name="name")
+        # Helpers to create DataArrays with the same component dimension name
+        # as PyPSA/linopy uses for each variable (e.g. Generator, StorageUnit).
+        def _component_dim(variable_name):
+            dims = [dim for dim in model.variables[variable_name].dims if dim != "snapshot"]
+            return dims[0] if dims else "name"
+
+        def _zero_lower(sns, names, dim_name="name"):
+            idx = pd.Index(names, name=dim_name)
             return xr.DataArray(
-                0, dims=["snapshot", "name"],
-                coords={"snapshot": sns, "name": idx},
+                0, dims=["snapshot", dim_name],
+                coords={"snapshot": sns, dim_name: idx},
             )
 
-        def _make_upper(sns, names, arr):
-            idx = pd.Index(names, name="name")
+        def _make_upper(sns, names, arr, dim_name="name"):
+            idx = pd.Index(names, name=dim_name)
             return xr.DataArray(
-                arr, dims=["snapshot", "name"],
-                coords={"snapshot": sns, "name": idx},
+                arr, dims=["snapshot", dim_name],
+                coords={"snapshot": sns, dim_name: idx},
             )
+
+        def _build_ladder_arrays(ladders, sns, names, fallback_prices, side_label):
+            """Return ladder generator names plus price/volume arrays."""
+            if ladders is None or ladders.empty or not names:
+                return [], None, None
+
+            work = ladders[
+                ladders["generator"].isin(names)
+                & ladders["snapshot"].isin(pd.Index(sns))
+            ].copy()
+            if work.empty:
+                return [], None, None
+
+            ladder_names = [
+                name for name in names if name in set(work["generator"].unique())
+            ]
+            max_block = max(1, int(work["block"].max()))
+            name_pos = {name: i for i, name in enumerate(ladder_names)}
+            snap_pos = {snap: i for i, snap in enumerate(pd.Index(sns))}
+
+            prices = np.zeros((len(sns), len(ladder_names), max_block), dtype=float)
+            volumes = np.zeros_like(prices)
+            has_ladder = np.zeros((len(sns), len(ladder_names)), dtype=bool)
+
+            for row in work.itertuples(index=False):
+                snap_i = snap_pos.get(row.snapshot)
+                name_i = name_pos.get(row.generator)
+                if snap_i is None or name_i is None:
+                    continue
+                block_i = int(row.block) - 1
+                if block_i < 0 or block_i >= max_block:
+                    continue
+                prices[snap_i, name_i, block_i] = float(row.price)
+                volumes[snap_i, name_i, block_i] += float(row.volume_mw)
+                has_ladder[snap_i, name_i] = True
+
+            if ladder_missing_hour_fallback:
+                fallback = fallback_prices.reindex(ladder_names).fillna(0.0).values
+                missing = ~has_ladder
+                for snap_i, name_i in zip(*np.where(missing)):
+                    prices[snap_i, name_i, 0] = fallback[name_i]
+                    volumes[snap_i, name_i, 0] = ladder_fallback_volume_mw
+
+            active = volumes.sum(axis=(0, 2)) > 0
+            if not active.any():
+                return [], None, None
+            ladder_names = [name for name, keep in zip(ladder_names, active) if keep]
+            prices = prices[:, active, :]
+            volumes = volumes[:, active, :]
+
+            logger.info(
+                f"Using {side_label} price ladders for {len(ladder_names)} generators "
+                f"({max_block} blocks max)"
+            )
+            return ladder_names, prices, volumes
 
         # ── 1. Generator increase/decrease variables ─────────────────────
         # Generator participation is configurable. Non-participants can either
@@ -161,9 +236,10 @@ def _build_balancing_extra_functionality(
         fixed_gen_names = [
             g for g in all_gen_names if g in fixed_gen_set and g not in participant_gen_set
         ]
+        gen_dim = _component_dim("Generator-p") if all_gen_names else "name"
 
         if gen_names:
-            lower_gen = _zero_lower(snapshots, gen_names)
+            lower_gen = _zero_lower(snapshots, gen_names, gen_dim)
 
             # Upper bounds prevent the LP going unbounded when offer prices are
             # negative (e.g. ROC generators with negative marginal costs).
@@ -196,17 +272,17 @@ def _build_balancing_extra_functionality(
 
             model.add_variables(
                 lower=lower_gen,
-                upper=_make_upper(snapshots, gen_names, upper_inc_arr),
+                upper=_make_upper(snapshots, gen_names, upper_inc_arr, gen_dim),
                 name="Generator-increase",
             )
             model.add_variables(
                 lower=lower_gen,
-                upper=_make_upper(snapshots, gen_names, upper_dec_arr),
+                upper=_make_upper(snapshots, gen_names, upper_dec_arr, gen_dim),
                 name="Generator-decrease",
             )
 
             # Linking constraint: p == p_wholesale + increase - decrease
-            gen_p = model.variables["Generator-p"].sel({"name": gen_names})
+            gen_p = model.variables["Generator-p"].sel({gen_dim: gen_names})
             gen_inc = model.variables["Generator-increase"]
             gen_dec = model.variables["Generator-decrease"]
 
@@ -220,7 +296,7 @@ def _build_balancing_extra_functionality(
                 f"Added BM variables + anchor constraints for {len(gen_names)} generators"
             )
         if fixed_gen_names:
-            gen_p_fixed = model.variables["Generator-p"].sel({"name": fixed_gen_names})
+            gen_p_fixed = model.variables["Generator-p"].sel({gen_dim: fixed_gen_names})
             ws_gen_fixed = wholesale_gen[fixed_gen_names].reindex(snapshots).values
             model.add_constraints(
                 gen_p_fixed == ws_gen_fixed,
@@ -242,8 +318,9 @@ def _build_balancing_extra_functionality(
         fixed_su_names = [
             s for s in all_su_names if s in fixed_su_set and s not in participant_su_set
         ]
+        su_dim = _component_dim("StorageUnit-p_dispatch") if all_su_names else "name"
         if su_names:
-            lower_su = _zero_lower(snapshots, su_names)
+            lower_su = _zero_lower(snapshots, su_names, su_dim)
 
             # Upper bounds: net dispatch can swing ±p_nom from wholesale position.
             # increase ≤ p_nom - ws_su  (headroom above current net dispatch)
@@ -255,17 +332,17 @@ def _build_balancing_extra_functionality(
 
             model.add_variables(
                 lower=lower_su,
-                upper=_make_upper(snapshots, su_names, su_upper_inc_arr),
+                upper=_make_upper(snapshots, su_names, su_upper_inc_arr, su_dim),
                 name="StorageUnit-increase",
             )
             model.add_variables(
                 lower=lower_su,
-                upper=_make_upper(snapshots, su_names, su_upper_dec_arr),
+                upper=_make_upper(snapshots, su_names, su_upper_dec_arr, su_dim),
                 name="StorageUnit-decrease",
             )
 
-            su_p = model.variables["StorageUnit-p_dispatch"].sel({"name": su_names})
-            su_store = model.variables["StorageUnit-p_store"].sel({"name": su_names})
+            su_p = model.variables["StorageUnit-p_dispatch"].sel({su_dim: su_names})
+            su_store = model.variables["StorageUnit-p_store"].sel({su_dim: su_names})
             su_inc = model.variables["StorageUnit-increase"]
             su_dec = model.variables["StorageUnit-decrease"]
 
@@ -281,8 +358,8 @@ def _build_balancing_extra_functionality(
                 f"Added BM variables + anchor constraints for {len(su_names)} storage units"
             )
         if fixed_su_names:
-            su_p_fixed = model.variables["StorageUnit-p_dispatch"].sel({"name": fixed_su_names})
-            su_store_fixed = model.variables["StorageUnit-p_store"].sel({"name": fixed_su_names})
+            su_p_fixed = model.variables["StorageUnit-p_dispatch"].sel({su_dim: fixed_su_names})
+            su_store_fixed = model.variables["StorageUnit-p_store"].sel({su_dim: fixed_su_names})
             ws_su_fixed = wholesale_su[fixed_su_names].reindex(snapshots).values
             model.add_constraints(
                 su_p_fixed - su_store_fixed == ws_su_fixed,
@@ -310,7 +387,8 @@ def _build_balancing_extra_functionality(
                     ic_names.append(lk)
 
             if ic_names and "Link-p" in model.variables:
-                link_p = model.variables["Link-p"].sel({"name": ic_names})
+                link_dim = _component_dim("Link-p")
+                link_p = model.variables["Link-p"].sel({link_dim: ic_names})
                 ws_link_vals = wholesale_links[ic_names].reindex(snapshots).values
 
                 model.add_constraints(
@@ -326,12 +404,31 @@ def _build_balancing_extra_functionality(
                 logger.info("No cross-border interconnectors found to fix")
 
         # ── 4. Replace objective with BM redispatch cost ─────────────────
-        # Build objective expression: min Σ offer·inc + bid·dec
+        # Build objective expression: min Σ hours·(offer·inc + bid·dec)
         obj_expr = None
+        snapshot_hours = pd.Series(1.0, index=pd.Index(snapshots))
+        if len(snapshot_hours) > 1:
+            inferred_hours = (
+                pd.Index(snapshots)
+                .to_series()
+                .diff()
+                .dt.total_seconds()
+                .dropna()
+                .median()
+                / 3600
+            )
+            if pd.notna(inferred_hours) and inferred_hours > 0:
+                snapshot_hours.iloc[:] = float(inferred_hours)
+        snapshot_hours_da = xr.DataArray(
+            snapshot_hours.values,
+            dims=["snapshot"],
+            coords={"snapshot": snapshots},
+        )
 
         if gen_names:
             gen_inc = model.variables["Generator-increase"]
             gen_dec = model.variables["Generator-decrease"]
+            gen_obj_parts = []
 
             # Build offer/bid coefficient arrays (snapshots × generators).
             # Use per-snapshot time-varying prices if available (ELEXON),
@@ -353,7 +450,120 @@ def _build_balancing_extra_functionality(
                     gen_bid_prices.reindex(gen_names).values, (n_snapshots, 1)
                 )
 
-            gen_obj = (gen_inc * offer_coeffs).sum() + (gen_dec * bid_coeffs).sum()
+            offer_ladder_names, offer_ladder_prices, offer_ladder_volumes = (
+                _build_ladder_arrays(
+                    gen_offer_ladders,
+                    snapshots,
+                    gen_names,
+                    gen_offer_prices,
+                    "offer",
+                )
+            )
+            bid_ladder_names, bid_ladder_prices, bid_ladder_volumes = (
+                _build_ladder_arrays(
+                    gen_bid_ladders,
+                    snapshots,
+                    gen_names,
+                    gen_bid_prices,
+                    "bid",
+                )
+            )
+
+            if offer_ladder_names:
+                block_idx = pd.Index(
+                    range(1, offer_ladder_prices.shape[2] + 1), name="block"
+                )
+                offer_upper = xr.DataArray(
+                    offer_ladder_volumes,
+                    dims=["snapshot", gen_dim, "block"],
+                    coords={
+                        "snapshot": snapshots,
+                        gen_dim: pd.Index(offer_ladder_names, name=gen_dim),
+                        "block": block_idx,
+                    },
+                )
+                model.add_variables(
+                    lower=xr.zeros_like(offer_upper),
+                    upper=offer_upper,
+                    name="Generator-offer-block",
+                )
+                offer_blocks = model.variables["Generator-offer-block"]
+                model.add_constraints(
+                    offer_blocks.sum("block")
+                    == gen_inc.sel({gen_dim: offer_ladder_names}),
+                    name="Generator-offer_ladder_balance",
+                )
+                offer_coeffs_da = xr.DataArray(
+                    offer_ladder_prices,
+                    dims=["snapshot", gen_dim, "block"],
+                    coords=offer_upper.coords,
+                )
+                gen_obj_parts.append(
+                    (offer_blocks * offer_coeffs_da * snapshot_hours_da).sum()
+                )
+
+            if bid_ladder_names:
+                block_idx = pd.Index(
+                    range(1, bid_ladder_prices.shape[2] + 1), name="block"
+                )
+                bid_upper = xr.DataArray(
+                    bid_ladder_volumes,
+                    dims=["snapshot", gen_dim, "block"],
+                    coords={
+                        "snapshot": snapshots,
+                        gen_dim: pd.Index(bid_ladder_names, name=gen_dim),
+                        "block": block_idx,
+                    },
+                )
+                model.add_variables(
+                    lower=xr.zeros_like(bid_upper),
+                    upper=bid_upper,
+                    name="Generator-bid-block",
+                )
+                bid_blocks = model.variables["Generator-bid-block"]
+                model.add_constraints(
+                    bid_blocks.sum("block") == gen_dec.sel({gen_dim: bid_ladder_names}),
+                    name="Generator-bid_ladder_balance",
+                )
+                bid_coeffs_da = xr.DataArray(
+                    bid_ladder_prices,
+                    dims=["snapshot", gen_dim, "block"],
+                    coords=bid_upper.coords,
+                )
+                gen_obj_parts.append(
+                    (bid_blocks * bid_coeffs_da * snapshot_hours_da).sum()
+                )
+
+            offer_ladder_set = set(offer_ladder_names)
+            bid_ladder_set = set(bid_ladder_names)
+            non_ladder_offer_names = [
+                name for name in gen_names if name not in offer_ladder_set
+            ]
+            non_ladder_bid_names = [
+                name for name in gen_names if name not in bid_ladder_set
+            ]
+            if non_ladder_offer_names:
+                offer_idx = [gen_names.index(name) for name in non_ladder_offer_names]
+                gen_obj_parts.append(
+                    (
+                        gen_inc.sel({gen_dim: non_ladder_offer_names})
+                        * offer_coeffs[:, offer_idx]
+                        * snapshot_hours_da
+                    ).sum()
+                )
+            if non_ladder_bid_names:
+                bid_idx = [gen_names.index(name) for name in non_ladder_bid_names]
+                gen_obj_parts.append(
+                    (
+                        gen_dec.sel({gen_dim: non_ladder_bid_names})
+                        * bid_coeffs[:, bid_idx]
+                        * snapshot_hours_da
+                    ).sum()
+                )
+
+            gen_obj = (
+                sum(gen_obj_parts[1:], gen_obj_parts[0]) if gen_obj_parts else None
+            )
             obj_expr = gen_obj
 
         if su_names:
@@ -377,7 +587,11 @@ def _build_balancing_extra_functionality(
                     su_bid_prices.reindex(su_names).values, (n_snapshots, 1)
                 )
 
-            su_obj = (su_inc * su_offer_coeffs).sum() + (su_dec * su_bid_coeffs).sum()
+            su_obj = (
+                su_inc * su_offer_coeffs * snapshot_hours_da
+            ).sum() + (
+                su_dec * su_bid_coeffs * snapshot_hours_da
+            ).sum()
             obj_expr = obj_expr + su_obj if obj_expr is not None else su_obj
 
         if obj_expr is not None:
@@ -410,6 +624,10 @@ def solve_rolling_balancing(
     gen_bid_tv=None,
     su_offer_tv=None,
     su_bid_tv=None,
+    gen_offer_ladders=None,
+    gen_bid_ladders=None,
+    ladder_fallback_volume_mw=1.0e6,
+    ladder_missing_hour_fallback=True,
     participating_generators=None,
     fixed_generators=None,
     participating_storage_units=None,
@@ -448,6 +666,22 @@ def solve_rolling_balancing(
     objective_total : float
         Sum of BM objectives across all windows.
     """
+    def _build_retry_solver_options(current_solver_name, current_solver_options):
+        if str(current_solver_name).lower() != "gurobi":
+            return None
+
+        retry_options = dict(current_solver_options or {})
+        for barrier_only_key in ["BarHomogeneous", "BarConvTol", "BarIterLimit"]:
+            retry_options.pop(barrier_only_key, None)
+
+        retry_options["method"] = 1
+        retry_options["crossover"] = -1
+        retry_options["DualReductions"] = 1
+        retry_options["NumericFocus"] = max(
+            1, int(retry_options.get("NumericFocus", 0) or 0)
+        )
+        return retry_options
+
     # Configure a silent logger for subsequent windows to avoid log spam.
     # First window uses the main logger so messages appear once.
     bm_quiet = logging.getLogger("bm_quiet")
@@ -455,7 +689,7 @@ def solve_rolling_balancing(
     if not bm_quiet.handlers:
         bm_quiet.addHandler(logging.NullHandler())
 
-    window_hours = int(balancing_config.get("window_hours", 1))
+    window_hours = float(balancing_config.get("window_hours", 1))
     fix_ics = balancing_config.get("fix_interconnectors", True)
 
     all_snapshots = network.snapshots.copy()
@@ -561,6 +795,10 @@ def solve_rolling_balancing(
             gen_bid_tv=win_bid_tv,
             su_offer_tv=win_su_offer_tv,
             su_bid_tv=win_su_bid_tv,
+            gen_offer_ladders=gen_offer_ladders,
+            gen_bid_ladders=gen_bid_ladders,
+            ladder_fallback_volume_mw=ladder_fallback_volume_mw,
+            ladder_missing_hour_fallback=ladder_missing_hour_fallback,
             participating_generators=participating_generators,
             fixed_generators=fixed_generators,
             participating_storage_units=participating_storage_units,
@@ -579,6 +817,22 @@ def solve_rolling_balancing(
                 extra_func, hydro_callback, neso_boundary_callback
             ),
         )
+
+        if status != "ok" and str(cond).lower() == "unbounded":
+            retry_options = _build_retry_solver_options(solver_name, solver_options)
+            if retry_options is not None and retry_options != dict(solver_options or {}):
+                logger.warning(
+                    f"BM window {i + 1} ({window_start}) returned unbounded with "
+                    "the configured Gurobi barrier settings; retrying with "
+                    "dual-simplex fallback options"
+                )
+                status, cond = win_net.optimize(
+                    solver_name=solver_name,
+                    solver_options=retry_options,
+                    extra_functionality=combine_extra_functionalities(
+                        extra_func, hydro_callback, neso_boundary_callback
+                    ),
+                )
 
         if status != "ok":
             logger.error(
@@ -707,6 +961,18 @@ if __name__ == "__main__":
             elexon_dir = str(Path(snakemake.input.elexon_offers).parent)
             market_config.setdefault("balancing", {}).setdefault("elexon", {})
             market_config["balancing"]["elexon"]["data_dir"] = elexon_dir
+        if hasattr(snakemake.input, 'elexon_offer_ladders'):
+            market_config.setdefault("balancing", {}).setdefault("elexon", {})
+            market_config["balancing"]["elexon"].setdefault("price_ladders", {})
+            market_config["balancing"]["elexon"]["price_ladders"][
+                "offer_file"
+            ] = snakemake.input.elexon_offer_ladders
+        if hasattr(snakemake.input, 'elexon_bid_ladders'):
+            market_config.setdefault("balancing", {}).setdefault("elexon", {})
+            market_config["balancing"]["elexon"].setdefault("price_ladders", {})
+            market_config["balancing"]["elexon"]["price_ladders"][
+                "bid_file"
+            ] = snakemake.input.elexon_bid_ladders
 
         logger.info(f"Scenario: {scenario_id}")
         logger.info(
@@ -750,6 +1016,7 @@ if __name__ == "__main__":
 
         improve_numerical_conditioning(network, logger)
         apply_solve_period(network, scenario_config, logger)
+        apply_load_shedding_limits(network, logger)
 
         # ── Solve mode ───────────────────────────────────────────────────
         global_solve_mode = get_solve_mode_from_config()
@@ -809,6 +1076,14 @@ if __name__ == "__main__":
         gen_bid_tv = getattr(network, "_bm_bid_tv", None)
         su_offer_tv = getattr(network, "_bm_su_offer_tv", None)
         su_bid_tv = getattr(network, "_bm_su_bid_tv", None)
+        gen_offer_ladders = getattr(network, "_bm_offer_ladders", None)
+        gen_bid_ladders = getattr(network, "_bm_bid_ladders", None)
+        ladder_fallback_volume_mw = getattr(
+            network, "_bm_ladder_fallback_volume_mw", 1.0e6
+        )
+        ladder_missing_hour_fallback = bool(
+            getattr(network, "_bm_ladder_missing_hour_fallback", 1)
+        )
         participating_generators = getattr(
             network, "_bm_participating_generators", network.generators.index
         )
@@ -829,6 +1104,15 @@ if __name__ == "__main__":
             )
 
         # ── Configure solver ─────────────────────────────────────────────
+        if gen_offer_ladders is not None and not gen_offer_ladders.empty:
+            logger.info(
+                f"Offer price ladders active: {len(gen_offer_ladders):,} blocks"
+            )
+        if gen_bid_ladders is not None and not gen_bid_ladders.empty:
+            logger.info(
+                f"Bid price ladders active: {len(gen_bid_ladders):,} blocks"
+            )
+
         solver_name, solver_options = configure_solver(
             network, solver_name, solver_options, logger
         )
@@ -861,6 +1145,10 @@ if __name__ == "__main__":
                     gen_bid_tv=gen_bid_tv,
                     su_offer_tv=su_offer_tv,
                     su_bid_tv=su_bid_tv,
+                    gen_offer_ladders=gen_offer_ladders,
+                    gen_bid_ladders=gen_bid_ladders,
+                    ladder_fallback_volume_mw=ladder_fallback_volume_mw,
+                    ladder_missing_hour_fallback=ladder_missing_hour_fallback,
                     participating_generators=participating_generators,
                     fixed_generators=fixed_generators,
                     participating_storage_units=participating_storage_units,
@@ -903,6 +1191,10 @@ if __name__ == "__main__":
                 gen_bid_tv=gen_bid_tv,
                 su_offer_tv=su_offer_tv,
                 su_bid_tv=su_bid_tv,
+                gen_offer_ladders=gen_offer_ladders,
+                gen_bid_ladders=gen_bid_ladders,
+                ladder_fallback_volume_mw=ladder_fallback_volume_mw,
+                ladder_missing_hour_fallback=ladder_missing_hour_fallback,
                 participating_generators=participating_generators,
                 fixed_generators=fixed_generators,
                 participating_storage_units=participating_storage_units,
@@ -999,6 +1291,8 @@ if __name__ == "__main__":
             gen_bid_prices_tv=gen_bid_tv,
             su_offer_prices_tv=su_offer_tv,
             su_bid_prices_tv=su_bid_tv,
+            gen_offer_ladders=gen_offer_ladders,
+            gen_bid_ladders=gen_bid_ladders,
         )
 
         redispatch_summary = pd.concat([gen_summary, su_summary], ignore_index=True)
@@ -1111,6 +1405,7 @@ if __name__ == "__main__":
             logger.warning("No marginal price data from BM solve")
 
         # ── Save solved BM network ───────────────────────────────────────
+        _clear_runtime_bm_attrs(network)
         save_network(network, snakemake.output.network, custom_logger=logger)
         logger.info(f"Saved BM network: {snakemake.output.network}")
 

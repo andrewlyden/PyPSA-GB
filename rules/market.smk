@@ -89,6 +89,28 @@ _market_scenario_ids = [rid for rid in _run_ids if _is_market_enabled(rid)]
 MARKET_SCENARIO_REGEX = _regex_from_list(_market_scenario_ids)
 
 
+def _neso_boundary_mapping_path(scenario_id):
+    """Resolve the NESO boundary mapping file used by a scenario."""
+    sc = _scenarios.get(scenario_id, {})
+    neso_cfg = (
+        sc.get("transmission", {})
+        .get("outage_schedule", {})
+        .get("neso", {})
+    )
+    if neso_cfg.get("boundary_mapping"):
+        return neso_cfg["boundary_mapping"]
+
+    global_neso_cfg = (
+        _cfg.get("transmission", {})
+        .get("outage_schedule", {})
+        .get("neso", {})
+    )
+    return global_neso_cfg.get(
+        "boundary_mapping",
+        "data/network/neso_boundary_mapping.yaml",
+    )
+
+
 def _effective_bid_offer_source(scenario_id):
     """Resolve the effective bid/offer source for a scenario."""
     sc = _scenarios.get(scenario_id, {})
@@ -120,19 +142,98 @@ def _uses_elexon_bid_offer_data(scenario_id):
     return _effective_bid_offer_source(scenario_id) == "elexon"
 
 
+def _uses_elexon_price_ladders(scenario_id):
+    """Check if scenario should use full ELEXON BOD price ladders in BM."""
+    if not _uses_elexon_bid_offer_data(scenario_id):
+        return False
+    sc = _scenarios.get(scenario_id, {})
+    return bool(
+        sc.get("market", {})
+        .get("balancing", {})
+        .get("elexon", {})
+        .get("price_ladders", {})
+        .get("enabled", False)
+    )
+
+
+def _elexon_solve_dates(scenario_id):
+    """Return start/end dates used to retrieve ELEXON BOD data."""
+    sc = _scenarios.get(scenario_id, {})
+    solve_period = sc.get("solve_period", {})
+    start_date = solve_period.get("start", "2023-01-01 00:00")[:10]
+    end_date = solve_period.get("end", "2023-01-07 23:00")[:10]
+    return start_date, end_date
+
+
+def _elexon_ladder_settings(scenario_id):
+    """Return ELEXON ladder settings that affect processed BOD output."""
+    sc = _scenarios.get(scenario_id, {})
+    ladder_cfg = (
+        sc.get("market", {})
+        .get("balancing", {})
+        .get("elexon", {})
+        .get("price_ladders", {})
+    )
+    build_ladders = bool(ladder_cfg.get("enabled", False))
+    max_blocks = int(ladder_cfg.get("max_blocks_per_side", 10)) if build_ladders else 0
+    return build_ladders, max_blocks
+
+
+def _elexon_cache_key(scenario_id):
+    """Shared processed ELEXON BOD cache key for a scenario."""
+    start_date, end_date = _elexon_solve_dates(scenario_id)
+    build_ladders, max_blocks = _elexon_ladder_settings(scenario_id)
+    return (
+        f"{start_date}_to_{end_date}_"
+        f"ladders-{int(build_ladders)}_blocks-{max_blocks}"
+    )
+
+
+def _shared_elexon_files_for_key(cache_key):
+    """Return shared processed ELEXON BOD files for a cache key."""
+    base = f"{resources_path}/market/elexon_shared/{cache_key}"
+    return {
+        "offers_file": f"{base}/elexon_offers.csv",
+        "bids_file": f"{base}/elexon_bids.csv",
+        "offer_ladders_file": f"{base}/elexon_offer_ladders.csv",
+        "bid_ladders_file": f"{base}/elexon_bid_ladders.csv",
+    }
+
+
+def _shared_elexon_files_for_scenario(scenario_id):
+    """Return shared processed ELEXON BOD files for a scenario."""
+    return _shared_elexon_files_for_key(_elexon_cache_key(scenario_id))
+
+
 _elexon_scenario_ids = [rid for rid in _run_ids if _uses_elexon_bid_offer_data(rid)]
 ELEXON_SCENARIO_REGEX = _regex_from_list(_elexon_scenario_ids) if _elexon_scenario_ids else r"(?!x)x"
+_elexon_cache_key_to_scenario = {
+    _elexon_cache_key(sid): sid for sid in _elexon_scenario_ids
+}
+ELEXON_CACHE_KEY_REGEX = (
+    _regex_from_list(_elexon_cache_key_to_scenario.keys())
+    if _elexon_cache_key_to_scenario
+    else r"(?!x)x"
+)
 
 
 def _balancing_extra_inputs(wildcards):
     """Return additional input files for ELEXON scenarios (BMU mapping + data)."""
     sid = wildcards.scenario
     if _uses_elexon_bid_offer_data(sid):
-        return {
+        inputs = {
             "elexon_offers": f"{resources_path}/market/{sid}/elexon/elexon_offers.csv",
             "elexon_bids": f"{resources_path}/market/{sid}/elexon/elexon_bids.csv",
             "bmu_mapping": f"{resources_path}/generators/{sid}_bmu_mapping.csv",
         }
+        if _uses_elexon_price_ladders(sid):
+            inputs.update(
+                {
+                    "elexon_offer_ladders": f"{resources_path}/market/{sid}/elexon/elexon_offer_ladders.csv",
+                    "elexon_bid_ladders": f"{resources_path}/market/{sid}/elexon/elexon_bid_ladders.csv",
+                }
+            )
+        return inputs
     return {}
 
 
@@ -151,6 +252,8 @@ rule build_bmu_mapping:
     """
     input:
         network=f"{resources_path}/network/{{scenario}}.nc",
+        elexon_offers=f"{resources_path}/market/{{scenario}}/elexon/elexon_offers.csv",
+        power_station_dictionary="data/generators/power_station_dictionary_bmu_crosswalk.csv",
     output:
         bmu_mapping=f"{resources_path}/generators/{{scenario}}_bmu_mapping.csv",
     log:
@@ -173,32 +276,70 @@ rule build_bmu_mapping:
 # OPTIONAL: RETRIEVE ELEXON MARKET DATA (HISTORICAL SCENARIOS ONLY)
 # ══════════════════════════════════════════════════════════════════════════════
 
-rule retrieve_elexon_market_data:
+rule retrieve_elexon_market_data_shared:
     """
-    Fetch ELEXON BMRS bid/offer data for historical market scenarios.
+    Build a shared processed ELEXON BMRS bid/offer cache for a date range.
 
-    Only runs when market.balancing.bid_offer_source is "elexon".
-    Downloads settlement-period-level data and aggregates to hourly.
+    Identical scenario date ranges and ladder settings share this output, so
+    scenario variants do not rebuild the expensive BOD aggregation.
 
     Output:
       - ELEXON offer prices: elexon/elexon_offers.csv
       - ELEXON bid prices: elexon/elexon_bids.csv
     """
     output:
+        offers_file=f"{resources_path}/market/elexon_shared/{{cache_key}}/elexon_offers.csv",
+        bids_file=f"{resources_path}/market/elexon_shared/{{cache_key}}/elexon_bids.csv",
+        offer_ladders_file=f"{resources_path}/market/elexon_shared/{{cache_key}}/elexon_offer_ladders.csv",
+        bid_ladders_file=f"{resources_path}/market/elexon_shared/{{cache_key}}/elexon_bid_ladders.csv",
+    log:
+        "logs/market/retrieve_elexon_shared_{cache_key}.log"
+    benchmark:
+        "benchmarks/market/retrieve_elexon_shared_{cache_key}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        cache_key=ELEXON_CACHE_KEY_REGEX
+    params:
+        scenario_config=lambda wildcards: {
+            **_cfg,
+            **_scenarios.get(_elexon_cache_key_to_scenario[wildcards.cache_key], {}),
+        },
+    script:
+        "../scripts/market/elexon_data.py"
+
+
+rule retrieve_elexon_market_data:
+    """
+    Copy shared ELEXON bid/offer files into the scenario output location.
+
+    Downstream rules keep using resources/market/{scenario}/elexon/*.csv, while
+    the expensive retrieval/aggregation is keyed by date range and ladder config.
+    """
+    input:
+        offers_file=lambda wildcards: _shared_elexon_files_for_scenario(wildcards.scenario)["offers_file"],
+        bids_file=lambda wildcards: _shared_elexon_files_for_scenario(wildcards.scenario)["bids_file"],
+        offer_ladders_file=lambda wildcards: _shared_elexon_files_for_scenario(wildcards.scenario)["offer_ladders_file"],
+        bid_ladders_file=lambda wildcards: _shared_elexon_files_for_scenario(wildcards.scenario)["bid_ladders_file"],
+    output:
         offers_file=f"{resources_path}/market/{{scenario}}/elexon/elexon_offers.csv",
         bids_file=f"{resources_path}/market/{{scenario}}/elexon/elexon_bids.csv",
+        offer_ladders_file=f"{resources_path}/market/{{scenario}}/elexon/elexon_offer_ladders.csv",
+        bid_ladders_file=f"{resources_path}/market/{{scenario}}/elexon/elexon_bid_ladders.csv",
     log:
         "logs/market/retrieve_elexon_{scenario}.log"
     benchmark:
         "benchmarks/market/retrieve_elexon_{scenario}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
     wildcard_constraints:
         scenario=ELEXON_SCENARIO_REGEX
-    params:
-        scenario_config=lambda wildcards: {**_cfg, **_scenarios.get(wildcards.scenario, {})},
-    script:
-        "../scripts/market/elexon_data.py"
+    run:
+        import shutil
+        from pathlib import Path
+
+        for source, target in zip(input, output):
+            target_path = Path(target)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target_path)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -276,7 +417,7 @@ rule solve_balancing_mechanism:
     """
     input:
         unpack(_balancing_extra_inputs),
-        boundary_mapping_yaml="data/network/neso_boundary_mapping.yaml",
+        boundary_mapping_yaml=lambda wildcards: _neso_boundary_mapping_path(wildcards.scenario),
         network=f"{resources_path}/network/{{scenario}}.nc",
         wholesale_dispatch_csv=f"{resources_path}/market/{{scenario}}_wholesale_dispatch.csv",
         wholesale_storage_csv=f"{resources_path}/market/{{scenario}}_wholesale_storage.csv",
@@ -373,14 +514,15 @@ rule validate_bm_results:
     """
     Validate BM results against ELEXON actuals for historical scenarios.
 
-    Fetches (or loads cached) ELEXON BOALF, system prices, and full B1610
+    Fetches (or loads cached) ELEXON BOAV, BOALF, system prices, and full B1610
     generation data and compares against model redispatch volumes, constraint
     costs, prices, and dispatch levels.
 
     Output:
       - Validation report CSV: per-metric model vs ELEXON comparison
       - Validation dashboard HTML: multi-panel interactive comparison
-            - BOALF flag split CSV: flagged vs unflagged BM acceptance volumes
+            - BOAV carrier CSV: accepted bid/offer volumes by carrier
+            - BOALF flag split CSV: timing/flag diagnostic volumes
             - DISBSAD summary CSV: non-BM balancing-service adjustment totals
     """
     input:
@@ -389,11 +531,14 @@ rule validate_bm_results:
         redispatch_summary_csv=f"{resources_path}/market/{{scenario}}_redispatch_summary.csv",
         constraint_costs_csv=f"{resources_path}/market/{{scenario}}_constraint_costs.csv",
         price_comparison_csv=f"{resources_path}/market/{{scenario}}_price_comparison.csv",
+        bmu_mapping=f"{resources_path}/generators/{{scenario}}_bmu_mapping.csv",
     output:
         validation_csv=f"{resources_path}/market/{{scenario}}_bm_validation.csv",
         validation_html=f"{resources_path}/analysis/{{scenario}}_bm_validation.html",
+        boav_by_carrier_csv=f"{resources_path}/market/{{scenario}}_boav_by_carrier.csv",
         boalf_by_flag_csv=f"{resources_path}/market/{{scenario}}_boalf_by_flag.csv",
         disbsad_summary_csv=f"{resources_path}/market/{{scenario}}_disbsad_summary.csv",
+        mapped_redispatch_csv=f"{resources_path}/market/{{scenario}}_redispatch_mapped_unmapped.csv",
     log:
         "logs/market/validate_bm_{scenario}.log"
     benchmark:
@@ -420,8 +565,8 @@ rule validate_bm_results:
 rule validate_bm_calibration:
     """
     Per-carrier scorecard comparing model effective bid/offer prices against
-    ELEXON BOD medians and model redispatch volumes against BOALF unflagged
-    acceptance volumes. Flags carriers that drift beyond the configured
+    ELEXON BOD medians and model redispatch volumes against BOAV accepted
+    bid/offer volumes. Flags carriers that drift beyond the configured
     tolerance (default ±20%) and optionally fails the rule.
 
     Only runs for scenarios that actually consume ELEXON data (historical
@@ -434,7 +579,7 @@ rule validate_bm_calibration:
     """
     input:
         redispatch_summary_csv=f"{resources_path}/market/{{scenario}}_redispatch_summary.csv",
-        boalf_by_flag_csv=f"{resources_path}/market/{{scenario}}_boalf_by_flag.csv",
+        boav_by_carrier_csv=f"{resources_path}/market/{{scenario}}_boav_by_carrier.csv",
         network=f"{resources_path}/network/{{scenario}}.nc",
         elexon_offers=f"{resources_path}/market/{{scenario}}/elexon/elexon_offers.csv",
         elexon_bids=f"{resources_path}/market/{{scenario}}/elexon/elexon_bids.csv",
@@ -484,7 +629,7 @@ rule validate_neso_constraints:
         balancing_network=f"{resources_path}/market/{{scenario}}_balancing.nc",
         constraint_costs_csv=f"{resources_path}/market/{{scenario}}_constraint_costs.csv",
         congestion_csv=f"{resources_path}/market/{{scenario}}_congestion.csv",
-        boundary_mapping_yaml="data/network/neso_boundary_mapping.yaml",
+        boundary_mapping_yaml=lambda wildcards: _neso_boundary_mapping_path(wildcards.scenario),
     output:
         validation_csv=f"{resources_path}/market/{{scenario}}_neso_validation.csv",
         validation_html=f"{resources_path}/analysis/{{scenario}}_neso_validation.html",
@@ -502,7 +647,7 @@ rule validate_neso_constraints:
             **_scenarios.get(wildcards.scenario, {}),
             "scenario_id": wildcards.scenario,
         },
-        boundary_mapping_path="data/network/neso_boundary_mapping.yaml",
+        boundary_mapping_path=lambda wildcards: _neso_boundary_mapping_path(wildcards.scenario),
         cache_dir="data/validation",
     script:
         "../scripts/market/validate_neso_constraints.py"
