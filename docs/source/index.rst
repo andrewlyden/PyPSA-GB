@@ -40,7 +40,7 @@ PyPSA-GB is a comprehensive model of the Great Britain electricity system built 
       :link-type: doc
       :class-card: sd-shadow-md
 
-      **Deep dive into configuration.** Learn how to customise scenarios, configure solvers, and analyse optimisation results.
+      **Deep dive into configuration.** Learn how to customise scenarios, configure solvers, run market dispatch, and analyse optimisation results.
 
    .. grid-item-card:: 📊 Data Reference
       :link: data_reference/index
@@ -54,7 +54,7 @@ PyPSA-GB is a comprehensive model of the Great Britain electricity system built 
       :link-type: doc
       :class-card: sd-shadow-md
 
-      **Learn by example.** Jupyter notebooks exploring historical and future scenario analysis.
+      **Learn by example.** Jupyter notebooks exploring historical, future, flexibility, and market-dispatch analysis.
 
    .. grid-item-card:: 🔧 API Reference
       :link: api/index
@@ -79,6 +79,7 @@ Key Features
 - **Historical & Future Scenarios**: Model years 2010-2024 (historical) or 2025-2050 (FES projections)
 - **NESO Future Energy Scenarios**: Holistic Transition, Electric Engagement, and other pathways
 - **Demand-Side Flexibility**: Heat pump pre-heating, EV smart charging & V2G, and event-based demand response
+- **Two-Stage Market Dispatch**: Copperplate wholesale scheduling, balancing redispatch, and historical ELEXON/NESO validation
 - **High Resolution**: Half-hourly or hourly timesteps with full network constraints
 - **Open Source**: MIT license, transparent assumptions, community contributions welcome
 

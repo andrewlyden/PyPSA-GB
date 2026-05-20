@@ -366,6 +366,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-market-dispatch.html">Market Dispatch</a></li>
 </ul>
 </div>
 </nav></div>
@@ -446,6 +447,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-market-dispatch.html">Market Dispatch</a></li>
 </ul>
 </div>
 <section id="tutorial-overview">
@@ -497,8 +499,8 @@ document.write(`
 </table>
 </div>
 </section>
-<section id="component-tutorials-5-12">
-<h3>Component Tutorials (5-12)<a class="headerlink" href="#component-tutorials-5-12" title="Link to this heading">#</a></h3>
+<section id="component-tutorials-5-16">
+<h3>Component Tutorials (5-16)<a class="headerlink" href="#component-tutorials-5-16" title="Link to this heading">#</a></h3>
 <p>Deep dives into specific aspects of power system modeling:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -564,6 +566,11 @@ document.write(`
 <td><p>Event Response</p></td>
 <td><p>Saving Sessions, demand reduction events, DSR capacity</p></td>
 </tr>
+<tr class="row-odd"><td><p><strong>16</strong></p></td>
+<td><p>Market Dispatch</p></td>
+<td><p>Wholesale + BM</p></td>
+<td><p>Copperplate wholesale dispatch, balancing redispatch, ELEXON/NESO validation</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -597,6 +604,13 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span
 
 <span class="c1"># Notebook 4: Future 2050 (Clustered ETYS)</span>
 snakemake<span class="w"> </span>resources/network/EE50_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+<p>The market dispatch tutorial reads solved market and validation outputs rather
+than a single solved network. Build the relevant market validation targets first,
+for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
@@ -651,6 +665,11 @@ jupyter<span class="w"> </span>notebook
 <td><p>8 GB</p></td>
 <td><p>10-15 min</p></td>
 <td><p>~1 GB</p></td>
+</tr>
+<tr class="row-even"><td><p>16 - Market Dispatch</p></td>
+<td><p>16 GB+</p></td>
+<td><p>Depends on market scenarios</p></td>
+<td><p>Several GB for monthly validation outputs</p></td>
 </tr>
 </tbody>
 </table>
@@ -722,7 +741,7 @@ jupyter<span class="w"> </span>notebook
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorial-overview">Tutorial Overview</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-tutorials-1-4">Scenario Tutorials (1-4)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#component-tutorials-5-12">Component Tutorials (5-12)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#component-tutorials-5-16">Component Tutorials (5-16)</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-tutorials">Running Tutorials</a><ul class="nav section-nav flex-column">

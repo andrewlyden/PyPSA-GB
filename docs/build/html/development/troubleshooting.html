@@ -638,6 +638,54 @@ which<span class="w"> </span>snakemake
 </section>
 </section>
 <hr class="docutils" />
+<section id="market-dispatch-issues">
+<h2>Market Dispatch Issues<a class="headerlink" href="#market-dispatch-issues" title="Link to this heading">#</a></h2>
+<section id="elexon-prices-requested-for-a-future-scenario">
+<h3>ELEXON Prices Requested For A Future Scenario<a class="headerlink" href="#elexon-prices-requested-for-a-future-scenario" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Market solve errors when <code class="docutils literal notranslate"><span class="pre">bid_offer_source:</span> <span class="pre">&quot;elexon&quot;</span></code> is used for
+a modelled year after 2024.</p>
+<p><strong>Solution</strong>: ELEXON bid/offer data is historical. Use derived prices for future
+scenarios:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;derived&quot;</span>
+</pre></div>
+</div>
+<p>Or use <code class="docutils literal notranslate"><span class="pre">bid_offer_source:</span> <span class="pre">&quot;auto&quot;</span></code> to prefer ELEXON only when valid historical
+files are available.</p>
+</section>
+<section id="balancing-solve-is-infeasible">
+<h3>Balancing Solve Is Infeasible<a class="headerlink" href="#balancing-solve-is-infeasible" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Wholesale solves, but <code class="docutils literal notranslate"><span class="pre">solve_balancing_mechanism</span></code> fails.</p>
+<p><strong>Common causes</strong>:</p>
+<ul class="simple">
+<li><p>BM participation filters exclude assets needed for feasibility</p></li>
+<li><p>non-participants are set to <code class="docutils literal notranslate"><span class="pre">behavior:</span> <span class="pre">&quot;fixed&quot;</span></code></p></li>
+<li><p>interconnector or outage settings over-constrain the physical network</p></li>
+</ul>
+<p>Start from permissive participation settings, then tighten filters:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">participation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">generators</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+<span class="w">      </span><span class="nt">storage_units</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="wholesale-price-spread-looks-too-high">
+<h3>Wholesale Price Spread Looks Too High<a class="headerlink" href="#wholesale-price-spread-looks-too-high" title="Link to this heading">#</a></h3>
+<p><strong>Symptom</strong>: Averaging <code class="docutils literal notranslate"><span class="pre">network.buses_t.marginal_price</span></code> directly gives an
+unrealistic price spread in the wholesale network.</p>
+<p><strong>Solution</strong>: Use <code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_price.csv</span></code>. The market
+reporting code filters to demand buses and avoids internal DC-link buses that can
+retain directional shadow prices.</p>
+</section>
+</section>
+<hr class="docutils" />
 <section id="data-issues">
 <h2>Data Issues<a class="headerlink" href="#data-issues" title="Link to this heading">#</a></h2>
 <section id="fes-data-not-found">
@@ -842,6 +890,12 @@ python<span class="w"> </span>--version
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#infeasible-optimization">Infeasible Optimization</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-runs-forever">Solver Runs Forever</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#out-of-memory">Out of Memory</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#market-dispatch-issues">Market Dispatch Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#elexon-prices-requested-for-a-future-scenario">ELEXON Prices Requested For A Future Scenario</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#balancing-solve-is-infeasible">Balancing Solve Is Infeasible</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#wholesale-price-spread-looks-too-high">Wholesale Price Spread Looks Too High</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-issues">Data Issues</a><ul class="nav section-nav flex-column">

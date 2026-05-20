@@ -1,0 +1,1593 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Market Dispatch &#8212; PyPSA-GB 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=95747493" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+const defaultStyle = document.createElement('style');
+defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+`;
+document.head.appendChild(defaultStyle);
+
+const fullscreenStyle = document.createElement('style');
+fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+document.head.appendChild(fullscreenStyle);
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness < 128;
+    }
+    return false;
+};
+
+const load = async () => {
+    await mermaid.run();
+
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(load, 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(load, 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(load, 200);
+        return;
+    }
+
+    const darkTheme = isDarkTheme();
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    const modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    let previousScrollOffset = [window.scrollX, window.scrollY];
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    const allButtons = [];
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        container.appendChild(fullscreenBtn);
+        allButtons.push(fullscreenBtn);
+    });
+
+    // Update theme classes when theme changes
+    const updateTheme = () => {
+        const dark = isDarkTheme();
+        allButtons.forEach(btn => {
+            if (dark) {
+                btn.classList.add('dark-theme');
+            } else {
+                btn.classList.remove('dark-theme');
+            }
+        });
+        if (dark) {
+            modal.classList.add('dark-theme');
+            modalContent.classList.add('dark-theme');
+            closeBtn.classList.add('dark-theme');
+        } else {
+            modal.classList.remove('dark-theme');
+            modalContent.classList.remove('dark-theme');
+            closeBtn.classList.remove('dark-theme');
+        }
+    };
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+};
+
+window.addEventListener("load", load);
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/market';</script>
+    <script src="../_static/gurubase-widget.js?v=aa0a349d"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Reference" href="../data_reference/index.html" />
+    <link rel="prev" title="Demand-Side Flexibility" href="demand_flexibility.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyPSA-GB</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../data_reference/index.html">
+    Data Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Snakemake Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scenarios.html">Scenario Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demand_flexibility.html">Demand-Side Flexibility</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Market Dispatch</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Market Dispatch</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="market-dispatch">
+<h1>Market Dispatch<a class="headerlink" href="#market-dispatch" title="Link to this heading">#</a></h1>
+<p>PyPSA-GB can run a two-stage electricity market simulation after the standard
+network build. The market workflow separates the unconstrained wholesale market
+from the constrained physical dispatch that is needed after transmission limits
+are restored.</p>
+<p>The market mode is useful when you want to analyse:</p>
+<ul class="simple">
+<li><p>a single GB wholesale price from copperplate dispatch;</p></li>
+<li><p>balancing mechanism (BM) redispatch caused by network constraints;</p></li>
+<li><p>constraint costs and congested network boundaries;</p></li>
+<li><p>historical BM validation against ELEXON and NESO data;</p></li>
+<li><p>dispatch and revenue impacts of CfD and ROC subsidy assumptions.</p></li>
+</ul>
+<p>The implementation lives in <code class="docutils literal notranslate"><span class="pre">rules/market.smk</span></code> and <code class="docutils literal notranslate"><span class="pre">scripts/market/</span></code>.</p>
+<section id="workflow-overview">
+<h2>Workflow Overview<a class="headerlink" href="#workflow-overview" title="Link to this heading">#</a></h2>
+<p>Market dispatch starts from the final network produced by the normal PyPSA-GB
+workflow:</p>
+<pre  class="mermaid">
+        flowchart TB
+    FINAL[&quot;Finalized network&lt;br/&gt;resources/network/{scenario}.nc&quot;]
+    WS[&quot;Stage 1: wholesale market&lt;br/&gt;copperplate dispatch&quot;]
+    BM[&quot;Stage 2: balancing mechanism&lt;br/&gt;anchored constrained redispatch&quot;]
+    ANALYSIS[&quot;Analysis&lt;br/&gt;dashboard, summary, notebooks&quot;]
+    VALIDATION[&quot;Historical validation&lt;br/&gt;ELEXON BM and NESO constraints&quot;]
+
+    FINAL --&gt; WS
+    WS --&gt; BM
+    BM --&gt; ANALYSIS
+    BM --&gt; VALIDATION
+    </pre><p>Stage 1 relaxes line and transformer capacities to a very large value. This
+creates a copperplate dispatch and a uniform wholesale price.</p>
+<p>Stage 2 reloads the original constrained network and anchors each participating
+asset to its wholesale position. The solver can move assets up or down only
+through explicit increase and decrease variables, priced by BM offer and bid
+prices.</p>
+</section>
+<section id="enabling-market-mode">
+<h2>Enabling Market Mode<a class="headerlink" href="#enabling-market-mode" title="Link to this heading">#</a></h2>
+<p>Enable the workflow per scenario in <code class="docutils literal notranslate"><span class="pre">config/scenarios.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">My_Market_Scenario</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Example</span><span class="nv"> </span><span class="s">two-stage</span><span class="nv"> </span><span class="s">market</span><span class="nv"> </span><span class="s">run&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+<span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
+
+<span class="w">  </span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-01</span><span class="nv"> </span><span class="s">00:00&quot;</span>
+<span class="w">    </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035-01-07</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+
+<span class="w">  </span><span class="nt">market</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling_day_ahead&quot;</span>
+<span class="w">      </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span>
+<span class="w">      </span><span class="nt">carry_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling&quot;</span>
+<span class="w">      </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">      </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;derived&quot;</span>
+<span class="w">      </span><span class="nt">fix_interconnectors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>The full default configuration is in <code class="docutils literal notranslate"><span class="pre">config/defaults.yaml</span></code> under <code class="docutils literal notranslate"><span class="pre">market:</span></code>.
+Scenario-level values override these defaults.</p>
+</section>
+<section id="running">
+<h2>Running<a class="headerlink" href="#running" title="Link to this heading">#</a></h2>
+<p>Run the normal workflow. Market scenarios are detected automatically when
+<code class="docutils literal notranslate"><span class="pre">market.enabled:</span> <span class="pre">true</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+<p>To build a specific market output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_dashboard.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+<p>For development, it is often faster to target the individual stage you are
+debugging:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stage 1 only</span>
+snakemake<span class="w"> </span>resources/market/My_Market_Scenario_wholesale.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Stage 2</span>
+snakemake<span class="w"> </span>resources/market/My_Market_Scenario_balancing.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># Analysis notebook</span>
+snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code> if you only want the wholesale solve and
+wholesale analysis notebook.</p>
+</section>
+<section id="running-a-wholesale-only-market">
+<h2>Running A Wholesale-Only Market<a class="headerlink" href="#running-a-wholesale-only-market" title="Link to this heading">#</a></h2>
+<p>Wholesale-only mode runs Stage 1 without the balancing mechanism. Use it when
+you want a copperplate market schedule, a uniform wholesale price, and a quick
+check of merit-order dispatch before adding network-constrained redispatch.</p>
+<p>Enable it with both <code class="docutils literal notranslate"><span class="pre">market.enabled:</span> <span class="pre">true</span></code> and <code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">My_Wholesale_Only_Scenario</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Historical</span><span class="nv"> </span><span class="s">2024</span><span class="nv"> </span><span class="s">wholesale-only</span><span class="nv"> </span><span class="s">market</span><span class="nv"> </span><span class="s">run&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+
+<span class="w">  </span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2024-01-01</span><span class="nv"> </span><span class="s">00:00&quot;</span>
+<span class="w">    </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2024-01-07</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+
+<span class="w">  </span><span class="nt">market</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">wholesale_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling_day_ahead&quot;</span>
+<span class="w">      </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span>
+<span class="w">      </span><span class="nt">carry_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">transmission_relaxation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0e6</span>
+</pre></div>
+</div>
+<p>Then run the normal workflow:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+<p>Or target the wholesale outputs directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/market/My_Wholesale_Only_Scenario_wholesale.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/My_Wholesale_Only_Scenario_wholesale_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>In wholesale-only mode, the workflow includes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Output</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale.nc</span></code></p></td>
+<td><p>Solved copperplate network</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_dispatch.csv</span></code></p></td>
+<td><p>Generator wholesale schedule</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_storage.csv</span></code></p></td>
+<td><p>Storage wholesale schedule</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_links.csv</span></code></p></td>
+<td><p>Link and interconnector schedule</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_price.csv</span></code></p></td>
+<td><p>Uniform demand-bus wholesale SMP</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/analysis/{scenario}_wholesale_notebook.ipynb</span></code></p></td>
+<td><p>Generated wholesale analysis notebook</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The workflow skips the BM outputs, market dashboard, BM validation, and NESO
+constraint validation because no constrained redispatch is solved.</p>
+<p>Choose the wholesale mode based on the question:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Use when</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mode:</span> <span class="pre">&quot;single&quot;</span></code></p></td>
+<td><p>You want the fastest run or full-period storage foresight.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mode:</span> <span class="pre">&quot;rolling_day_ahead&quot;</span></code></p></td>
+<td><p>You want a day-ahead style schedule with limited storage foresight.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For historical price comparison, the generated wholesale notebook can overlay
+the model SMP with ELEXON MID data when the relevant market data is available.
+For future scenarios, use the wholesale outputs as modelled counterfactual
+prices rather than validation against observed market prices.</p>
+</section>
+<section id="stage-1-wholesale-market">
+<h2>Stage 1: Wholesale Market<a class="headerlink" href="#stage-1-wholesale-market" title="Link to this heading">#</a></h2>
+<p>The wholesale stage is implemented by <code class="docutils literal notranslate"><span class="pre">scripts/market/solve_wholesale.py</span></code>.
+It removes internal transmission congestion by setting every line and
+transformer rating to <code class="docutils literal notranslate"><span class="pre">market.wholesale.transmission_relaxation</span></code>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;single&quot;</span>
+<span class="w">    </span><span class="nt">transmission_relaxation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0e6</span>
+</pre></div>
+</div>
+<p>Available modes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">single</span></code></p></td>
+<td><p>Solve the whole selected period in one optimisation. Storage has full-period foresight.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rolling_day_ahead</span></code></p></td>
+<td><p>Solve independent rolling windows, normally 24 hours. Storage state of charge can carry between windows.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Rolling day-ahead mode is usually a better representation of operational
+market scheduling, especially for storage:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling_day_ahead&quot;</span>
+<span class="w">    </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span>
+<span class="w">    </span><span class="nt">carry_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>The wholesale stage writes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Output</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale.nc</span></code></p></td>
+<td><p>Solved copperplate network</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_dispatch.csv</span></code></p></td>
+<td><p>Generator dispatch by snapshot</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_storage.csv</span></code></p></td>
+<td><p>Storage dispatch by snapshot</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_links.csv</span></code></p></td>
+<td><p>Link dispatch by snapshot</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale_price.csv</span></code></p></td>
+<td><p>Uniform wholesale price time series</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Wholesale prices are reported for demand buses only. Internal DC link buses can
+have directional shadow-price artefacts even in a copperplate solve, so they are
+excluded from the reported spread.</p>
+<section id="optional-unit-commitment">
+<h3>Optional Unit Commitment<a class="headerlink" href="#optional-unit-commitment" title="Link to this heading">#</a></h3>
+<p>The wholesale stage can use a unit commitment overlay even when the rest of the
+scenario uses LP mode. This is slower, but can produce more realistic thermal
+schedules.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">unit_commitment</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">min_p_nom_mw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+</pre></div>
+</div>
+<p>Carrier-specific commitment parameters are configured under
+<code class="docutils literal notranslate"><span class="pre">market.wholesale.unit_commitment.carrier_parameters</span></code>.</p>
+</section>
+</section>
+<section id="stage-2-balancing-mechanism">
+<h2>Stage 2: Balancing Mechanism<a class="headerlink" href="#stage-2-balancing-mechanism" title="Link to this heading">#</a></h2>
+<p>The balancing stage is implemented by <code class="docutils literal notranslate"><span class="pre">scripts/market/solve_balancing.py</span></code>.
+It solves the physical network with original constraints and minimises
+redispatch cost:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>physical_dispatch = wholesale_dispatch + increase - decrease
+cost = offer_price * increase + bid_price * decrease
+</pre></div>
+</div>
+<p>Bid prices use the ESO-cost convention: a positive bid price means it costs the
+ESO money to turn the asset down.</p>
+<p>Available modes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">full_period</span></code></p></td>
+<td><p>Solve the whole period in one constrained optimisation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rolling</span></code></p></td>
+<td><p>Solve shorter constrained windows anchored to the wholesale positions.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For BM-style operation, a one-hour rolling window is common:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling&quot;</span>
+<span class="w">    </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+<p>Storage state of charge is carried between rolling BM windows automatically.</p>
+<p>The balancing stage writes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Output</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_balancing.nc</span></code></p></td>
+<td><p>Solved constrained network</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_balancing_dispatch.csv</span></code></p></td>
+<td><p>Physical generator dispatch</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_balancing_storage.csv</span></code></p></td>
+<td><p>Physical storage dispatch</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_redispatch_summary.csv</span></code></p></td>
+<td><p>Increase/decrease volume and cost by asset</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_constraint_costs.csv</span></code></p></td>
+<td><p>Constraint cost summary by carrier</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_congestion.csv</span></code></p></td>
+<td><p>Congested line and transformer diagnostics</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_price_comparison.csv</span></code></p></td>
+<td><p>Wholesale price and constrained nodal price comparison</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Like wholesale reporting, BM nodal price spread calculations use demand buses
+only.</p>
+</section>
+<section id="bid-and-offer-prices">
+<h2>Bid And Offer Prices<a class="headerlink" href="#bid-and-offer-prices" title="Link to this heading">#</a></h2>
+<p>Configure the price source with <code class="docutils literal notranslate"><span class="pre">market.balancing.bid_offer_source</span></code>.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Use case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code></p></td>
+<td><p>Prefer ELEXON data for historical scenarios when available; otherwise use derived prices.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">derived</span></code></p></td>
+<td><p>Compute prices from marginal costs and configured markups or absolute carrier prices.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">elexon</span></code></p></td>
+<td><p>Use historical ELEXON BMRS bid/offer data. Valid only for historical scenarios.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">csv</span></code></p></td>
+<td><p>Load user-supplied offer and bid CSV files.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="derived-prices">
+<h3>Derived Prices<a class="headerlink" href="#derived-prices" title="Link to this heading">#</a></h3>
+<p>Derived pricing starts from generator marginal costs:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;derived&quot;</span>
+<span class="w">    </span><span class="nt">default_offer_markup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.10</span>
+<span class="w">    </span><span class="nt">default_bid_discount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.10</span>
+</pre></div>
+</div>
+<p>Carrier overrides can use either markup mode or absolute prices:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">carrier_overrides</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">CCGT</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;markup&quot;</span>
+<span class="w">        </span><span class="nt">offer_markup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+<span class="w">        </span><span class="nt">bid_discount</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.10</span>
+<span class="w">      </span><span class="nt">nuclear</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;absolute&quot;</span>
+<span class="w">        </span><span class="nt">offer_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">999.0</span>
+<span class="w">        </span><span class="nt">bid_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">150.0</span>
+<span class="w">      </span><span class="nt">wind_offshore</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;absolute&quot;</span>
+<span class="w">        </span><span class="nt">offer_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">        </span><span class="nt">bid_price</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">90.0</span>
+</pre></div>
+</div>
+<p>Absolute prices are useful for technologies where BM behaviour is not well
+represented by short-run marginal cost, such as nuclear, subsidised renewables,
+and storage.</p>
+</section>
+<section id="elexon-prices">
+<h3>ELEXON Prices<a class="headerlink" href="#elexon-prices" title="Link to this heading">#</a></h3>
+<p>Historical scenarios can use ELEXON BMRS bid and offer data:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elexon&quot;</span>
+<span class="w">    </span><span class="nt">elexon</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">fallback</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;carrier_average&quot;</span>
+<span class="w">      </span><span class="nt">price_ladders</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<p>When ELEXON mode is selected, the workflow retrieves or reuses cached BOD data,
+builds a BMU-to-generator mapping, and writes per-scenario files under
+<code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}/elexon/</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">price_ladders.enabled:</span> <span class="pre">true</span></code>, the BM solve can use ELEXON price/volume
+blocks rather than a single averaged bid and offer price.</p>
+</section>
+<section id="csv-prices">
+<h3>CSV Prices<a class="headerlink" href="#csv-prices" title="Link to this heading">#</a></h3>
+<p>Use CSV mode for custom studies:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;csv&quot;</span>
+<span class="w">    </span><span class="nt">csv</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">offer_file</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;path/to/offers.csv&quot;</span>
+<span class="w">      </span><span class="nt">bid_file</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;path/to/bids.csv&quot;</span>
+</pre></div>
+</div>
+<p>CSV inputs should be aligned with the scenario snapshots and model asset names.</p>
+</section>
+</section>
+<section id="bm-participation">
+<h2>BM Participation<a class="headerlink" href="#bm-participation" title="Link to this heading">#</a></h2>
+<p>By default, all generators and storage units can redispatch. You can restrict
+participation under <code class="docutils literal notranslate"><span class="pre">market.balancing.participation</span></code>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">participation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">generators</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elexon_mapped&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+<span class="w">        </span><span class="nt">min_p_nom_mw</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<span class="w">      </span><span class="nt">storage_units</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+</pre></div>
+</div>
+<p>Participation modes:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">all</span></code></p></td>
+<td><p>Every asset in that class can redispatch.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">none</span></code></p></td>
+<td><p>No assets in that class participate.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">elexon_mapped</span></code></p></td>
+<td><p>Only assets with direct BMU mappings participate.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Non-participant behaviour controls how the solver handles assets that would be
+needed for feasibility:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Behaviour</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">priced_out</span></code></p></td>
+<td><p>Allow emergency redispatch at penalty prices.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fallback_priced</span></code></p></td>
+<td><p>Allow redispatch at the normal fallback prices.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code></p></td>
+<td><p>Lock the asset at its wholesale position. This is stricter but can make the problem infeasible.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="interconnectors">
+<h2>Interconnectors<a class="headerlink" href="#interconnectors" title="Link to this heading">#</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">market.balancing.fix_interconnectors:</span> <span class="pre">true</span></code> to hold interconnector links at
+their wholesale position in the BM solve. This is the default and reflects a
+first-order assumption that cross-border schedules are not redispatched by the
+GB BM.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">fix_interconnectors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>Set it to <code class="docutils literal notranslate"><span class="pre">false</span></code> only for sensitivity analysis where interconnector
+redispatch is intentionally allowed.</p>
+</section>
+<section id="subsidies-and-revenue-tracking">
+<h2>Subsidies And Revenue Tracking<a class="headerlink" href="#subsidies-and-revenue-tracking" title="Link to this heading">#</a></h2>
+<p>Subsidy-aware marginal costs and market revenue tracking are separate options.</p>
+<p>During generator integration, <code class="docutils literal notranslate"><span class="pre">subsidy_tracking.enabled:</span> <span class="pre">true</span></code> stores
+<code class="docutils literal notranslate"><span class="pre">support_type</span></code> attributes such as <code class="docutils literal notranslate"><span class="pre">CfD</span></code>, <code class="docutils literal notranslate"><span class="pre">ROC</span></code>, and <code class="docutils literal notranslate"><span class="pre">merchant</span></code>. If
+<code class="docutils literal notranslate"><span class="pre">marginal_costs.subsidies.enabled:</span> <span class="pre">true</span></code>, these attributes affect renewable
+dispatch order before the market solve.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">subsidy_tracking</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">marginal_costs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">subsidies</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">revenue_tracking</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">include_cfd</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">include_roc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>Revenue tracking computes post-solve CfD difference payments and ROC income.
+It requires both market mode and subsidy tracking.</p>
+</section>
+<section id="analysis-outputs">
+<h2>Analysis Outputs<a class="headerlink" href="#analysis-outputs" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">analyze_market_results</span></code> rule creates:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Output</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resources/analysis/{scenario}_market_dashboard.html</span></code></p></td>
+<td><p>Interactive Plotly dashboard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resources/analysis/{scenario}_market_summary.json</span></code></p></td>
+<td><p>Machine-readable metrics</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The generated dashboard compares wholesale and physical dispatch, redispatch
+volumes, constraint costs, congestion, and price spreads.</p>
+<p>You can also generate a per-scenario notebook:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>For wholesale-only scenarios:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_wholesale_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+<section id="historical-validation">
+<h2>Historical Validation<a class="headerlink" href="#historical-validation" title="Link to this heading">#</a></h2>
+<p>For historical market scenarios (<code class="docutils literal notranslate"><span class="pre">modelled_year</span> <span class="pre">&lt;=</span> <span class="pre">2024</span></code>), extra validation
+rules compare the model with observed market and constraint data.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Rule</p></th>
+<th class="head"><p>Output</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">validate_bm_results</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{scenario}_bm_validation.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">{scenario}_bm_validation.html</span></code></p></td>
+<td><p>Compare model BM volumes, costs, prices, and dispatch with ELEXON actuals.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">validate_bm_calibration</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{scenario}_bm_calibration.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">{scenario}_bm_calibration.html</span></code></p></td>
+<td><p>Compare model bid/offer prices and redispatch volumes with ELEXON carrier-level medians.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">validate_neso_constraints</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{scenario}_neso_validation.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">{scenario}_neso_validation.html</span></code></p></td>
+<td><p>Compare boundary flows and constraint costs with NESO constraint data.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Example targets:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_bm_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_neso_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+<p>Network access may be needed the first time historical ELEXON or NESO data is
+downloaded. Subsequent runs use local caches where available.</p>
+</section>
+<section id="choosing-modes">
+<h2>Choosing Modes<a class="headerlink" href="#choosing-modes" title="Link to this heading">#</a></h2>
+<p>Use these starting points:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Goal</p></th>
+<th class="head"><p>Suggested settings</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Fast smoke test</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wholesale.mode:</span> <span class="pre">&quot;single&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">balancing.mode:</span> <span class="pre">&quot;full_period&quot;</span></code>, short <code class="docutils literal notranslate"><span class="pre">solve_period</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Operational market study</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wholesale.mode:</span> <span class="pre">&quot;rolling_day_ahead&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">balancing.mode:</span> <span class="pre">&quot;rolling&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">balancing.window_hours:</span> <span class="pre">1</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Future scenario without historical BM data</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bid_offer_source:</span> <span class="pre">&quot;derived&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Historical validation</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bid_offer_source:</span> <span class="pre">&quot;elexon&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">auto</span></code>, with ELEXON validation targets</p></td>
+</tr>
+<tr class="row-even"><td><p>Wholesale price only</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="common-issues">
+<h2>Common Issues<a class="headerlink" href="#common-issues" title="Link to this heading">#</a></h2>
+<section id="elexon-requested-for-a-future-scenario">
+<h3>ELEXON requested for a future scenario<a class="headerlink" href="#elexon-requested-for-a-future-scenario" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">bid_offer_source:</span> <span class="pre">&quot;elexon&quot;</span></code> is valid only for historical scenarios. Use
+<code class="docutils literal notranslate"><span class="pre">derived</span></code> for future years, or <code class="docutils literal notranslate"><span class="pre">auto</span></code> if you want PyPSA-GB to choose the best
+available source.</p>
+</section>
+<section id="bm-solve-is-infeasible">
+<h3>BM solve is infeasible<a class="headerlink" href="#bm-solve-is-infeasible" title="Link to this heading">#</a></h3>
+<p>Common causes are overly strict participation settings, fixed non-participants,
+or a network that cannot physically serve demand without redispatching assets
+that have been excluded.</p>
+<p>Start by using:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">participation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">generators</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+<span class="w">      </span><span class="nt">storage_units</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span>
+<span class="w">        </span><span class="nt">behavior</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;priced_out&quot;</span>
+</pre></div>
+</div>
+<p>Then tighten the participation filters once the scenario solves.</p>
+</section>
+<section id="wholesale-price-spread-looks-too-high">
+<h3>Wholesale price spread looks too high<a class="headerlink" href="#wholesale-price-spread-looks-too-high" title="Link to this heading">#</a></h3>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">*_wholesale_price.csv</span></code> output rather than directly averaging all
+entries in <code class="docutils literal notranslate"><span class="pre">network.buses_t.marginal_price</span></code>. The reporting code filters to
+demand buses because internal DC link buses can retain directional price
+differences.</p>
+</section>
+<section id="redispatch-volume-is-unexpectedly-large">
+<h3>Redispatch volume is unexpectedly large<a class="headerlink" href="#redispatch-volume-is-unexpectedly-large" title="Link to this heading">#</a></h3>
+<p>Check the wholesale and BM modes first. A copperplate wholesale dispatch can
+schedule remote generation behind real network constraints, especially Scottish
+wind and English thermal generation. That is expected to produce redispatch.
+Use <code class="docutils literal notranslate"><span class="pre">*_congestion.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">*_constraint_costs.csv</span></code>, and the market dashboard to
+identify the binding regions and assets.</p>
+</section>
+<section id="runs-are-slow">
+<h3>Runs are slow<a class="headerlink" href="#runs-are-slow" title="Link to this heading">#</a></h3>
+<p>Market mode solves at least two optimisation problems per scenario. Rolling
+mode solves many smaller problems. Reduce the <code class="docutils literal notranslate"><span class="pre">solve_period</span></code>, use a Reduced or
+Zonal network for testing, or start with <code class="docutils literal notranslate"><span class="pre">single</span></code> and <code class="docutils literal notranslate"><span class="pre">full_period</span></code> modes before
+moving to rolling runs.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="demand_flexibility.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Demand-Side Flexibility</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../data_reference/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Data Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow-overview">Workflow Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#enabling-market-mode">Enabling Market Mode</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running">Running</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-a-wholesale-only-market">Running A Wholesale-Only Market</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-1-wholesale-market">Stage 1: Wholesale Market</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-unit-commitment">Optional Unit Commitment</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-2-balancing-mechanism">Stage 2: Balancing Mechanism</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bid-and-offer-prices">Bid And Offer Prices</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#derived-prices">Derived Prices</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#elexon-prices">ELEXON Prices</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#csv-prices">CSV Prices</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bm-participation">BM Participation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interconnectors">Interconnectors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subsidies-and-revenue-tracking">Subsidies And Revenue Tracking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analysis-outputs">Analysis Outputs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#historical-validation">Historical Validation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing-modes">Choosing Modes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-issues">Common Issues</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#elexon-requested-for-a-future-scenario">ELEXON requested for a future scenario</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bm-solve-is-infeasible">BM solve is infeasible</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#wholesale-price-spread-looks-too-high">Wholesale price spread looks too high</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#redispatch-volume-is-unexpectedly-large">Redispatch volume is unexpectedly large</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#runs-are-slow">Runs are slow</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, Andrew Lyden, University of Edinburgh.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

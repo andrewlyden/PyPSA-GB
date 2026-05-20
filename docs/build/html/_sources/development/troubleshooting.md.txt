@@ -227,6 +227,59 @@ print(f"Disconnected buses: {disconnected}")
 
 ---
 
+## Market Dispatch Issues
+
+### ELEXON Prices Requested For A Future Scenario
+
+**Symptom**: Market solve errors when `bid_offer_source: "elexon"` is used for
+a modelled year after 2024.
+
+**Solution**: ELEXON bid/offer data is historical. Use derived prices for future
+scenarios:
+
+```yaml
+market:
+  balancing:
+    bid_offer_source: "derived"
+```
+
+Or use `bid_offer_source: "auto"` to prefer ELEXON only when valid historical
+files are available.
+
+### Balancing Solve Is Infeasible
+
+**Symptom**: Wholesale solves, but `solve_balancing_mechanism` fails.
+
+**Common causes**:
+- BM participation filters exclude assets needed for feasibility
+- non-participants are set to `behavior: "fixed"`
+- interconnector or outage settings over-constrain the physical network
+
+Start from permissive participation settings, then tighten filters:
+
+```yaml
+market:
+  balancing:
+    participation:
+      generators:
+        mode: "all"
+        behavior: "priced_out"
+      storage_units:
+        mode: "all"
+        behavior: "priced_out"
+```
+
+### Wholesale Price Spread Looks Too High
+
+**Symptom**: Averaging `network.buses_t.marginal_price` directly gives an
+unrealistic price spread in the wholesale network.
+
+**Solution**: Use `resources/market/{scenario}_wholesale_price.csv`. The market
+reporting code filters to demand buses and avoids internal DC-link buses that can
+retain directional shadow prices.
+
+---
+
 ## Data Issues
 
 ### FES Data Not Found

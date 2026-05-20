@@ -416,7 +416,7 @@ window.addEventListener("load", load);
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Data Sources" href="data_sources.html" />
-    <link rel="prev" title="Demand-Side Flexibility" href="../user_guide/demand_flexibility.html" />
+    <link rel="prev" title="Market Dispatch" href="../user_guide/market.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -825,6 +825,8 @@ document.write(`
         ETYS[&quot;ETYS Network Data&quot;]
         ERA5[&quot;ERA5 Weather&quot;]
         ESPENI[&quot;ESPENI Demand&quot;]
+        ELEXON[&quot;ELEXON BMRS&quot;]
+        NESO_VAL[&quot;NESO Constraint Data&quot;]
     end
     
     subgraph Raw[&quot;data/ (Raw)&quot;]
@@ -839,12 +841,15 @@ document.write(`
         GEN_PROC[&quot;Generators&quot;]
         RENEW_PROC[&quot;Renewables&quot;]
         NETWORK[&quot;Network files&quot;]
+        MARKET[&quot;Market outputs&quot;]
     end
     
     FES --&gt; FES_RAW --&gt; FES_PROC
     DUKES --&gt; DUKES_RAW --&gt; GEN_PROC
     REPD --&gt; REPD_RAW --&gt; RENEW_PROC
     ETYS --&gt; ETYS_RAW --&gt; NETWORK
+    ELEXON --&gt; MARKET
+    NESO_VAL --&gt; MARKET
     </pre></section>
 <section id="directory-structure">
 <h2>Directory Structure<a class="headerlink" href="#directory-structure" title="Link to this heading">#</a></h2>
@@ -866,6 +871,9 @@ resources/               # Generated outputs (recreated by workflow)
 └── analysis/            # Output reports
 </pre></div>
 </div>
+<p>Market-enabled scenarios also use <code class="docutils literal notranslate"><span class="pre">data/market/</span></code> for optional ELEXON caches and
+<code class="docutils literal notranslate"><span class="pre">data/validation/</span></code> for NESO/ELEXON validation caches. Per-scenario wholesale,
+balancing, and validation outputs are written to <code class="docutils literal notranslate"><span class="pre">resources/market/</span></code>.</p>
 </section>
 <section id="key-data-files">
 <h2>Key Data Files<a class="headerlink" href="#key-data-files" title="Link to this heading">#</a></h2>
@@ -896,6 +904,14 @@ resources/               # Generated outputs (recreated by workflow)
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data/demand/ESPENI/*.csv</span></code></p></td>
 <td><p>Historical demand</p></td>
 <td><p>Annual</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">data/market/elexon_*</span></code></p></td>
+<td><p>Optional ELEXON BMRS caches</p></td>
+<td><p>Generated/cached as needed</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data/validation/*constraint*</span></code></p></td>
+<td><p>Optional NESO constraint validation data</p></td>
+<td><p>Generated/cached as needed</p></td>
 </tr>
 </tbody>
 </table>
@@ -949,12 +965,12 @@ resources/               # Generated outputs (recreated by workflow)
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../user_guide/demand_flexibility.html"
+       href="../user_guide/market.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Demand-Side Flexibility</p>
+        <p class="prev-next-title">Market Dispatch</p>
       </div>
     </a>
     <a class="right-next"

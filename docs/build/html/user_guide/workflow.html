@@ -718,6 +718,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demand_flexibility.html">Demand-Side Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="market.html">Market Dispatch</a></li>
 </ul>
 </div>
 </nav></div>
@@ -810,6 +811,12 @@ document.write(`
         SOLVE[&quot;Solve Network&quot;]
         ANALYZE[&quot;Analyze Results&quot;]
     end
+
+    subgraph Market[&quot;Optional Market Dispatch&quot;]
+        WHOLESALE[&quot;Solve Wholesale Market&quot;]
+        BM[&quot;Solve Balancing Mechanism&quot;]
+        MARKET_ANALYZE[&quot;Analyze Market Results&quot;]
+    end
     
     FES --&gt; RENEW
     FES --&gt; THERMAL
@@ -832,6 +839,9 @@ document.write(`
     INTER --&gt; FINALIZE
     FINALIZE --&gt; SOLVE
     SOLVE --&gt; ANALYZE
+    FINALIZE --&gt; WHOLESALE
+    WHOLESALE --&gt; BM
+    BM --&gt; MARKET_ANALYZE
     </pre></section>
 <section id="two-workflows">
 <h2>Two Workflows<a class="headerlink" href="#two-workflows" title="Link to this heading">#</a></h2>
@@ -904,7 +914,10 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">solve.smk</span></code></p></td>
 <td><p>Network finalization and optimization solving</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">analysis.smk</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">market.smk</span></code></p></td>
+<td><p>Optional wholesale market, balancing mechanism, validation, and market notebooks</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">analysis.smk</span></code></p></td>
 <td><p>Results analysis, spatial plots, dashboards, notebooks</p></td>
 </tr>
 </tbody>
@@ -952,6 +965,23 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <p>Runs the linear optimal power flow optimization.</p>
 <p><strong>Input</strong>: Complete unsolved network<br />
 <strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">resources/network/{scenario}_solved.nc</span></code></p>
+</section>
+<section id="solve-wholesale-market">
+<h3><code class="docutils literal notranslate"><span class="pre">solve_wholesale_market</span></code><a class="headerlink" href="#solve-wholesale-market" title="Link to this heading">#</a></h3>
+<p>Runs the optional Stage 1 market solve when <code class="docutils literal notranslate"><span class="pre">market.enabled:</span> <span class="pre">true</span></code>. It relaxes
+line and transformer capacities to create a copperplate wholesale schedule and
+uniform demand-bus wholesale price.</p>
+<p><strong>Input</strong>: Finalized network (<code class="docutils literal notranslate"><span class="pre">resources/network/{scenario}.nc</span></code>)<br />
+<strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_wholesale.nc</span></code> and wholesale CSVs</p>
+</section>
+<section id="solve-balancing-mechanism">
+<h3><code class="docutils literal notranslate"><span class="pre">solve_balancing_mechanism</span></code><a class="headerlink" href="#solve-balancing-mechanism" title="Link to this heading">#</a></h3>
+<p>Runs the optional Stage 2 market solve unless <code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code>. It
+restores network constraints and redispatches from the wholesale position using
+configured bid and offer prices.</p>
+<p><strong>Input</strong>: Finalized network and wholesale outputs<br />
+<strong>Output</strong>: <code class="docutils literal notranslate"><span class="pre">resources/market/{scenario}_balancing.nc</span></code>, redispatch, congestion, and price comparison CSVs</p>
+<p>See <a class="reference internal" href="market.html"><span class="doc">Market Dispatch</span></a> for configuration and output details.</p>
 </section>
 </section>
 <section id="running-the-workflow">
@@ -1013,6 +1043,10 @@ snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j
 └── HT35_solved.nc                                    # Solved (final results)
 </pre></div>
 </div>
+<p>Market-enabled scenarios also add outputs under <code class="docutils literal notranslate"><span class="pre">resources/market/</span></code>, including
+the wholesale network, wholesale price CSV, balancing network, redispatch
+summary, congestion diagnostics, and price comparison files. Market dashboards
+and notebooks are written under <code class="docutils literal notranslate"><span class="pre">resources/analysis/</span></code>.</p>
 </section>
 <section id="logs">
 <h2>Logs<a class="headerlink" href="#logs" title="Link to this heading">#</a></h2>
@@ -1024,6 +1058,9 @@ snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j
 └── ...
 </pre></div>
 </div>
+<p>Market rules write logs under <code class="docutils literal notranslate"><span class="pre">logs/market/</span></code>, for example
+<code class="docutils literal notranslate"><span class="pre">logs/market/solve_wholesale_{scenario}.log</span></code> and
+<code class="docutils literal notranslate"><span class="pre">logs/market/solve_balancing_{scenario}.log</span></code>.</p>
 </section>
 <section id="configuration-flow">
 <h2>Configuration Flow<a class="headerlink" href="#configuration-flow" title="Link to this heading">#</a></h2>
@@ -1151,6 +1188,8 @@ snakemake<span class="w"> </span>resources/analysis/HT35_spatial.html<span class
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#build-network"><code class="docutils literal notranslate"><span class="pre">build_network</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integrate-renewable-generators"><code class="docutils literal notranslate"><span class="pre">integrate_renewable_generators</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-network"><code class="docutils literal notranslate"><span class="pre">solve_network</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-wholesale-market"><code class="docutils literal notranslate"><span class="pre">solve_wholesale_market</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-balancing-mechanism"><code class="docutils literal notranslate"><span class="pre">solve_balancing_mechanism</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-workflow">Running the Workflow</a><ul class="nav section-nav flex-column">

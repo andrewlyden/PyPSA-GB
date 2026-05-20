@@ -54,6 +54,38 @@ The ETYS publication year is set via `etys.year` (supports 2022, 2023, 2024).
 See {doc}`configuration` for details.
 ```
 
+### Market Scenarios
+
+Market scenarios are historical or future scenarios with an additional
+`market:` block. They still build the same physical network, but then branch
+into a copperplate wholesale solve and, unless `wholesale_only: true`, a
+constrained balancing redispatch solve.
+
+```yaml
+Historical_2024_market:
+  description: "Historical 2024 wholesale and balancing market run"
+  modelled_year: 2024
+  renewables_year: 2024
+  demand_year: 2024
+  network_model: "ETYS"
+  solve_period:
+    enabled: true
+    start: "2024-01-01 00:00"
+    end: "2024-01-07 23:00"
+  market:
+    enabled: true
+    wholesale:
+      mode: "rolling_day_ahead"
+      window_hours: 24
+    balancing:
+      mode: "rolling"
+      window_hours: 1
+      bid_offer_source: "auto"
+```
+
+Use `market.wholesale_only: true` for wholesale price and schedule analysis
+without BM redispatch. See {doc}`market` for detailed configuration.
+
 ## FES Pathway Selection
 
 ### Holistic Transition

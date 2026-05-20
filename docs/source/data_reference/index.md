@@ -23,6 +23,8 @@ flowchart TB
         ETYS["ETYS Network Data"]
         ERA5["ERA5 Weather"]
         ESPENI["ESPENI Demand"]
+        ELEXON["ELEXON BMRS"]
+        NESO_VAL["NESO Constraint Data"]
     end
     
     subgraph Raw["data/ (Raw)"]
@@ -37,12 +39,15 @@ flowchart TB
         GEN_PROC["Generators"]
         RENEW_PROC["Renewables"]
         NETWORK["Network files"]
+        MARKET["Market outputs"]
     end
     
     FES --> FES_RAW --> FES_PROC
     DUKES --> DUKES_RAW --> GEN_PROC
     REPD --> REPD_RAW --> RENEW_PROC
     ETYS --> ETYS_RAW --> NETWORK
+    ELEXON --> MARKET
+    NESO_VAL --> MARKET
 ```
 
 ## Directory Structure
@@ -66,6 +71,10 @@ resources/               # Generated outputs (recreated by workflow)
 └── analysis/            # Output reports
 ```
 
+Market-enabled scenarios also use `data/market/` for optional ELEXON caches and
+`data/validation/` for NESO/ELEXON validation caches. Per-scenario wholesale,
+balancing, and validation outputs are written to `resources/market/`.
+
 ## Key Data Files
 
 | File | Description | Update Frequency |
@@ -75,6 +84,8 @@ resources/               # Generated outputs (recreated by workflow)
 | `data/generators/tec-register-*.csv` | Transmission entry capacity | Monthly |
 | `data/FES/FES_api_urls.yaml` | NESO API endpoints | Per FES release |
 | `data/demand/ESPENI/*.csv` | Historical demand | Annual |
+| `data/market/elexon_*` | Optional ELEXON BMRS caches | Generated/cached as needed |
+| `data/validation/*constraint*` | Optional NESO constraint validation data | Generated/cached as needed |
 
 ## Scenario Data Routing
 

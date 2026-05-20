@@ -862,6 +862,12 @@ document.write(`
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve_network.py</span></code></p></td>
 <td><p>Run optimization</p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">market/solve_wholesale.py</span></code></p></td>
+<td><p>Run copperplate wholesale dispatch</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">market/solve_balancing.py</span></code></p></td>
+<td><p>Run anchored balancing redispatch</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -944,6 +950,39 @@ document.write(`
 </pre></div>
 </div>
 </section>
+<section id="market-workflow-modules">
+<h3>Market Workflow Modules<a class="headerlink" href="#market-workflow-modules" title="Link to this heading">#</a></h3>
+<p>Market dispatch is an optional branch from the finalized network. The main
+entry points are <code class="docutils literal notranslate"><span class="pre">rules/market.smk</span></code> and <code class="docutils literal notranslate"><span class="pre">scripts/market/</span></code>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve_wholesale.py</span></code></p></td>
+<td><p>Copperplate Stage 1 wholesale solve</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">solve_balancing.py</span></code></p></td>
+<td><p>Constrained Stage 2 balancing redispatch</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">market_utils.py</span></code></p></td>
+<td><p>Bid/offer pricing, ELEXON loading, redispatch metrics</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">analyze_market.py</span></code></p></td>
+<td><p>Dashboard and summary outputs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">validate_bm.py</span></code></p></td>
+<td><p>Historical ELEXON BM validation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">validate_neso_constraints.py</span></code></p></td>
+<td><p>NESO constraint validation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 <section id="data-flow">
 <h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading">#</a></h2>
@@ -979,6 +1018,14 @@ document.write(`
 <span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_</span><span class="o">...</span><span class="n">_hydrogen</span><span class="o">.</span><span class="n">pkl</span>                     <span class="c1"># + hydrogen</span>
 <span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_</span><span class="o">...</span><span class="n">_interconnectors</span><span class="o">.</span><span class="n">nc</span>               <span class="c1"># + interconnectors</span>
 <span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_solved</span><span class="o">.</span><span class="n">nc</span>                            <span class="c1"># Optimized</span>
+</pre></div>
+</div>
+<p>Market-enabled scenarios branch from the finalized network rather than from
+<code class="docutils literal notranslate"><span class="pre">{scenario}_solved.nc</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">/</span><span class="n">network</span><span class="o">/</span><span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="o">.</span><span class="n">nc</span>                 <span class="c1"># Finalized physical network</span>
+<span class="n">resources</span><span class="o">/</span><span class="n">market</span><span class="o">/</span><span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_wholesale</span><span class="o">.</span><span class="n">nc</span>        <span class="c1"># Copperplate wholesale solve</span>
+<span class="n">resources</span><span class="o">/</span><span class="n">market</span><span class="o">/</span><span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_balancing</span><span class="o">.</span><span class="n">nc</span>        <span class="c1"># Constrained BM solve</span>
+<span class="n">resources</span><span class="o">/</span><span class="n">analysis</span><span class="o">/</span><span class="p">{</span><span class="n">scenario</span><span class="p">}</span><span class="n">_market_dashboard</span><span class="o">.</span><span class="n">html</span>
 </pre></div>
 </div>
 </section>
@@ -1209,6 +1256,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-system">Configuration System</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow-system">Workflow System</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#script-organization">Script Organization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#market-workflow-modules">Market Workflow Modules</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-flow">Data Flow</a><ul class="nav section-nav flex-column">
