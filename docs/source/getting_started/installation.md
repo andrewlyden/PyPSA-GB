@@ -78,9 +78,6 @@ Test that everything is working:
 python -c "import pypsa; print(f'PyPSA version: {pypsa.__version__}')"
 python -c "import snakemake; print('Snakemake OK')"
 
-# Validate scenarios
-python scripts/validate_scenarios.py
-
 # Dry run to check workflow
 snakemake -n -p
 ```
