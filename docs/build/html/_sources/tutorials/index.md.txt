@@ -27,6 +27,7 @@ Interactive Jupyter notebook tutorials demonstrating PyPSA-GB's network-constrai
 13-heat-flexibility
 14-ev-flexibility
 15-demand-side-response
+16-market-dispatch
 ```
 
 ## Tutorial Overview
@@ -44,7 +45,7 @@ Complete scenario walkthroughs from network building to results analysis:
 | **3** | Future Near-Term (2035) | 2035 | ETYS clustered (100 buses) | 10-15 min | Renewable dominance, storage, network upgrades |
 | **4** | Future Long-Term (2050) | 2050 | ETYS clustered (100 buses) | 10-15 min | Near-100% renewables, stress test, adequacy |
 
-### Component Tutorials (5-12)
+### Component Tutorials (5-16)
 
 Deep dives into specific aspects of power system modeling:
 
@@ -61,6 +62,7 @@ Deep dives into specific aspects of power system modeling:
 | **13** | Heat Flexibility | Heat Pump Demand | TANK/COSY modes, COP, thermal storage, demand shifting |
 | **14** | EV Flexibility | EV Smart Charging | GO/INT/V2G tariffs, battery storage, Vehicle-to-Grid |
 | **15** | Demand-Side Response | Event Response | Saving Sessions, demand reduction events, DSR capacity |
+| **16** | Market Dispatch | Wholesale + BM | Copperplate wholesale dispatch, balancing redispatch, ELEXON/NESO validation |
 
 
 ## Running Tutorials
@@ -90,6 +92,15 @@ snakemake resources/network/HT35_clustered_solved.nc -j 4
 
 # Notebook 4: Future 2050 (Clustered ETYS)
 snakemake resources/network/EE50_clustered_solved.nc -j 4
+```
+
+The market dispatch tutorial reads solved market and validation outputs rather
+than a single solved network. Build the relevant market validation targets first,
+for example:
+
+```bash
+snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html -j 4
+snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html -j 4
 ```
 
 
@@ -122,6 +133,7 @@ Then select the `pypsa-gb` kernel in Jupyter.
 | 2 - Historical 2023 | 16 GB | 30-60 min | ~2 GB |
 | 3 - Future 2035 | 8 GB | 10-15 min | ~1 GB |
 | 4 - Future 2050 | 8 GB | 10-15 min | ~1 GB |
+| 16 - Market Dispatch | 16 GB+ | Depends on market scenarios | Several GB for monthly validation outputs |
 
 ### Solver Requirements
 

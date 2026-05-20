@@ -952,6 +952,90 @@ rule finalize_generator_integration:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# DAILY EMPIRICAL MC CALIBRATION (from ELEXON data)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _daily_mc_enabled(scenario_id):
+    """Check if daily empirical MC calibration is enabled for a scenario."""
+    sc = scenarios.get(scenario_id, {})
+    return (sc.get('marginal_costs', {})
+              .get('empirical_calibration', {})
+              .get('enabled', False))
+
+
+def _renewable_mc_enabled(scenario_id):
+    """Check if renewable empirical MC calibration is enabled for a scenario."""
+    sc = scenarios.get(scenario_id, {})
+    return (sc.get('marginal_costs', {})
+              .get('empirical_calibration', {})
+              .get('enabled', False))
+
+
+def _carrier_correction_factors_file(scenario_id):
+    """Return the carrier correction factors CSV path if enabled, else empty list."""
+    sc = scenarios.get(scenario_id, {})
+    ccf = sc.get('marginal_costs', {}).get('carrier_correction_factors', {})
+    if ccf.get('enabled', False) and ccf.get('file'):
+        return ccf['file']
+    return []
+
+
+rule calibrate_daily_empirical_mc:
+    """
+    Fetch ELEXON B1610 + MID data and calibrate per-generator empirical
+    marginal costs at daily resolution (rolling +/-N-day window).
+
+    Only runs when marginal_costs.empirical_calibration.enabled: true.
+    Output is consumed by apply_marginal_costs_to_network to build day-aware
+    time-varying MC (generators_t.marginal_cost).
+    """
+    input:
+        network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
+    output:
+        daily_mc=f"{resources_path}/marginal_costs/{{scenario}}_daily_empirical_mc.csv",
+    params:
+        scenario_config=lambda w: scenarios[w.scenario],
+        data_dir="resources/market/elexon",
+    log:
+        "logs/calibrate_daily_mc_{scenario}.log"
+    benchmark:
+        "benchmarks/generators/calibrate_daily_mc_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    script:
+        "../scripts/generators/calibrate_daily_mc.py"
+
+
+rule calibrate_renewable_empirical_mc:
+    """
+    Calibrate renewable generator MCs from ELEXON BOD bid prices.
+
+    Only runs when marginal_costs.empirical_calibration.enabled: true.
+    For future scenarios (>2024), produces an empty CSV.
+    Output is consumed by apply_marginal_costs_to_network.
+    """
+    input:
+        network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
+    output:
+        renewable_mc=f"{resources_path}/marginal_costs/{{scenario}}_renewable_empirical_mc.csv",
+    params:
+        scenario_config=lambda w: scenarios[w.scenario],
+        data_dir="resources/market/elexon",
+    log:
+        "logs/calibrate_renewable_mc_{scenario}.log"
+    benchmark:
+        "benchmarks/generators/calibrate_renewable_mc_{scenario}.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    script:
+        "../scripts/generators/calibrate_renewable_mc.py"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # MARGINAL COST CALCULATION
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1024,15 +1108,23 @@ rule apply_marginal_costs_to_network:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
         # Optional: FES price inputs for future scenarios (>2024)
         fuel_prices=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
-        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else []
+        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
+        # Optional: Daily thermal empirical MC calibration
+        daily_mc=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_daily_empirical_mc.csv" if _daily_mc_enabled(w.scenario) else [],
+        # Optional: Renewable empirical MC calibration
+        renewable_mc=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_renewable_empirical_mc.csv" if _renewable_mc_enabled(w.scenario) else [],
+        # Optional: Carrier correction factors (bridges historical calibration to future)
+        correction_factors=lambda w: _carrier_correction_factors_file(w.scenario),
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_costs.pkl",
         marginal_costs_csv=f"{resources_path}/generators/{{scenario}}_marginal_costs_breakdown.csv"
     params:
         scenario_config=lambda w: scenarios[w.scenario],
-        # Optional: Pass FES price file paths to script for dynamic price loading
         fuel_price_file=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
-        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None
+        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
+        thermal_mc_file=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_daily_empirical_mc.csv" if _daily_mc_enabled(w.scenario) else None,
+        renewable_mc_file=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_renewable_empirical_mc.csv" if _renewable_mc_enabled(w.scenario) else None,
+        correction_factors_file=lambda w: _carrier_correction_factors_file(w.scenario) or None,
     log:
         "logs/marginal_costs_{scenario}.log"
     benchmark:

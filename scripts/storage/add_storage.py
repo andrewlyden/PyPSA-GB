@@ -21,6 +21,7 @@ from pathlib import Path
 import logging
 import time
 import warnings
+import yaml
 from typing import Dict, Tuple, Optional
 
 # Fast I/O for network loading/saving
@@ -467,7 +468,8 @@ def load_fes_storage_data(
 
 
 def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
-                           standing_loss_default: float = 0.001) -> pypsa.Network:
+                           standing_loss_default: float = 0.001,
+                           hydro_config: Optional[Dict] = None) -> pypsa.Network:
     """
     Add storage units to the PyPSA network.
     
@@ -498,6 +500,8 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
     tech_counts = {}
     total_power = 0
     total_energy = 0
+    hydro_config = hydro_config or {}
+    pumped_hydro_config = hydro_config.get('pumped_hydro', {})
     
     for idx, row in storage_df.iterrows():
         # Use site_name if available, otherwise create unique name
@@ -543,14 +547,24 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
             bus_lat = row.get('lat', None)
         
         # Prepare storage parameters
+        carrier = str(row['technology'])
+        standing_loss = standing_loss_default
+        initial_soc_fraction = 0.5
+        cyclic_state_of_charge = False
+
+        if carrier in {'Pumped Storage Hydroelectricity', 'pumped_hydro'}:
+            standing_loss = float(pumped_hydro_config.get('standing_loss', 0.0))
+            initial_soc_fraction = float(pumped_hydro_config.get('initial_soc_fraction', 0.65))
+            cyclic_state_of_charge = bool(pumped_hydro_config.get('cyclic_state_of_charge', False))
+
         storage_params = {
             'bus': row['bus'],
-            'carrier': row['technology'],
+            'carrier': carrier,
             'p_nom': row['power_mw'],  # Nominal power capacity
             'max_hours': row['duration_h'],  # Energy/Power ratio
             'efficiency_store': row['eta_charge'],  # Charge efficiency
             'efficiency_dispatch': row['eta_discharge'],  # Discharge efficiency
-            'standing_loss': standing_loss_default,  # Self-discharge per hour
+            'standing_loss': standing_loss,  # Self-discharge per hour
             'capital_cost': row.get('capital_cost', 0),
             'marginal_cost': row.get('marginal_cost', 0),
         }
@@ -563,7 +577,13 @@ def add_storage_to_network(network: pypsa.Network, storage_df: pd.DataFrame,
         
         # Add cyclic state of charge if available
         if 'cyclic_state_of_charge' not in storage_params:
-            storage_params['cyclic_state_of_charge'] = False  # Don't force SOC to match at start/end
+            storage_params['cyclic_state_of_charge'] = cyclic_state_of_charge
+
+        # Initialise state of charge at 50% of max energy capacity.
+        # Without this, storage starts empty and cannot generate in the
+        # first solve window, producing unrealistic pumped-storage profiles.
+        max_energy = row['power_mw'] * row['duration_h']
+        storage_params['state_of_charge_initial'] = max_energy * initial_soc_fraction
         
         # Add StorageUnit to network
         try:
@@ -715,6 +735,25 @@ def main():
     logger.info("="*80)
     logger.info("Starting storage integration into PyPSA network...")
     logger.info("="*80)
+
+    def _merge_dicts(base: Dict, override: Dict) -> Dict:
+        merged = dict(base)
+        for key, value in override.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = _merge_dicts(merged[key], value)
+            else:
+                merged[key] = value
+        return merged
+
+    def _load_hydro_config(scenario_config: Optional[Dict] = None) -> Dict:
+        defaults_path = Path("config/defaults.yaml")
+        hydro_config = {}
+        if defaults_path.exists():
+            with defaults_path.open("r", encoding="utf-8") as handle:
+                hydro_config = (yaml.safe_load(handle) or {}).get("hydro", {}) or {}
+        if scenario_config and scenario_config.get("hydro"):
+            hydro_config = _merge_dicts(hydro_config, scenario_config["hydro"])
+        return hydro_config
     
     try:
         # Get input and output files
@@ -727,6 +766,7 @@ def main():
             standing_loss = snakemake.params.get('standing_loss', 0.001)
             modelled_year = snakemake.params.get('modelled_year', None)
             is_historical = snakemake.params.get('is_historical', False)
+            scenario_config = snakemake.params.get('scenario_config', {})
             logger.info("Running in Snakemake mode")
         except NameError:
             # Standalone mode
@@ -742,6 +782,7 @@ def main():
             standing_loss = 0.001
             modelled_year = None
             is_historical = False
+            scenario_config = {}
             logger.info("Running in standalone mode")
         
         logger.info(f"Input network: {network_input}")
@@ -749,6 +790,8 @@ def main():
         logger.info(f"Output network: {network_output}")
         if modelled_year:
             logger.info(f"Modelled year: {modelled_year} ({'historical' if is_historical else 'future'} scenario)")
+
+        hydro_config = _load_hydro_config(scenario_config)
         
         # Load storage parameters
         storage_df = load_storage_parameters(storage_file)
@@ -852,7 +895,12 @@ def main():
             storage_df = apply_etys_bmu_mapping(storage_df, network)
         
         # Add storage to network
-        network = add_storage_to_network(network, storage_df, standing_loss)
+        network = add_storage_to_network(
+            network,
+            storage_df,
+            standing_loss,
+            hydro_config=hydro_config,
+        )
         
         # Validate integration
         validation = validate_storage_integration(network, storage_df)

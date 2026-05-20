@@ -35,6 +35,12 @@ flowchart TB
         SOLVE["Solve Network"]
         ANALYZE["Analyze Results"]
     end
+
+    subgraph Market["Optional Market Dispatch"]
+        WHOLESALE["Solve Wholesale Market"]
+        BM["Solve Balancing Mechanism"]
+        MARKET_ANALYZE["Analyze Market Results"]
+    end
     
     FES --> RENEW
     FES --> THERMAL
@@ -57,6 +63,9 @@ flowchart TB
     INTER --> FINALIZE
     FINALIZE --> SOLVE
     SOLVE --> ANALYZE
+    FINALIZE --> WHOLESALE
+    WHOLESALE --> BM
+    BM --> MARKET_ANALYZE
 ```
 
 ## Two Workflows
@@ -107,6 +116,7 @@ Rules are organized by function in `rules/`:
 | `network_clustering.smk` | Network reduction/clustering (spatial/k-means presets) |
 | `FES.smk` | FES data downloading and processing |
 | `solve.smk` | Network finalization and optimization solving |
+| `market.smk` | Optional wholesale market, balancing mechanism, validation, and market notebooks |
 | `analysis.smk` | Results analysis, spatial plots, dashboards, notebooks |
 
 ## Key Rules
@@ -149,6 +159,26 @@ Runs the linear optimal power flow optimization.
 
 **Input**: Complete unsolved network  
 **Output**: `resources/network/{scenario}_solved.nc`
+
+### `solve_wholesale_market`
+
+Runs the optional Stage 1 market solve when `market.enabled: true`. It relaxes
+line and transformer capacities to create a copperplate wholesale schedule and
+uniform demand-bus wholesale price.
+
+**Input**: Finalized network (`resources/network/{scenario}.nc`)  
+**Output**: `resources/market/{scenario}_wholesale.nc` and wholesale CSVs
+
+### `solve_balancing_mechanism`
+
+Runs the optional Stage 2 market solve unless `market.wholesale_only: true`. It
+restores network constraints and redispatches from the wholesale position using
+configured bid and offer prices.
+
+**Input**: Finalized network and wholesale outputs  
+**Output**: `resources/market/{scenario}_balancing.nc`, redispatch, congestion, and price comparison CSVs
+
+See {doc}`market` for configuration and output details.
 
 ## Running the Workflow
 
@@ -212,6 +242,11 @@ resources/network/
 └── HT35_solved.nc                                    # Solved (final results)
 ```
 
+Market-enabled scenarios also add outputs under `resources/market/`, including
+the wholesale network, wholesale price CSV, balancing network, redispatch
+summary, congestion diagnostics, and price comparison files. Market dashboards
+and notebooks are written under `resources/analysis/`.
+
 ## Logs
 
 Each rule writes logs to `logs/`:
@@ -223,6 +258,10 @@ logs/
 ├── plotting/HT35_spatial.log
 └── ...
 ```
+
+Market rules write logs under `logs/market/`, for example
+`logs/market/solve_wholesale_{scenario}.log` and
+`logs/market/solve_balancing_{scenario}.log`.
 
 ## Configuration Flow
 

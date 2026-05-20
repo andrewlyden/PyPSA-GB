@@ -942,6 +942,45 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <hr class="docutils" />
 <section id="data-quality-notes">
 <h2>Data Quality Notes<a class="headerlink" href="#data-quality-notes" title="Link to this heading">#</a></h2>
+<section id="market-and-validation-data">
+<h3>Market And Validation Data<a class="headerlink" href="#market-and-validation-data" title="Link to this heading">#</a></h3>
+<p>Market scenarios can use additional historical operational data:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Used For</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ELEXON BMRS BOD</p></td>
+<td><p>Historical BM bid and offer prices</p></td>
+<td><p>Used when <code class="docutils literal notranslate"><span class="pre">market.balancing.bid_offer_source:</span> <span class="pre">&quot;elexon&quot;</span></code> or when <code class="docutils literal notranslate"><span class="pre">auto</span></code> resolves to ELEXON for historical scenarios.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ELEXON BOAV/BOALF</p></td>
+<td><p>Historical BM validation</p></td>
+<td><p>Used by <code class="docutils literal notranslate"><span class="pre">validate_bm_results</span></code> to compare model redispatch with accepted bid/offer actions.</p></td>
+</tr>
+<tr class="row-even"><td><p>ELEXON MID</p></td>
+<td><p>Wholesale price validation</p></td>
+<td><p>Used by wholesale notebooks and validation plots for historical scenarios.</p></td>
+</tr>
+<tr class="row-odd"><td><p>NESO thermal constraint data</p></td>
+<td><p>Constraint-cost validation</p></td>
+<td><p>Used by <code class="docutils literal notranslate"><span class="pre">validate_neso_constraints</span></code> to compare model constraint costs and boundary flows.</p></td>
+</tr>
+<tr class="row-even"><td><p>ESPENI generation by fuel</p></td>
+<td><p>Physical dispatch validation</p></td>
+<td><p>Used as an independent comparison for historical balancing dispatch.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>These files are cached under <code class="docutils literal notranslate"><span class="pre">data/market/</span></code>, <code class="docutils literal notranslate"><span class="pre">data/validation/</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">resources/market/</span></code> depending on whether they are persistent raw inputs,
+validation caches, or per-scenario processed outputs. See
+<a class="reference internal" href="../user_guide/market.html"><span class="doc">Market Dispatch</span></a> for the workflow entry points.</p>
+</section>
 <section id="known-issues">
 <h3>Known Issues<a class="headerlink" href="#known-issues" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -1215,6 +1254,7 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-quality-notes">Data Quality Notes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#market-and-validation-data">Market And Validation Data</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issues">Known Issues</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">Validation</a></li>
 </ul>

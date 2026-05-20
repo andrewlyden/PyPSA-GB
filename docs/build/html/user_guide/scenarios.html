@@ -353,6 +353,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demand_flexibility.html">Demand-Side Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="market.html">Market Dispatch</a></li>
 </ul>
 </div>
 </nav></div>
@@ -465,6 +466,36 @@ document.write(`
 The ETYS publication year is set via <code class="docutils literal notranslate"><span class="pre">etys.year</span></code> (supports 2022, 2023, 2024).
 See <a class="reference internal" href="configuration.html"><span class="doc">Configuration Reference</span></a> for details.</p>
 </div>
+</section>
+<section id="market-scenarios">
+<h3>Market Scenarios<a class="headerlink" href="#market-scenarios" title="Link to this heading">#</a></h3>
+<p>Market scenarios are historical or future scenarios with an additional
+<code class="docutils literal notranslate"><span class="pre">market:</span></code> block. They still build the same physical network, but then branch
+into a copperplate wholesale solve and, unless <code class="docutils literal notranslate"><span class="pre">wholesale_only:</span> <span class="pre">true</span></code>, a
+constrained balancing redispatch solve.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Historical_2024_market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Historical</span><span class="nv"> </span><span class="s">2024</span><span class="nv"> </span><span class="s">wholesale</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">balancing</span><span class="nv"> </span><span class="s">market</span><span class="nv"> </span><span class="s">run&quot;</span>
+<span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
+<span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
+<span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
+<span class="w">  </span><span class="nt">solve_period</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2024-01-01</span><span class="nv"> </span><span class="s">00:00&quot;</span>
+<span class="w">    </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2024-01-07</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+<span class="w">  </span><span class="nt">market</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling_day_ahead&quot;</span>
+<span class="w">      </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span>
+<span class="w">    </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling&quot;</span>
+<span class="w">      </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">      </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;auto&quot;</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code> for wholesale price and schedule analysis
+without BM redispatch. See <a class="reference internal" href="market.html"><span class="doc">Market Dispatch</span></a> for detailed configuration.</p>
 </section>
 </section>
 <section id="fes-pathway-selection">
@@ -774,6 +805,7 @@ Examples:
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scenario-types">Scenario Types</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#historical-scenarios">Historical Scenarios</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#future-scenarios">Future Scenarios</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#market-scenarios">Market Scenarios</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-pathway-selection">FES Pathway Selection</a><ul class="nav section-nav flex-column">

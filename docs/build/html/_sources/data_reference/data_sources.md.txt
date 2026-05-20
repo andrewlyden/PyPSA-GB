@@ -363,6 +363,23 @@ Used to cross-reference DUKES data and validate capacities.
 
 ## Data Quality Notes
 
+### Market And Validation Data
+
+Market scenarios can use additional historical operational data:
+
+| Source | Used For | Notes |
+|--------|----------|-------|
+| ELEXON BMRS BOD | Historical BM bid and offer prices | Used when `market.balancing.bid_offer_source: "elexon"` or when `auto` resolves to ELEXON for historical scenarios. |
+| ELEXON BOAV/BOALF | Historical BM validation | Used by `validate_bm_results` to compare model redispatch with accepted bid/offer actions. |
+| ELEXON MID | Wholesale price validation | Used by wholesale notebooks and validation plots for historical scenarios. |
+| NESO thermal constraint data | Constraint-cost validation | Used by `validate_neso_constraints` to compare model constraint costs and boundary flows. |
+| ESPENI generation by fuel | Physical dispatch validation | Used as an independent comparison for historical balancing dispatch. |
+
+These files are cached under `data/market/`, `data/validation/`, or
+`resources/market/` depending on whether they are persistent raw inputs,
+validation caches, or per-scenario processed outputs. See
+{doc}`../user_guide/market` for the workflow entry points.
+
 ### Known Issues
 
 | Source | Issue | Mitigation |

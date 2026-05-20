@@ -24,6 +24,7 @@ Version history and changelog for PyPSA-GB.
 - Offshore bus identification (OFTO wind farm connections)
 - Multi-tier coordinate resolution for missing bus locations
 - Transmission constraint configuration (`transmission.min_line_s_nom`, `capacity_scale`, etc.)
+- Optional two-stage market dispatch: copperplate wholesale solve, balancing redispatch, ELEXON/NESO validation, and market notebooks
 - Centralised logging configuration
 - Scenario validation tools
 

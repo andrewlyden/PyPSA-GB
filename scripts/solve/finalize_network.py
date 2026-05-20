@@ -326,6 +326,15 @@ if __name__ == "__main__":
 
             logger.info(f"Total components removed via aggregation: {removed_total}")
             logger.info(f"Network now has {len(network.generators)} generators")
+
+            # Clean up orphaned time-series columns after aggregation
+            for attr in list(network.generators_t.keys()):
+                df = network.generators_t[attr]
+                if isinstance(df, pd.DataFrame) and len(df.columns) > 0:
+                    orphaned = df.columns.difference(network.generators.index)
+                    if len(orphaned) > 0:
+                        network.generators_t[attr] = df.drop(columns=orphaned)
+                        logger.info(f"  Cleaned {len(orphaned)} orphaned generators_t.{attr} columns")
         else:
             logger.info("Component aggregation disabled; skipping.")
         

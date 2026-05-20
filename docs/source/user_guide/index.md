@@ -11,4 +11,5 @@ scenarios
 network_models
 clustering
 demand_flexibility
+market
 ```

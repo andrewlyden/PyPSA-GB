@@ -28,4 +28,9 @@ PyPSA-GB uses a **Snakemake workflow** to orchestrate the model:
 2. **Run** the Snakemake workflow
 3. **Analyse** the results
 
+For market studies, scenarios can also enable the optional two-stage market
+workflow: a copperplate wholesale solve followed by constrained balancing
+redispatch. See {doc}`../user_guide/market` once you are comfortable running a
+standard scenario.
+
 If you encounter issues, check the {doc}`../development/troubleshooting` guide or open a [GitHub Issue](https://github.com/andrewlyden/PyPSA-GB/issues).

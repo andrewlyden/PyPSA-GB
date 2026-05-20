@@ -30,6 +30,7 @@ sys.path.insert(0, str(project_root))
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+from scripts.solve.solve_network import apply_load_shedding_limits
 
 # Suppress PyPSA warnings about unoptimized networks
 warnings.filterwarnings('ignore', message='.*has not been optimized yet.*')
@@ -473,6 +474,7 @@ def main():
         logger.info("-" * 80)
         
         n_load_shedding = add_load_shedding_generators(n, voll=voll)
+        apply_load_shedding_limits(n, logger)
         
         logger.info(f"Generators after load shedding: {len(n.generators)}")
         

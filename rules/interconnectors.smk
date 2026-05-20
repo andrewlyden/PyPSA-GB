@@ -37,6 +37,8 @@ rule process_european_generation_mix:
     output:
         marginal_costs=f"{resources_path}/interconnectors/european_marginal_costs_{{fes_year}}.csv",
         price_differentials=f"{resources_path}/interconnectors/price_differentials_{{fes_year}}.csv"
+    params:
+        gb_price=config.get("interconnectors", {}).get("pricing", {}).get("gb_price", 50.0)
     log:
         "logs/process_european_generation_mix_{fes_year}.log"
     conda:
@@ -63,6 +65,28 @@ rule extract_historical_interconnector_flows:
         "../envs/pypsa-gb.yaml"
     script:
         "../scripts/interconnectors/extract_historical_flows.py"
+
+# =============================================================================
+# ENTSO-E Day-Ahead Price Fetching (optional)
+# =============================================================================
+
+rule fetch_entsoe_day_ahead_prices:
+    """Fetch hourly day-ahead prices from ENTSO-E Transparency Platform.
+
+    Requires an API token in .env (ENTSOE_API_TOKEN=…) or in the environment.
+    Output is cached — delete the CSV to re-fetch.
+    """
+    output:
+        prices=resources_path + "/interconnectors/entsoe_day_ahead_prices_{entsoe_year}.csv"
+    params:
+        year=lambda wildcards: wildcards.entsoe_year,
+        pricing_config=lambda wildcards: config.get("interconnectors", {}).get("pricing", {})
+    log:
+        "logs/fetch_entsoe_day_ahead_prices_{entsoe_year}.log"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/interconnectors/fetch_entsoe_prices.py"
 
 # =============================================================================
 # Core Interconnector Data Processing
@@ -222,13 +246,24 @@ def get_interconnector_inputs(wildcards):
         'interconnectors': f"{resources_path}/interconnectors/interconnectors_mapped_{scenario_config['network_model']}.csv",
     }
     
+    # Determine interconnector pricing source
+    pricing_cfg = scenario_config.get('interconnectors', {}).get('pricing', {})
+    pricing_source = pricing_cfg.get('source', 'derived')
+    
     if is_historical_scenario(modelled_year):
         # Historical: use actual flows from ESPENI
         inputs['historical_flows'] = f"{resources_path}/interconnectors/historical_flows_{modelled_year}.csv"
+        # Optionally add ENTSO-E prices for accurate shadow pricing
+        if pricing_source == 'entsoe':
+            inputs['entsoe_prices'] = f"{resources_path}/interconnectors/entsoe_day_ahead_prices_{modelled_year}.csv"
     else:
         # Future: use availability + price differentials
         inputs['availability'] = f"{resources_path}/interconnectors/interconnector_availability.csv"
         inputs['price_differentials'] = f"{resources_path}/interconnectors/price_differentials_{scenario_config.get('FES_year', 2024)}.csv"
+        # Optionally add ENTSO-E prices (uses weather year for hourly shape)
+        if pricing_source == 'entsoe':
+            weather_year = scenario_config.get('renewables_year', modelled_year)
+            inputs['entsoe_prices'] = f"{resources_path}/interconnectors/entsoe_day_ahead_prices_{weather_year}.csv"
     
     return inputs
 
@@ -341,7 +376,9 @@ rule add_interconnectors_to_network:
         network_model=lambda wc: scenarios[wc.scenario]["network_model"],
         modelled_year=lambda wc: scenarios[wc.scenario].get('modelled_year') or scenarios[wc.scenario].get('year'),
         is_historical=lambda wc: (scenarios[wc.scenario].get('modelled_year') or scenarios[wc.scenario].get('year', 9999)) <= 2024,
-        fes_pathway=lambda wc: scenarios[wc.scenario].get('FES_scenario', None)
+        fes_pathway=lambda wc: scenarios[wc.scenario].get('FES_scenario', None),
+        pricing_config=lambda wc: scenarios[wc.scenario].get('interconnectors', {}).get('pricing', {}),
+        renewables_year=lambda wc: scenarios[wc.scenario].get('renewables_year', None)
     message:
         "Adding interconnectors to network for {wildcards.scenario} (model: {params.network_model})"
     benchmark:

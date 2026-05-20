@@ -51,7 +51,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Core Modules" href="core_modules.html" />
-    <link rel="prev" title="Demand Side Response" href="../tutorials/15-demand-side-response.html" />
+    <link rel="prev" title="Market Dispatch" href="../tutorials/16-market-dispatch.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -526,6 +526,43 @@ document.write(`
 </table>
 </div>
 </section>
+<section id="market-modules-scripts-market">
+<h3>Market Modules (<code class="docutils literal notranslate"><span class="pre">scripts/market/</span></code>)<a class="headerlink" href="#market-modules-scripts-market" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve_wholesale.py</span></code></p></td>
+<td><p>Stage 1 copperplate wholesale dispatch and wholesale price export</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">solve_balancing.py</span></code></p></td>
+<td><p>Stage 2 anchored balancing redispatch with full network constraints</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">market_utils.py</span></code></p></td>
+<td><p>Bid/offer prices, ELEXON price loading, redispatch and congestion utilities</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">elexon_data.py</span></code></p></td>
+<td><p>Historical ELEXON BMRS data retrieval and aggregation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">analyze_market.py</span></code></p></td>
+<td><p>Market dashboard and summary generation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">revenue_tracking.py</span></code></p></td>
+<td><p>CfD and ROC revenue accounting</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">validate_bm.py</span></code></p></td>
+<td><p>Historical ELEXON BM validation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">validate_neso_constraints.py</span></code></p></td>
+<td><p>NESO constraint-cost and boundary-flow validation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="utility-modules">
 <h3>Utility Modules<a class="headerlink" href="#utility-modules" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -668,12 +705,12 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../tutorials/15-demand-side-response.html"
+       href="../tutorials/16-market-dispatch.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Demand Side Response</p>
+        <p class="prev-next-title">Market Dispatch</p>
       </div>
     </a>
     <a class="right-next"
@@ -707,6 +744,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core-modules">Core Modules</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-build-modules-scripts-network-build">Network Build Modules (<code class="docutils literal notranslate"><span class="pre">scripts/network_build/</span></code>)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-modules">Integration Modules</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#market-modules-scripts-market">Market Modules (<code class="docutils literal notranslate"><span class="pre">scripts/market/</span></code>)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#utility-modules">Utility Modules</a></li>
 </ul>
 </li>

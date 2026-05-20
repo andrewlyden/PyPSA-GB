@@ -96,6 +96,10 @@ snakemake resources/analysis/HT35_clustered_dashboard.html -j 1
 
 Open the generated HTML files in your browser.
 
+Market scenarios produce additional outputs under `resources/market/` and
+`resources/analysis/`. After the basic workflow is working, see
+{doc}`../user_guide/market` for wholesale-only and two-stage market runs.
+
 ## Quick Commands Reference
 
 ```bash
@@ -142,3 +146,5 @@ Start with reduced networks for testing, then scale up to full ETYS for producti
 - {doc}`first_scenario` - Create your own custom scenario
 - {doc}`../user_guide/configuration` - Understand configuration options
 - {doc}`../user_guide/workflow` - Deep dive into the Snakemake workflow
+- {doc}`../user_guide/market` - Run wholesale and balancing market dispatch
+- {doc}`../tutorials/16-market-dispatch` - Analyse market validation outputs

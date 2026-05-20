@@ -353,6 +353,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="network_models.html">Network Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="clustering.html">Network Clustering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demand_flexibility.html">Demand-Side Flexibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="market.html">Market Dispatch</a></li>
 </ul>
 </div>
 </nav></div>
@@ -696,6 +697,30 @@ document.write(`
 </div>
 <p>Half-hourly (30 min) doubles computation time but captures faster dynamics.</p>
 </section>
+<section id="market-dispatch">
+<h3>Market Dispatch<a class="headerlink" href="#market-dispatch" title="Link to this heading">#</a></h3>
+<p>Market dispatch is optional and configured under <code class="docutils literal notranslate"><span class="pre">market</span></code>. It runs after the
+final network has been built.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">market</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">wholesale_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">wholesale</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling_day_ahead&quot;</span><span class="w">    </span><span class="c1"># single | rolling_day_ahead</span>
+<span class="w">    </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span>
+<span class="w">    </span><span class="nt">carry_soc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">transmission_relaxation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0e6</span>
+<span class="w">  </span><span class="nt">balancing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rolling&quot;</span><span class="w">              </span><span class="c1"># full_period | rolling</span>
+<span class="w">    </span><span class="nt">window_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">bid_offer_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;derived&quot;</span><span class="w">  </span><span class="c1"># auto | derived | elexon | csv</span>
+<span class="w">    </span><span class="nt">fix_interconnectors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">wholesale_only:</span> <span class="pre">true</span></code> to stop after the copperplate wholesale solve and
+generate a wholesale notebook. Use the full two-stage mode to add balancing
+redispatch, congestion, and constraint-cost outputs. For the full explanation,
+see <a class="reference internal" href="market.html"><span class="doc">Market Dispatch</span></a>.</p>
+</section>
 </section>
 <section id="clustering-configuration">
 <h2>Clustering Configuration<a class="headerlink" href="#clustering-configuration" title="Link to this heading">#</a></h2>
@@ -909,6 +934,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-period">Solve Period</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-configuration">Solver Configuration</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#timestep-resolution">Timestep Resolution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#market-dispatch">Market Dispatch</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#clustering-configuration">Clustering Configuration</a></li>

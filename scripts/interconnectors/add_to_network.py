@@ -70,14 +70,20 @@ if 'snakemake' in globals():
     input_availability = snakemake.input.get('availability', None)
     input_price_diff = snakemake.input.get('price_differentials', None)
     input_historical_flows = snakemake.input.get('historical_flows', None)
+    input_entsoe_prices = snakemake.input.get('entsoe_prices', None)
     output_network = snakemake.output[0]
     is_historical = snakemake.params.get('is_historical', False)
     modelled_year = snakemake.params.get('modelled_year', None)
     fes_pathway = snakemake.params.get('fes_pathway', None)
+    pricing_config = snakemake.params.get('pricing_config', {})
+    renewables_year = snakemake.params.get('renewables_year', None)
 else:
     SNAKEMAKE_MODE = False
     modelled_year = None
     fes_pathway = None
+    pricing_config = {}
+    renewables_year = None
+    input_entsoe_prices = None
 
 # Optional: force-zero interconnectors for diagnostics
 FORCE_ZERO_INTERCONNECTORS = os.environ.get("ZERO_INTERCONNECTORS", "0").lower() in ("1", "true", "yes")
@@ -355,6 +361,105 @@ def load_price_differentials(price_diff_file: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def load_entsoe_prices(entsoe_file: str) -> pd.DataFrame:
+    """
+    Load ENTSO-E day-ahead price CSV produced by fetch_entsoe_prices.py.
+
+    Args:
+        entsoe_file: Path to CSV (datetime index, one column per country in £/MWh).
+
+    Returns:
+        DataFrame with DatetimeIndex and country columns, or empty DataFrame on failure.
+    """
+    logger = logging.getLogger(__name__)
+
+    if not entsoe_file or not Path(entsoe_file).exists():
+        logger.warning(f"ENTSO-E price file not found: {entsoe_file}")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(entsoe_file, index_col=0, parse_dates=True)
+        if df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
+        logger.info(f"Loaded ENTSO-E prices: {len(df)} hours × {len(df.columns)} countries")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading ENTSO-E prices: {e}")
+        return pd.DataFrame()
+
+
+def _apply_time_varying_mc(
+    network: pypsa.Network,
+    gen_name: str,
+    hourly_prices: pd.Series,
+    logger: logging.Logger,
+) -> None:
+    """Set time-varying marginal cost on a generator using generators_t.
+
+    If ``generators_t['marginal_cost']`` doesn't exist yet it is created;
+    otherwise the new column is added to the existing DataFrame.
+
+    Parameters
+    ----------
+    network : pypsa.Network
+    gen_name : str
+        Generator name (must already exist in ``network.generators``).
+    hourly_prices : pd.Series
+        Hourly prices (£/MWh) with a DatetimeIndex.  Will be reindexed to
+        ``network.snapshots``; missing values are forward-filled then
+        back-filled, then filled with the series mean.
+    logger : logging.Logger
+    """
+    # Align year if ENTSO-E data year differs from network snapshot year
+    # (e.g. future scenarios use 2023 weather-year prices for 2035 snapshots)
+    snap_year = network.snapshots[0].year
+    price_year = hourly_prices.index[0].year
+    if snap_year != price_year:
+        logger.debug(
+            f"  {gen_name}: shifting ENTSO-E price index "
+            f"{price_year} → {snap_year}"
+        )
+        import calendar
+
+        target_is_leap = calendar.isleap(snap_year)
+
+        def _shift_ts(ts):
+            if ts.month == 2 and ts.day == 29 and not target_is_leap:
+                # Feb 29 doesn't exist in target year — map to Feb 28
+                return ts.replace(year=snap_year, day=28)
+            return ts.replace(year=snap_year)
+
+        shifted_index = pd.DatetimeIndex([_shift_ts(ts) for ts in hourly_prices.index])
+        # Remove any duplicates introduced by the Feb-28/29 collapse
+        hourly_prices = hourly_prices.copy()
+        hourly_prices.index = shifted_index
+        hourly_prices = hourly_prices[~hourly_prices.index.duplicated(keep="first")]
+
+    # Reindex to network snapshots
+    prices = hourly_prices.reindex(network.snapshots)
+
+    n_missing = prices.isna().sum()
+    if n_missing > 0:
+        logger.debug(f"  {gen_name}: {n_missing}/{len(prices)} snapshots missing — gap-filling")
+        prices = prices.interpolate(method="linear", limit=6, limit_direction="both")
+        prices = prices.ffill().bfill()
+        if prices.isna().any():
+            prices = prices.fillna(prices.mean())
+
+    # Ensure generators_t.marginal_cost DataFrame exists
+    mc_key = "marginal_cost"
+    if mc_key not in network.generators_t or network.generators_t[mc_key].empty:
+        network.generators_t[mc_key] = pd.DataFrame(index=network.snapshots)
+
+    network.generators_t[mc_key][gen_name] = prices.values
+
+    logger.info(
+        f"  {gen_name}: time-varying MC set — "
+        f"mean £{prices.mean():.2f}/MWh, "
+        f"range £{prices.min():.2f}–£{prices.max():.2f}/MWh"
+    )
+
+
 def load_historical_flows(historical_flows_file: str) -> pd.DataFrame:
     """
     Load historical interconnector flows from ESPENI data.
@@ -497,7 +602,8 @@ def add_external_generators(network: pypsa.Network,
                            interconnectors_df: pd.DataFrame,
                            price_differentials_df: pd.DataFrame = None,
                            modelled_year: int = None,
-                           fes_pathway: str = None) -> None:
+                           fes_pathway: str = None,
+                           entsoe_prices_df: pd.DataFrame = None) -> None:
     """
     Add generators on external buses to represent European electricity supply.
     
@@ -506,12 +612,18 @@ def add_external_generators(network: pypsa.Network,
     modelled year and FES pathway. Generator capacity is limited to the total
     interconnector capacity to each country, providing a realistic constraint.
     
+    When *entsoe_prices_df* is provided the MC becomes **time-varying**: hourly
+    ENTSO-E day-ahead prices are scaled so the annual mean matches the FES-derived
+    price, preserving the hourly shape (weather-correlated).
+    
     Args:
         network: PyPSA network object
         interconnectors_df: Mapped interconnector data with external buses
         price_differentials_df: European price differentials (optional)
         modelled_year: The year being modelled (for filtering price data)
         fes_pathway: The FES pathway name (e.g., 'Holistic Transition')
+        entsoe_prices_df: Hourly ENTSO-E day-ahead prices (optional).
+            Columns are country names (France, Belgium, …), index is DatetimeIndex.
     """
     logger = logging.getLogger(__name__)
     
@@ -589,7 +701,7 @@ def add_external_generators(network: pypsa.Network,
             gen_name,
             bus=external_bus,
             p_nom=generator_capacity,  # Capacity = interconnector capacity + 10% margin
-            marginal_cost=marginal_cost,  # European wholesale price
+            marginal_cost=marginal_cost,  # European wholesale price (scalar fallback)
             carrier='EU_import',
             # Additional metadata
             country=country,
@@ -599,6 +711,27 @@ def add_external_generators(network: pypsa.Network,
         generators_added += 1
         logger.info(f"  Added EU generator: {gen_name}, capacity={generator_capacity:.0f} MW, "
                    f"marginal_cost=£{marginal_cost:.2f}/MWh")
+        
+        # ── Apply time-varying MC from ENTSO-E prices if available ──
+        if entsoe_prices_df is not None and len(entsoe_prices_df) > 0 and country in entsoe_prices_df.columns:
+            hourly = entsoe_prices_df[country].copy()
+            entsoe_annual_mean = hourly.mean()
+
+            if entsoe_annual_mean > 0:
+                # Scale hourly shape so its mean equals the FES-derived annual MC
+                scale = marginal_cost / entsoe_annual_mean
+                scaled_hourly = hourly * scale
+                logger.info(
+                    f"  {gen_name}: Scaling ENTSO-E shape (mean £{entsoe_annual_mean:.2f}) "
+                    f"× {scale:.3f} → target mean £{marginal_cost:.2f}/MWh"
+                )
+            else:
+                scaled_hourly = hourly
+                logger.warning(f"  {gen_name}: ENTSO-E mean ≤ 0 — using unscaled prices")
+
+            _apply_time_varying_mc(network, gen_name, scaled_hourly, logger)
+        elif entsoe_prices_df is not None and len(entsoe_prices_df) > 0:
+            logger.warning(f"  {gen_name}: No ENTSO-E column for '{country}' — using scalar MC")
     
     logger.info(f"Added {generators_added} European supply generators on external buses")
 
@@ -608,7 +741,8 @@ def add_interconnector_links(network: pypsa.Network,
                              availability_df: pd.DataFrame,
                              price_differentials_df: pd.DataFrame = None,
                              modelled_year: int = None,
-                             fes_pathway: str = None) -> None:
+                             fes_pathway: str = None,
+                             entsoe_prices_df: pd.DataFrame = None) -> None:
     """
     Add interconnector links to the PyPSA network.
     
@@ -623,6 +757,7 @@ def add_interconnector_links(network: pypsa.Network,
         price_differentials_df: European price differentials (used for external generators)
         modelled_year: The year being modelled (for filtering price data)
         fes_pathway: The FES pathway name (e.g., 'Holistic Transition')
+        entsoe_prices_df: Hourly ENTSO-E day-ahead prices (optional)
     """
     logger = logging.getLogger(__name__)
     
@@ -635,7 +770,8 @@ def add_interconnector_links(network: pypsa.Network,
         interconnectors_df, 
         price_differentials_df,
         modelled_year=modelled_year,
-        fes_pathway=fes_pathway
+        fes_pathway=fes_pathway,
+        entsoe_prices_df=entsoe_prices_df
     )
     
     logger.info("Adding interconnector links (with external generators already in place)...")
@@ -801,12 +937,18 @@ def apply_availability_profiles(network: pypsa.Network, availability_df: pd.Data
 
 def add_historical_interconnector_links(network: pypsa.Network,
                                        interconnectors_df: pd.DataFrame,
-                                       historical_flows_df: pd.DataFrame) -> None:
+                                       historical_flows_df: pd.DataFrame,
+                                       entsoe_prices_df: pd.DataFrame = None) -> None:
     """
     Add interconnector links with FIXED historical flows from ESPENI.
     
     For historical scenarios, interconnector flows are actual observations
     and should not be optimized. Positive flows = imports, negative = exports.
+    
+    When *entsoe_prices_df* is provided, EU_supply generators are created on
+    the external buses with time-varying marginal costs.  The generators have
+    p_nom = 0 and serve only to inject price signals into the nodal shadow
+    prices; they do NOT affect dispatch (flows remain fixed via p_set).
     
     This function also tracks which external buses have no corresponding links
     (due to missing flow data) and removes them from the network.
@@ -996,7 +1138,7 @@ def add_historical_interconnector_links(network: pypsa.Network,
                     abs(flows_before_clip.max()) - capacity_mw if flows_before_clip.max() > capacity_mw else 0,
                     abs(flows_before_clip.min()) - capacity_mw if flows_before_clip.min() < -capacity_mw else 0
                 )
-                logger.warning(
+                logger.debug(
                     f"  {ic_name}: Clipped {clipped_count} flow values exceeding capacity of {capacity_mw:.0f} MW. "
                     f"Max exceedance: {max_exceed:.1f} MW ({max_exceed/capacity_mw*100:.1f}% over capacity)"
                 )
@@ -1171,6 +1313,16 @@ def add_historical_interconnector_links(network: pypsa.Network,
                     p_max_pu=1.0
                 )
                 generators_added += 1
+                
+                # Apply ENTSO-E time-varying MC if available (for price signal accuracy)
+                counterparty = link.get('counterparty_country', '')
+                if (entsoe_prices_df is not None and len(entsoe_prices_df) > 0
+                        and counterparty in entsoe_prices_df.columns):
+                    _apply_time_varying_mc(
+                        network, gen_name,
+                        entsoe_prices_df[counterparty],
+                        logger,
+                    )
                 
                 # Add load on external bus (for exports)
                 # This absorbs power when GB exports to Europe
@@ -1348,6 +1500,7 @@ def main():
             availability_file = input_availability
             price_diff_file = input_price_diff
             historical_flows_file = input_historical_flows
+            entsoe_prices_file = input_entsoe_prices
             output_file = output_network
             is_historical_scenario = is_historical
             target_network_model = "Unknown"
@@ -1358,6 +1511,7 @@ def main():
             availability_file = "resources/interconnectors/interconnector_availability.csv"
             price_diff_file = "resources/interconnectors/price_differentials_2024.csv"
             historical_flows_file = None
+            entsoe_prices_file = None
             output_file = "resources/network/ETYS_with_interconnectors.nc"
             is_historical_scenario = False
             target_network_model = "ETYS"
@@ -1437,6 +1591,16 @@ def main():
                     logger.warning(f"Could not validate coordinates (spatial_utils import failed): {e}")
             
             # Branch based on scenario type
+            #
+            # Optionally load ENTSO-E hourly prices for time-varying EU_supply MC
+            entsoe_prices_df = pd.DataFrame()
+            if entsoe_prices_file:
+                entsoe_prices_df = load_entsoe_prices(entsoe_prices_file)
+                if len(entsoe_prices_df) > 0:
+                    logger.info(f"ENTSO-E prices loaded: {len(entsoe_prices_df)} hours × {len(entsoe_prices_df.columns)} countries")
+                else:
+                    logger.warning("ENTSO-E price file could not be loaded — falling back to derived MC")
+
             if is_historical_scenario and len(interconnectors_df) > 0:
                 # HISTORICAL: Use fixed flows from ESPENI
                 logger.info("=== HISTORICAL SCENARIO: Using fixed interconnector flows ===")
@@ -1450,7 +1614,8 @@ def main():
                 add_historical_interconnector_links(
                     network, 
                     interconnectors_df, 
-                    historical_flows_df
+                    historical_flows_df,
+                    entsoe_prices_df=entsoe_prices_df if len(entsoe_prices_df) > 0 else None
                 )
                 
             elif len(interconnectors_df) > 0:
@@ -1481,7 +1646,8 @@ def main():
                     availability_df, 
                     price_differentials_df,
                     modelled_year=modelled_year,
-                    fes_pathway=fes_pathway
+                    fes_pathway=fes_pathway,
+                    entsoe_prices_df=entsoe_prices_df if len(entsoe_prices_df) > 0 else None
                 )
                 
                 # Apply availability profiles

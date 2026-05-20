@@ -45,6 +45,19 @@ PyPSA-GB is organized into modular scripts:
 | `electric_vehicles.py` | EV smart charging and V2G |
 | `event_flex.py` | Event-based demand response |
 
+### Market Modules (`scripts/market/`)
+
+| Module | Purpose |
+|--------|---------|
+| `solve_wholesale.py` | Stage 1 copperplate wholesale dispatch and wholesale price export |
+| `solve_balancing.py` | Stage 2 anchored balancing redispatch with full network constraints |
+| `market_utils.py` | Bid/offer prices, ELEXON price loading, redispatch and congestion utilities |
+| `elexon_data.py` | Historical ELEXON BMRS data retrieval and aggregation |
+| `analyze_market.py` | Market dashboard and summary generation |
+| `revenue_tracking.py` | CfD and ROC revenue accounting |
+| `validate_bm.py` | Historical ELEXON BM validation |
+| `validate_neso_constraints.py` | NESO constraint-cost and boundary-flow validation |
+
 ### Utility Modules
 
 | Module | Purpose |

@@ -50,9 +50,10 @@ except Exception:
 
 
 # REPD technology type to output category mapping
+# Keys must match REPD 'Technology Type' values exactly (case-insensitive substring match)
 REPD_TECHNOLOGY_MAPPING = {
     # Biomass
-    'Dedicated Biomass': 'biomass',
+    'Biomass (dedicated)': 'biomass',
     'Biomass (co-firing)': 'biomass',
     
     # Waste to Energy
@@ -199,7 +200,7 @@ def extract_dispatchable_sites_from_repd(repd_path: str) -> dict:
     
     # Process each technology type
     for tech, category in REPD_TECHNOLOGY_MAPPING.items():
-        tech_mask = repd_df[tech_col].str.contains(tech, case=False, na=False)
+        tech_mask = repd_df[tech_col].str.contains(tech, case=False, na=False, regex=False)
         tech_sites = repd_df[tech_mask].copy()
         
         if len(tech_sites) == 0:

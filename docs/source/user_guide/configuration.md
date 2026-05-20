@@ -271,6 +271,32 @@ timestep_minutes: 60  # or 30
 
 Half-hourly (30 min) doubles computation time but captures faster dynamics.
 
+### Market Dispatch
+
+Market dispatch is optional and configured under `market`. It runs after the
+final network has been built.
+
+```yaml
+market:
+  enabled: true
+  wholesale_only: false
+  wholesale:
+    mode: "rolling_day_ahead"    # single | rolling_day_ahead
+    window_hours: 24
+    carry_soc: true
+    transmission_relaxation: 1.0e6
+  balancing:
+    mode: "rolling"              # full_period | rolling
+    window_hours: 1
+    bid_offer_source: "derived"  # auto | derived | elexon | csv
+    fix_interconnectors: true
+```
+
+Use `wholesale_only: true` to stop after the copperplate wholesale solve and
+generate a wholesale notebook. Use the full two-stage mode to add balancing
+redispatch, congestion, and constraint-cost outputs. For the full explanation,
+see {doc}`market`.
+
 ## Clustering Configuration
 
 In `config/clustering.yaml`:

@@ -683,7 +683,14 @@ def validate_network_topology(network: pypsa.Network,
         logger.debug(f"  Duplicate component check failed: {e}")
 
 
-def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: Optional[logging.Logger] = None) -> pypsa.Network:
+def create_network(df: pd.DataFrame,
+                   df_buses_with_locs: pd.DataFrame,
+                   logger: Optional[logging.Logger] = None,
+                   export_path: Optional[str] = None,
+                   etys_upgrades_enabled: Optional[bool] = None,
+                   upgrade_year: Optional[int] = None,
+                   etys_upgrade_file: Optional[str] = None,
+                   substation_coords_file: Optional[str] = None) -> pypsa.Network:
     """
     Create the final PyPSA network with all components and export to NetCDF.
 
@@ -691,6 +698,17 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
         df: DataFrame with all network components (lines, transformers, links)
         df_buses_with_locs: DataFrame with buses that have coordinates
         logger: Optional logger instance
+        export_path: Optional NetCDF output path. If omitted, falls back to
+            snakemake.output[0] when running under Snakemake.
+        etys_upgrades_enabled: Whether to apply ETYS upgrades. If omitted,
+            falls back to snakemake.params.etys_upgrades_enabled.
+        upgrade_year: Year through which to apply upgrades. If omitted,
+            falls back to snakemake.params.etys_upgrade_year or modelled_year.
+        etys_upgrade_file: Path to the ETYS Appendix B file used for upgrades.
+            If omitted, falls back to snakemake.input.etys_file.
+        substation_coords_file: Optional path to substation coordinates used
+            for upgrade bus placement. If omitted, falls back to
+            snakemake.input.substation_coords.
 
     Returns:
         Complete PyPSA Network object
@@ -776,8 +794,11 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     # ──────────────────────────────────────────────────────────────────────────
     # APPLY ETYS NETWORK UPGRADES (if enabled)
     # ──────────────────────────────────────────────────────────────────────────
-    # Check if upgrades are enabled via snakemake params
-    etys_upgrades_enabled = getattr(snakemake.params, 'etys_upgrades_enabled', False)
+    if etys_upgrades_enabled is None:
+        if 'snakemake' in globals():
+            etys_upgrades_enabled = getattr(snakemake.params, 'etys_upgrades_enabled', False)
+        else:
+            etys_upgrades_enabled = False
 
     # NOTE: Land boundary validation ran during coordinate guessing (above).
     # Upgrade buses get coordinates from OSGB36 (x/y) via same-site matching,
@@ -786,18 +807,24 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     if etys_upgrades_enabled:
         from scripts.network_build.ETYS_upgrades import apply_etys_network_upgrades
 
-        # Get upgrade year (use modelled_year if upgrade_year not specified)
-        modelled_year = getattr(snakemake.params, 'modelled_year', 2020)
-        etys_upgrade_year = getattr(snakemake.params, 'etys_upgrade_year', None)
-        upgrade_year = etys_upgrade_year if etys_upgrade_year else modelled_year
+        if upgrade_year is None:
+            if 'snakemake' in globals():
+                modelled_year = getattr(snakemake.params, 'modelled_year', 2020)
+                etys_upgrade_year = getattr(snakemake.params, 'etys_upgrade_year', None)
+                upgrade_year = etys_upgrade_year if etys_upgrade_year else modelled_year
+            else:
+                raise ValueError("upgrade_year must be provided when using create_network() outside Snakemake with upgrades enabled")
 
-        # Path to ETYS upgrade data (the ETYS Appendix B file for this year)
-        etys_upgrade_file = str(snakemake.input.etys_file)
+        if etys_upgrade_file is None:
+            if 'snakemake' in globals():
+                etys_upgrade_file = str(snakemake.input.etys_file)
+            else:
+                raise ValueError("etys_upgrade_file must be provided when using create_network() outside Snakemake with upgrades enabled")
 
-        # Path to substation coordinates (for Strategy 0 upgrade bus placement)
-        substation_coords_file = getattr(snakemake.input, 'substation_coords', None)
-        if substation_coords_file:
-            substation_coords_file = str(substation_coords_file)
+        if substation_coords_file is None and 'snakemake' in globals():
+            substation_coords_file = getattr(snakemake.input, 'substation_coords', None)
+            if substation_coords_file:
+                substation_coords_file = str(substation_coords_file)
 
         logger.info("="*70)
         logger.info(f"APPLYING ETYS NETWORK UPGRADES through year {upgrade_year}")
@@ -837,19 +864,25 @@ def create_network(df: pd.DataFrame, df_buses_with_locs: pd.DataFrame, logger: O
     else:
         logger.info("ETYS network upgrades: DISABLED (set etys_upgrades.enabled: true to enable)")
 
-    logger.info(f"Exporting network to {snakemake.output[0]}")
+    if export_path is None and 'snakemake' in globals():
+        export_path = str(snakemake.output[0])
 
-    # Set version metadata before export to prevent compatibility warnings
-    network2.meta = {"pypsa_version": pypsa.__version__}
+    if export_path is not None:
+        logger.info(f"Exporting network to {export_path}")
 
-    # Suppress PyPSA warnings about unoptimized network during export
-    pypsa_logger = logging.getLogger('pypsa.networks')
-    original_level = pypsa_logger.level
-    pypsa_logger.setLevel(logging.ERROR)
-    try:
-        network2.export_to_netcdf(snakemake.output[0])
-    finally:
-        pypsa_logger.setLevel(original_level)
+        # Set version metadata before export to prevent compatibility warnings
+        network2.meta = {"pypsa_version": pypsa.__version__}
+
+        # Suppress PyPSA warnings about unoptimized network during export
+        pypsa_logger = logging.getLogger('pypsa.networks')
+        original_level = pypsa_logger.level
+        pypsa_logger.setLevel(logging.ERROR)
+        try:
+            network2.export_to_netcdf(export_path)
+        finally:
+            pypsa_logger.setLevel(original_level)
+    else:
+        logger.info("No export path provided; returning network without NetCDF export")
 
     log_network_info(network2, logger)
     logger.info("Network creation completed successfully")

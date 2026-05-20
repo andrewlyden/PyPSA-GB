@@ -73,6 +73,22 @@ def get_carrier_definitions():
             'max_relative_growth': 0.0
         },
         
+        # Embedded generation (from ESPENI, not individually sited)
+        'embedded_solar': {
+            'color': '#FFA500',  # Orange (distinct from solar_pv yellow)
+            'nice_name': 'Embedded Solar',
+            'co2_emissions': 0.0,
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'embedded_wind': {
+            'color': '#87CEEB',  # Sky blue (distinct from wind_onshore/offshore)
+            'nice_name': 'Embedded Wind',
+            'co2_emissions': 0.0,
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        
         # Renewable - Hydro
         'small_hydro': {
             'color': '#08519C',  # Navy blue

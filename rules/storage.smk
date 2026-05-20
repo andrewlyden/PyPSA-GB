@@ -146,6 +146,7 @@ rule add_storage_to_network:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_storage.pkl"
     params:
         scenario=lambda wc: wc.scenario,
+        scenario_config=lambda wc: scenarios.get(wc.scenario, {}),
         network_model=lambda wc: scenarios[wc.scenario]["network_model"],
         modelled_year=lambda wc: scenarios[wc.scenario].get('modelled_year') or scenarios[wc.scenario].get('year'),
         is_historical=lambda wc: (scenarios[wc.scenario].get('modelled_year') or scenarios[wc.scenario].get('year', 9999)) <= 2024,

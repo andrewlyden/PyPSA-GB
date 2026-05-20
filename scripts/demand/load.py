@@ -1201,24 +1201,36 @@ def distribute_demand_to_etys_nodes(
         if gsp_demand is not None:
             # Use FES demand weights for GSPs
             gsp_weight_map = dict(zip(gsp_demand['GSP'], gsp_demand['weight_norm']))
-            
+
+            # Build group-level FES weights by summing individual GSP weights per group
+            # within_group_pct is relative to the GROUP, not the individual GSP,
+            # so we need the total FES weight for each GSP Group ID
+            group_fes_weights = {}
             for _, row in dem_per_node.iterrows():
                 gsp_id = row['GSP Id']
-                node_id = row['Node Id']
-                within_group_pct = row['Dem as % of demand within the GSP Group ID per each node']
-                
-                # Get GSP weight (0 if not found)
+                group_id = row['GSP Group ID']
                 gsp_weight = gsp_weight_map.get(gsp_id, 0)
-                
-                # Node weight = GSP weight * within-group percentage
-                node_weight = gsp_weight * within_group_pct
-                
+                group_fes_weights[group_id] = group_fes_weights.get(group_id, 0) + gsp_weight
+
+            logger.info(f"FES weight by GSP Group: {len(group_fes_weights)} groups")
+            for gid, gw in sorted(group_fes_weights.items(), key=lambda x: -x[1])[:10]:
+                logger.info(f"  {gid}: {gw:.4f} ({gw*100:.2f}%)")
+
+            for _, row in dem_per_node.iterrows():
+                node_id = row['Node Id']
+                group_id = row['GSP Group ID']
+                within_group_pct = row['Dem as % of demand within the GSP Group ID per each node']
+
+                # Node weight = group's total FES weight * node's share within that group
+                group_weight = group_fes_weights.get(group_id, 0)
+                node_weight = group_weight * within_group_pct
+
                 if node_id in node_weights:
                     node_weights[node_id] += node_weight
                 else:
                     node_weights[node_id] = node_weight
-                    
-            logger.info(f"Created weights for {len(node_weights)} unique nodes using FES GSP weights")
+
+            logger.info(f"Created weights for {len(node_weights)} unique nodes using FES GSP Group weights")
         else:
             # Fallback: equal weight per GSP Group, then distribute within group
             n_groups = dem_per_node['GSP Group ID'].nunique()
@@ -1969,7 +1981,7 @@ def load_egy_data(modelled_year):
     # Select the column for modelled year (simplified - may need adjustment)
     return egy_df
 
-def generate_load_timeseries(demand_data: pd.DataFrame, dataset_name: str, modelled_year: int, logger, demand_year: int = None, profile_year: int = None) -> pd.DataFrame:
+def generate_load_timeseries(demand_data: pd.DataFrame, dataset_name: str, modelled_year: int, logger, demand_year: int = None, profile_year: int = None, embedded_generation_config: dict = None, scenario_name: str = 'unknown') -> pd.DataFrame:
     """
     Generate load timeseries data.
     
@@ -1985,6 +1997,8 @@ def generate_load_timeseries(demand_data: pd.DataFrame, dataset_name: str, model
         logger: Logger instance
         demand_year: For ESPENI only - which historical year to use for profile shape
         profile_year: For eload/desstinee - which profile to use (2010 or 2050, auto-selected if None)
+        embedded_generation_config: Optional config dict for embedded generation gross-up
+        scenario_name: Scenario name for embedded generation output file naming
     """
     logger.info(f"Generating load timeseries using dataset: {dataset_name}")
     
@@ -1996,7 +2010,7 @@ def generate_load_timeseries(demand_data: pd.DataFrame, dataset_name: str, model
     elif dataset_name_lower == "desstinee":
         return generate_desstinee_profiles_from_excel(demand_data, modelled_year, logger, profile_year)
     elif dataset_name_lower == "espeni":
-        return generate_espeni_profiles(demand_data, modelled_year, logger, demand_year)
+        return generate_espeni_profiles(demand_data, modelled_year, logger, demand_year, embedded_generation_config, scenario_name)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}. Supported: ESPENI, eload, desstinee")
 
@@ -2213,8 +2227,18 @@ def generate_desstinee_profiles_from_excel(demand_data: pd.DataFrame, modelled_y
     )
 
 
-def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logger, demand_year: int = None) -> pd.DataFrame:
-    """Generate profiles using ESPENI historical data."""
+def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logger, demand_year: int = None, embedded_generation_config: dict = None, scenario_name: str = 'unknown') -> pd.DataFrame:
+    """Generate profiles using ESPENI historical data.
+    
+    When *embedded_generation_config* is provided and enabled, the ESPENI
+    embedded solar/wind timeseries are extracted and saved to
+    ``resources/demand/{scenario}_embedded_{carrier}.csv`` for use by the
+    renewable integration step, which adds matching generators.
+    
+    NOTE: TOTAL_ESPENI already INCLUDES embedded generation (energy balance:
+    metered gen + net imports + embedded = TOTAL_ESPENI), so demand is NOT
+    modified here — only the generator dispatch profiles are saved.
+    """
     logger.info("Loading ESPENI historical demand data")
     
     # Load ESPENI data
@@ -2443,7 +2467,76 @@ def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logg
             historical_demand_mw = historical_demand_mw.iloc[:len(time_index)]
         
         total_annual_mwh = historical_demand_mw.sum() * TIMESTEP_HOURS
-        logger.info(f"Total historical demand: {total_annual_mwh / 1000:.1f} GWh")
+        logger.info(f"Total historical demand (transmission): {total_annual_mwh / 1000:.1f} GWh")
+        
+        # ── Embedded generation profile extraction ──────────────────────
+        # TOTAL_ESPENI is total GB consumption, which already INCLUDES embedded
+        # solar/wind (energy balance: metered gen + net imports + embedded = TOTAL_ESPENI).
+        # Therefore demand must NOT be changed here.
+        # When enabled, we extract the ESPENI embedded timeseries and save it to CSV
+        # so that the renewable integration step can add matching generators.
+        # Those generators will dispatch to serve the portion of TOTAL_ESPENI demand
+        # that embedded generation covers, displacing over-dispatched thermal.
+        emb_cfg = embedded_generation_config or {}
+        if emb_cfg.get('enabled', False):
+            logger.info("-" * 60)
+            logger.info("EXTRACTING EMBEDDED GENERATION PROFILES")
+            logger.info("-" * 60)
+            logger.info("NOTE: demand is NOT changed — TOTAL_ESPENI already includes embedded generation")
+            
+            _ESPENI_EMBEDDED_COLS = {
+                'solar': 'ELEC_POWER_NGEM_EMBEDDED_SOLAR_GENERATION[MW](float32)',
+                'wind':  'ELEC_POWER_NGEM_EMBEDDED_WIND_GENERATION[MW](float32)',
+            }
+            
+            use_year = demand_year if demand_year is not None else modelled_year
+            year_slice = espeni_data.loc[f'{use_year}-01-01':f'{use_year}-12-31']
+            
+            for carrier, col_name in _ESPENI_EMBEDDED_COLS.items():
+                if not emb_cfg.get(carrier, False):
+                    continue
+                if col_name not in year_slice.columns:
+                    logger.warning(f"ESPENI column '{col_name}' not found – skipping embedded {carrier}")
+                    continue
+                
+                emb_raw = year_slice[col_name].dropna()
+                if emb_raw.empty:
+                    logger.warning(f"No embedded {carrier} data for {use_year}")
+                    continue
+                
+                # Align to the target time_index (same resample as demand)
+                src_doy = emb_raw.index.dayofyear
+                src_hour = emb_raw.index.hour
+                src_minute = emb_raw.index.minute
+                
+                vals = []
+                for doy, hour, minute in zip(time_index.dayofyear, time_index.hour, time_index.minute):
+                    mask = (src_doy == doy) & (src_hour == hour) & (src_minute == minute)
+                    if mask.any():
+                        vals.append(float(emb_raw[mask].iloc[0]))
+                    else:
+                        day_mask = src_doy == doy
+                        if day_mask.any():
+                            vals.append(float(emb_raw[day_mask].mean()))
+                        else:
+                            vals.append(0.0)
+                
+                emb_series = pd.Series(vals, index=time_index).clip(lower=0.0)
+                
+                peak_mw = emb_series.max()
+                annual_twh = emb_series.sum() * TIMESTEP_HOURS / 1e6
+                logger.info(f"Embedded {carrier}: peak {peak_mw:.0f} MW, annual {annual_twh:.2f} TWh")
+                logger.info(f"  → Saving profile for generator creation in renewable integration step")
+                
+                # Save embedded profile for the renewable integration step
+                out_dir = Path("resources/demand")
+                out_dir.mkdir(parents=True, exist_ok=True)
+                emb_path = out_dir / f"{scenario_name}_embedded_{carrier}.csv"
+                emb_series.to_frame(name='p_mw').to_csv(emb_path)
+                logger.info(f"Saved embedded {carrier} profile → {emb_path}")
+            
+            logger.info("-" * 60)
+        
         
         # Distribute demand equally across all buses
         # (spatial disaggregation will be handled by the network building code)
@@ -3042,13 +3135,22 @@ if __name__ == "__main__":
         # Get profile_year parameter for eload/desstinee (optional)
         profile_year = get_param_value(getattr(snakemake.params, 'profile_year', None)) if hasattr(snakemake.params, 'profile_year') else None
         
+        # Get embedded generation config (historical scenarios only)
+        embedded_gen_config = getattr(snakemake.params, 'embedded_generation', None)
+        if embedded_gen_config and is_historical:
+            logger.info(f"Embedded generation config: {embedded_gen_config}")
+        else:
+            embedded_gen_config = None
+        
         p_set_data = generate_load_timeseries(
             original_fes_demand,
             get_param_value(snakemake.params.demand_timeseries),
             modelled_year,
             logger,
             demand_year if demand_year is not None else (modelled_year if is_historical else None),
-            profile_year
+            profile_year,
+            embedded_gen_config,
+            get_param_value(getattr(snakemake.params, 'scenario', 'unknown'))
         )
         
         # Step 3: Write load profile CSV (if output is defined in rule)

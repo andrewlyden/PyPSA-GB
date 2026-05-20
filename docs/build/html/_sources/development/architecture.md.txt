@@ -71,6 +71,8 @@ Each script does one thing well:
 | `network_build/build_network.py` | Create Reduced/Zonal networks |
 | `integrate_thermal_generators.py` | Add thermal capacity |
 | `solve_network.py` | Run optimization |
+| `market/solve_wholesale.py` | Run copperplate wholesale dispatch |
+| `market/solve_balancing.py` | Run anchored balancing redispatch |
 
 ### 4. Data Source Abstraction
 
@@ -149,6 +151,20 @@ scripts/
     └── plotting.py
 ```
 
+### Market Workflow Modules
+
+Market dispatch is an optional branch from the finalized network. The main
+entry points are `rules/market.smk` and `scripts/market/`:
+
+| Module | Role |
+|--------|------|
+| `solve_wholesale.py` | Copperplate Stage 1 wholesale solve |
+| `solve_balancing.py` | Constrained Stage 2 balancing redispatch |
+| `market_utils.py` | Bid/offer pricing, ELEXON loading, redispatch metrics |
+| `analyze_market.py` | Dashboard and summary outputs |
+| `validate_bm.py` | Historical ELEXON BM validation |
+| `validate_neso_constraints.py` | NESO constraint validation |
+
 ## Data Flow
 
 ### Network Building Pipeline
@@ -184,6 +200,16 @@ Each step:
 {scenario}_..._hydrogen.pkl                     # + hydrogen
 {scenario}_..._interconnectors.nc               # + interconnectors
 {scenario}_solved.nc                            # Optimized
+```
+
+Market-enabled scenarios branch from the finalized network rather than from
+`{scenario}_solved.nc`:
+
+```
+resources/network/{scenario}.nc                 # Finalized physical network
+resources/market/{scenario}_wholesale.nc        # Copperplate wholesale solve
+resources/market/{scenario}_balancing.nc        # Constrained BM solve
+resources/analysis/{scenario}_market_dashboard.html
 ```
 
 ## PyPSA Integration

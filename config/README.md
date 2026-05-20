@@ -1,6 +1,6 @@
 # PyPSA-GB Configuration System
 
-This document explains the reorganized configuration structure.
+This document explains the configuration structure.
 
 ## File Structure
 

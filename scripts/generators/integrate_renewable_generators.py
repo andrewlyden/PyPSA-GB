@@ -58,60 +58,255 @@ from scripts.generators.aggregate_renewable_generators import aggregate_renewabl
 _PROFILE_CACHE = {}
 
 
-def filter_sites_by_year(sites_df: pd.DataFrame, modelled_year: int, 
-                         logger: logging.Logger = None) -> pd.DataFrame:
+def filter_sites_by_year(sites_df: pd.DataFrame, modelled_year: int,
+                         logger: logging.Logger = None,
+                         start_date: str = None) -> pd.DataFrame:
     """
     Filter renewable sites by operational date for historical year modeling.
-    
-    For historical scenarios, only sites that were operational by the modelled year
-    should be included. This ensures 2010 only has sites operational by 2010, etc.
-    
+
+    For historical scenarios, only sites that were operational by the simulation
+    start date should be included. This ensures that sites commissioned mid-year
+    are not included in scenarios representing earlier periods.
+
     Parameters
     ----------
     sites_df : pd.DataFrame
         Renewable sites dataframe with 'operational_date' column (DD/MM/YYYY format)
     modelled_year : int
-        The year being modelled (sites must be operational by end of this year)
+        The year being modelled; used as Dec-31 fallback if start_date is None
     logger : logging.Logger, optional
         Logger instance
-        
+    start_date : str, optional
+        ISO-format start date of the simulation window (e.g. "2020-01-07 00:00").
+        When provided, used as the cutoff instead of Dec 31 of modelled_year.
+
     Returns
     -------
     pd.DataFrame
-        Filtered dataframe with only sites operational by modelled_year
+        Filtered dataframe with only sites operational by the cutoff date
     """
     if logger is None:
         logger = logging.getLogger(__name__)
-    
+
     original_count = len(sites_df)
-    
+
     # Check if operational_date column exists
     if 'operational_date' not in sites_df.columns:
         logger.warning("No 'operational_date' column found - cannot filter by year")
         return sites_df
-    
+
+    # Determine cutoff: use simulation start_date if available, else year-end
+    if start_date is not None:
+        cutoff_date = pd.Timestamp(start_date)
+        logger.info(f"REPD capacity cutoff: simulation start_date = {cutoff_date.date()}")
+    else:
+        cutoff_date = pd.Timestamp(f'{modelled_year}-12-31')
+        logger.info(f"REPD capacity cutoff: year-end fallback = {cutoff_date.date()}")
+
     # Parse operational dates (DD/MM/YYYY format from REPD)
     operational_dates = pd.to_datetime(
-        sites_df['operational_date'], 
-        format='%d/%m/%Y', 
+        sites_df['operational_date'],
+        format='%d/%m/%Y',
         errors='coerce'
     )
-    
-    # Filter to sites operational by end of modelled year
-    cutoff_date = pd.Timestamp(f'{modelled_year}-12-31')
+
     mask = operational_dates <= cutoff_date
-    
+
     # Handle NaT (unparseable dates) - include them for robustness
     mask = mask | operational_dates.isna()
-    
+
     filtered_df = sites_df[mask].copy()
     filtered_count = len(filtered_df)
-    
+
     if original_count > 0:
         pct_kept = (filtered_count / original_count) * 100
-        logger.info(f"Year-based filtering: {filtered_count}/{original_count} sites operational by {modelled_year} ({pct_kept:.1f}%)")
-    
+        logger.info(f"Year-based filtering: {filtered_count}/{original_count} sites operational by {cutoff_date.date()} ({pct_kept:.1f}%)")
+
     return filtered_df
+
+
+def _assign_subsidy_attributes(
+    sites_df: pd.DataFrame,
+    modelled_year: int,
+    roc_eligibility_years: int,
+    fes_cfd_fractions: dict,
+    logger: logging.Logger,
+    roc_closure_date: str = "2017-04-01",
+    default_roc_bandings: Optional[dict] = None,
+) -> pd.DataFrame:
+    """
+    Assign support_type and region attributes to renewable sites.
+
+    For REPD sites (historical): uses cfd_round and ro_banding columns, with a
+    date-based fallback for the ~90% of sites missing ro_banding data.  Non-CfD
+    renewables operational before the ROC closure date (April 2017) are inferred
+    as ROC-accredited using technology-specific default banding values — following
+    the same assumption used by GBPower (all non-CfD wind/solar are ROC).
+
+    For FES sites (future): splits generators into CfD/merchant sub-units
+    based on fes_cfd_fractions config (ROC scheme closed 2017, no new ROC).
+
+    Also assigns region ('north' or 'south') based on latitude threshold 55.5°.
+
+    Parameters
+    ----------
+    sites_df : DataFrame
+        Renewable sites with at least 'technology' and 'capacity_mw' columns.
+    modelled_year : int
+        The year being modelled (for ROC expiry check).
+    roc_eligibility_years : int
+        Number of years ROC accreditation lasts (typically 20).
+    fes_cfd_fractions : dict
+        Carrier → fraction of new capacity assumed to be CfD (e.g. wind_offshore: 1.0).
+    logger : Logger
+    roc_closure_date : str
+        Date after which new ROC accreditation was closed (default "2017-04-01").
+    default_roc_bandings : dict, optional
+        Carrier → default ROC banding (ROC/MWh) for sites missing REPD ro_banding data.
+
+    Returns
+    -------
+    DataFrame with added columns: support_type, region.
+    FES rows may be duplicated where CfD fraction is between 0 and 1.
+    """
+    df = sites_df.copy()
+
+    has_cfd = 'cfd_round' in df.columns
+    has_roc = 'ro_banding' in df.columns
+    has_opdate = 'operational_date' in df.columns
+
+    # --- Assign support_type ---
+    if has_cfd or has_roc:
+        # REPD path: use actual REPD subsidy columns
+        support = pd.Series('merchant', index=df.index)
+
+        if has_cfd:
+            is_cfd = df['cfd_round'].notna() & (df['cfd_round'] != '')
+            support[is_cfd] = 'CfD'
+
+        if has_roc:
+            is_roc = df['ro_banding'].notna() & (df['ro_banding'] > 0)
+            # Check ROC expiry: operational_date + roc_eligibility_years > modelled_year
+            if has_opdate:
+                op_dates = pd.to_datetime(df['operational_date'], format='%d/%m/%Y', errors='coerce')
+                roc_expiry = op_dates + pd.DateOffset(years=roc_eligibility_years)
+                roc_expired = roc_expiry <= pd.Timestamp(f'{modelled_year}-01-01')
+                # Only assign ROC if not expired AND not already CfD
+                is_roc = is_roc & ~roc_expired & (support != 'CfD')
+            else:
+                # No operational_date — assume ROC still valid if banding present
+                is_roc = is_roc & (support != 'CfD')
+            support[is_roc] = 'ROC'
+
+        # --- Date-based ROC inference fallback ---
+        # REPD ro_banding is blank for ~90% of sites. For non-CfD renewables
+        # operational before the ROC closure date, infer ROC accreditation with
+        # default banding by technology. This follows GBPower's approach where
+        # all non-CfD wind/solar are assumed ROC.
+        if default_roc_bandings and has_opdate:
+            roc_cutoff = pd.Timestamp(roc_closure_date)
+            op_dates = pd.to_datetime(df['operational_date'], format='%d/%m/%Y', errors='coerce')
+
+            # Eligible: still 'merchant', operational before ROC closure, not expired
+            is_merchant = support == 'merchant'
+            is_pre_closure = op_dates.notna() & (op_dates < roc_cutoff)
+            roc_expiry_inferred = op_dates + pd.DateOffset(years=roc_eligibility_years)
+            not_expired = roc_expiry_inferred > pd.Timestamp(f'{modelled_year}-01-01')
+
+            # Carrier must have a default banding defined
+            carrier_col = 'technology' if 'technology' in df.columns else 'carrier'
+            has_default_banding = df[carrier_col].map(
+                lambda c: c in default_roc_bandings
+            )
+
+            infer_mask = is_merchant & is_pre_closure & not_expired & has_default_banding
+            n_inferred = infer_mask.sum()
+
+            if n_inferred > 0:
+                support[infer_mask] = 'ROC'
+                # Fill in ro_banding with the default value for each carrier
+                if 'ro_banding' not in df.columns:
+                    df['ro_banding'] = np.nan
+                for carrier, banding in default_roc_bandings.items():
+                    carrier_mask = infer_mask & (df[carrier_col] == carrier)
+                    df.loc[carrier_mask, 'ro_banding'] = float(banding)
+
+                inferred_mw = df.loc[infer_mask, 'capacity_mw'].sum()
+                logger.info(f"  ROC inference: {n_inferred} sites ({inferred_mw:.0f} MW) "
+                            f"inferred as ROC (operational before {roc_closure_date}, "
+                            f"default banding applied)")
+                # Log per-carrier breakdown
+                for carrier in df.loc[infer_mask, carrier_col].unique():
+                    c_mask = infer_mask & (df[carrier_col] == carrier)
+                    c_mw = df.loc[c_mask, 'capacity_mw'].sum()
+                    c_banding = default_roc_bandings.get(carrier, '?')
+                    logger.info(f"    {carrier}: {c_mask.sum()} sites, "
+                                f"{c_mw:.0f} MW, banding={c_banding} ROC/MWh")
+
+        df['support_type'] = support
+        n_cfd = (support == 'CfD').sum()
+        n_roc = (support == 'ROC').sum()
+        n_merchant = (support == 'merchant').sum()
+        logger.info(f"  REPD subsidy assignment: {n_cfd} CfD, "
+                     f"{n_roc} ROC, {n_merchant} merchant")
+    else:
+        # FES path: no REPD columns — split by fes_cfd_fractions
+        rows_cfd = []
+        rows_merchant = []
+        rows_unchanged = []
+
+        for idx, row in df.iterrows():
+            carrier = row.get('technology', '')
+            fraction = fes_cfd_fractions.get(carrier, 0.0)
+            cap = row.get('capacity_mw', 0.0)
+
+            if fraction >= 1.0:
+                row_copy = row.copy()
+                row_copy['support_type'] = 'CfD'
+                rows_cfd.append(row_copy)
+            elif fraction <= 0.0:
+                row_copy = row.copy()
+                row_copy['support_type'] = 'merchant'
+                rows_merchant.append(row_copy)
+            else:
+                # Split into CfD and merchant sub-units
+                cfd_row = row.copy()
+                cfd_row['capacity_mw'] = cap * fraction
+                cfd_row['support_type'] = 'CfD'
+                if 'site_name' in cfd_row.index and pd.notna(cfd_row.get('site_name')):
+                    cfd_row['site_name'] = str(cfd_row['site_name']) + '_CfD'
+                rows_cfd.append(cfd_row)
+
+                merch_row = row.copy()
+                merch_row['capacity_mw'] = cap * (1.0 - fraction)
+                merch_row['support_type'] = 'merchant'
+                if 'site_name' in merch_row.index and pd.notna(merch_row.get('site_name')):
+                    merch_row['site_name'] = str(merch_row['site_name']) + '_merchant'
+                rows_merchant.append(merch_row)
+
+        all_rows = rows_cfd + rows_merchant
+        # Include any rows that weren't processed (shouldn't happen, but safe)
+        if all_rows:
+            df = pd.DataFrame(all_rows).reset_index(drop=True)
+        else:
+            df['support_type'] = 'merchant'
+
+        n_cfd = (df['support_type'] == 'CfD').sum()
+        n_merch = (df['support_type'] == 'merchant').sum()
+        logger.info(f"  FES subsidy assignment: {n_cfd} CfD, {n_merch} merchant "
+                     f"({len(df)} total rows, was {len(sites_df)})")
+
+    # --- Assign region based on latitude ---
+    if 'lat' in df.columns:
+        df['region'] = np.where(df['lat'] > 55.5, 'north', 'south')
+        n_north = (df['region'] == 'north').sum()
+        n_south = (df['region'] == 'south').sum()
+        logger.info(f"  Region assignment: {n_north} north, {n_south} south")
+    else:
+        df['region'] = 'south'  # default fallback
+        logger.warning("  No lat column found — defaulting all to 'south'")
+
+    return df
 
 
 def _hash_snapshots(snapshots) -> str:
@@ -305,7 +500,10 @@ def add_renewable_generators(
     p_nom_col: str = 'capacity_mw',
     carrier_col: str = 'technology',
     overwrite: bool = False,
-    snapshot_weighting: Optional[pd.Series] = None
+    snapshot_weighting: Optional[pd.Series] = None,
+    renewables_year: Optional[int] = None,
+    wind_calib_factors: Optional[Dict[str, float]] = None,  # kept for back-compat
+    performance_factors: Optional[Dict[str, float]] = None,
 ) -> pypsa.Network:
     logger.info(f"Adding {len(sites_df)} renewable generators to network")
     required_cols = ['bus', p_nom_col, carrier_col]
@@ -332,7 +530,20 @@ def add_renewable_generators(
         }
         for tech in valid_sites[carrier_col].unique():
             profile_name = tech_to_profile.get(tech, tech.lower().replace(' ', '_'))
-            profile_files = list(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
+            # Use year-specific glob to avoid loading profiles from wrong weather year
+            if renewables_year is not None:
+                profile_files = list(Path(profiles_dir).glob(f"{profile_name}_{renewables_year}.csv"))
+                if not profile_files:
+                    # Fallback: try broader glob but prefer correct year
+                    all_files = sorted(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
+                    year_str = str(renewables_year)
+                    profile_files = [f for f in all_files if year_str in f.name]
+                    if not profile_files:
+                        profile_files = all_files
+                        if profile_files:
+                            logger.warning(f"No {renewables_year} profile for {tech}, using {profile_files[0].name}")
+            else:
+                profile_files = sorted(Path(profiles_dir).glob(f"*{profile_name}*.csv"))
             if profile_files:
                 profile_path = profile_files[0]
                 cache_key = _get_profile_cache_key(profile_path, snapshots_hash)
@@ -394,6 +605,11 @@ def add_renewable_generators(
         elif 'lat' in site and 'lon' in site and pd.notna(site['lat']) and pd.notna(site['lon']):
             gen_attrs['lon'] = float(site['lon'])
             gen_attrs['lat'] = float(site['lat'])
+        
+        # Pass through subsidy tracking and region attributes (if assigned by Stage 5.75)
+        for attr in ['support_type', 'ro_banding', 'cfd_round', 'region']:
+            if attr in site and pd.notna(site[attr]):
+                gen_attrs[attr] = site[attr]
         
         # Look up generator characteristics using carrier name mapping
         # Network uses lowercase_underscore names (e.g., 'wind_offshore')
@@ -494,14 +710,22 @@ def add_renewable_generators(
             if profile_series.max() > 1.0 and p_nom > 0:
                 # Individual site profile in MW - convert to CF by dividing by generator capacity
                 profile_series = profile_series / p_nom
-                profile_series = profile_series.clip(0, 1)
                 logger.debug(f"Converted MW profile to capacity factor for {gen_name}")
             elif profile_series.max() <= 1.0:
-                profile_series = profile_series.clip(0, 1)
                 logger.debug(f"Using capacity factor profile for {gen_name}")
             else:
                 logger.warning(f"Profile values > 1.0 for {gen_name} with zero capacity, using zero profile")
                 profile_series = profile_series * 0.0
+            # Apply ERA5 performance factor (bias correction) before clipping.
+            # performance_factors takes precedence; wind_calib_factors kept for back-compat.
+            _perf = performance_factors or wind_calib_factors
+            if _perf:
+                factor = _perf.get(carrier, 1.0)
+                if factor != 1.0:
+                    profile_series = profile_series * factor
+                    logger.debug(f"Applied performance factor {factor:.4f} for {gen_name} ({carrier})")
+            # Clip to valid CF range [0, 1]
+            profile_series = profile_series.clip(0, 1)
             if len(network.snapshots) > 0:
                 if len(profile_series) == 0:
                     logger.warning(f"Empty profile for {gen_name}, creating zero profile")
@@ -555,13 +779,20 @@ def add_renewable_generators(
             profile_series = profile_series.fillna(0.0).clip(0.0, 1.0)
             profiles_to_add[gen_name] = profile_series
     generators_added = 0
+    skipped_existing = 0
     for gen_attrs in generators_to_add:
         try:
             gen_name = gen_attrs.pop('name')
+            # Skip if generator already exists (avoid PyPSA print warning)
+            if gen_name in network.generators.index:
+                skipped_existing += 1
+                continue
             network.add("Generator", gen_name, **gen_attrs)
             generators_added += 1
         except Exception as e:
             logger.error(f"Failed to add generator {gen_name}: {e}")
+    if skipped_existing > 0:
+        logger.debug(f"Skipped {skipped_existing} generators (already exist in network)")
     if profiles_to_add:
         try:
             profiles_df = pd.DataFrame(profiles_to_add)
@@ -1373,6 +1604,11 @@ def main():
         scenario_config = snk.params.scenario_config
         modelled_year = scenario_config.get('modelled_year', None)
         is_historical = snk.params.get('is_historical', True)  # Default to historical for safety
+        # Use simulation start date as REPD cutoff so mid-year capacity is excluded
+        # when simulating earlier periods (e.g. EA1 commissioned Jul 2020 is excluded
+        # from Jan 2020 scenarios). Falls back to year-end if not set.
+        solve_period = scenario_config.get('solve_period', {})
+        sim_start_date = solve_period.get('start', None)
         
         logger.info(f"Scenario: {scenario_name}")
         if modelled_year:
@@ -1422,24 +1658,56 @@ def main():
             current_year = pd.Timestamp.today().year
             apply_year_filter = modelled_year is not None and modelled_year <= current_year
             if apply_year_filter:
-                logger.info(f"Historical scenario - filtering renewable sites to operational by {modelled_year}")
+                cutoff_desc = sim_start_date if sim_start_date else f"{modelled_year}-12-31"
+                logger.info(f"Historical scenario - filtering renewable sites to operational by {cutoff_desc}")
             else:
                 logger.info("Future scenario or no modelled_year - using all available sites")
-            
+
             renewable_sites_list = []
             for technology, site_file in renewable_site_files.items():
                 if os.path.exists(site_file):
                     logger.info(f"Loading {technology} sites from {site_file}")
                     sites_df = pd.read_csv(site_file)
-                    
+
                     if len(sites_df) > 0:
                         # Add technology column
                         sites_df['technology'] = technology
-                        
+
                         # Apply year-based filtering for historical scenarios
                         if apply_year_filter:
-                            sites_df = filter_sites_by_year(sites_df, modelled_year, logger)
-                        
+                            sites_df = filter_sites_by_year(sites_df, modelled_year, logger,
+                                                            start_date=sim_start_date)
+
+                        # ESPENI separates transmission-metered wind (ELEX_WIND)
+                        # from embedded wind (NGEM_EMBEDDED_WIND). REPD includes
+                        # small distribution-connected onshore sites, so validation
+                        # scenarios can exclude that subset from wind_onshore and
+                        # let the ESPENI-derived embedded_wind generator represent it.
+                        emb_cfg = scenario_config.get('embedded_generation', {})
+                        overlap_cfg = emb_cfg.get('wind_overlap_exclusion', {})
+                        if (
+                            is_historical
+                            and technology == 'wind_onshore'
+                            and emb_cfg.get('enabled', False)
+                            and emb_cfg.get('wind', False)
+                            and overlap_cfg.get('enabled', False)
+                        ):
+                            max_capacity_mw = float(overlap_cfg.get('max_capacity_mw', 0.0) or 0.0)
+                            if max_capacity_mw > 0 and 'capacity_mw' in sites_df.columns:
+                                capacity = pd.to_numeric(sites_df['capacity_mw'], errors='coerce')
+                                overlap_mask = capacity <= max_capacity_mw
+                                excluded_count = int(overlap_mask.sum())
+                                excluded_capacity = float(capacity[overlap_mask].sum())
+                                if excluded_count:
+                                    logger.info(
+                                        "Excluding %d small onshore wind sites (%.1f MW <= %.1f MW) "
+                                        "from wind_onshore; ESPENI embedded_wind will represent this output",
+                                        excluded_count,
+                                        excluded_capacity,
+                                        max_capacity_mw,
+                                    )
+                                    sites_df = sites_df.loc[~overlap_mask].copy()
+
                         if len(sites_df) > 0:
                             renewable_sites_list.append(sites_df)
                             log_dataframe_info(sites_df, logger, f"{technology} sites (after filtering)")
@@ -1537,6 +1805,31 @@ def main():
             
             stage_times['5.5. ETYS BMU mapping'] = time.time() - stage_start_bmu
         
+        # STAGE 5.75: Assign subsidy tracking attributes (support_type + region)
+        subsidy_config = scenario_config.get('subsidy_tracking', {})
+        if subsidy_config.get('enabled', False):
+            stage_start_sub = time.time()
+            logger.info("-" * 80)
+            logger.info("ASSIGNING SUBSIDY TRACKING ATTRIBUTES")
+            logger.info("-" * 80)
+            
+            roc_years = subsidy_config.get('roc_eligibility_years', 20)
+            fes_fractions = subsidy_config.get('fes_cfd_fractions', {})
+            roc_closure = subsidy_config.get('roc_closure_date', '2017-04-01')
+            default_bandings = subsidy_config.get('default_roc_bandings', {})
+            
+            renewable_sites = _assign_subsidy_attributes(
+                renewable_sites,
+                modelled_year or 2024,
+                roc_years,
+                fes_fractions,
+                logger,
+                roc_closure_date=roc_closure,
+                default_roc_bandings=default_bandings,
+            )
+            
+            stage_times['5.75. Subsidy attributes'] = time.time() - stage_start_sub
+        
         # STAGE 6: Add renewable generators to network
         stage_start = time.time()
         logger.info("-" * 80)
@@ -1548,11 +1841,69 @@ def main():
         
         initial_gen_count = len(network.generators)
         
+        renewables_year = scenario_config.get('renewables_year', modelled_year)
+
+        # Load ERA5 performance factors (bias correction) directly from config.
+        # Factors represent uncurtailed available generation — do NOT use ESPENI
+        # metered output as target because ESPENI includes real-world curtailment
+        # which the copperplate wholesale stage intentionally ignores.
+        #
+        # The correct calibration target is:
+        #   model wholesale wind ≈ ESPENI metered + estimated real curtailment
+        #
+        # Two config formats are supported:
+        #   Option A (stacked): era5_bias, turbine_curve, wake_losses, availability
+        #                       dicts per carrier — effective factor = product
+        #   Option B (flat):    factors dict per carrier — used directly
+        # If 'factors' is provided and non-empty, Option B wins (backward compat).
+        performance_factors = None
+        perf_cfg = scenario_config.get('renewable_performance_factors', {})
+        if perf_cfg.get('enabled', False):
+            cfg_factors = perf_cfg.get('factors', {})
+            if cfg_factors:
+                # Option B: flat override factors — use directly
+                performance_factors = {c: float(v) for c, v in cfg_factors.items()}
+                logger.info(f"Renewable performance factors (flat override): {performance_factors}")
+            else:
+                # Option A: stacked component factors — compute product per carrier
+                component_names = ['era5_bias', 'turbine_curve', 'wake_losses', 'availability']
+                components = {}
+                for name in component_names:
+                    d = perf_cfg.get(name, {})
+                    if d:
+                        components[name] = {c: float(v) for c, v in d.items()}
+
+                if components:
+                    # Collect all carriers mentioned across any component
+                    all_carriers = set()
+                    for d in components.values():
+                        all_carriers.update(d.keys())
+
+                    performance_factors = {}
+                    for carrier in sorted(all_carriers):
+                        product = 1.0
+                        parts = []
+                        for name in component_names:
+                            val = components.get(name, {}).get(carrier, 1.0)
+                            product *= val
+                            if val != 1.0:
+                                parts.append(f"{name}={val:.3f}")
+                        performance_factors[carrier] = product
+                        logger.info(
+                            f"  {carrier}: effective={product:.4f} "
+                            f"({' × '.join(parts) if parts else 'all 1.0'})"
+                        )
+                    logger.info(f"Renewable performance factors (stacked): {performance_factors}")
+                else:
+                    logger.warning("renewable_performance_factors.enabled=true but no factors or components defined")
+
         network = add_renewable_generators(
-            network, 
+            network,
             renewable_sites,
             profiles_dir=profiles_dir,
-            p_nom_col='capacity_mw'
+            p_nom_col='capacity_mw',
+            renewables_year=renewables_year,
+            performance_factors=performance_factors,
         )
         
         final_gen_count = len(network.generators)
@@ -1606,9 +1957,191 @@ def main():
             
             logger.info(f"Aggregation reduced generators from {pre_agg_count} to {post_agg_count} "
                        f"(removed {removed_count})")
+
+            # STAGE 6.6: Re-run bus corrections on aggregated generators
+            # After aggregation, individual 50 MW farms that were below the check
+            # threshold may have been combined into 500+ MW aggregate generators
+            # that now exceed the export capacity of their 33/132kV bus.
+            # Re-run apply_etys_bmu_mapping with a lower threshold to catch these.
+            if network_model.upper() == 'ETYS':
+                stage_start_post = time.time()
+                logger.info("-" * 80)
+                logger.info("POST-AGGREGATION BUS CORRECTIONS")
+                logger.info("-" * 80)
+
+                # Build a DataFrame from network.generators for the correction function
+                agg_gen_df = network.generators[
+                    network.generators.carrier.isin(agg_carriers)
+                ].copy()
+
+                if not agg_gen_df.empty:
+                    # Use 'name' index as site_name for matching
+                    agg_gen_df['site_name'] = agg_gen_df.index
+
+                    pre_buses = agg_gen_df['bus'].copy()
+                    agg_gen_df = apply_etys_bmu_mapping(
+                        agg_gen_df, network, min_check_mw=10.0
+                    )
+
+                    # Apply any corrections back to network.generators
+                    changed = (agg_gen_df['bus'] != pre_buses).sum()
+                    if changed > 0:
+                        for gen_idx in agg_gen_df.index:
+                            if agg_gen_df.at[gen_idx, 'bus'] != pre_buses[gen_idx]:
+                                network.generators.at[gen_idx, 'bus'] = agg_gen_df.at[gen_idx, 'bus']
+                        logger.info(f"Post-aggregation: corrected {changed} aggregate generator bus assignments")
+                    else:
+                        logger.info("Post-aggregation: no bus corrections needed")
+
+                stage_times['6.6. Post-agg bus corrections'] = time.time() - stage_start_post
+
             stage_times['6.5. Aggregate renewables'] = time.time() - stage_start
         else:
             logger.info("Renewable aggregation disabled (set renewable_aggregation.enabled: true to enable)")
+        
+        # STAGE 6.75: Add embedded generation from ESPENI (historical only)
+        # TOTAL_ESPENI already includes embedded solar/wind output, so demand
+        # is unchanged.  The demand step saved the national ESPENI embedded MW
+        # timeseries to CSV.  Here we subtract the output already represented
+        # by REPD generators (to avoid double-counting) and add the remaining
+        # gap as explicit embedded_solar / embedded_wind generators.
+        emb_cfg = scenario_config.get('embedded_generation', {})
+        if emb_cfg.get('enabled', False) and is_historical:
+            stage_start = time.time()
+            logger.info("-" * 80)
+            logger.info("ADDING EMBEDDED GENERATION FROM ESPENI")
+            logger.info("-" * 80)
+            
+            _EMBEDDED_CARRIERS = {
+                'solar': 'embedded_solar',
+                'wind':  'embedded_wind',
+            }
+            
+            for source_key, carrier_name in _EMBEDDED_CARRIERS.items():
+                if not emb_cfg.get(source_key, False):
+                    continue
+                
+                # Load the profile saved by the demand step
+                emb_path = Path(f"resources/demand/{scenario_name}_embedded_{source_key}.csv")
+                if not emb_path.exists():
+                    logger.warning(f"Embedded {source_key} profile not found at {emb_path} – skipping")
+                    continue
+                
+                emb_df = pd.read_csv(emb_path, index_col=0, parse_dates=True)
+                emb_national = emb_df['p_mw']
+                raw_peak_mw = emb_national.max()
+                
+                if raw_peak_mw <= 0:
+                    logger.warning(f"Embedded {source_key} has zero peak – skipping")
+                    continue
+                
+                logger.info(f"Embedded {source_key} (raw ESPENI): peak {raw_peak_mw:.0f} MW, "
+                           f"annual {emb_national.sum() * (scenario_config.get('timestep_minutes', 60) / 60) / 1e6:.2f} TWh")
+                
+                # ── Subtract REPD generator output to avoid double-counting ──
+                # ESPENI NGEM_EMBEDDED_SOLAR includes output from ALL solar farms
+                # (there is no ELEX solar column), so REPD solar_pv generators
+                # already account for most of this.  The gap is rooftop / small-
+                # scale solar that REPD does not capture.
+                # For wind, NGEM_EMBEDDED_WIND covers distribution-connected wind
+                # only; transmission-connected REPD wind is in ELEX_WIND instead.
+                # These are separate ESPENI columns with no overlap — do NOT subtract.
+                _OVERLAP_CARRIERS = {
+                    'solar': ['solar_pv'],
+                    'wind':  [],   # NGEM_EMBEDDED_WIND != ELEX_WIND; no overlap with REPD
+                }
+                overlap_carriers = _OVERLAP_CARRIERS.get(source_key, [])
+                overlap_gens = network.generators[
+                    network.generators.carrier.isin(overlap_carriers)
+                ]
+                if len(overlap_gens) > 0:
+                    # Compute aggregate modelled output from overlapping generators
+                    overlap_output = pd.Series(0.0, index=network.snapshots)
+                    for gen_name in overlap_gens.index:
+                        p_nom = overlap_gens.at[gen_name, 'p_nom']
+                        if gen_name in network.generators_t.p_max_pu.columns:
+                            ppu = network.generators_t.p_max_pu[gen_name]
+                        else:
+                            ppu = overlap_gens.at[gen_name, 'p_max_pu']
+                        overlap_output += p_nom * ppu
+                    
+                    # Align ESPENI profile to network snapshots before subtraction
+                    emb_national.index = pd.DatetimeIndex(emb_national.index)
+                    emb_aligned = emb_national.reindex(network.snapshots, method='nearest').fillna(0.0)
+                    
+                    gap = (emb_aligned - overlap_output).clip(lower=0.0)
+                    
+                    logger.info(f"  Overlap with {overlap_carriers}: peak modelled output "
+                               f"{overlap_output.max():.0f} MW")
+                    logger.info(f"  Gap after subtraction: peak {gap.max():.0f} MW "
+                               f"(raw was {raw_peak_mw:.0f} MW)")
+                    
+                    emb_national = gap
+                else:
+                    # No overlapping generators — use full ESPENI profile
+                    emb_national.index = pd.DatetimeIndex(emb_national.index)
+                    emb_national = emb_national.reindex(network.snapshots, method='nearest').fillna(0.0)
+                
+                peak_mw = emb_national.max()
+                if peak_mw <= 0:
+                    logger.info(f"  Embedded {source_key} gap is zero after subtracting REPD — skipping")
+                    continue
+                
+                # Ensure carrier exists in network
+                if carrier_name not in network.carriers.index:
+                    network.add("Carrier", carrier_name, color="#FFA500" if 'solar' in carrier_name else "#87CEEB",
+                                co2_emissions=0.0, nice_name=f"Embedded {source_key.title()}")
+                
+                # Distribute across load buses proportionally to their demand share
+                load_buses = network.loads['bus'].unique()
+                if len(load_buses) == 0:
+                    logger.warning("No load buses found – cannot distribute embedded generation")
+                    continue
+                
+                # Calculate demand share per bus from the load time series
+                if not network.loads_t.p_set.empty:
+                    bus_demand = network.loads_t.p_set.sum()  # Total MWh per load
+                    # Map from load names to buses
+                    load_to_bus = network.loads['bus']
+                    bus_total = bus_demand.groupby(load_to_bus).sum()
+                    total_demand = bus_total.sum()
+                    if total_demand > 0:
+                        bus_share = bus_total / total_demand
+                    else:
+                        bus_share = pd.Series(1.0 / len(load_buses), index=load_buses)
+                else:
+                    # Uniform distribution as fallback
+                    bus_share = pd.Series(1.0 / len(load_buses), index=load_buses)
+                
+                # Normalize the national profile to [0, 1]
+                # (emb_national is already aligned to network.snapshots above)
+                p_max_pu = emb_national / peak_mw
+                p_max_pu.index = network.snapshots
+                
+                # Add one generator per load bus
+                gen_count_before = len(network.generators)
+                for bus in bus_share.index:
+                    share = bus_share[bus]
+                    if share <= 0:
+                        continue
+                    
+                    gen_name = f"embedded_{source_key}_{bus}"
+                    bus_p_nom = peak_mw * share
+                    
+                    network.add("Generator", gen_name,
+                                bus=bus,
+                                carrier=carrier_name,
+                                p_nom=bus_p_nom,
+                                p_max_pu=p_max_pu,
+                                marginal_cost=0.0,
+                                capital_cost=0.0,
+                                p_nom_extendable=False)
+                
+                gen_count_after = len(network.generators)
+                logger.info(f"  Added {gen_count_after - gen_count_before} embedded {source_key} generators "
+                           f"({peak_mw:.0f} MW total across {len(bus_share[bus_share > 0])} buses)")
+            
+            stage_times['6.75. Embedded generation'] = time.time() - stage_start
         
         # STAGE 7: Create summary by technology
         stage_start = time.time()
@@ -1620,6 +2153,16 @@ def main():
                     'technology': tech,
                     'capacity_mw': tech_gens['p_nom'].sum(),
                     'count': len(tech_gens)
+                })
+        
+        # Include embedded generation carriers in summary
+        for emb_carrier in ['embedded_solar', 'embedded_wind']:
+            emb_gens = network.generators[network.generators['carrier'] == emb_carrier]
+            if len(emb_gens) > 0:
+                summary_data.append({
+                    'technology': emb_carrier,
+                    'capacity_mw': emb_gens['p_nom'].sum(),
+                    'count': len(emb_gens)
                 })
         
         summary_df = pd.DataFrame(summary_data)
