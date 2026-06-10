@@ -849,7 +849,7 @@ document.write(`
 <section id="main-workflow-snakefile">
 <h3>Main Workflow (<code class="docutils literal notranslate"><span class="pre">Snakefile</span></code>)<a class="headerlink" href="#main-workflow-snakefile" title="Link to this heading">#</a></h3>
 <p>Runs the core model - assumes weather cutouts exist.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
@@ -988,38 +988,38 @@ configured bid and offer prices.</p>
 <h2>Running the Workflow<a class="headerlink" href="#running-the-workflow" title="Link to this heading">#</a></h2>
 <section id="basic-commands">
 <h3>Basic Commands<a class="headerlink" href="#basic-commands" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run to a specific target</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run active scenarios from config/config.yaml</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Dry run (show what would execute)</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-n<span class="w"> </span>-p
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>-n<span class="w"> </span>-p
+
+<span class="c1"># Run one scenario without editing config/config.yaml</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">scenario</span><span class="o">=</span>HT35
 
 <span class="c1"># Force re-run of specific rule and downstream</span>
-snakemake<span class="w"> </span>-R<span class="w"> </span>solve_network<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-
-<span class="c1"># Run all active scenarios</span>
-snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>-R<span class="w"> </span>solve_network<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
 <section id="parallel-execution">
 <h3>Parallel Execution<a class="headerlink" href="#parallel-execution" title="Link to this heading">#</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">-j</span></code> flag controls parallelism:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--cores</span></code> flag controls parallelism:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Single-threaded (sequential)</span>
-snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># Use 4 cores</span>
-snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Use all available cores</span>
-snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j
+snakemake<span class="w"> </span>--cores<span class="w"> </span>all
 </pre></div>
 </div>
 </section>
 <section id="viewing-the-dag">
 <h3>Viewing the DAG<a class="headerlink" href="#viewing-the-dag" title="Link to this heading">#</a></h3>
 <p>Generate a visualization of the workflow:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--dag<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span><span class="p">|</span><span class="w"> </span>dot<span class="w"> </span>-Tpng<span class="w"> </span>&gt;<span class="w"> </span>dag.png
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--dag<span class="w"> </span><span class="p">|</span><span class="w"> </span>dot<span class="w"> </span>-Tpng<span class="w"> </span>&gt;<span class="w"> </span>dag.png
 </pre></div>
 </div>
 </section>
@@ -1084,14 +1084,14 @@ and notebooks are written under <code class="docutils literal notranslate"><span
 <section id="re-run-failed-rule">
 <h3>Re-run Failed Rule<a class="headerlink" href="#re-run-failed-rule" title="Link to this heading">#</a></h3>
 <p>Force re-execution:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-R<span class="w"> </span>failed_rule_name<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-R<span class="w"> </span>failed_rule_name<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
 <section id="missing-input">
 <h3>Missing Input<a class="headerlink" href="#missing-input" title="Link to this heading">#</a></h3>
 <p>Snakemake will tell you which input is missing. Generate it first:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>missing_file.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
@@ -1099,7 +1099,7 @@ and notebooks are written under <code class="docutils literal notranslate"><span
 <h3>Clean and Restart<a class="headerlink" href="#clean-and-restart" title="Link to this heading">#</a></h3>
 <p>Remove outputs for a scenario:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>resources/network/HT35*.nc
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">scenario</span><span class="o">=</span>HT35
 </pre></div>
 </div>
 </section>
@@ -1109,10 +1109,10 @@ snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"
 <section id="running-specific-rules">
 <h3>Running Specific Rules<a class="headerlink" href="#running-specific-rules" title="Link to this heading">#</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Only run data processing (no solving)</span>
-snakemake<span class="w"> </span>resources/network/HT35_finalized.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/network/HT35_finalized.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Only run analysis on existing solved network</span>
-snakemake<span class="w"> </span>resources/analysis/HT35_spatial.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/HT35_spatial.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
@@ -1124,7 +1124,7 @@ snakemake<span class="w"> </span>resources/analysis/HT35_spatial.html<span class
 </section>
 <section id="using-conda-environments">
 <h3>Using Conda Environments<a class="headerlink" href="#using-conda-environments" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--use-conda<span class="w">  </span><span class="c1"># Use rule-specific envs</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--use-conda<span class="w">  </span><span class="c1"># Use rule-specific envs</span>
 </pre></div>
 </div>
 </section>

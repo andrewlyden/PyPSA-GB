@@ -27,20 +27,20 @@ The repository is approximately 2GB due to included data files. This may take so
 
 ## Step 3: Create the Conda Environment
 
-Create the `pypsa-gb` environment using the provided environment file:
+Create the `pypsa-gb-stable` environment using the provided stable environment file:
 
 ```bash
-conda env create -f envs/pypsa-gb.yaml
+conda env create -f envs/pypsa-gb-stable.yaml
 ```
 
 Activate the environment:
 
 ```bash
-conda activate pypsa-gb
+conda activate pypsa-gb-stable
 ```
 
 ```{tip}
-Add `conda activate pypsa-gb` to your shell profile to automatically activate it in new terminals.
+Add `conda activate pypsa-gb-stable` to your shell profile to automatically activate it in new terminals.
 ```
 
 ## Step 4: Install a Solver
@@ -79,8 +79,45 @@ python -c "import pypsa; print(f'PyPSA version: {pypsa.__version__}')"
 python -c "import snakemake; print('Snakemake OK')"
 
 # Dry run to check workflow
-snakemake -n -p
+snakemake --cores 4 -n -p
 ```
+
+## Optional: Configure an ENTSO-E API Key
+
+PyPSA-GB can use hourly day-ahead electricity prices from the
+[ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) for
+interconnector pricing when `interconnectors.pricing.source` is set to
+`"entsoe"`.
+
+This is optional. If no ENTSO-E token is configured, PyPSA-GB falls back to the
+derived interconnector pricing method.
+
+1. Register for a free ENTSO-E Transparency Platform account and request API
+   access.
+2. Add your token to a `.env` file in the project root:
+
+   ```bash
+   ENTSOE_API_TOKEN=your-token-here
+   ```
+
+   Alternatively, set it as an environment variable:
+
+   ```bash
+   # Linux/macOS
+   export ENTSOE_API_TOKEN=your-token-here
+
+   # Windows PowerShell
+   $env:ENTSOE_API_TOKEN = "your-token-here"
+   ```
+
+3. To use ENTSO-E prices, set the interconnector pricing source in your
+   scenario or defaults configuration:
+
+   ```yaml
+   interconnectors:
+     pricing:
+       source: "entsoe"
+   ```
 
 ## Step 6: Download Weather Data
 
@@ -163,7 +200,7 @@ PyPSA-GB/
 Try updating conda first:
 ```bash
 conda update -n base conda
-conda env create -f envs/pypsa-gb.yaml
+conda env create -f envs/pypsa-gb-stable.yaml
 ```
 
 **Gurobi license not found**
@@ -176,7 +213,7 @@ Ensure your license file is in the correct location:
 
 Ensure the environment is activated:
 ```bash
-conda activate pypsa-gb
+conda activate pypsa-gb-stable
 which snakemake  # Should show path in conda env
 ```
 

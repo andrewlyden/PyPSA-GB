@@ -77,7 +77,7 @@ PyPSA-GB has two separate Snakemake workflows:
 Runs the core model - assumes weather cutouts exist.
 
 ```bash
-snakemake resources/network/HT35_solved.nc -j 4
+snakemake --cores 4
 ```
 
 ### Cutouts Workflow (`Snakefile_cutouts`)
@@ -185,32 +185,32 @@ See {doc}`market` for configuration and output details.
 ### Basic Commands
 
 ```bash
-# Run to a specific target
-snakemake resources/network/HT35_solved.nc -j 4
+# Run active scenarios from config/config.yaml
+snakemake --cores 4
 
 # Dry run (show what would execute)
-snakemake resources/network/HT35_solved.nc -n -p
+snakemake --cores 4 -n -p
+
+# Run one scenario without editing config/config.yaml
+snakemake --cores 4 --config scenario=HT35
 
 # Force re-run of specific rule and downstream
-snakemake -R solve_network -j 4
-
-# Run all active scenarios
-snakemake -j 4
+snakemake -R solve_network --cores 4
 ```
 
 ### Parallel Execution
 
-The `-j` flag controls parallelism:
+The `--cores` flag controls parallelism:
 
 ```bash
 # Single-threaded (sequential)
-snakemake target.nc -j 1
+snakemake --cores 1
 
 # Use 4 cores
-snakemake target.nc -j 4
+snakemake --cores 4
 
 # Use all available cores
-snakemake target.nc -j
+snakemake --cores all
 ```
 
 ### Viewing the DAG
@@ -218,7 +218,7 @@ snakemake target.nc -j
 Generate a visualization of the workflow:
 
 ```bash
-snakemake --dag resources/network/HT35_solved.nc | dot -Tpng > dag.png
+snakemake --dag | dot -Tpng > dag.png
 ```
 
 ## Intermediate Files
@@ -287,14 +287,14 @@ cat logs/solve/HT35.log
 
 Force re-execution:
 ```bash
-snakemake -R failed_rule_name -j 4
+snakemake -R failed_rule_name --cores 4
 ```
 
 ### Missing Input
 
 Snakemake will tell you which input is missing. Generate it first:
 ```bash
-snakemake missing_file.nc -j 4
+snakemake --cores 4
 ```
 
 ### Clean and Restart
@@ -302,7 +302,7 @@ snakemake missing_file.nc -j 4
 Remove outputs for a scenario:
 ```bash
 rm -rf resources/network/HT35*.nc
-snakemake resources/network/HT35_solved.nc -j 4
+snakemake --cores 4 --config scenario=HT35
 ```
 
 ## Advanced Usage
@@ -311,10 +311,10 @@ snakemake resources/network/HT35_solved.nc -j 4
 
 ```bash
 # Only run data processing (no solving)
-snakemake resources/network/HT35_finalized.nc -j 4
+snakemake resources/network/HT35_finalized.nc --cores 4
 
 # Only run analysis on existing solved network
-snakemake resources/analysis/HT35_spatial.html -j 1
+snakemake resources/analysis/HT35_spatial.html --cores 1
 ```
 
 ### Profile Performance
@@ -326,5 +326,5 @@ snakemake --profile slurm  # For cluster execution
 ### Using Conda Environments
 
 ```bash
-snakemake -j 4 --use-conda  # Use rule-specific envs
+snakemake --cores 4 --use-conda  # Use rule-specific envs
 ```

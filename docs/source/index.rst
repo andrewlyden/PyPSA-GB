@@ -87,15 +87,15 @@ Key Features
 Quick Example
 =============
 
-Run a 2035 Holistic Transition scenario:
+Run the active scenarios listed in ``config/config.yaml``:
 
 .. code-block:: bash
 
    # Activate environment
-   conda activate pypsa-gb
+   conda activate pypsa-gb-stable
 
    # Run the workflow
-   snakemake resources/network/HT35_solved.nc -j 4
+   snakemake --cores 4
 
 
 

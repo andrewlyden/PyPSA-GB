@@ -87,7 +87,7 @@ from scripts.network_build.ETYS_network import create_network
 from scripts.network_build.ETYS_upgrades import apply_etys_network_upgrades
 
 # Or use the Snakemake rules (recommended):
-# snakemake resources/network/ETYS_2024_base_network.nc -j 1
+# snakemake resources/network/ETYS_2024_base_network.nc --cores 1
 ```
 
 ## Type Hints

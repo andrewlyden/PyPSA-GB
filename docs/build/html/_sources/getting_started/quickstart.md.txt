@@ -4,10 +4,10 @@ This guide gets you running a PyPSA-GB scenario.
 
 ## Prerequisites
 
-Ensure you've completed the {doc}`installation` steps and have the `pypsa-gb` environment activated:
+Ensure you've completed the {doc}`installation` steps and have the `pypsa-gb-stable` environment activated:
 
 ```bash
-conda activate pypsa-gb
+conda activate pypsa-gb-stable
 ```
 
 ## Step 1: Check Available Scenarios
@@ -20,7 +20,7 @@ python -c "
 import yaml
 with open('config/config.yaml') as f:
     config = yaml.safe_load(f)
-print('Active scenarios:', config.get('scenarios', []))
+print('Active scenarios:', config.get('run_scenarios', []))
 "
 ```
 
@@ -35,15 +35,16 @@ Common scenarios include:
 
 ## Step 2: Run a Scenario
 
-Run a single scenario using Snakemake:
+Run the active scenarios listed in `config/config.yaml`:
 
 ```bash
-# Run the HT35_clustered scenario (2035 Holistic Transition, clustered network)
-snakemake resources/network/HT35_clustered_solved.nc -j 4
+snakemake --cores 4
 ```
 
 ```{note}
-The `-j 4` flag runs up to 4 jobs in parallel. Adjust based on your CPU cores.
+The `--cores 4` flag runs up to 4 jobs in parallel. Adjust based on your CPU cores.
+To run one scenario without editing `config/config.yaml`, use
+`snakemake --cores 4 --config scenario=HT35_clustered`.
 ```
 
 ### What Happens
@@ -88,10 +89,10 @@ Generate HTML analysis reports:
 
 ```bash
 # Generate spatial analysis map
-snakemake resources/analysis/HT35_clustered_spatial.html -j 1
+snakemake resources/analysis/HT35_clustered_spatial.html --cores 1
 
 # Generate summary dashboard
-snakemake resources/analysis/HT35_clustered_dashboard.html -j 1
+snakemake resources/analysis/HT35_clustered_dashboard.html --cores 1
 ```
 
 Open the generated HTML files in your browser.
@@ -104,13 +105,13 @@ Market scenarios produce additional outputs under `resources/market/` and
 
 ```bash
 # Dry run (show what would execute)
-snakemake resources/network/HT35_clustered_solved.nc -n -p
+snakemake --cores 4 -n -p
 
 # Force re-run of a specific rule
-snakemake -R solve_network -j 4
+snakemake -R solve_network --cores 4
 
 # Run with verbose logging
-snakemake resources/network/HT35_clustered_solved.nc -j 4 --verbose
+snakemake --cores 4 --verbose
 
 # Clean all outputs for a scenario
 snakemake clean_HT35_clustered
@@ -120,12 +121,14 @@ snakemake clean_HT35_clustered
 
 For quick tests, use reduced network models:
 
-```bash
-# 32-bus reduced network (much faster)
-snakemake resources/network/HT35_reduced_solved.nc -j 4
+```yaml
+# In config/config.yaml
+run_scenarios:
+  - HT35_reduced
+```
 
-# Clustered to ~100 buses
-snakemake resources/network/HT35_clustered_100_solved.nc -j 4
+```bash
+snakemake --cores 4
 ```
 
 ## Expected Run Times

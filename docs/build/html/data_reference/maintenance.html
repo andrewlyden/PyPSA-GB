@@ -469,7 +469,7 @@ document.write(`
 </div>
 </li>
 <li><p><strong>Process new data</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/FES/FES_2025_data.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R<span class="w"> </span>process_fes_data
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/FES/FES_2025_data.csv<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R<span class="w"> </span>process_fes_data
 </pre></div>
 </div>
 </li>
@@ -519,7 +519,7 @@ document.write(`
 </div>
 </li>
 <li><p><strong>Re-process generators</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/generators/DUKES/DUKES_2026_generators.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R<span class="w"> </span>process_dukes
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/generators/DUKES/DUKES_2026_generators.csv<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R<span class="w"> </span>process_dukes
 </pre></div>
 </div>
 </li>
@@ -557,7 +557,7 @@ document.write(`
 </div>
 </li>
 <li><p><strong>Re-process renewables</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-R<span class="w"> </span>prepare_renewable_sites<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-R<span class="w"> </span>prepare_renewable_sites<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </li>
@@ -622,10 +622,10 @@ document.write(`
 </li>
 <li><p><strong>Process and validate</strong> via Snakemake:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process raw Excel into intermediate CSVs (stage 1)</span>
-snakemake<span class="w"> </span>resources/network/ETYS/ETYS_2025_components.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/network/ETYS/ETYS_2025_components.csv<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># Build and validate the network (stage 2, includes topology validation)</span>
-snakemake<span class="w"> </span>resources/network/ETYS_2025_base_network.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/network/ETYS_2025_base_network.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>Topology validation (connectivity, parameter ranges, coordinate checks) runs automatically during the <code class="docutils literal notranslate"><span class="pre">build_ETYS_base_network</span></code> rule.</p>
@@ -660,7 +660,7 @@ key:<span class="w"> </span>YOUR-API-KEY
 </div>
 </li>
 <li><p><strong>Generate cutout</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2023.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">2</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<span class="w"> </span>resources/atlite/GB_2023.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">2</span>
 </pre></div>
 </div>
 </li>

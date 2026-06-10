@@ -513,7 +513,7 @@ document.write(`
 <section id="step-3-activate-your-scenario">
 <h2>Step 3: Activate Your Scenario<a class="headerlink" href="#step-3-activate-your-scenario" title="Link to this heading">#</a></h2>
 <p>Edit <code class="docutils literal notranslate"><span class="pre">config/config.yaml</span></code> to add your scenario:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">scenarios</span><span class="p">:</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">run_scenarios</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyScenario_2040</span>
 <span class="w">  </span><span class="c1"># - HT35  # Comment out others if not needed</span>
 </pre></div>
@@ -535,10 +535,10 @@ document.write(`
 <section id="step-5-run-your-scenario">
 <h2>Step 5: Run Your Scenario<a class="headerlink" href="#step-5-run-your-scenario" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dry run first to see what will execute</span>
-snakemake<span class="w"> </span>resources/network/MyScenario_2040_solved.nc<span class="w"> </span>-n<span class="w"> </span>-p
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>-n<span class="w"> </span>-p
 
 <span class="c1"># Full run</span>
-snakemake<span class="w"> </span>resources/network/MyScenario_2040_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>

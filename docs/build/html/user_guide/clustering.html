@@ -862,7 +862,7 @@ document.write(`
 <section id="running-clustered-scenarios">
 <h2>Running Clustered Scenarios<a class="headerlink" href="#running-clustered-scenarios" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build and solve clustered network</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">scenario</span><span class="o">=</span>HT35_clustered
 </pre></div>
 </div>
 <p>The clustering happens automatically in the workflow.</p>
@@ -994,7 +994,7 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<
 <h3>Sensitivity Analysis<a class="headerlink" href="#sensitivity-analysis" title="Link to this heading">#</a></h3>
 <p>Run many scenarios quickly:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test 10 different configurations</span>
-<span class="nt">scenarios</span><span class="p">:</span>
+<span class="nt">run_scenarios</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_clustered_100_base</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_clustered_100_high_wind</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_clustered_100_low_nuclear</span>
@@ -1005,12 +1005,17 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<
 <section id="screening-studies">
 <h3>Screening Studies<a class="headerlink" href="#screening-studies" title="Link to this heading">#</a></h3>
 <p>Identify interesting cases to run with full detail:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/config.yaml</span>
+<span class="nt">run_scenarios</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_clustered</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EE50_clustered</span>
+</pre></div>
+</div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick clustered runs</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-snakemake<span class="w"> </span>resources/network/HT50_clustered_100_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
-<span class="c1"># Then full detail for most interesting</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<span class="c1"># Then full detail for the most interesting case</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">scenario</span><span class="o">=</span>HT35
 </pre></div>
 </div>
 </section>
@@ -1052,7 +1057,7 @@ snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"
 <h3>Memory Issues<a class="headerlink" href="#memory-issues" title="Link to this heading">#</a></h3>
 <p>If clustering or solving uses too much memory:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reduce parallel jobs</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">scenario</span><span class="o">=</span>HT35_clustered
 </pre></div>
 </div>
 <ul class="simple">

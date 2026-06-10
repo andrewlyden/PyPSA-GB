@@ -85,7 +85,7 @@ MyScenario:
 
 ```bash
 # Build and solve clustered network
-snakemake resources/network/HT35_clustered_100_solved.nc -j 4
+snakemake --cores 4 --config scenario=HT35_clustered
 ```
 
 The clustering happens automatically in the workflow.
@@ -197,7 +197,7 @@ Run many scenarios quickly:
 
 ```yaml
 # Test 10 different configurations
-scenarios:
+run_scenarios:
   - HT35_clustered_100_base
   - HT35_clustered_100_high_wind
   - HT35_clustered_100_low_nuclear
@@ -208,13 +208,19 @@ scenarios:
 
 Identify interesting cases to run with full detail:
 
+```yaml
+# In config/config.yaml
+run_scenarios:
+  - HT35_clustered
+  - EE50_clustered
+```
+
 ```bash
 # Quick clustered runs
-snakemake resources/network/HT35_clustered_100_solved.nc -j 4
-snakemake resources/network/HT50_clustered_100_solved.nc -j 4
+snakemake --cores 4
 
-# Then full detail for most interesting
-snakemake resources/network/HT35_solved.nc -j 4
+# Then full detail for the most interesting case
+snakemake --cores 4 --config scenario=HT35
 ```
 
 ### Educational
@@ -255,7 +261,7 @@ If clustering or solving uses too much memory:
 
 ```bash
 # Reduce parallel jobs
-snakemake resources/network/HT35_clustered.nc -j 1
+snakemake --cores 1 --config scenario=HT35_clustered
 ```
 
 - Enable `component_aggregation` to reduce asset count after clustering.

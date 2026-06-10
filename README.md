@@ -15,13 +15,13 @@ PyPSA-GB is an open-source electricity system model for Great Britain, built on 
 
 ```bash
 # Create environment
-conda env create -f envs/pypsa-gb.yaml
+conda env create -f envs/pypsa-gb-stable.yaml
 
 # Activate environment 
-conda activate pypsa-gb
+conda activate pypsa-gb-stable
 
-# Run scenario workflow
-snakemake -j 4
+# Run active scenarios from config/config.yaml
+snakemake --cores 4
 ```
 
 Configure scenarios in `config/scenarios.yaml` and active runs in `config/config.yaml`.

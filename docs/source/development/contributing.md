@@ -14,8 +14,8 @@ Thank you for your interest in contributing to PyPSA-GB!
    ```
 3. Set up the development environment:
    ```bash
-   conda env create -f envs/pypsa-gb.yaml
-   conda activate pypsa-gb
+   conda env create -f envs/pypsa-gb-stable.yaml
+   conda activate pypsa-gb-stable
    ```
 4. Add the upstream remote:
    ```bash
@@ -44,8 +44,8 @@ git checkout -b fix/bug-description
 # Validate scenarios
 python scripts/validate_scenarios.py
 
-# Run a test scenario
-snakemake resources/network/Test_reduced_solved.nc -j 4
+# Run the active test scenario(s)
+snakemake --cores 4
 
 # Check for errors
 python -m pytest tests/ -v

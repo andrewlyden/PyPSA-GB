@@ -432,17 +432,17 @@ document.write(`
 </section>
 <section id="step-3-create-the-conda-environment">
 <h2>Step 3: Create the Conda Environment<a class="headerlink" href="#step-3-create-the-conda-environment" title="Link to this heading">#</a></h2>
-<p>Create the <code class="docutils literal notranslate"><span class="pre">pypsa-gb</span></code> environment using the provided environment file:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
+<p>Create the <code class="docutils literal notranslate"><span class="pre">pypsa-gb-stable</span></code> environment using the provided stable environment file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb-stable.yaml
 </pre></div>
 </div>
 <p>Activate the environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 </pre></div>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Add <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">pypsa-gb</span></code> to your shell profile to automatically activate it in new terminals.</p>
+<p>Add <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">pypsa-gb-stable</span></code> to your shell profile to automatically activate it in new terminals.</p>
 </div>
 </section>
 <section id="step-4-install-a-solver">
@@ -479,9 +479,43 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;i
 python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import snakemake; print(&#39;Snakemake OK&#39;)&quot;</span>
 
 <span class="c1"># Dry run to check workflow</span>
-snakemake<span class="w"> </span>-n<span class="w"> </span>-p
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>-n<span class="w"> </span>-p
 </pre></div>
 </div>
+</section>
+<section id="optional-configure-an-entso-e-api-key">
+<h2>Optional: Configure an ENTSO-E API Key<a class="headerlink" href="#optional-configure-an-entso-e-api-key" title="Link to this heading">#</a></h2>
+<p>PyPSA-GB can use hourly day-ahead electricity prices from the
+<a class="reference external" href="https://transparency.entsoe.eu/">ENTSO-E Transparency Platform</a> for
+interconnector pricing when <code class="docutils literal notranslate"><span class="pre">interconnectors.pricing.source</span></code> is set to
+<code class="docutils literal notranslate"><span class="pre">&quot;entsoe&quot;</span></code>.</p>
+<p>This is optional. If no ENTSO-E token is configured, PyPSA-GB falls back to the
+derived interconnector pricing method.</p>
+<ol class="arabic">
+<li><p>Register for a free ENTSO-E Transparency Platform account and request API
+access.</p></li>
+<li><p>Add your token to a <code class="docutils literal notranslate"><span class="pre">.env</span></code> file in the project root:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">ENTSOE_API_TOKEN</span><span class="o">=</span>your-token-here
+</pre></div>
+</div>
+<p>Alternatively, set it as an environment variable:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Linux/macOS</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ENTSOE_API_TOKEN</span><span class="o">=</span>your-token-here
+
+<span class="c1"># Windows PowerShell</span>
+<span class="nv">$env</span>:ENTSOE_API_TOKEN<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;your-token-here&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>To use ENTSO-E prices, set the interconnector pricing source in your
+scenario or defaults configuration:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">interconnectors</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pricing</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;entsoe&quot;</span>
+</pre></div>
+</div>
+</li>
+</ol>
 </section>
 <section id="step-6-download-weather-data">
 <h2>Step 6: Download Weather Data<a class="headerlink" href="#step-6-download-weather-data" title="Link to this heading">#</a></h2>
@@ -562,7 +596,7 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <p><strong>Conda environment creation fails</strong></p>
 <p>Try updating conda first:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>update<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>conda
-conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
+conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb-stable.yaml
 </pre></div>
 </div>
 <p><strong>Gurobi license not found</strong></p>
@@ -573,7 +607,7 @@ conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> <
 </ul>
 <p><strong>Snakemake not found</strong></p>
 <p>Ensure the environment is activated:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 which<span class="w"> </span>snakemake<span class="w">  </span><span class="c1"># Should show path in conda env</span>
 </pre></div>
 </div>
@@ -643,6 +677,7 @@ which<span class="w"> </span>snakemake<span class="w">  </span><span class="c1">
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-verify-installation">Step 5: Verify Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-configure-an-entso-e-api-key">Optional: Configure an ENTSO-E API Key</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-download-weather-data">Step 6: Download Weather Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start-recommended">Quick Start (Recommended)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manual-era5-download-advanced">Manual ERA5 Download (Advanced)</a></li>

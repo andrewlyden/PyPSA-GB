@@ -424,7 +424,7 @@ document.write(`
 </li>
 <li><p>Try mamba (faster resolver):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>mamba
-mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
+mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb-stable.yaml
 </pre></div>
 </div>
 </li>
@@ -465,13 +465,13 @@ mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> <
 <p><strong>Solutions</strong>:</p>
 <ol class="arabic">
 <li><p>Ensure environment is activated:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 which<span class="w"> </span>snakemake
 </pre></div>
 </div>
 </li>
 <li><p>Reinstall snakemake:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>pypsa-gb<span class="w"> </span>snakemake
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>pypsa-gb-stable<span class="w"> </span>snakemake
 </pre></div>
 </div>
 </li>
@@ -492,7 +492,7 @@ which<span class="w"> </span>snakemake
 </div>
 </li>
 <li><p>Generate the missing file:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>path/to/missing/file<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>path/to/missing/file<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </li>
@@ -510,7 +510,7 @@ which<span class="w"> </span>snakemake
 </div>
 </li>
 <li><p>Re-run with verbose output:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>--verbose
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span><span class="w"> </span>--verbose
 </pre></div>
 </div>
 </li>
@@ -622,7 +622,7 @@ which<span class="w"> </span>snakemake
 <p><strong>Solutions</strong>:</p>
 <ol class="arabic">
 <li><p>Reduce parallel jobs:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </li>
@@ -699,7 +699,7 @@ retain directional shadow prices.</p>
 </div>
 </li>
 <li><p>Regenerate FES data:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/FES/FES_2024_data.csv<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/FES/FES_2024_data.csv<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span><span class="w"> </span>-R
 </pre></div>
 </div>
 </li>
@@ -804,7 +804,7 @@ python<span class="w"> </span>--version
 </div>
 </li>
 <li><p><strong>Command run</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>target.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </li>

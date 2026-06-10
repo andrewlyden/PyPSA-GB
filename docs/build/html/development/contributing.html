@@ -424,8 +424,8 @@ document.write(`
 </div>
 </li>
 <li><p>Set up the development environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb.yaml
-conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>envs/pypsa-gb-stable.yaml
+conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 </pre></div>
 </div>
 </li>
@@ -460,8 +460,8 @@ git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Validate scenarios</span>
 python<span class="w"> </span>scripts/validate_scenarios.py
 
-<span class="c1"># Run a test scenario</span>
-snakemake<span class="w"> </span>resources/network/Test_reduced_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<span class="c1"># Run the active test scenario(s)</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Check for errors</span>
 python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v

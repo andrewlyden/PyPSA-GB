@@ -256,14 +256,14 @@ HT35_suite:
 
 ```yaml
 # In config/config.yaml
-scenarios:
+run_scenarios:
   - HT35_baseline
   - HT35_high_wind
   - HT35_low_nuclear
 ```
 
 ```bash
-snakemake -j 4  # Runs all active scenarios
+snakemake --cores 4  # Runs all active scenarios
 ```
 
 ### Comparing Results

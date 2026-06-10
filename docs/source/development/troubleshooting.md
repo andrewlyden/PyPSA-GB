@@ -18,7 +18,7 @@ Common issues and their solutions.
 2. Try mamba (faster resolver):
    ```bash
    conda install -n base mamba
-   mamba env create -f envs/pypsa-gb.yaml
+   mamba env create -f envs/pypsa-gb-stable.yaml
    ```
 
 3. Clear package cache:
@@ -55,13 +55,13 @@ Common issues and their solutions.
 
 1. Ensure environment is activated:
    ```bash
-   conda activate pypsa-gb
+   conda activate pypsa-gb-stable
    which snakemake
    ```
 
 2. Reinstall snakemake:
    ```bash
-   conda install -n pypsa-gb snakemake
+   conda install -n pypsa-gb-stable snakemake
    ```
 
 ---
@@ -81,7 +81,7 @@ Common issues and their solutions.
 
 2. Generate the missing file:
    ```bash
-   snakemake path/to/missing/file -j 1
+   snakemake path/to/missing/file --cores 1
    ```
 
 3. Check for typos in scenario name
@@ -99,7 +99,7 @@ Common issues and their solutions.
 
 2. Re-run with verbose output:
    ```bash
-   snakemake target.nc -j 1 --verbose
+   snakemake target.nc --cores 1 --verbose
    ```
 
 3. Check Python errors in log
@@ -213,7 +213,7 @@ print(f"Disconnected buses: {disconnected}")
 
 1. Reduce parallel jobs:
    ```bash
-   snakemake target.nc -j 1
+   snakemake --cores 1
    ```
 
 2. Use network clustering
@@ -295,7 +295,7 @@ retain directional shadow prices.
 
 2. Regenerate FES data:
    ```bash
-   snakemake resources/FES/FES_2024_data.csv -j 1 -R
+   snakemake resources/FES/FES_2024_data.csv --cores 1 -R
    ```
 
 ### DUKES Coordinates Missing
@@ -397,7 +397,7 @@ When reporting an issue:
 
 2. **Command run**:
    ```bash
-   snakemake target.nc -j 4
+   snakemake --cores 4
    ```
 
 3. **Full error message** (copy from terminal)

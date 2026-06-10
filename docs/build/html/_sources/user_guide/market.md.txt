@@ -80,13 +80,13 @@ Run the normal workflow. Market scenarios are detected automatically when
 `market.enabled: true`.
 
 ```bash
-snakemake -j 4
+snakemake --cores 4
 ```
 
 To build a specific market output:
 
 ```bash
-snakemake resources/analysis/My_Market_Scenario_market_dashboard.html -j 4
+snakemake resources/analysis/My_Market_Scenario_market_dashboard.html --cores 4
 ```
 
 For development, it is often faster to target the individual stage you are
@@ -94,13 +94,13 @@ debugging:
 
 ```bash
 # Stage 1 only
-snakemake resources/market/My_Market_Scenario_wholesale.nc -j 4
+snakemake resources/market/My_Market_Scenario_wholesale.nc --cores 4
 
 # Stage 2
-snakemake resources/market/My_Market_Scenario_balancing.nc -j 4
+snakemake resources/market/My_Market_Scenario_balancing.nc --cores 4
 
 # Analysis notebook
-snakemake resources/analysis/My_Market_Scenario_market_notebook.ipynb -j 1
+snakemake resources/analysis/My_Market_Scenario_market_notebook.ipynb --cores 1
 ```
 
 Use `market.wholesale_only: true` if you only want the wholesale solve and
@@ -138,14 +138,14 @@ My_Wholesale_Only_Scenario:
 Then run the normal workflow:
 
 ```bash
-snakemake -j 4
+snakemake --cores 4
 ```
 
 Or target the wholesale outputs directly:
 
 ```bash
-snakemake resources/market/My_Wholesale_Only_Scenario_wholesale.nc -j 4
-snakemake resources/analysis/My_Wholesale_Only_Scenario_wholesale_notebook.ipynb -j 1
+snakemake resources/market/My_Wholesale_Only_Scenario_wholesale.nc --cores 4
+snakemake resources/analysis/My_Wholesale_Only_Scenario_wholesale_notebook.ipynb --cores 1
 ```
 
 In wholesale-only mode, the workflow includes:
@@ -459,13 +459,13 @@ volumes, constraint costs, congestion, and price spreads.
 You can also generate a per-scenario notebook:
 
 ```bash
-snakemake resources/analysis/My_Market_Scenario_market_notebook.ipynb -j 1
+snakemake resources/analysis/My_Market_Scenario_market_notebook.ipynb --cores 1
 ```
 
 For wholesale-only scenarios:
 
 ```bash
-snakemake resources/analysis/My_Market_Scenario_wholesale_notebook.ipynb -j 1
+snakemake resources/analysis/My_Market_Scenario_wholesale_notebook.ipynb --cores 1
 ```
 
 ## Historical Validation
@@ -482,8 +482,8 @@ rules compare the model with observed market and constraint data.
 Example targets:
 
 ```bash
-snakemake resources/analysis/Historical_2020_ETYS_market_bm_validation.html -j 4
-snakemake resources/analysis/Historical_2020_ETYS_market_neso_validation.html -j 4
+snakemake resources/analysis/Historical_2020_ETYS_market_bm_validation.html --cores 4
+snakemake resources/analysis/Historical_2020_ETYS_market_neso_validation.html --cores 4
 ```
 
 Network access may be needed the first time historical ELEXON or NESO data is

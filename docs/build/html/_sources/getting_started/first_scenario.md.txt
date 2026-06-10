@@ -80,7 +80,7 @@ FES releases are updated annually by NESO. You can use different FES release yea
 Edit `config/config.yaml` to add your scenario:
 
 ```yaml
-scenarios:
+run_scenarios:
   - MyScenario_2040
   # - HT35  # Comment out others if not needed
 ```
@@ -102,10 +102,10 @@ This checks:
 
 ```bash
 # Dry run first to see what will execute
-snakemake resources/network/MyScenario_2040_solved.nc -n -p
+snakemake --cores 4 -n -p
 
 # Full run
-snakemake resources/network/MyScenario_2040_solved.nc -j 4
+snakemake --cores 4
 ```
 
 ## Step 6: Analyze Results

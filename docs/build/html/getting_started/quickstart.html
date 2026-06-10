@@ -777,8 +777,8 @@ document.write(`
 <p>This guide gets you running a PyPSA-GB scenario.</p>
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
-<p>Ensure you’ve completed the <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> steps and have the <code class="docutils literal notranslate"><span class="pre">pypsa-gb</span></code> environment activated:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<p>Ensure you’ve completed the <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> steps and have the <code class="docutils literal notranslate"><span class="pre">pypsa-gb-stable</span></code> environment activated:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 </pre></div>
 </div>
 </section>
@@ -790,7 +790,7 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;<
 <span class="s2">import yaml</span>
 <span class="s2">with open(&#39;config/config.yaml&#39;) as f:</span>
 <span class="s2">    config = yaml.safe_load(f)</span>
-<span class="s2">print(&#39;Active scenarios:&#39;, config.get(&#39;scenarios&#39;, []))</span>
+<span class="s2">print(&#39;Active scenarios:&#39;, config.get(&#39;run_scenarios&#39;, []))</span>
 <span class="s2">&quot;</span>
 </pre></div>
 </div>
@@ -820,14 +820,15 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;<
 </section>
 <section id="step-2-run-a-scenario">
 <h2>Step 2: Run a Scenario<a class="headerlink" href="#step-2-run-a-scenario" title="Link to this heading">#</a></h2>
-<p>Run a single scenario using Snakemake:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the HT35_clustered scenario (2035 Holistic Transition, clustered network)</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<p>Run the active scenarios listed in <code class="docutils literal notranslate"><span class="pre">config/config.yaml</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">4</span></code> flag runs up to 4 jobs in parallel. Adjust based on your CPU cores.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--cores</span> <span class="pre">4</span></code> flag runs up to 4 jobs in parallel. Adjust based on your CPU cores.
+To run one scenario without editing <code class="docutils literal notranslate"><span class="pre">config/config.yaml</span></code>, use
+<code class="docutils literal notranslate"><span class="pre">snakemake</span> <span class="pre">--cores</span> <span class="pre">4</span> <span class="pre">--config</span> <span class="pre">scenario=HT35_clustered</span></code>.</p>
 </div>
 <section id="what-happens">
 <h3>What Happens<a class="headerlink" href="#what-happens" title="Link to this heading">#</a></h3>
@@ -867,10 +868,10 @@ snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span
 <h2>Step 4: Generate Analysis Outputs<a class="headerlink" href="#step-4-generate-analysis-outputs" title="Link to this heading">#</a></h2>
 <p>Generate HTML analysis reports:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate spatial analysis map</span>
-snakemake<span class="w"> </span>resources/analysis/HT35_clustered_spatial.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/HT35_clustered_spatial.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># Generate summary dashboard</span>
-snakemake<span class="w"> </span>resources/analysis/HT35_clustered_dashboard.html<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/HT35_clustered_dashboard.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>Open the generated HTML files in your browser.</p>
@@ -881,13 +882,13 @@ snakemake<span class="w"> </span>resources/analysis/HT35_clustered_dashboard.htm
 <section id="quick-commands-reference">
 <h2>Quick Commands Reference<a class="headerlink" href="#quick-commands-reference" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dry run (show what would execute)</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-n<span class="w"> </span>-p
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>-n<span class="w"> </span>-p
 
 <span class="c1"># Force re-run of a specific rule</span>
-snakemake<span class="w"> </span>-R<span class="w"> </span>solve_network<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>-R<span class="w"> </span>solve_network<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Run with verbose logging</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--verbose
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span><span class="w"> </span>--verbose
 
 <span class="c1"># Clean all outputs for a scenario</span>
 snakemake<span class="w"> </span>clean_HT35_clustered
@@ -897,11 +898,12 @@ snakemake<span class="w"> </span>clean_HT35_clustered
 <section id="faster-testing-with-reduced-networks">
 <h2>Faster Testing with Reduced Networks<a class="headerlink" href="#faster-testing-with-reduced-networks" title="Link to this heading">#</a></h2>
 <p>For quick tests, use reduced network models:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 32-bus reduced network (much faster)</span>
-snakemake<span class="w"> </span>resources/network/HT35_reduced_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-
-<span class="c1"># Clustered to ~100 buses</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_100_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/config.yaml</span>
+<span class="nt">run_scenarios</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_reduced</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>

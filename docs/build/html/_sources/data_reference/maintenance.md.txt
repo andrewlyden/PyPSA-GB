@@ -32,7 +32,7 @@ Guide for updating data files when new versions are released.
 
 3. **Process new data**:
    ```bash
-   snakemake resources/FES/FES_2025_data.csv -j 1 -R process_fes_data
+   snakemake resources/FES/FES_2025_data.csv --cores 1 -R process_fes_data
    ```
 
 4. **Update scenario defaults**:
@@ -76,7 +76,7 @@ print("2025 FES - 2035 Wind:", new[(new.year==2035) & (new.technology=='Wind')].
 
 4. **Re-process generators**:
    ```bash
-   snakemake resources/generators/DUKES/DUKES_2026_generators.csv -j 1 -R process_dukes
+   snakemake resources/generators/DUKES/DUKES_2026_generators.csv --cores 1 -R process_dukes
    ```
 
 ### DUKES Data Mapping
@@ -107,7 +107,7 @@ When new power stations appear:
 
 4. **Re-process renewables**:
    ```bash
-   snakemake -R prepare_renewable_sites -j 1
+   snakemake -R prepare_renewable_sites --cores 1
    ```
 
 ### Handling REPD Changes
@@ -155,10 +155,10 @@ REPD format occasionally changes. Check:
 5. **Process and validate** via Snakemake:
    ```bash
    # Process raw Excel into intermediate CSVs (stage 1)
-   snakemake resources/network/ETYS/ETYS_2025_components.csv -j 1
+   snakemake resources/network/ETYS/ETYS_2025_components.csv --cores 1
 
    # Build and validate the network (stage 2, includes topology validation)
-   snakemake resources/network/ETYS_2025_base_network.nc -j 1
+   snakemake resources/network/ETYS_2025_base_network.nc --cores 1
    ```
    Topology validation (connectivity, parameter ranges, coordinate checks) runs automatically during the `build_ETYS_base_network` rule.
 
@@ -185,7 +185,7 @@ REPD format occasionally changes. Check:
 
 2. **Generate cutout**:
    ```bash
-   snakemake -s Snakefile_cutouts resources/atlite/GB_2023.nc -j 2
+   snakemake -s Snakefile_cutouts resources/atlite/GB_2023.nc --cores 2
    ```
 
 3. **Validate**:

@@ -455,12 +455,12 @@ Open-source energy system modelling for Great Britain's electricity network
 </section>
 <section id="quick-example">
 <h2>Quick Example<a class="headerlink" href="#quick-example" title="Link to this heading">#</a></h2>
-<p>Run a 2035 Holistic Transition scenario:</p>
+<p>Run the active scenarios listed in <code class="docutils literal notranslate"><span class="pre">config/config.yaml</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Activate environment</span>
-conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 
 <span class="c1"># Run the workflow</span>
-snakemake<span class="w"> </span>resources/network/HT35_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <div class="toctree-wrapper compound">

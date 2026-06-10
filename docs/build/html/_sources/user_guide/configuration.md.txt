@@ -18,7 +18,7 @@ The main configuration file. Specifies which scenarios to run and any global ove
 
 ```yaml
 # Active scenarios to run
-scenarios:
+run_scenarios:
   - HT35
   - HT50
 

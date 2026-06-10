@@ -583,7 +583,7 @@ document.write(`
 <ol class="arabic">
 <li><p>Complete the <a class="reference internal" href="../getting_started/installation.html"><span class="doc">Installation</span></a></p></li>
 <li><p>Activate the environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>pypsa-gb-stable
 </pre></div>
 </div>
 </li>
@@ -592,25 +592,24 @@ document.write(`
 </section>
 <section id="generate-scenario-networks">
 <h3>Generate Scenario Networks<a class="headerlink" href="#generate-scenario-networks" title="Link to this heading">#</a></h3>
-<p>Before running the tutorials, build the required networks:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Notebook 1: Historical 2015 (Reduced network)</span>
-snakemake<span class="w"> </span>resources/network/Historical_2015_reduced_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-
-<span class="c1"># Notebook 2: Historical 2023 (Full ETYS - takes longer)</span>
-snakemake<span class="w"> </span>resources/network/Historical_2023_etys_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-
-<span class="c1"># Notebook 3: Future 2035 (Clustered ETYS)</span>
-snakemake<span class="w"> </span>resources/network/HT35_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-
-<span class="c1"># Notebook 4: Future 2050 (Clustered ETYS)</span>
-snakemake<span class="w"> </span>resources/network/EE50_clustered_solved.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<p>Before running the tutorials, add the required scenarios to <code class="docutils literal notranslate"><span class="pre">config/config.yaml</span></code>
+and run the main workflow:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config/config.yaml</span>
+<span class="nt">run_scenarios</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Historical_2015_reduced</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Historical_2023_etys</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HT35_clustered</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EE50_clustered</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <p>The market dispatch tutorial reads solved market and validation outputs rather
 than a single solved network. Build the relevant market validation targets first,
 for example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 </section>
@@ -627,10 +626,10 @@ jupyter<span class="w"> </span>notebook
 <section id="first-time-setup">
 <h3>First-Time Setup<a class="headerlink" href="#first-time-setup" title="Link to this heading">#</a></h3>
 <p>Install the kernel if needed:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>ipykernel<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>--name<span class="o">=</span>pypsa-gb
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>ipykernel<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>--name<span class="o">=</span>pypsa-gb-stable
 </pre></div>
 </div>
-<p>Then select the <code class="docutils literal notranslate"><span class="pre">pypsa-gb</span></code> kernel in Jupyter.</p>
+<p>Then select the <code class="docutils literal notranslate"><span class="pre">pypsa-gb-stable</span></code> kernel in Jupyter.</p>
 </section>
 </section>
 <section id="tutorial-requirements">

@@ -72,26 +72,26 @@ Deep dives into specific aspects of power system modeling:
 1. Complete the {doc}`../getting_started/installation`
 2. Activate the environment:
    ```bash
-   conda activate pypsa-gb
+   conda activate pypsa-gb-stable
    ```
 3. Generate the required scenario networks (see below)
 
 ### Generate Scenario Networks
 
-Before running the tutorials, build the required networks:
+Before running the tutorials, add the required scenarios to `config/config.yaml`
+and run the main workflow:
+
+```yaml
+# In config/config.yaml
+run_scenarios:
+  - Historical_2015_reduced
+  - Historical_2023_etys
+  - HT35_clustered
+  - EE50_clustered
+```
 
 ```bash
-# Notebook 1: Historical 2015 (Reduced network)
-snakemake resources/network/Historical_2015_reduced_solved.nc -j 4
-
-# Notebook 2: Historical 2023 (Full ETYS - takes longer)
-snakemake resources/network/Historical_2023_etys_solved.nc -j 4
-
-# Notebook 3: Future 2035 (Clustered ETYS)
-snakemake resources/network/HT35_clustered_solved.nc -j 4
-
-# Notebook 4: Future 2050 (Clustered ETYS)
-snakemake resources/network/EE50_clustered_solved.nc -j 4
+snakemake --cores 4
 ```
 
 The market dispatch tutorial reads solved market and validation outputs rather
@@ -99,8 +99,8 @@ than a single solved network. Build the relevant market validation targets first
 for example:
 
 ```bash
-snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html -j 4
-snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html -j 4
+snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html --cores 4
+snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html --cores 4
 ```
 
 
@@ -118,10 +118,10 @@ jupyter notebook
 
 Install the kernel if needed:
 ```bash
-python -m ipykernel install --user --name=pypsa-gb
+python -m ipykernel install --user --name=pypsa-gb-stable
 ```
 
-Then select the `pypsa-gb` kernel in Jupyter.
+Then select the `pypsa-gb-stable` kernel in Jupyter.
 
 ## Tutorial Requirements
 

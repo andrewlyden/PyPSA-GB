@@ -848,23 +848,23 @@ Scenario-level values override these defaults.</p>
 <h2>Running<a class="headerlink" href="#running" title="Link to this heading">#</a></h2>
 <p>Run the normal workflow. Market scenarios are detected automatically when
 <code class="docutils literal notranslate"><span class="pre">market.enabled:</span> <span class="pre">true</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <p>To build a specific market output:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_dashboard.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_dashboard.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <p>For development, it is often faster to target the individual stage you are
 debugging:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stage 1 only</span>
-snakemake<span class="w"> </span>resources/market/My_Market_Scenario_wholesale.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/market/My_Market_Scenario_wholesale.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Stage 2</span>
-snakemake<span class="w"> </span>resources/market/My_Market_Scenario_balancing.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/market/My_Market_Scenario_balancing.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 
 <span class="c1"># Analysis notebook</span>
-snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>Use <code class="docutils literal notranslate"><span class="pre">market.wholesale_only:</span> <span class="pre">true</span></code> if you only want the wholesale solve and
@@ -897,12 +897,12 @@ check of merit-order dispatch before adding network-constrained redispatch.</p>
 </pre></div>
 </div>
 <p>Then run the normal workflow:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <p>Or target the wholesale outputs directly:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/market/My_Wholesale_Only_Scenario_wholesale.nc<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-snakemake<span class="w"> </span>resources/analysis/My_Wholesale_Only_Scenario_wholesale_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/market/My_Wholesale_Only_Scenario_wholesale.nc<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/My_Wholesale_Only_Scenario_wholesale_notebook.ipynb<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>In wholesale-only mode, the workflow includes:</p>
@@ -1318,11 +1318,11 @@ It requires both market mode and subsidy tracking.</p>
 <p>The generated dashboard compares wholesale and physical dispatch, redispatch
 volumes, constraint costs, congestion, and price spreads.</p>
 <p>You can also generate a per-scenario notebook:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_market_notebook.ipynb<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <p>For wholesale-only scenarios:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_wholesale_notebook.ipynb<span class="w"> </span>-j<span class="w"> </span><span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/My_Market_Scenario_wholesale_notebook.ipynb<span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
@@ -1354,8 +1354,8 @@ rules compare the model with observed market and constraint data.</p>
 </table>
 </div>
 <p>Example targets:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_bm_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
-snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_neso_validation.html<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_bm_validation.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
+snakemake<span class="w"> </span>resources/analysis/Historical_2020_ETYS_market_neso_validation.html<span class="w"> </span>--cores<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>
 <p>Network access may be needed the first time historical ELEXON or NESO data is
