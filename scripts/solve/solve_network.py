@@ -443,7 +443,7 @@ def apply_line_rating_overrides(network, scenario_config, logger):
         # Only applies to lines — transformers span two voltage levels so v_nom
         # is ambiguous, and transformer constraints are not the source of loop-flow
         # artefacts in the Highland 132 kV network.
-
+        
         # Skip defining voltage floor if using Zonal model
         if 'v_nom' not in network.lines.columns:
             logger.info("  Voltage floor skipped: no v_nom column (Zonal network)")
