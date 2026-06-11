@@ -443,20 +443,25 @@ def apply_line_rating_overrides(network, scenario_config, logger):
         # Only applies to lines — transformers span two voltage levels so v_nom
         # is ambiguous, and transformer constraints are not the source of loop-flow
         # artefacts in the Highland 132 kV network.
-        low_lines = network.lines[network.lines['v_nom'] < min_v]
-        if len(low_lines) > 0:
-            network.lines.loc[low_lines.index, 's_nom'] = 9999.0
-            v_counts = low_lines['v_nom'].value_counts().sort_index()
-            logger.info(
-                f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_lines)} lines "
-                f"({v_counts.to_dict()})"
-            )
-            applied += len(low_lines)
+
+        # Skip defining voltage floor if using Zonal model
+        if 'v_nom' not in network.lines.columns:
+            logger.info("  Voltage floor skipped: no v_nom column (Zonal network)")
         else:
-            logger.info(f"  Voltage floor {min_v:.0f} kV: no lines below threshold")
+            low_lines = network.lines[network.lines['v_nom'] < min_v]
+            if len(low_lines) > 0:
+                network.lines.loc[low_lines.index, 's_nom'] = 9999.0
+                v_counts = low_lines['v_nom'].value_counts().sort_index()
+                logger.info(
+                    f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_lines)} lines "
+                    f"({v_counts.to_dict()})"
+                )
+                applied += len(low_lines)
+            else:
+                logger.info(f"  Voltage floor {min_v:.0f} kV: no lines below threshold")
     else:
         logger.info("  Voltage floor disabled (min_bm_constraint_voltage_kv=0)")
-
+        
     # ── 2. Explicit per-line overrides ───────────────────────────────────────
     overrides = transmission.get('line_rating_overrides', {}) or {}
     if not isinstance(overrides, dict):
