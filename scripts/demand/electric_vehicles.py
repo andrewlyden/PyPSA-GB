@@ -25,7 +25,7 @@ from typing import Optional, Dict, Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.utilities.logging_config import setup_logging
 from scripts.utilities.network_io import load_network
-from scripts.demand.load import load_spatial_mapping_data, aggregate_demand_to_network_topology
+from scripts.demand.load import load_spatial_mapping_data, aggregate_demand_to_network_topology, get_ed1_consumer_demand_gwh
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Spatial Allocation Functions
@@ -144,6 +144,7 @@ def _get_fes_scenario_column(df: pd.DataFrame) -> Optional[str]:
 def _calculate_fes_fraction(fes_path: str,
                             fes_scenario: str,
                             modelled_year: int,
+                            fes_year: Optional[int],
                             component_blocks: list,
                             logger: logging.Logger) -> Optional[float]:
     if not fes_path or not Path(fes_path).exists():
@@ -163,22 +164,37 @@ def _calculate_fes_fraction(fes_path: str,
     if year_col not in fes.columns:
         return None
 
-    total = fes[
-        (fes['Building Block ID Number'] == 'Dem_BB003') &
-        (fes[scenario_col] == fes_scenario)
-    ]
     comp = fes[
         (fes['Building Block ID Number'].isin(component_blocks)) &
         (fes[scenario_col] == fes_scenario)
     ]
-
-    total_val = pd.to_numeric(total[year_col], errors='coerce').sum()
     comp_val = pd.to_numeric(comp[year_col], errors='coerce').sum()
+    if comp_val <= 0:
+        return None
+
+    if fes_year is None:
+        logger.warning("FES year unavailable; cannot calculate EV fraction against ED1 consumer demand")
+        return None
+
+    try:
+        total_val = get_ed1_consumer_demand_gwh(
+            int(fes_year),
+            fes_scenario,
+            modelled_year,
+            logger,
+            fes_data_path=fes_path,
+        )
+    except Exception as exc:
+        logger.warning(f"Failed to read ED1 consumer demand for EV fraction: {exc}")
+        return None
 
     if total_val <= 0:
         return None
-    return comp_val / total_val
 
+    logger.info(
+        f"FES EV component total {comp_val:.1f} GWh / ED1 consumer demand {total_val:.1f} GWh"
+    )
+    return comp_val / total_val
 
 def _load_fes_component_gsp_demand(
     fes_path: str,
@@ -1466,6 +1482,7 @@ if __name__ == "__main__":
                 snakemake.input.fes_data,
                 snakemake.params.fes_scenario,
                 snakemake.params.modelled_year,
+                snakemake.params.fes_year,
                 ['Dem_BB006', 'Dem_BB007'],
                 logger
             )
@@ -1660,4 +1677,3 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Error in EV disaggregation: {e}", exc_info=True)
         raise
-

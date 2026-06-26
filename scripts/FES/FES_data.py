@@ -15,6 +15,12 @@ from urllib3.util.retry import Retry
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
+from scripts.FES.gsp_metadata import (
+    derive_gsp_metadata_from_spatial,
+    map_gsp_names_to_ids,
+    save_gsp_metadata_file,
+)
+
 # Configure logging
 try:
     from scripts.utilities.logging_config import setup_logging
@@ -313,10 +319,10 @@ def add_node_id_to_gsp(FES_year, raw_FES_data):
         raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
         logger.info(f"Applied default GSP cleaning rules for FES {FES_year}")
 
-    # Download GSP info from API, with fallback to alternate years
+    # Download or derive GSP info, and persist exact-year metadata for later workflow stages.
     GSP_info = None
-    
-    # Try to fetch from API for the requested year first
+
+    # Try to fetch from API for the requested year first.
     gsp_url = config.get('gsp_info', {}).get(FES_year)
     if gsp_url:
         logger.info(f"Fetching GSP info for {FES_year} from API")
@@ -324,20 +330,31 @@ def add_node_id_to_gsp(FES_year, raw_FES_data):
             time.sleep(1)  # polite delay
             response = http.get(gsp_url, timeout=30)
             response.raise_for_status()
-            # Use utf-8-sig to properly handle BOM (Byte Order Mark) in CSV files
             GSP_info = pd.read_csv(io.BytesIO(response.content), encoding='utf-8-sig')
             logger.info(f"Downloaded GSP info from API: {GSP_info.shape[0]} rows")
+            save_gsp_metadata_file(GSP_info, FES_year, logger=logger)
         except Exception as e:
             logger.warning(f"Failed to download GSP info for {FES_year} from API: {e}")
             GSP_info = None
-    
-    # If primary year failed, try alternate years (2024, 2023, 2022, 2021)
+
+    # FES 2025 and later may not publish a standalone GSP-info CSV. In that case,
+    # build the same metadata shape from the local GSP-region spatial layer.
+    if GSP_info is None:
+        try:
+            GSP_info = derive_gsp_metadata_from_spatial(FES_year, fes_data=raw_FES_data, logger=logger)
+            if GSP_info is not None and not GSP_info.empty:
+                save_gsp_metadata_file(GSP_info, FES_year, logger=logger)
+        except Exception as e:
+            logger.warning(f"Failed to derive GSP info for {FES_year} from spatial data: {e}")
+            GSP_info = None
+
+    # If primary year failed, try alternate years for name-to-code mapping only.
     if GSP_info is None:
         fallback_years = [2024, 2023, 2022, 2021]
         for fallback_year in fallback_years:
             if fallback_year == FES_year:
-                continue  # Skip the year we already tried
-            
+                continue
+
             fallback_url = config.get('gsp_info', {}).get(fallback_year)
             if fallback_url:
                 logger.info(f"GSP info for {FES_year} not available, trying {fallback_year} from API")
@@ -351,22 +368,20 @@ def add_node_id_to_gsp(FES_year, raw_FES_data):
                 except Exception as e:
                     logger.debug(f"Failed to download GSP info for {fallback_year}: {e}")
                     continue
-    
-    # If all API downloads failed, raise an error
+
     if GSP_info is None:
-        raise RuntimeError(f"Could not download GSP info for FES {FES_year} or any fallback year from NESO API. Check internet connection and configuration.")
-    # remove any ' characters
+        raise RuntimeError(f"Could not download or derive GSP info for FES {FES_year}. Check internet connection, configuration, and local GSP region data.")
+    # remove any '' characters
     GSP_info['Name'] = GSP_info['Name'].str.replace("'", "")
     # .replace("’", '')
     GSP_info['Name'] = GSP_info['Name'].str.replace("’", '')
 
     GSP_info['Name'] = GSP_info['Name'].str.replace("'", '')
 
-    # Create a mapping dictionary from Name to GSP ID
-    name_to_gsp_mapping = dict(zip(GSP_info['Name'], GSP_info['GSP ID']))
-
-    # New Node ID column to the corresponding GSP ID values without overwriting non-matching values
-    raw_FES_data['GSP ID'] = raw_FES_data['GSP'].map(name_to_gsp_mapping, na_action='ignore')
+    # Map GSP names to IDs using exact match first, then canonical labels.
+    raw_FES_data['GSP ID'] = map_gsp_names_to_ids(raw_FES_data['GSP'], GSP_info)
+    missing_gsp_ids = raw_FES_data['GSP ID'].isna().sum()
+    logger.info(f"Mapped GSP IDs; missing GSP ID count: {missing_gsp_ids}")
     # # remove row where GSP contains Direct
     # raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Direct')]
 
