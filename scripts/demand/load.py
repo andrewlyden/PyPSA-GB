@@ -1791,14 +1791,15 @@ def distribute_future_fes_demand_to_etys_nodes(
     fes_demand: pd.DataFrame,
     fes_timeseries: pd.DataFrame,
     network: pypsa.Network,
-    logger
+    logger,
+    fes_year: int = 2024,
 ):
     """
     Distribute FES future demand projections across ETYS network nodes.
 
     FES API data is indexed by GSP names (e.g., "Abham", "Norwich") but ETYS buses
     use GSP codes (e.g., "ABHA1"). This function:
-    1. Maps GSP names to GSP codes using FES 2023 metadata file
+    1. Maps GSP names to GSP codes using the matching FES metadata file
     2. Maps GSP codes to ETYS Node IDs using Dem_per_node from GB_network.xlsx
     3. Distributes FES demand to network buses based on this mapping
 
@@ -1816,19 +1817,10 @@ def distribute_future_fes_demand_to_etys_nodes(
     available_buses = set(network.buses.index)
     logger.info(f"ETYS network has {len(available_buses)} buses")
 
-    # Step 1: Load GSP Name -> GSP Code mapping from FES 2023 metadata
-    # (FES 2023 has proper GSP codes; FES 2024 metadata only has numeric IDs)
-    gsp_metadata_path = Path("data/network/ETYS/fes2023_regional_breakdown_gsp_info.csv")
-    if not gsp_metadata_path.exists():
-        logger.warning(f"GSP metadata file not found at {gsp_metadata_path}")
-        # Try other years
-        for year in [2022, 2021]:
-            alt_path = Path(f"data/network/ETYS/fes{year}_regional_breakdown_gsp_info.csv")
-            if alt_path.exists():
-                gsp_metadata_path = alt_path
-                break
+    # Step 1: Load GSP Name -> GSP Code mapping from the matching FES metadata.
+    gsp_metadata_path = resolve_gsp_metadata_path(fes_year, logger)
 
-    if gsp_metadata_path.exists():
+    if gsp_metadata_path and gsp_metadata_path.exists():
         gsp_metadata = pd.read_csv(gsp_metadata_path)
         logger.info(f"Loaded GSP metadata from {gsp_metadata_path}: {len(gsp_metadata)} entries")
 
@@ -2018,7 +2010,8 @@ def aggregate_demand_to_network_topology(
     network: pypsa.Network,
     spatial_mapping,
     logger,
-    is_historical: bool = False
+    is_historical: bool = False,
+    fes_year: int = 2024
 ):
     """
     Aggregate FES demand data to match the network topology.
@@ -2044,7 +2037,7 @@ def aggregate_demand_to_network_topology(
             # Future ETYS: map GSP names to ETYS Node IDs
             logger.info("ETYS network - future scenario, mapping GSP names to node IDs")
             return distribute_future_fes_demand_to_etys_nodes(
-                fes_demand, fes_timeseries, network, logger
+                fes_demand, fes_timeseries, network, logger, fes_year
             )
 
     elif network_model in ["Reduced", "Zonal"]:
@@ -3414,12 +3407,17 @@ def add_FES_demand_data_to_network(demand_data, p_set_data, logger, is_historica
     # Get FES year from snakemake params
     fes_year = get_param_value(snakemake.params.fes_year) if hasattr(snakemake.params, 'fes_year') else 2024
 
-    # Load spatial mapping data for network model
-    spatial_mapping = load_spatial_mapping_data(network_model, gsp_names, fes_year, logger)
+    # Future scenarios need GSP spatial mapping. Historical reduced/zonal demand
+    # uses network demand weights in aggregate_demand_to_network_topology().
+    if is_historical:
+        spatial_mapping = None
+    else:
+        spatial_mapping = load_spatial_mapping_data(network_model, gsp_names, fes_year, logger)
 
     # Aggregate demand to match network topology
     network_demand, network_timeseries = aggregate_demand_to_network_topology(
-        demand_data, p_set_data, network_model, network, spatial_mapping, logger, is_historical=is_historical
+        demand_data, p_set_data, network_model, network, spatial_mapping, logger,
+        is_historical=is_historical, fes_year=fes_year
     )
 
     # Set snapshots (use the timeseries index from aggregated timeseries)

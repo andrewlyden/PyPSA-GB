@@ -37,7 +37,7 @@ Future_2035:
   description: "2035 under Holistic Transition"
   modelled_year: 2035
   renewables_year: 2019    # Historical weather pattern
-  demand_year: 2035
+  demand_year: 2020      # Historical profile shape
   network_model: "ETYS"
   FES_year: 2024
   FES_scenario: "Holistic Transition"
@@ -45,8 +45,12 @@ Future_2035:
 
 **Data sources**:
 - Thermal/Renewables/Storage: FES projections
-- Demand: FES annual totals with historical profiles
+- Demand: ED1/F.53-equivalent FES consumer electricity demand, allocated across GSPs using Dem_BB003 shares and shaped with the configured demand profile
 - Network: ETYS base topology with planned upgrades (optional)
+
+```{note}
+For future scenarios, `demand_year` selects the temporal demand shape, not the annual demand total. The annual national demand target is read from the FES workbook `ED1` sheet. `Dem_BB003` is treated as the GSP-facing spatial distribution, then scaled to the ED1 consumer-demand total so direct transmission-connected demand and embedded generation accounting are included consistently.
+```
 
 ```{tip}
 ETYS network upgrades are controlled by `etys_upgrades.enabled` and `etys_upgrades.upgrade_year`.

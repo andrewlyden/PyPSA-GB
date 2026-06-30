@@ -369,7 +369,7 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="13-heat-flexibility.html">Heat Pump Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="14-ev-flexibility.html">Electric Vehicle Flexibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="15-demand-side-response.html">Demand Side Response</a></li>
-<li class="toctree-l1"><a class="reference internal" href="16-market-dispatch.html">Market Dispatch Tutorial: Wholesale, Balancing, and Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-market-dispatch.html">Market Dispatch</a></li>
 </ul>
 </div>
 </nav></div>
@@ -589,6 +589,7 @@ PyPSA version: 1.0.7
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
+INFO:pypsa.network.io:New version 1.2.4 available! (Current: 1.0.7)
 INFO:pypsa.network.io:Imported network &#39;Historical_2015_reduced (Full)&#39; has buses, carriers, generators, lines, links, loads, storage_units, sub_networks
 </pre></div></div>
 </div>
@@ -598,7 +599,7 @@ INFO:pypsa.network.io:Imported network &#39;Historical_2015_reduced (Full)&#39; 
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Network loaded
-  Loads: 32
+  Loads: 35
   Snapshots: 168
   Period: 2015-01-01 00:00:00 to 2015-01-07 23:00:00
 </pre></div></div>
@@ -672,7 +673,7 @@ Load DataFrame:
     <tr>
       <th>load_Beauly</th>
       <td>Beauly</td>
-      <td></td>
+      <td>electricity</td>
       <td></td>
       <td>0.0</td>
       <td>0.0</td>
@@ -682,7 +683,7 @@ Load DataFrame:
     <tr>
       <th>load_Peterhead</th>
       <td>Peterhead</td>
-      <td></td>
+      <td>electricity</td>
       <td></td>
       <td>0.0</td>
       <td>0.0</td>
@@ -692,7 +693,7 @@ Load DataFrame:
     <tr>
       <th>load_Errochty</th>
       <td>Errochty</td>
-      <td></td>
+      <td>electricity</td>
       <td></td>
       <td>0.0</td>
       <td>0.0</td>
@@ -702,7 +703,7 @@ Load DataFrame:
     <tr>
       <th>load_Denny/Bonnybridge</th>
       <td>Denny/Bonnybridge</td>
-      <td></td>
+      <td>electricity</td>
       <td></td>
       <td>0.0</td>
       <td>0.0</td>
@@ -712,7 +713,7 @@ Load DataFrame:
     <tr>
       <th>load_Neilston</th>
       <td>Neilston</td>
-      <td></td>
+      <td>electricity</td>
       <td></td>
       <td>0.0</td>
       <td>0.0</td>
@@ -739,7 +740,7 @@ Load DataFrame:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Demand time series shape: (168, 31)
+Demand time series shape: (168, 33)
 
 Sample demand values (MW):
 </pre></div></div>
@@ -778,8 +779,6 @@ Sample demand values (MW):
       <th>load_Harker</th>
       <th>load_Stella West</th>
       <th>...</th>
-      <th>load_Sundon/East Claydon</th>
-      <th>load_Melksham</th>
       <th>load_Bramley</th>
       <th>load_London</th>
       <th>load_Kemsley</th>
@@ -787,6 +786,8 @@ Sample demand values (MW):
       <th>load_Lovedean</th>
       <th>load_S.W.Penisula</th>
       <th>EU_demand_IFA</th>
+      <th>EU_demand_Moyle</th>
+      <th>EU_demand_Auchencrosh (interconnector CCT)</th>
       <th>EU_demand_East West Interconnector</th>
     </tr>
     <tr>
@@ -828,8 +829,6 @@ Sample demand values (MW):
       <td>172.422992</td>
       <td>1686.610361</td>
       <td>...</td>
-      <td>1319.819632</td>
-      <td>2752.497950</td>
       <td>1225.770727</td>
       <td>4790.224222</td>
       <td>1147.396640</td>
@@ -837,6 +836,8 @@ Sample demand values (MW):
       <td>742.986349</td>
       <td>2580.074957</td>
       <td>0.0</td>
+      <td>12.666667</td>
+      <td>13.333333</td>
       <td>120.0</td>
     </tr>
     <tr>
@@ -852,8 +853,6 @@ Sample demand values (MW):
       <td>172.508251</td>
       <td>1687.444344</td>
       <td>...</td>
-      <td>1320.472247</td>
-      <td>2753.858986</td>
       <td>1226.376838</td>
       <td>4792.592859</td>
       <td>1147.963996</td>
@@ -861,6 +860,8 @@ Sample demand values (MW):
       <td>743.353735</td>
       <td>2581.350735</td>
       <td>0.0</td>
+      <td>26.307692</td>
+      <td>27.692308</td>
       <td>120.0</td>
     </tr>
     <tr>
@@ -876,8 +877,6 @@ Sample demand values (MW):
       <td>165.222772</td>
       <td>1616.179118</td>
       <td>...</td>
-      <td>1264.705221</td>
-      <td>2637.556256</td>
       <td>1174.583708</td>
       <td>4590.189019</td>
       <td>1099.482448</td>
@@ -885,6 +884,8 @@ Sample demand values (MW):
       <td>711.959946</td>
       <td>2472.333483</td>
       <td>0.0</td>
+      <td>40.923077</td>
+      <td>43.076923</td>
       <td>8.0</td>
     </tr>
     <tr>
@@ -900,8 +901,6 @@ Sample demand values (MW):
       <td>157.813531</td>
       <td>1543.703270</td>
       <td>...</td>
-      <td>1207.990849</td>
-      <td>2519.277828</td>
       <td>1121.910741</td>
       <td>4384.346835</td>
       <td>1050.177318</td>
@@ -909,6 +908,8 @@ Sample demand values (MW):
       <td>680.032853</td>
       <td>2361.464296</td>
       <td>0.0</td>
+      <td>43.846154</td>
+      <td>46.153846</td>
       <td>0.0</td>
     </tr>
     <tr>
@@ -924,8 +925,6 @@ Sample demand values (MW):
       <td>149.152915</td>
       <td>1458.986699</td>
       <td>...</td>
-      <td>1141.697770</td>
-      <td>2381.022902</td>
       <td>1060.341634</td>
       <td>4143.739174</td>
       <td>992.544854</td>
@@ -933,11 +932,13 @@ Sample demand values (MW):
       <td>642.713471</td>
       <td>2231.869987</td>
       <td>1022.0</td>
+      <td>75.025641</td>
+      <td>78.974359</td>
       <td>0.0</td>
     </tr>
   </tbody>
 </table>
-<p>5 rows × 31 columns</p>
+<p>5 rows × 33 columns</p>
 </div></div>
 </div>
 </section>
@@ -969,12 +970,12 @@ Sample demand values (MW):
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 System Demand Statistics (GW):
-  Mean: 38.33
-  Peak: 52.21
-  Minimum: 27.11
-  Standard Dev: 7.17
+  Mean: 38.45
+  Peak: 52.46
+  Minimum: 27.20
+  Standard Dev: 7.22
 
-Total Energy: 6.44 TWh over 168 hours
+Total Energy: 6.46 TWh over 168 hours
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1051,9 +1052,9 @@ Total Energy: 6.44 TWh over 168 hours
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Morning peak: 9:00 (39.86 GW)
-Evening peak: 17:00 (48.25 GW)
-Night trough: 4:00 (29.30 GW)
+Morning peak: 9:00 (39.94 GW)
+Evening peak: 17:00 (48.44 GW)
+Night trough: 4:00 (29.41 GW)
 </pre></div></div>
 </div>
 </section>
@@ -1102,7 +1103,7 @@ Night trough: 4:00 (29.30 GW)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Load Factor: 73.4%
+Load Factor: 73.3%
 </pre></div></div>
 </div>
 </section>
@@ -1193,9 +1194,9 @@ load_Ratcliffe                 1.554
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Warning: 1 loads have no timeseries and were ignored (examples: [&#39;EU_demand_Britned&#39;])
+Warning: 2 loads have no timeseries and were ignored (examples: [&#39;EU_demand_Britned&#39;, &#39;EU_demand_Greenlink&#39;])
 Spatial Demand Distribution (Bus size = average demand)
-lon range: -6.09249939157784 4.058099999999997
+lon range: -6.9603353547518845 4.058099999999997
 lat range: 50.912041859956986 57.484467069924335
 </pre></div></div>
 </div>
@@ -1243,12 +1244,465 @@ lat range: 50.912041859956986 57.484467069924335
     const jsonInput = {
   &quot;initialViewState&quot;: {
     &quot;bearing&quot;: 0,
-    &quot;latitude&quot;: 53.47027507077782,
-    &quot;longitude&quot;: -1.5512614921631807,
+    &quot;latitude&quot;: 53.47093592917482,
+    &quot;longitude&quot;: -1.8392345746638465,
     &quot;pitch&quot;: 0,
     &quot;zoom&quot;: 4
   },
   &quot;layers&quot;: [
+    {
+      &quot;@@type&quot;: &quot;PathLayer&quot;,
+      &quot;autoHighlight&quot;: true,
+      &quot;data&quot;: [
+        {
+          &quot;bus0&quot;: &quot;Kemsley&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Netherlands_Maasvlakte&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_Britned&quot;,
+          &quot;path&quot;: [
+            [
+              0.7682084062554182,
+              51.376013815662866
+            ],
+            [
+              4.058099999999997,
+              51.9889
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Britned&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Kemsley&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Netherlands_Maasvlakte&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;bus0&quot;: &quot;Sellindge&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_France_Calais&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_IFA&quot;,
+          &quot;path&quot;: [
+            [
+              1.1175925500284765,
+              51.10492970297485
+            ],
+            [
+              1.8587220233887165,
+              50.95130725773047
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_IFA&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Sellindge&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_France_Calais&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;bus0&quot;: &quot;Neilston&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Northern_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_Moyle&quot;,
+          &quot;path&quot;: [
+            [
+              -4.414773163610933,
+              55.80882688746656
+            ],
+            [
+              -5.933272434597121,
+              54.73331062404302
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Moyle&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Neilston&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Northern_Ireland&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;bus0&quot;: &quot;Neilston&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Northern_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_Auchencrosh (interconnector CCT)&quot;,
+          &quot;path&quot;: [
+            [
+              -4.414773163610933,
+              55.80882688746656
+            ],
+            [
+              -5.933272434597121,
+              54.73331062404302
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Auchencrosh (interconnector...&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Neilston&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Northern_Ireland&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;bus0&quot;: &quot;Deeside&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Ireland_Rush_North_Beach&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_East West Interconnector&quot;,
+          &quot;path&quot;: [
+            [
+              -3.0722070046286696,
+              53.22304605455342
+            ],
+            [
+              -6.09249939157784,
+              53.518111364805655
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_East West Interconnector&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Deeside&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Ireland_Rush_North_Beach&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;bus0&quot;: &quot;Deeside&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;name&quot;: &quot;IC_Greenlink&quot;,
+          &quot;path&quot;: [
+            [
+              -3.0722070046286696,
+              53.22304605455342
+            ],
+            [
+              -6.9603353547518845,
+              52.22970870301097
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Greenlink&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Deeside&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Ireland&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        }
+      ],
+      &quot;getColor&quot;: &quot;@@=rgba&quot;,
+      &quot;getPath&quot;: &quot;@@=path&quot;,
+      &quot;getWidth&quot;: &quot;@@=width_pdk&quot;,
+      &quot;id&quot;: &quot;7dc4cf39-ba92-4660-8c21-37306690d652&quot;,
+      &quot;parameters&quot;: {
+        &quot;depthTest&quot;: false
+      },
+      &quot;pickable&quot;: true
+    },
+    {
+      &quot;@@type&quot;: &quot;PolygonLayer&quot;,
+      &quot;autoHighlight&quot;: true,
+      &quot;data&quot;: [
+        {
+          &quot;arrow&quot;: [
+            [
+              2.4131542031277076,
+              51.68349394151072
+            ],
+            [
+              2.4131542031277076,
+              51.68349394151072
+            ],
+            [
+              2.4131542031277076,
+              51.68349394151072
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Kemsley&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Netherlands_Maasvlakte&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_Britned&quot;,
+          &quot;path&quot;: [
+            [
+              0.7682084062554182,
+              51.376013815662866
+            ],
+            [
+              4.058099999999997,
+              51.9889
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Britned&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;arrow&quot;: [
+            [
+              1.4881572867085961,
+              51.02818212530699
+            ],
+            [
+              1.4881572867085961,
+              51.02818212530699
+            ],
+            [
+              1.4881572867085961,
+              51.02818212530699
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Sellindge&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_France_Calais&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_IFA&quot;,
+          &quot;path&quot;: [
+            [
+              1.1175925500284765,
+              51.10492970297485
+            ],
+            [
+              1.8587220233887165,
+              50.95130725773047
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_IFA&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;arrow&quot;: [
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ],
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ],
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Neilston&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Northern_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_Moyle&quot;,
+          &quot;path&quot;: [
+            [
+              -4.414773163610933,
+              55.80882688746656
+            ],
+            [
+              -5.933272434597121,
+              54.73331062404302
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Moyle&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;arrow&quot;: [
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ],
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ],
+            [
+              -5.174022799104026,
+              55.27470967530296
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Neilston&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Northern_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_Auchencrosh (interconnector CCT)&quot;,
+          &quot;path&quot;: [
+            [
+              -4.414773163610933,
+              55.80882688746656
+            ],
+            [
+              -5.933272434597121,
+              54.73331062404302
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Auchencrosh (interconnector...&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;arrow&quot;: [
+            [
+              -4.582353198103255,
+              53.3708341956668
+            ],
+            [
+              -4.582353198103255,
+              53.3708341956668
+            ],
+            [
+              -4.582353198103255,
+              53.3708341956668
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Deeside&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Ireland_Rush_North_Beach&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_East West Interconnector&quot;,
+          &quot;path&quot;: [
+            [
+              -3.0722070046286696,
+              53.22304605455342
+            ],
+            [
+              -6.09249939157784,
+              53.518111364805655
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_East West Interconnector&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        },
+        {
+          &quot;arrow&quot;: [
+            [
+              -5.016271179690277,
+              52.72920606523743
+            ],
+            [
+              -5.016271179690277,
+              52.72920606523743
+            ],
+            [
+              -5.016271179690277,
+              52.72920606523743
+            ]
+          ],
+          &quot;bus0&quot;: &quot;Deeside&quot;,
+          &quot;bus1&quot;: &quot;HVDC_External_Ireland&quot;,
+          &quot;color&quot;: &quot;darkseagreen&quot;,
+          &quot;flow_pdk&quot;: 0,
+          &quot;name&quot;: &quot;IC_Greenlink&quot;,
+          &quot;path&quot;: [
+            [
+              -3.0722070046286696,
+              53.22304605455342
+            ],
+            [
+              -6.9603353547518845,
+              52.22970870301097
+            ]
+          ],
+          &quot;rgba&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;rgba_arrow&quot;: [
+            143,
+            188,
+            143,
+            230
+          ],
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Greenlink&lt;/b&gt;\n&quot;,
+          &quot;width&quot;: 2,
+          &quot;width_pdk&quot;: 2000.0
+        }
+      ],
+      &quot;getFillColor&quot;: &quot;@@=rgba_arrow&quot;,
+      &quot;getPolygon&quot;: &quot;@@=arrow&quot;,
+      &quot;id&quot;: &quot;f65d1623-ee99-44ee-9e7c-73ab75728e3c&quot;,
+      &quot;parameters&quot;: {
+        &quot;depthTest&quot;: false
+      },
+      &quot;pickable&quot;: true
+    },
     {
       &quot;@@type&quot;: &quot;PathLayer&quot;,
       &quot;autoHighlight&quot;: true,
@@ -3732,7 +4186,7 @@ lat range: 50.912041859956986 57.484467069924335
       &quot;getColor&quot;: &quot;@@=rgba&quot;,
       &quot;getPath&quot;: &quot;@@=path&quot;,
       &quot;getWidth&quot;: &quot;@@=width_pdk&quot;,
-      &quot;id&quot;: &quot;80b11227-ef8b-42a8-a540-a96f79615d80&quot;,
+      &quot;id&quot;: &quot;02b4db2e-4a76-4e74-afb3-d6866dc1f109&quot;,
       &quot;parameters&quot;: {
         &quot;depthTest&quot;: false
       },
@@ -8299,247 +8753,7 @@ lat range: 50.912041859956986 57.484467069924335
       ],
       &quot;getFillColor&quot;: &quot;@@=rgba_arrow&quot;,
       &quot;getPolygon&quot;: &quot;@@=arrow&quot;,
-      &quot;id&quot;: &quot;83dd7f85-c801-4860-a69c-f4f32400f4b4&quot;,
-      &quot;parameters&quot;: {
-        &quot;depthTest&quot;: false
-      },
-      &quot;pickable&quot;: true
-    },
-    {
-      &quot;@@type&quot;: &quot;PathLayer&quot;,
-      &quot;autoHighlight&quot;: true,
-      &quot;data&quot;: [
-        {
-          &quot;bus0&quot;: &quot;Kemsley&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_Netherlands_Maasvlakte&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;name&quot;: &quot;IC_Britned&quot;,
-          &quot;path&quot;: [
-            [
-              0.7682084062554182,
-              51.376013815662866
-            ],
-            [
-              4.058099999999997,
-              51.9889
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Britned&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Kemsley&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Netherlands_Maasvlakte&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        },
-        {
-          &quot;bus0&quot;: &quot;Sellindge&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_France_Calais&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;name&quot;: &quot;IC_IFA&quot;,
-          &quot;path&quot;: [
-            [
-              1.1175925500284765,
-              51.10492970297485
-            ],
-            [
-              1.8587220233887165,
-              50.95130725773047
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_IFA&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Sellindge&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_France_Calais&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        },
-        {
-          &quot;bus0&quot;: &quot;Deeside&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_Ireland_Rush_North_Beach&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;name&quot;: &quot;IC_East West Interconnector&quot;,
-          &quot;path&quot;: [
-            [
-              -3.0722070046286696,
-              53.22304605455342
-            ],
-            [
-              -6.09249939157784,
-              53.518111364805655
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_East West Interconnector&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus0:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;Deeside&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;bus1:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;HVDC_External_Ireland_Rush_North_Beach&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;color:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;darkseagreen&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;width:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;2&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        }
-      ],
-      &quot;getColor&quot;: &quot;@@=rgba&quot;,
-      &quot;getPath&quot;: &quot;@@=path&quot;,
-      &quot;getWidth&quot;: &quot;@@=width_pdk&quot;,
-      &quot;id&quot;: &quot;cfebbdfa-34e4-45c5-aa6e-79f122314f5b&quot;,
-      &quot;parameters&quot;: {
-        &quot;depthTest&quot;: false
-      },
-      &quot;pickable&quot;: true
-    },
-    {
-      &quot;@@type&quot;: &quot;PolygonLayer&quot;,
-      &quot;autoHighlight&quot;: true,
-      &quot;data&quot;: [
-        {
-          &quot;arrow&quot;: [
-            [
-              2.4131542031277076,
-              51.68349394151072
-            ],
-            [
-              2.4131542031277076,
-              51.68349394151072
-            ],
-            [
-              2.4131542031277076,
-              51.68349394151072
-            ]
-          ],
-          &quot;bus0&quot;: &quot;Kemsley&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_Netherlands_Maasvlakte&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;flow_pdk&quot;: 0,
-          &quot;name&quot;: &quot;IC_Britned&quot;,
-          &quot;path&quot;: [
-            [
-              0.7682084062554182,
-              51.376013815662866
-            ],
-            [
-              4.058099999999997,
-              51.9889
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;rgba_arrow&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_Britned&lt;/b&gt;\n&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        },
-        {
-          &quot;arrow&quot;: [
-            [
-              1.4881572867085961,
-              51.02818212530699
-            ],
-            [
-              1.4881572867085961,
-              51.02818212530699
-            ],
-            [
-              1.4881572867085961,
-              51.02818212530699
-            ]
-          ],
-          &quot;bus0&quot;: &quot;Sellindge&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_France_Calais&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;flow_pdk&quot;: 0,
-          &quot;name&quot;: &quot;IC_IFA&quot;,
-          &quot;path&quot;: [
-            [
-              1.1175925500284765,
-              51.10492970297485
-            ],
-            [
-              1.8587220233887165,
-              50.95130725773047
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;rgba_arrow&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_IFA&lt;/b&gt;\n&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        },
-        {
-          &quot;arrow&quot;: [
-            [
-              -4.582353198103255,
-              53.3708341956668
-            ],
-            [
-              -4.582353198103255,
-              53.3708341956668
-            ],
-            [
-              -4.582353198103255,
-              53.3708341956668
-            ]
-          ],
-          &quot;bus0&quot;: &quot;Deeside&quot;,
-          &quot;bus1&quot;: &quot;HVDC_External_Ireland_Rush_North_Beach&quot;,
-          &quot;color&quot;: &quot;darkseagreen&quot;,
-          &quot;flow_pdk&quot;: 0,
-          &quot;name&quot;: &quot;IC_East West Interconnector&quot;,
-          &quot;path&quot;: [
-            [
-              -3.0722070046286696,
-              53.22304605455342
-            ],
-            [
-              -6.09249939157784,
-              53.518111364805655
-            ]
-          ],
-          &quot;rgba&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;rgba_arrow&quot;: [
-            143,
-            188,
-            143,
-            230
-          ],
-          &quot;tooltip_html&quot;: &quot;&lt;b&gt;IC_East West Interconnector&lt;/b&gt;\n&quot;,
-          &quot;width&quot;: 2,
-          &quot;width_pdk&quot;: 2000.0
-        }
-      ],
-      &quot;getFillColor&quot;: &quot;@@=rgba_arrow&quot;,
-      &quot;getPolygon&quot;: &quot;@@=arrow&quot;,
-      &quot;id&quot;: &quot;b9570e02-4a23-4607-8703-0f1ad3e7ddb4&quot;,
+      &quot;id&quot;: &quot;88fdfb41-f35a-43b0-80dd-e43e3cb4974c&quot;,
       &quot;parameters&quot;: {
         &quot;depthTest&quot;: false
       },
@@ -9015,6 +9229,21 @@ lat range: 50.912041859956986 57.484467069924335
           &quot;y&quot;: 50.95130725773047
         },
         {
+          &quot;demand_MW&quot;: 125.19047619047619,
+          &quot;rgba&quot;: [
+            95,
+            158,
+            160,
+            230
+          ],
+          &quot;size&quot;: 125.19047619047619,
+          &quot;size_pdk&quot;: 1411.548196617548,
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;HVDC_External_Northern_Ireland&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;demand_MW:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;125.19&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;v_nom:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;400&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;x:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;-5.93&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;y:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;54.73&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;size:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;125.19&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;v_nom&quot;: 400.0,
+          &quot;x&quot;: -5.933272434597121,
+          &quot;y&quot;: 54.73331062404302
+        },
+        {
           &quot;demand_MW&quot;: 193.10714285714286,
           &quot;rgba&quot;: [
             95,
@@ -9028,12 +9257,27 @@ lat range: 50.912041859956986 57.484467069924335
           &quot;v_nom&quot;: 400.0,
           &quot;x&quot;: -6.09249939157784,
           &quot;y&quot;: 53.518111364805655
+        },
+        {
+          &quot;demand_MW&quot;: 0.0,
+          &quot;rgba&quot;: [
+            95,
+            158,
+            160,
+            230
+          ],
+          &quot;size&quot;: 10.0,
+          &quot;size_pdk&quot;: 398.9422804014327,
+          &quot;tooltip_html&quot;: &quot;&lt;b&gt;HVDC_External_Ireland&lt;/b&gt;\n&lt;table&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;demand_MW:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;0&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;v_nom:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;400&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;x:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;-6.96&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;y:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;52.23&lt;/td&gt;&lt;/tr&gt;\n&lt;tr&gt;&lt;td style=&#x27;font-weight:bold&#x27;&gt;size:&lt;/td&gt;&lt;td style=&#x27;text-align:left&#x27;&gt;10&lt;/td&gt;&lt;/tr&gt;\n&lt;/table&gt;&quot;,
+          &quot;v_nom&quot;: 400.0,
+          &quot;x&quot;: -6.9603353547518845,
+          &quot;y&quot;: 52.22970870301097
         }
       ],
       &quot;getColor&quot;: &quot;@@=rgba&quot;,
       &quot;getPosition&quot;: &quot;@@=[x, y]&quot;,
       &quot;getRadius&quot;: &quot;@@=size_pdk&quot;,
-      &quot;id&quot;: &quot;4903fdb5-07e2-4ace-bd63-6d8dd13d8f83&quot;,
+      &quot;id&quot;: &quot;a6e6eb1b-adb2-496a-8951-59e1e701945a&quot;,
       &quot;parameters&quot;: {
         &quot;depthTest&quot;: false
       },
@@ -9103,6 +9347,7 @@ lat range: 50.912041859956986 57.484467069924335
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
+INFO:pypsa.network.io:New version 1.2.4 available! (Current: 1.0.7)
 INFO:pypsa.network.io:Imported network &#39;HT35_clustered (Clustered)&#39; has buses, carriers, generators, lines, links, loads, storage_units, stores, sub_networks
 </pre></div></div>
 </div>
@@ -9114,16 +9359,16 @@ INFO:pypsa.network.io:Imported network &#39;HT35_clustered (Clustered)&#39; has 
 Demand Comparison:
 
   Historical 2015:
-    Mean: 38.33 GW
-    Peak: 52.21 GW
+    Mean: 38.45 GW
+    Peak: 52.46 GW
 
   Future 2035 HT:
-    Mean: 38.95 GW
-    Peak: 48.43 GW
+    Mean: 49.01 GW
+    Peak: 60.93 GW
 
   Change:
-    Mean: +1.6%
-    Peak: -7.2%
+    Mean: +27.4%
+    Peak: +16.1%
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -9205,8 +9450,8 @@ Demand Comparison:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Max imbalance: 300.0 MW
-Average imbalance: 78.2 MW
+Max imbalance: 1418.1 MW
+Average imbalance: 111.7 MW
 </pre></div></div>
 </div>
 </section>

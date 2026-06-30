@@ -96,6 +96,6 @@ Data sources depend on the modelled year:
 | Thermal | DUKES statistics | FES projections |
 | Renewables | REPD site data | FES + REPD distribution |
 | Storage | REPD site data | FES GSP-level |
-| Demand | ESPENI profiles | FES totals + profile shape |
+| Demand | ESPENI profiles | FES ED1 consumer demand + Dem_BB003 GSP shares + profile shape |
 | Network | ETYS current | ETYS + planned upgrades |
 

@@ -22,7 +22,7 @@ HT35:
   description: "Holistic Transition 2035"
   modelled_year: 2035
   renewables_year: 2019
-  demand_year: 2035
+  demand_year: 2020              # Historical profile shape
   network_model: "ETYS"
   FES_year: 2024
   FES_scenario: "Holistic Transition"
@@ -42,7 +42,7 @@ MyScenario_2040:
   description: "Custom 2040 analysis - winter week"
   modelled_year: 2040
   renewables_year: 2018          # Weather year for renewables
-  demand_year: 2040
+  demand_year: 2018              # Historical profile shape
   network_model: "Reduced"       # Use 32-bus for faster solving
   FES_year: 2024
   FES_scenario: "Electric Engagement"
@@ -61,10 +61,15 @@ MyScenario_2040:
 |-----------|-------------|---------|
 | `modelled_year` | Target year to model | 2010-2050 |
 | `renewables_year` | Weather data year | 2010-2024 (auto-download from Zenodo) |
+| `demand_year` | Temporal demand profile year; future annual demand comes from FES ED1 | 2010-2024 for ESPENI profiles |
 | `network_model` | Network resolution | `ETYS`, `Reduced`, `Zonal` |
 | `FES_year` | FES release year | 2021, 2022, 2023, 2024, 2025 |
 | `FES_scenario` | FES pathway name | Varies by FES release |
 | `solve_period` | Time window to solve | Any date range |
+
+### Future Demand Accounting
+
+For future scenarios, `demand_year` selects the temporal profile shape. The annual demand target is read from the FES workbook `ED1` sheet as total consumer electricity demand. FES `Dem_BB003` supplies the GSP-level spatial shares and is scaled to the ED1 total.
 
 ### Available FES Years and Scenarios
 
