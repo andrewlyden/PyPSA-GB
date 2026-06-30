@@ -59,7 +59,9 @@ For future years (`modelled_year > 2024`), PyPSA-GB uses the specified FES relea
 - Thermal generation capacity
 - Renewable capacity by technology
 - Storage capacity (GSP-level)
-- Demand projections
+- Demand projections: ED1 consumer demand totals and Dem_BB003 GSP shares
+
+**Demand accounting**: future demand does not use raw `Dem_BB003` as the national total. `Dem_BB003` is GSP-facing demand and is used as the spatial allocation across GSPs. The national annual target is read from the FES workbook `ED1` sheet as total consumer electricity demand, then allocated to GSPs using the `Dem_BB003` shares.
 
 **Note**: Different FES releases may have different scenario names and capacity values for the same modelled year. Use this to explore sensitivity to FES updates.
 
@@ -322,7 +324,7 @@ data/demand/
 ### Usage
 
 - **Historical years**: Direct use
-- **Future years**: Profile shape scaled to FES demand
+- **Future years**: Profile shape only; annual totals come from FES ED1 consumer demand and are spatially allocated using Dem_BB003 GSP shares
 
 ---
 

@@ -448,7 +448,7 @@ document.write(`
 <span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2035</span><span class="nv"> </span><span class="s">under</span><span class="nv"> </span><span class="s">Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
 <span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
 <span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">    </span><span class="c1"># Historical weather pattern</span>
-<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span><span class="w">      </span><span class="c1"># Historical profile shape</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
 <span class="w">  </span><span class="nt">FES_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
 <span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
@@ -457,9 +457,13 @@ document.write(`
 <p><strong>Data sources</strong>:</p>
 <ul class="simple">
 <li><p>Thermal/Renewables/Storage: FES projections</p></li>
-<li><p>Demand: FES annual totals with historical profiles</p></li>
+<li><p>Demand: ED1/F.53-equivalent FES consumer electricity demand, allocated across GSPs using Dem_BB003 shares and shaped with the configured demand profile</p></li>
 <li><p>Network: ETYS base topology with planned upgrades (optional)</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For future scenarios, <code class="docutils literal notranslate"><span class="pre">demand_year</span></code> selects the temporal demand shape, not the annual demand total. The annual national demand target is read from the FES workbook <code class="docutils literal notranslate"><span class="pre">ED1</span></code> sheet. <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> is treated as the GSP-facing spatial distribution, then scaled to the ED1 consumer-demand total so direct transmission-connected demand and embedded generation accounting are included consistently.</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>ETYS network upgrades are controlled by <code class="docutils literal notranslate"><span class="pre">etys_upgrades.enabled</span></code> and <code class="docutils literal notranslate"><span class="pre">etys_upgrades.upgrade_year</span></code>.

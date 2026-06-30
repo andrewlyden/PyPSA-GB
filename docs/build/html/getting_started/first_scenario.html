@@ -429,7 +429,7 @@ document.write(`
 <span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition</span><span class="nv"> </span><span class="s">2035&quot;</span>
 <span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
 <span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span>
-<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span><span class="w">              </span><span class="c1"># Historical profile shape</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span>
 <span class="w">  </span><span class="nt">FES_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
 <span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Holistic</span><span class="nv"> </span><span class="s">Transition&quot;</span>
@@ -448,7 +448,7 @@ document.write(`
 <span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Custom</span><span class="nv"> </span><span class="s">2040</span><span class="nv"> </span><span class="s">analysis</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">winter</span><span class="nv"> </span><span class="s">week&quot;</span>
 <span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2040</span>
 <span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2018</span><span class="w">          </span><span class="c1"># Weather year for renewables</span>
-<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2040</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2018</span><span class="w">              </span><span class="c1"># Historical profile shape</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Reduced&quot;</span><span class="w">       </span><span class="c1"># Use 32-bus for faster solving</span>
 <span class="w">  </span><span class="nt">FES_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2024</span>
 <span class="w">  </span><span class="nt">FES_scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Electric</span><span class="nv"> </span><span class="s">Engagement&quot;</span>
@@ -479,25 +479,33 @@ document.write(`
 <td><p>Weather data year</p></td>
 <td><p>2010-2024 (auto-download from Zenodo)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_model</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demand_year</span></code></p></td>
+<td><p>Temporal demand profile year; future annual demand comes from FES ED1</p></td>
+<td><p>2010-2024 for ESPENI profiles</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">network_model</span></code></p></td>
 <td><p>Network resolution</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ETYS</span></code>, <code class="docutils literal notranslate"><span class="pre">Reduced</span></code>, <code class="docutils literal notranslate"><span class="pre">Zonal</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FES_year</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FES_year</span></code></p></td>
 <td><p>FES release year</p></td>
 <td><p>2021, 2022, 2023, 2024, 2025</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code></p></td>
 <td><p>FES pathway name</p></td>
 <td><p>Varies by FES release</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">solve_period</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve_period</span></code></p></td>
 <td><p>Time window to solve</p></td>
 <td><p>Any date range</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</section>
+<section id="future-demand-accounting">
+<h3>Future Demand Accounting<a class="headerlink" href="#future-demand-accounting" title="Link to this heading">#</a></h3>
+<p>For future scenarios, <code class="docutils literal notranslate"><span class="pre">demand_year</span></code> selects the temporal profile shape. The annual demand target is read from the FES workbook <code class="docutils literal notranslate"><span class="pre">ED1</span></code> sheet as total consumer electricity demand. FES <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> supplies the GSP-level spatial shares and is scaled to the ED1 total.</p>
 </section>
 <section id="available-fes-years-and-scenarios">
 <h3>Available FES Years and Scenarios<a class="headerlink" href="#available-fes-years-and-scenarios" title="Link to this heading">#</a></h3>
@@ -728,6 +736,7 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-view-existing-scenarios">Step 1: View Existing Scenarios</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-create-your-scenario">Step 2: Create Your Scenario</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-configuration-options">Key Configuration Options</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#future-demand-accounting">Future Demand Accounting</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#available-fes-years-and-scenarios">Available FES Years and Scenarios</a></li>
 </ul>
 </li>

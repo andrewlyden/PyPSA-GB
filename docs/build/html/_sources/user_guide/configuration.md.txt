@@ -44,7 +44,7 @@ HT35:
   # Core temporal settings
   modelled_year: 2035           # Target year for the model
   renewables_year: 2019         # Weather year for renewable profiles
-  demand_year: 2035             # Demand profile year
+  demand_year: 2020             # Historical demand profile year
   
   # Network configuration
   network_model: "ETYS"         # ETYS | Reduced | Zonal
@@ -169,7 +169,7 @@ modelled_year: 2035
 ```
 
 - **Historical** (≤2024): Uses DUKES for thermal, REPD for renewables, ESPENI for demand
-- **Future** (>2024): Uses FES projections for capacity, requires `FES_scenario`
+- **Future** (>2024): Uses FES projections for capacity and ED1-scaled demand, requires `FES_scenario`
 
 ### ETYS Configuration
 
@@ -216,6 +216,17 @@ network_model: "ETYS"  # or "Reduced" or "Zonal"
 | ETYS | ~2000 | ~3000 | Full transmission detail |
 | Reduced | 32 | 64 | Testing, quick analysis |
 | Zonal | 17 | ~30 | Aggregate regional flows |
+
+### Demand Data
+
+```yaml
+demand_timeseries: "ESPENI"     # temporal profile source
+demand_year: 2020               # profile year used for future scaling
+```
+
+Historical scenarios (`modelled_year <= 2024`) use ESPENI directly for the annual demand and profile. Future scenarios (`modelled_year > 2024`) use the configured `demand_timeseries` and `demand_year` only for the temporal shape. The annual demand target comes from the FES workbook `ED1` sheet as total consumer electricity demand. The workflow uses FES `Dem_BB003` as the GSP spatial distribution and scales those GSP shares to the ED1 total.
+
+This means future demand includes direct transmission-connected demand in the national total and does not treat raw `Dem_BB003` as total electricity demand.
 
 ### FES Scenario
 

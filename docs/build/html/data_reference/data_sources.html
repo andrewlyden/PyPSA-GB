@@ -485,8 +485,9 @@ document.write(`
 <li><p>Thermal generation capacity</p></li>
 <li><p>Renewable capacity by technology</p></li>
 <li><p>Storage capacity (GSP-level)</p></li>
-<li><p>Demand projections</p></li>
+<li><p>Demand projections: ED1 consumer demand totals and Dem_BB003 GSP shares</p></li>
 </ul>
+<p><strong>Demand accounting</strong>: future demand does not use raw <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> as the national total. <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> is GSP-facing demand and is used as the spatial allocation across GSPs. The national annual target is read from the FES workbook <code class="docutils literal notranslate"><span class="pre">ED1</span></code> sheet as total consumer electricity demand, then allocated to GSPs using the <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> shares.</p>
 <p><strong>Note</strong>: Different FES releases may have different scenario names and capacity values for the same modelled year. Use this to explore sensitivity to FES updates.</p>
 </section>
 </section>
@@ -883,7 +884,7 @@ snakemake<span class="w"> </span>-s<span class="w"> </span>Snakefile_cutouts<spa
 <h3>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>Historical years</strong>: Direct use</p></li>
-<li><p><strong>Future years</strong>: Profile shape scaled to FES demand</p></li>
+<li><p><strong>Future years</strong>: Profile shape only; annual totals come from FES ED1 consumer demand and are spatially allocated using Dem_BB003 GSP shares</p></li>
 </ul>
 </section>
 </section>

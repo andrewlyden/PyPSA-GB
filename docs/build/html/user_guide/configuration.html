@@ -453,7 +453,7 @@ document.write(`
 <span class="w">  </span><span class="c1"># Core temporal settings</span>
 <span class="w">  </span><span class="nt">modelled_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span><span class="w">           </span><span class="c1"># Target year for the model</span>
 <span class="w">  </span><span class="nt">renewables_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2019</span><span class="w">         </span><span class="c1"># Weather year for renewable profiles</span>
-<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2035</span><span class="w">             </span><span class="c1"># Demand profile year</span>
+<span class="w">  </span><span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span><span class="w">             </span><span class="c1"># Historical demand profile year</span>
 <span class="w">  </span>
 <span class="w">  </span><span class="c1"># Network configuration</span>
 <span class="w">  </span><span class="nt">network_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ETYS&quot;</span><span class="w">         </span><span class="c1"># ETYS | Reduced | Zonal</span>
@@ -578,7 +578,7 @@ document.write(`
 </div>
 <ul class="simple">
 <li><p><strong>Historical</strong> (≤2024): Uses DUKES for thermal, REPD for renewables, ESPENI for demand</p></li>
-<li><p><strong>Future</strong> (&gt;2024): Uses FES projections for capacity, requires <code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code></p></li>
+<li><p><strong>Future</strong> (&gt;2024): Uses FES projections for capacity and ED1-scaled demand, requires <code class="docutils literal notranslate"><span class="pre">FES_scenario</span></code></p></li>
 </ul>
 </section>
 <section id="etys-configuration">
@@ -644,6 +644,15 @@ document.write(`
 </tbody>
 </table>
 </div>
+</section>
+<section id="demand-data">
+<h3>Demand Data<a class="headerlink" href="#demand-data" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">demand_timeseries</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ESPENI&quot;</span><span class="w">     </span><span class="c1"># temporal profile source</span>
+<span class="nt">demand_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span><span class="w">               </span><span class="c1"># profile year used for future scaling</span>
+</pre></div>
+</div>
+<p>Historical scenarios (<code class="docutils literal notranslate"><span class="pre">modelled_year</span> <span class="pre">&lt;=</span> <span class="pre">2024</span></code>) use ESPENI directly for the annual demand and profile. Future scenarios (<code class="docutils literal notranslate"><span class="pre">modelled_year</span> <span class="pre">&gt;</span> <span class="pre">2024</span></code>) use the configured <code class="docutils literal notranslate"><span class="pre">demand_timeseries</span></code> and <code class="docutils literal notranslate"><span class="pre">demand_year</span></code> only for the temporal shape. The annual demand target comes from the FES workbook <code class="docutils literal notranslate"><span class="pre">ED1</span></code> sheet as total consumer electricity demand. The workflow uses FES <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> as the GSP spatial distribution and scales those GSP shares to the ED1 total.</p>
+<p>This means future demand includes direct transmission-connected demand in the national total and does not treat raw <code class="docutils literal notranslate"><span class="pre">Dem_BB003</span></code> as total electricity demand.</p>
 </section>
 <section id="fes-scenario">
 <h3>FES Scenario<a class="headerlink" href="#fes-scenario" title="Link to this heading">#</a></h3>
@@ -930,6 +939,7 @@ see <a class="reference internal" href="market.html"><span class="doc">Market Di
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-model">Network Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#demand-data">Demand Data</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fes-scenario">FES Scenario</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solve-period">Solve Period</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#solver-configuration">Solver Configuration</a></li>

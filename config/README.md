@@ -35,7 +35,7 @@ My_Future_2035:
   FES_year: 2024
   FES_scenario: "Holistic Transition"
   renewables_year: 2020       # Weather proxy year
-  demand_year: 2020           # Demand baseline
+  demand_year: 2020           # Historical profile shape
 ```
 
 ### 2. Enable Clustering
@@ -113,6 +113,12 @@ Example: If `defaults.yaml` has `timestep_minutes: 60` but your scenario specifi
 | `kmeans_10` | kmeans | 10 geographical clusters |
 | `kmeans_5` | kmeans | 5 geographical clusters |
 | `hierarchical_15` | hierarchical | 15 hierarchical clusters |
+
+## Future Demand Accounting
+
+For future scenarios (`modelled_year > 2024`), `demand_year` selects the temporal profile shape. The annual demand target is read from the FES workbook `ED1` sheet as total consumer electricity demand. FES `Dem_BB003` is used for GSP-level spatial shares and is scaled to that ED1 total.
+
+Raw `Dem_BB003` should not be interpreted as total electricity demand; it is GSP-facing and lower than the ED1 consumer-demand total.
 
 ## FES Scenario Options
 

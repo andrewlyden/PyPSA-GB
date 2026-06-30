@@ -1011,13 +1011,13 @@ logging:
 # ──────────────────────────────────────────────────────────────────────────────
 # DEMAND DATA SOURCES
 # ──────────────────────────────────────────────────────────────────────────────
-# Temporal profile source for demand (annual totals always from FES for future scenarios)
+# Temporal profile source for demand (future annual totals use FES ED1 consumer demand)
 # Options:
-#   "ESPENI"    - Historical half-hourly GB demand (recommended, uses demand_year)
+#   "ESPENI"    - Historical half-hourly GB demand shape (historical runs use it directly)
 #   "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
 #   "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
 # 
-# For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
+# Future runs scale the chosen profile to ED1 consumer demand and allocate by Dem_BB003 GSP shares. For eload/desstinee, profile_year auto-selects (2050 if modelled_year >= 2040, else 2010)
 demand_timeseries: "ESPENI"
 
 # ──────────────────────────────────────────────────────────────────────────────
