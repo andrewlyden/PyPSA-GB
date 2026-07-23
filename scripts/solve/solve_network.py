@@ -17,6 +17,7 @@ from scripts.solve.hydro_constraints import (
     combine_extra_functionalities,
     log_hydro_constraint_setup,
 )
+from scripts.utilities.generator_operation import configure_nuclear
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
@@ -44,7 +45,6 @@ RENEWABLE_CARRIERS = {
     "marine",
     "geothermal",
 }
-
 
 def get_solve_mode_from_config() -> str:
     """
@@ -1954,6 +1954,93 @@ if __name__ == "__main__":
             else:
                 logger.info("No 'p_min_pu' column found - all generators can turn off")
         logger.info("=" * 80)
+
+        # Apply scenario specific nuclear operating assumptions
+        nuclear_config = scenario_config.get("nuclear_operation", {})
+
+        if nuclear_config.get("enabled", False):
+            if remove_must_run:
+                raise ValueError(
+                    "Conflicting configuration: nuclear_operation is "
+                    "enabled while optimization.remove_must_run is true."
+                )
+
+            required_parameters = {
+                "min_output",
+                "ramp_limit",
+            }
+
+            missing_parameters = (
+                    required_parameters - nuclear_config.keys()
+            )
+
+            if missing_parameters:
+                raise KeyError(
+                    "Missing nuclear-operation parameters: "
+                    f"{sorted(missing_parameters)}"
+                )
+
+            logger.info("=" * 80)
+            logger.info(
+                "APPLYING NUCLEAR OPERATING ASSUMPTIONS"
+            )
+            logger.info("=" * 80)
+            logger.info(
+                f"Minimum nuclear output: "
+                f"{nuclear_config['min_output']}"
+            )
+            logger.info(
+                f"Nuclear ramp limit: "
+                f"{nuclear_config['ramp_limit']}"
+            )
+
+            # Apply nuclear config
+            network = configure_nuclear(
+                network=network,
+                min_output=float(
+                    nuclear_config["min_output"]
+                ),
+                ramp_limit=float(
+                    nuclear_config["ramp_limit"]
+                ),
+            )
+
+            nuclear_mask = (
+                network.generators["carrier"]
+                .astype(str)
+                .str.strip()
+                .str.casefold()
+                .eq("nuclear")
+            )
+
+            logger.info(
+                f"Configured {nuclear_mask.sum()} "
+                "nuclear generators"
+            )
+
+            applied_values = (
+                network.generators.loc[
+                    nuclear_mask,
+                    [
+                        "p_min_pu",
+                        "ramp_limit_up",
+                        "ramp_limit_down",
+                    ],
+                ]
+                .drop_duplicates()
+                .to_dict(orient="records")
+            )
+
+            logger.info(
+                f"Applied nuclear values: {applied_values}"
+            )
+            logger.info("=" * 80)
+
+        else:
+            logger.info(
+                "No scenario-specific nuclear operating "
+                "configuration enabled"
+            )
         
         # Check generator aggregation status
         if hasattr(network, 'meta') and network.meta.get('aggregated', False):

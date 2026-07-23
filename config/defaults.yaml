@@ -16,7 +16,7 @@ voll: 6000.0                      # Value of Lost Load (£/MWh)
 # SOLVER CONFIGURATION
 # ──────────────────────────────────────────────────────────────────────────────
 solver:
-  name: "gurobi"                  # Options: gurobi, highs, glpk, cplex
+  name: "highs"                  # Options: gurobi, highs, glpk, cplex
   threads: 4
   method: 2                       # 0=primal, 1=dual, 2=barrier
   crossover: 0                    # 0=disabled (faster), -1=auto (enables crossover)
@@ -1195,3 +1195,14 @@ demand_flexibility:
     max_reduction_fraction: 0.10      # Fallback: max demand reduction per event (10%)
     marginal_cost: 100.0              # DSR incentive payment (£/MWh) - high cost = only dispatch if needed
     winter_months: [10, 11, 12, 1, 2, 3]  # Oct-Mar for winter mode
+
+    # ──────────────────────────────────────────────────────────────────────────────
+    # NUCLEAR CONFIGURATION
+    # ──────────────────────────────────────────────────────────────────────────────
+    # Ensure default nuclear generators are configured to baseload.
+    # Only change if explicitly testing nuclear load following.
+    nuclear_operation:
+      enabled: false
+      min_output: null
+      ramp_limit: null
+

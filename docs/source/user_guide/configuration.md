@@ -158,6 +158,12 @@ demand_flexibility:
     enabled: false
     mode: "both"
     dsr_capacity_mw: 5000
+
+# Nuclear operation defaults
+nuclear_operation:
+  enabled: false
+  min_output: null
+  ramp_limit: null
 ```
 
 ## Key Parameters
@@ -281,6 +287,47 @@ timestep_minutes: 60  # or 30
 ```
 
 Half-hourly (30 min) doubles computation time but captures faster dynamics.
+
+### Nuclear Generator Operation
+
+Scenario-specific nuclear operating constraints can be configured under
+`nuclear_operation`:
+
+```yaml
+nuclear_operation:
+  enabled: true
+  min_output: 0.20
+  ramp_limit: 0.025
+```
+
+The available settings are:
+
+- `enabled`: Enables the nuclear operating constraints. The default is
+  `false`.
+- `min_output`: Minimum nuclear output per unit of nominal capacity. It
+  must be between 0 and 1.
+- `ramp_limit`: Maximum increase or decrease in nuclear output between
+  adjacent snapshots, per unit of nominal capacity. It must be between
+  0 and 1.
+
+The configuration is applied to all generators whose carrier is
+`nuclear`.
+
+Ramp limits apply between consecutive snapshots rather than over a
+fixed period of time. For example, a value of `0.025` represents a
+maximum change of 2.5% of nominal capacity between snapshots. Its
+time-based interpretation therefore depends on the configured snapshot
+resolution.
+
+This configuration does not change generator capacity-expansion or
+unit-commitment settings. When a nuclear generator has
+`committable: false` and `min_output` is greater than zero, it remains
+online above the configured minimum. Start-up and shut-down decisions,
+minimum up/down times and cycling costs are not introduced.
+
+If `optimization.remove_must_run` is also enabled, existing minimum
+output constraints are first removed globally. The nuclear-specific
+`min_output` is then reapplied to nuclear generators.
 
 ### Market Dispatch
 
