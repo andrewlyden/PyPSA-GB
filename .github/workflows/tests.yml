@@ -34,7 +34,8 @@ jobs:
 
       - name: Unit and smoke tests
         # Tests that need generated workflow outputs skip on a fresh checkout (tests/helpers).
-        run: python -m pytest -p no:cacheprovider
+        # -n auto: one worker per core (pytest-xdist); --dist loadfile keeps each test file on one worker.
+        run: python -m pytest -p no:cacheprovider -n auto --dist loadfile
 
       - name: Workflow dry run on a fresh checkout
         # Every declared input of the default scenario must be tracked or made by a rule.

@@ -73,7 +73,7 @@ When adding tests:
 the `envs/pypsa-gb.yaml` environment it:
 
 1. lints with `ruff check .`;
-2. runs `python -m pytest` (tests that need workflow outputs skip);
+2. runs `python -m pytest -n auto --dist loadfile`, one worker per core (tests that need workflow outputs skip);
 3. dry-runs the workflow on a fresh checkout,
    `python -m snakemake -n --quiet rules --config scenario=Test_Market --cores 1`, which fails if any declared input
    of the default scenario is neither tracked nor made by a rule.
