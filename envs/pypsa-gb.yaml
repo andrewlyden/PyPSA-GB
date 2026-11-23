@@ -39,7 +39,9 @@ dependencies:
 - scikit-learn
 
 # Snakemake workflow
-- snakemake-minimal>=9
+# snakemake is held below 9.14: the rerun rule (config_loader.scenario_param) relies on how
+# snakemake.persistence serialises rule params, tested on 9.13; 9.27 restructured that module.
+- snakemake-minimal>=9,<9.14
 - snakemake-storage-plugin-http>=0.3
 - snakemake-executor-plugin-slurm=1.8.0
 - snakemake-executor-plugin-cluster-generic
