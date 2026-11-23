@@ -7,11 +7,13 @@ This script integrates interconnectors into PyPSA networks as DC links with
 proper representation of European electricity supply.
 
 Architecture:
-- External buses represent connection points to European countries
-- Large generators on external buses represent European electricity supply
-  with marginal costs based on European generation mix data
-- DC links connect GB buses to external buses with near-zero marginal cost
-  (only transmission losses) since economics are handled by external generators
+- External buses represent connected European bidding zones
+- Future cables use paired, one-way import and export links so losses are
+  applied in the physical direction of flow
+- Foreign supply generators and signed export sinks represent a price-taking
+  external market with a configurable bid/ask spread
+- A shared-capacity callback prevents both directional links from independently
+  using the full cable rating
 - For historical scenarios, flows are fixed using actual ESPENI data
 
 This architecture ensures:
@@ -25,7 +27,7 @@ Key features:
 - External generators for European supply modeling
 - Efficiency calculation from losses
 - Availability profile integration
-- Bidirectional link configuration
+- Bidirectional market coupling using paired directional links
 - Historical flow fixing for validation scenarios
 - Network validation and consistency checking
 
@@ -33,6 +35,7 @@ Author: PyPSA-GB Team
 """
 
 import sys
+import json
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -51,6 +54,9 @@ sys.path.insert(0, str(project_root))
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+from scripts.utilities.calendar_year import fill_leap_day
+from scripts.CP30.storage_interconnectors import load_cp30_interconnector_capacity_mw
+from scripts.interconnectors.market_coupling import EXPORT_BID_FLOOR_COLUMN, floor_export_bid
 
 try:
     from scripts.utilities.logging_config import setup_logging, log_execution_summary
@@ -70,20 +76,46 @@ if 'snakemake' in globals():
     input_availability = snakemake.input.get('availability', None)
     input_price_diff = snakemake.input.get('price_differentials', None)
     input_historical_flows = snakemake.input.get('historical_flows', None)
+    input_historical_flows_metadata = snakemake.input.get('historical_flows_metadata', None)
     input_entsoe_prices = snakemake.input.get('entsoe_prices', None)
+    input_cp30_es1 = snakemake.input.get('cp30_es1', None)
+    input_cp30_interconnector_prices = snakemake.input.get('cp30_interconnector_prices', None)
+    input_market_demand = snakemake.input.get('market_demand', None)
+    # Task Y6b (FES 2050 plan): an HT50_* scenario declares the FES file whose
+    # Gen_BB022 total the cables are scaled to; absent = the FES 2024 default.
+    input_fes_capacity_data = snakemake.input.get('fes_capacity_data', None)
+    # CP30 cable composition (interconnectors.cp30_composition.file, 15 Oct 2026); future CP30 builds.
+    input_cp30_composition = snakemake.input.get('cp30_interconnector_composition', None)
     output_network = snakemake.output[0]
     is_historical = snakemake.params.get('is_historical', False)
     modelled_year = snakemake.params.get('modelled_year', None)
     fes_pathway = snakemake.params.get('fes_pathway', None)
+    scenario_source = snakemake.params.get('scenario_source', None)
+    cp30_pathway = snakemake.params.get('cp30_pathway', None)
     pricing_config = snakemake.params.get('pricing_config', {})
+    # Historical flows are fixed by default. The market_coupled alternative is
+    # deliberately opt-in and is used only to validate model-selected flows
+    # against the separate ESPENI reference file.
+    historical_flow_mode = str(
+        snakemake.params.get('historical_flow_mode', 'fixed')
+    ).strip().lower()
     renewables_year = snakemake.params.get('renewables_year', None)
 else:
     SNAKEMAKE_MODE = False
     modelled_year = None
     fes_pathway = None
+    scenario_source = None
+    cp30_pathway = None
+    input_cp30_es1 = None
+    input_cp30_interconnector_prices = None
+    input_market_demand = None
+    input_fes_capacity_data = None
+    input_cp30_composition = None
     pricing_config = {}
+    historical_flow_mode = 'fixed'
     renewables_year = None
     input_entsoe_prices = None
+    input_historical_flows_metadata = None
 
 # Optional: force-zero interconnectors for diagnostics
 FORCE_ZERO_INTERCONNECTORS = os.environ.get("ZERO_INTERCONNECTORS", "0").lower() in ("1", "true", "yes")
@@ -168,6 +200,79 @@ def load_availability_profiles(availability_file: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def enrich_historical_commissioning_years(interconnectors_df: pd.DataFrame, metadata_file: str | None) -> pd.DataFrame:
+    """Fill missing mapped commissioning years from ESPENI metadata.
+
+    This is an availability registry, not an optimisation input. It is used only
+    for explicit historical market-coupled back-tests, to prevent modern or
+    unverified cables from entering an earlier model year.
+    """
+    logger = logging.getLogger(__name__)
+    if not metadata_file or not Path(metadata_file).exists():
+        raise FileNotFoundError(
+            "Historical market-coupled mode requires ESPENI flow metadata: "
+            f"{metadata_file}"
+        )
+    with open(metadata_file, encoding="utf-8") as handle:
+        registry = json.load(handle).get("interconnectors", {})
+    known_years = {
+        str(name).lower(): item.get("commissioning_year")
+        for name, item in registry.items()
+    }
+    result = interconnectors_df.copy()
+    result["commissioning_year"] = pd.to_numeric(
+        result.get("commissioning_year"), errors="coerce"
+    )
+    filled = []
+    for index, row in result.loc[result["commissioning_year"].isna()].iterrows():
+        canonical = ESPENI_NAME_MAPPING.get(str(row["name"]), str(row["name"]))
+        year = known_years.get(canonical.lower())
+        if year is not None:
+            result.at[index, "commissioning_year"] = float(year)
+            filled.append(f"{row['name']}={int(year)}")
+    if filled:
+        logger.info("Filled historical commissioning years from ESPENI metadata: %s", ", ".join(filled))
+    return result
+
+
+def restrict_market_coupled_historical_interconnectors(interconnectors_df: pd.DataFrame, scenario_year: int) -> pd.DataFrame:
+    """Keep only cables with a source-backed commissioning year by scenario year."""
+    logger = logging.getLogger(__name__)
+    result = interconnectors_df.copy()
+    # ESPENI sometimes has one series for a named legacy cable while the mapped
+    # data also contains an auxiliary/alias record. Retain the exact-name record
+    # and exclude aliases from a market-coupled calibration to avoid creating a
+    # second independent cable from the same observation.
+    result["_espeni_reference"] = result["name"].map(
+        lambda name: ESPENI_NAME_MAPPING.get(str(name), str(name))
+    )
+    direct_reference = (
+        result["name"].astype(str).str.lower()
+        == result["_espeni_reference"].astype(str).str.lower()
+    )
+    has_direct_reference = direct_reference.groupby(
+        result["_espeni_reference"].astype(str).str.lower()
+    ).transform("any")
+    unique_reference = direct_reference | ~has_direct_reference
+    operational = (
+        result["commissioning_year"].notna()
+        & (result["commissioning_year"] <= scenario_year)
+        & unique_reference
+    )
+    excluded = result.loc[~operational]
+    if not excluded.empty:
+        logger.info(
+            "Historical market-coupled eligibility excludes %d cable(s) without a source-backed commissioning year by %d: %s",
+            len(excluded), scenario_year, ", ".join(excluded["name"].astype(str)),
+        )
+    return interconnectors_df.loc[operational].copy()
+
+#: Commissioning years of GB cables missing from DUKES 5.13 (data/interconnectors/DUKES_5.13_2025.csv).
+#: East West Interconnector: EirGrid, commercial operation December 2012. Greenlink: Greenlink Interconnector
+#: Ltd, commercial operation 2025.
+DECLARED_COMMISSIONING_YEARS = {"East West Interconnector": 2012, "Greenlink": 2025}
+
+
 def filter_interconnectors_by_commissioning_year(
     interconnectors_df: pd.DataFrame, 
     scenario_year: int,
@@ -204,6 +309,18 @@ def filter_interconnectors_by_commissioning_year(
         logger.warning("No 'commissioning_year' column found - cannot filter by commissioning year")
         return interconnectors_df
     
+    # Cables the DUKES 5.13 table omits: their commissioning years, declared (19 Nov 2026: Greenlink, which
+    # opened in 2025, was in the 2015 Reduced network because its year was blank).
+    interconnectors_df = interconnectors_df.copy()
+    years = pd.to_numeric(interconnectors_df['commissioning_year'], errors='coerce')
+    for name, year in DECLARED_COMMISSIONING_YEARS.items():
+        rows = interconnectors_df['name'].astype(str).str.strip().str.lower().eq(name.lower()) & years.isna()
+        years.loc[rows] = year
+    interconnectors_df['commissioning_year'] = years
+    unknown = interconnectors_df.loc[years.isna(), 'name'].astype(str).tolist()
+    if unknown:
+        logger.warning(f"No commissioning year for {unknown}: kept in the {scenario_year} network")
+
     # Filter: keep if commissioning_year <= scenario_year OR commissioning_year is NaN
     # (NaN means unknown, so we include it by default)
     mask = (
@@ -361,6 +478,17 @@ def load_price_differentials(price_diff_file: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def load_cp30_interconnector_prices(price_file: str) -> pd.DataFrame:
+    """Load the CP.29 pathway-level interconnector trade-price assumptions."""
+    if not price_file or not Path(price_file).exists():
+        raise FileNotFoundError(f"CP30 interconnector price file not found: {price_file}")
+    prices = pd.read_csv(price_file)
+    required = {"year", "pathway", "import_price_gbp_per_mwh", "export_price_gbp_per_mwh"}
+    missing = required - set(prices.columns)
+    if missing:
+        raise ValueError(f"CP30 interconnector price file missing columns: {sorted(missing)}")
+    return prices
+
 def load_entsoe_prices(entsoe_file: str) -> pd.DataFrame:
     """
     Load ENTSO-E day-ahead price CSV produced by fetch_entsoe_prices.py.
@@ -403,10 +531,12 @@ def _apply_time_varying_mc(
     ----------
     network : pypsa.Network
     gen_name : str
-        Generator name (must already exist in ``network.generators``).
+        Generator name (must already exist in `
+etwork.generators``).
     hourly_prices : pd.Series
         Hourly prices (£/MWh) with a DatetimeIndex.  Will be reindexed to
-        ``network.snapshots``; missing values are forward-filled then
+        `
+etwork.snapshots``; missing values are forward-filled then
         back-filled, then filled with the series mean.
     logger : logging.Logger
     """
@@ -434,6 +564,8 @@ def _apply_time_varying_mc(
         hourly_prices = hourly_prices.copy()
         hourly_prices.index = shifted_index
         hourly_prices = hourly_prices[~hourly_prices.index.duplicated(keep="first")]
+        # A leap target year from a source without 29 February: 28 February's hours, not a gap fill.
+        hourly_prices = fill_leap_day(hourly_prices)
 
     # Reindex to network snapshots
     prices = hourly_prices.reindex(network.snapshots)
@@ -460,6 +592,48 @@ def _apply_time_varying_mc(
     )
 
 
+def _apply_time_varying_link_mc(
+    network: pypsa.Network,
+    link_name: str,
+    hourly_costs: pd.Series,
+    logger: logging.Logger,
+) -> None:
+    """Set a time-varying marginal cost directly on a Link."""
+    costs = hourly_costs.copy()
+    snap_year = network.snapshots[0].year
+    cost_year = costs.index[0].year
+    if snap_year != cost_year:
+        import calendar
+
+        target_is_leap = calendar.isleap(snap_year)
+
+        def _shift_ts(ts):
+            if ts.month == 2 and ts.day == 29 and not target_is_leap:
+                return ts.replace(year=snap_year, day=28)
+            return ts.replace(year=snap_year)
+
+        costs.index = pd.DatetimeIndex([_shift_ts(ts) for ts in costs.index])
+        costs = costs[~costs.index.duplicated(keep="first")]
+        costs = fill_leap_day(costs)
+
+    costs = costs.reindex(network.snapshots)
+    if costs.isna().any():
+        costs = costs.interpolate(method="linear", limit=6, limit_direction="both")
+        costs = costs.ffill().bfill()
+        if costs.isna().any():
+            costs = costs.fillna(costs.mean())
+
+    if "marginal_cost" not in network.links_t or network.links_t.marginal_cost.empty:
+        network.links_t["marginal_cost"] = pd.DataFrame(index=network.snapshots)
+    network.links_t.marginal_cost[link_name] = costs.to_numpy(dtype=float)
+    network.links_t.marginal_cost.columns.name = "name"
+    logger.info(
+        "  %s: time-varying link MC set - mean %.2f GBP/MWh, range %.2f to %.2f",
+        link_name,
+        float(costs.mean()),
+        float(costs.min()),
+        float(costs.max()),
+    )
 def load_historical_flows(historical_flows_file: str) -> pd.DataFrame:
     """
     Load historical interconnector flows from ESPENI data.
@@ -589,6 +763,58 @@ def scale_interconnectors_to_fes(interconnectors_df: pd.DataFrame,
         return interconnectors_df
 
 
+def apply_cp30_interconnector_composition(
+    interconnectors_df: pd.DataFrame,
+    network: pypsa.Network,
+    composition_path,
+    cp30_es1_path: str,
+    cp30_pathway: str,
+    modelled_year: int,
+) -> pd.DataFrame:
+    """CP30's cables from the declared composition, checked against the ES1 total (15 Oct 2026).
+
+    Replaced the pro-rata uplift (every cable x 1.0559 to reach 12,450 MW in 2030): kept cables
+    take CP30's nominal ratings, an ``add`` row (MaresConnect, Bodelwyddan, 750 MW) joins the set
+    priced on its counterparty market like any mapped cable, and ``exclude`` rows (the Isle of Man
+    cable) leave it. An added cable whose GB bus is not in this network (a Reduced or Zonal build)
+    lands on the nearest AC bus to its GB coordinates.
+    """
+    logger = logging.getLogger(__name__)
+    if isinstance(composition_path, (list, tuple)):
+        composition_path = composition_path[0]
+    if not cp30_es1_path or not cp30_pathway:
+        raise ValueError("CP30 interconnector composition needs the cp30_es1 input and the CP30 pathway")
+    from scripts.CP30.storage_interconnectors import (
+        compose_cp30_interconnectors, load_cp30_interconnector_composition)
+    composition = load_cp30_interconnector_composition(composition_path)
+    target_mw = load_cp30_interconnector_capacity_mw(cp30_es1_path, cp30_pathway, modelled_year)
+    before = float(pd.to_numeric(interconnectors_df["capacity_mw"], errors="coerce").fillna(0.0).sum())
+    composed = compose_cp30_interconnectors(interconnectors_df, target_mw, composition, modelled_year)
+    added = composed["cp30_composition_action"].eq("add")
+    for idx in composed.index[added & ~composed["from_bus"].isin(network.buses.index)]:
+        from scripts.utilities.spatial_utils import get_bus_coordinates_for_external
+        candidates = network.buses[~network.buses.index.astype(str).str.contains("External", case=False)]
+        candidates = candidates[candidates.get("carrier", pd.Series("AC", index=candidates.index)).fillna("AC").eq("AC")]
+        x, y = get_bus_coordinates_for_external(float(composed.at[idx, "gb_longitude"]),
+                                                float(composed.at[idx, "gb_latitude"]), network)
+        nearest = np.hypot(candidates["x"].astype(float) - x, candidates["y"].astype(float) - y).idxmin()
+        logger.info(f"  {composed.at[idx, 'name']}: GB bus {composed.at[idx, 'from_bus']} not in this network, "
+                    f"landed at nearest bus {nearest}")
+        composed.at[idx, "from_bus"] = nearest
+        composed.at[idx, "gb_bus"] = nearest
+    excluded = sorted(set(interconnectors_df["name"]) - set(composed["name"]))
+    logger.info(f"=== CP30 interconnector composition, {cp30_pathway} {modelled_year} ===")
+    logger.info(f"  Mapped register total {before:,.0f} MW -> composed {composed['capacity_mw'].sum():,.0f} MW "
+                f"(CP30 ES1 {target_mw:,.0f} MW); no pro-rata scaling")
+    for _, row in composed.iterrows():
+        logger.info(f"  {row['name']} ({row['counterparty_country']}, {row['from_bus']}): "
+                    f"{row['capacity_mw']:,.0f} MW [{row['cp30_composition_action']}; register "
+                    f"{row['capacity_mw_original']:,.0f}]")
+    if excluded:
+        logger.info(f"  Outside the CP30 count, not built: {excluded}")
+    return composed
+
+
 # Country name mapping for European price data
 # Maps interconnector country names to price differential country names
 COUNTRY_PRICE_MAPPING = {
@@ -597,13 +823,255 @@ COUNTRY_PRICE_MAPPING = {
     'isle of man': 'sem',  # Use SEM prices as proxy for Isle of Man
 }
 
+ENTSOE_COUNTRY_MAPPING = {
+    'northern ireland': 'Ireland',
+    'isle of man': 'Ireland',
+}
 
-def add_external_generators(network: pypsa.Network,
+#: ``interconnectors.pricing.foreign_price_source`` values whose price file is used
+#: at its own level, with no CP.29 re-centring: the 2050 TYNDP shape (task Y3) and
+#: TYNDP NT2030 rebased to CP30's fuel (item F13).
+OWN_LEVEL_PRICE_SOURCES = ("tyndp", "cp30_basis")
+
+def _case_insensitive_column(df, requested):
+    '''Return a case-insensitive column match.'''
+    wanted = str(requested).strip().lower()
+    for column in df.columns:
+        if str(column).strip().lower() == wanted:
+            return column
+    return None
+
+
+def _apply_price_case(target, country, pricing):
+    """Apply configured price sensitivities and country overrides."""
+    case = str(pricing.get("future_price_case", "central")).lower()
+    multipliers = pricing.get(
+        "price_case_multipliers", {"low": 0.75, "central": 1.0, "high": 1.25}
+    )
+    target = float(target) * float(multipliers.get(case, 1.0))
+    price_country = COUNTRY_PRICE_MAPPING.get(country.lower(), country.lower())
+    overrides = pricing.get("country_price_overrides_gbp_per_mwh", {})
+    case_overrides = overrides.get(case, {}) if isinstance(overrides, dict) else {}
+    for key, value in case_overrides.items():
+        if str(key).lower() in {country.lower(), price_country}:
+            return float(value)
+    return target
+
+
+def _foreign_price_target(country, filtered_prices, pricing):
+    """Return the annual import-price target for one foreign bidding zone."""
+    if str(pricing.get("source", "derived")).lower() == "cp30":
+        if "cp30_import_price_gbp_per_mwh" not in pricing:
+            raise ValueError("CP30 interconnector pricing was selected but no CP.29 import price was loaded")
+        return _apply_price_case(pricing["cp30_import_price_gbp_per_mwh"], country, pricing)
+
+    price_country = COUNTRY_PRICE_MAPPING.get(country.lower(), country.lower())
+    target = float(pricing.get("gb_price", 50.0))
+    if not filtered_prices.empty and "country" in filtered_prices:
+        rows = filtered_prices[
+            filtered_prices["country"].astype(str).str.lower() == price_country
+        ]
+        if not rows.empty:
+            candidate = pd.to_numeric(
+                rows["estimated_price_gbp_per_mwh"], errors="coerce"
+            ).mean()
+            if pd.notna(candidate):
+                target = float(candidate)
+    return _apply_price_case(target, country, pricing)
+
+
+def _foreign_export_price_target(country, filtered_prices, pricing):
+    """Return the annual export-price target; CP.29 provides it separately."""
+    if str(pricing.get("source", "derived")).lower() != "cp30":
+        return _foreign_price_target(country, filtered_prices, pricing)
+    if "cp30_export_price_gbp_per_mwh" not in pricing:
+        raise ValueError("CP30 interconnector pricing was selected but no CP.29 export price was loaded")
+    return _apply_price_case(pricing["cp30_export_price_gbp_per_mwh"], country, pricing)
+
+
+def _prepare_historical_entsoe_prices(hourly, price_floor, price_cap):
+    """Fill and clip actual prices without changing their observed level."""
+    hourly = pd.to_numeric(hourly, errors="coerce").astype(float)
+    if hourly.notna().sum() == 0:
+        raise ValueError("Historical ENTSO-E price series contains no numeric observations")
+    return hourly.interpolate(limit_direction="both").ffill().bfill().clip(price_floor, price_cap)
+
+def _recenter_and_clip_prices(hourly, target_mean, price_floor, price_cap):
+    '''Preserve an hourly shape while matching its clipped target mean.'''
+    hourly = pd.to_numeric(hourly, errors='coerce').astype(float)
+    if hourly.notna().sum() == 0:
+        return pd.Series(target_mean, index=hourly.index, dtype=float)
+    hourly = hourly.interpolate(limit_direction='both').ffill().bfill()
+    deviations = hourly - hourly.mean()
+    target = min(max(float(target_mean), price_floor), price_cap)
+    low = price_floor - float(deviations.max()) - abs(price_cap - price_floor)
+    high = price_cap - float(deviations.min()) + abs(price_cap - price_floor)
+    for _ in range(60):
+        midpoint = (low + high) / 2.0
+        mean = deviations.add(midpoint).clip(price_floor, price_cap).mean()
+        if mean < target:
+            low = midpoint
+        else:
+            high = midpoint
+    return deviations.add((low + high) / 2.0).clip(price_floor, price_cap)
+
+
+def _foreign_bid_ask_prices(reference, efficiency, pricing):
+    '''Apply a bid/ask spread that keeps the signed-link cost curve convex.
+
+    The export slope is ``efficiency**2 x bid`` (item D2): a signed PyPSA link
+    running backwards delivers ``1/efficiency`` of what GB sends, so the loss
+    is charged on the price. Convexity needs ``ask >= efficiency**2 x bid``.
+    '''
+    base_half = max(
+        float(pricing.get('transaction_spread_gbp_per_mwh', 1.0)) / 2.0,
+        0.0,
+    )
+    epsilon = max(
+        float(pricing.get('circulation_epsilon_gbp_per_mwh', 0.01)),
+        0.0,
+    )
+    eta = max(float(efficiency), 0.01) ** 2
+    factor = (1.0 - eta) / (1.0 + eta)
+    if isinstance(reference, pd.Series):
+        required = (-reference).clip(lower=0.0) * factor + epsilon
+        half_spread = required.clip(lower=base_half)
+        return reference + half_spread, reference - half_spread
+    required = max(-float(reference), 0.0) * factor + epsilon
+    half_spread = max(base_half, required)
+    return float(reference) + half_spread, float(reference) - half_spread
+
+
+def single_foreign_price_basis(pricing) -> bool:
+    """True when each foreign market trades at ONE hourly price (item D2)."""
+    return str((pricing or {}).get("foreign_price_basis", "separate")).strip().lower() == "single"
+
+
+def single_price_market_of(country, pricing) -> str:
+    """The coupled market (volume-tranche market) a counterparty's level offset belongs to."""
+    markets = ((pricing.get("volume_tranches") or {}).get("markets") or {})
+    wanted = str(country).strip().lower()
+    for market, spec in markets.items():
+        if wanted in {str(c).strip().lower() for c in spec.get("counterparties", [])}:
+            return str(market)
+    raise ValueError(
+        f"single foreign price: counterparty {country!r} belongs to no market in "
+        "interconnectors.pricing.volume_tranches.markets"
+    )
+
+
+def single_price_market_shapes(entsoe_prices_df, interconnectors_df, pricing):
+    """One hourly shape per coupled market: the GB-capacity-weighted mean of its zones' prices.
+
+    France, Belgium, the Netherlands, Germany and Denmark clear in one coupled
+    continental market, so GB trades with them at one price; separate zone
+    prices would let GB wheel energy between them (import from France, export
+    to the Netherlands), which the continent's own borders do directly.
+    Weights are GB's cable capacity to each zone.
+    """
+    shapes = {}
+    capacity = interconnectors_df.groupby("counterparty_country")["capacity_mw"].sum()
+    by_market = {}
+    for country, mw in capacity.items():
+        by_market.setdefault(single_price_market_of(country, pricing), []).append((country, float(mw)))
+    for market, members in by_market.items():
+        total, weight = None, 0.0
+        for country, mw in members:
+            column = _case_insensitive_column(
+                entsoe_prices_df, ENTSOE_COUNTRY_MAPPING.get(str(country).lower(), country))
+            if column is None:
+                raise ValueError(f"single foreign price: no ENTSO-E column for {country}")
+            series = pd.to_numeric(entsoe_prices_df[column], errors="coerce").astype(float)
+            series = series.interpolate(limit_direction="both").ffill().bfill()
+            total = series * mw if total is None else total + series * mw
+            weight += mw
+        if weight <= 0:
+            raise ValueError(f"single foreign price: market {market!r} has no cable capacity")
+        shapes[market] = total / weight
+    return shapes
+
+
+def single_price_link_pricing(pricing):
+    """Pricing for a single-basis link: ``single_price_transaction_spread_gbp_per_mwh`` if set.
+
+    The single basis's spread is a calibrated trading hurdle (item D2), set with the
+    level offset; unset (null) it falls back to ``transaction_spread_gbp_per_mwh``.
+    """
+    hurdle = pricing.get("single_price_transaction_spread_gbp_per_mwh")
+    if hurdle is None:
+        return pricing
+    if float(hurdle) < 0:
+        raise ValueError("single_price_transaction_spread_gbp_per_mwh must be non-negative")
+    return dict(pricing, transaction_spread_gbp_per_mwh=float(hurdle))
+
+
+def single_price_export_bid_floor(pricing):
+    """The single basis's export-bid floor (GBP/MWh), or None when off.
+
+    ``single_price_export_bid_floor_gbp_per_mwh``: where the foreign price is
+    positive the export bid is at least ``min(foreign price, floor)``, so the
+    trading hurdle never stops GB exporting its surplus
+    (``market_coupling.floor_export_bid``). Imports keep the full hurdle.
+    """
+    floor = pricing.get("single_price_export_bid_floor_gbp_per_mwh")
+    if floor is None:
+        return None
+    if float(floor) < 0:
+        raise ValueError("single_price_export_bid_floor_gbp_per_mwh must be non-negative")
+    return float(floor)
+
+
+def single_price_reference(hourly, country, pricing, price_floor, price_cap):
+    """One hourly foreign price: the market's ENTSO-E (conditioned) shape plus its calibrated offset.
+
+    ``price = market shape + offset[market]``: the shape year's own level is
+    kept and one offset per coupled market
+    (``single_price_level_offsets_gbp_per_mwh``) moves it. The offsets are
+    calibrated so the model's gross trade matches CP30 (see
+    config/defaults/method/brownfield.yaml ``interconnectors.pricing``). The configured price case scales
+    the resulting annual level and a country override replaces it, as for the
+    separate CP.29 basis. ``hourly`` is the market shape
+    (``single_price_market_shapes``).
+    """
+    offsets = pricing.get("single_price_level_offsets_gbp_per_mwh") or {}
+    market = single_price_market_of(country, pricing)
+    if market not in offsets:
+        raise ValueError(f"single foreign price: no level offset for market {market!r} ({country})")
+    hourly = pd.to_numeric(hourly, errors="coerce").astype(float)
+    if hourly.notna().sum() == 0:
+        raise ValueError(f"single foreign price: no hourly shape observations for {country}")
+    hourly = hourly.interpolate(limit_direction="both").ffill().bfill()
+    shape_mean = float(hourly.mean())
+    target = _apply_price_case(shape_mean + float(offsets[market]), country, pricing)
+    return hourly.add(target - shape_mean).clip(price_floor, price_cap)
+
+
+def _separate_import_export_prices(import_reference, export_reference, efficiency, pricing):
+    """Construct a convex bid/ask pair from separately sourced trade prices."""
+    if import_reference is export_reference:
+        return _foreign_bid_ask_prices(import_reference, efficiency, pricing)
+    half_spread = max(
+        float(pricing.get("transaction_spread_gbp_per_mwh", 1.0)) / 2.0,
+        0.0,
+    )
+    epsilon = max(float(pricing.get("circulation_epsilon_gbp_per_mwh", 0.01)), 0.0)
+    eta = max(float(efficiency), 0.01) ** 2   # export slope efficiency**2 x bid (item D2)
+    import_ask = import_reference + half_spread
+    export_bid = export_reference - half_spread
+    maximum_export_bid = (import_ask - epsilon) / eta
+    if isinstance(export_bid, pd.Series):
+        export_bid = pd.concat([export_bid, maximum_export_bid], axis=1).min(axis=1)
+    else:
+        export_bid = min(float(export_bid), float(maximum_export_bid))
+    return import_ask, export_bid
+
+def _add_external_generators_legacy(network: pypsa.Network,
                            interconnectors_df: pd.DataFrame,
                            price_differentials_df: pd.DataFrame = None,
                            modelled_year: int = None,
                            fes_pathway: str = None,
-                           entsoe_prices_df: pd.DataFrame = None) -> None:
+                           entsoe_prices_df: pd.DataFrame = None,
+                           pricing_config: dict = None) -> None:
     """
     Add generators on external buses to represent European electricity supply.
     
@@ -626,6 +1094,7 @@ def add_external_generators(network: pypsa.Network,
             Columns are country names (France, Belgium, …), index is DatetimeIndex.
     """
     logger = logging.getLogger(__name__)
+    pricing_config = pricing_config or {}
     
     # Calculate total interconnector capacity by country
     # This will be used to set realistic EU_supply generator capacities
@@ -736,7 +1205,121 @@ def add_external_generators(network: pypsa.Network,
     logger.info(f"Added {generators_added} European supply generators on external buses")
 
 
-def add_interconnector_links(network: pypsa.Network, 
+def add_external_generators(
+    network,
+    interconnectors_df,
+    price_differentials_df=None,
+    modelled_year=None,
+    fes_pathway=None,
+    entsoe_prices_df=None,
+    pricing_config=None,
+):
+    '''Add price-taking foreign supply and export demand at external buses.'''
+    logger = logging.getLogger(__name__)
+    pricing = pricing_config or {}
+    filtered = (
+        price_differentials_df.copy()
+        if price_differentials_df is not None
+        else pd.DataFrame()
+    )
+    if not filtered.empty and modelled_year is not None and 'year' in filtered:
+        selected = filtered[filtered['year'] == modelled_year]
+        if not selected.empty:
+            filtered = selected
+    if not filtered.empty and fes_pathway and 'pathway' in filtered:
+        selected = filtered[
+            filtered['pathway'].astype(str).str.lower() == fes_pathway.lower()
+        ]
+        if not selected.empty:
+            filtered = selected
+
+    external_buses = interconnectors_df[
+        ['to_bus', 'counterparty_country']
+    ].drop_duplicates()
+    generators_added = 0
+    for row in external_buses.itertuples(index=False):
+        external_bus = row.to_bus
+        country = row.counterparty_country
+        cables = interconnectors_df[interconnectors_df['to_bus'] == external_bus]
+        capacity = float(cables['capacity_mw'].sum()) * 1.1
+        efficiencies = cables.get(
+            'losses_percent', pd.Series(2.5, index=cables.index)
+        ).apply(calculate_link_efficiency)
+        efficiency = float(efficiencies.min()) if not efficiencies.empty else 0.975
+        target = _foreign_price_target(country, filtered, pricing)
+        reference = target
+
+        entsoe_country = ENTSOE_COUNTRY_MAPPING.get(country.lower(), country)
+        entsoe_column = None
+        if entsoe_prices_df is not None and not entsoe_prices_df.empty:
+            entsoe_column = _case_insensitive_column(
+                entsoe_prices_df, entsoe_country
+            )
+        if entsoe_column is not None:
+            if entsoe_prices_df[entsoe_column].min() >= 0.0:
+                logger.warning(
+                    '%s hourly prices contain no negative values; refresh older '
+                    'cached ENTSO-E files if they were created with a zero floor',
+                    country,
+                )
+            reference = _recenter_and_clip_prices(
+                entsoe_prices_df[entsoe_column],
+                target,
+                float(pricing.get('price_floor', -500.0)),
+                float(pricing.get('price_cap', 500.0)),
+            )
+
+        import_ask, export_bid = _foreign_bid_ask_prices(
+            reference, efficiency, pricing
+        )
+        static_ask, static_bid = _foreign_bid_ask_prices(
+            target, efficiency, pricing
+        )
+        supply_name = f'EU_supply_{country}_{external_bus}'
+        export_name = f'EU_export_sink_{country}_{external_bus}'
+
+        network.add(
+            'Generator',
+            supply_name,
+            bus=external_bus,
+            p_nom=capacity,
+            p_min_pu=0.0,
+            p_max_pu=1.0,
+            marginal_cost=static_ask,
+            carrier='EU_import',
+            country=country,
+            foreign_market_role='import_supply',
+            source='Foreign day-ahead market',
+        )
+        network.add(
+            'Generator',
+            export_name,
+            bus=external_bus,
+            p_nom=capacity,
+            p_min_pu=-1.0,
+            p_max_pu=0.0,
+            marginal_cost=static_bid,
+            carrier='EU_export',
+            country=country,
+            foreign_market_role='export_demand',
+            source='Foreign day-ahead market',
+        )
+        generators_added += 2
+        if isinstance(import_ask, pd.Series):
+            _apply_time_varying_mc(network, supply_name, import_ask, logger)
+            _apply_time_varying_mc(network, export_name, export_bid, logger)
+        elif entsoe_prices_df is not None and not entsoe_prices_df.empty:
+            logger.warning(
+                'No ENTSO-E price column for %s; using static price', country
+            )
+        logger.info(
+            '%s foreign market: target %.2f, ask %.2f, bid %.2f GBP/MWh',
+            country, target, static_ask, static_bid,
+        )
+    logger.info('Added %d foreign market counterparties', generators_added)
+
+
+def _add_interconnector_links_legacy(network: pypsa.Network,
                              interconnectors_df: pd.DataFrame,
                              availability_df: pd.DataFrame,
                              price_differentials_df: pd.DataFrame = None,
@@ -839,6 +1422,438 @@ def add_interconnector_links(network: pypsa.Network,
     
     logger.info(f"Interconnector links: {links_added} added, {links_failed} failed")
 
+def _filter_price_differentials(price_differentials_df, modelled_year, fes_pathway):
+    """Select one explicit FES price pathway, with no all-pathway fallback."""
+    filtered = price_differentials_df.copy() if price_differentials_df is not None else pd.DataFrame()
+    if filtered.empty:
+        return filtered
+    if modelled_year is not None and "year" in filtered:
+        filtered = filtered[filtered["year"] == modelled_year]
+        if filtered.empty:
+            raise ValueError(f"No foreign price data for model year {modelled_year}")
+    if fes_pathway and "pathway" in filtered:
+        # The pathway's own rows first; a table that groups the two net zero pathways in one label (an earlier
+        # ES2 layout) is matched through it. NESO's current ES2 table lists them separately.
+        aliases = {
+            "holistic transition": "holistic transition, electric engagement",
+            "electric engagement": "holistic transition, electric engagement",
+        }
+        own = str(fes_pathway).strip().lower()
+        labels = filtered["pathway"].astype(str).str.strip().str.lower()
+        wanted = own if (labels == own).any() else aliases.get(own, own)
+        filtered = filtered[labels == wanted]
+        if filtered.empty:
+            raise ValueError(
+                f"No foreign price data matches pathway '{fes_pathway}' (resolved as '{wanted}')"
+            )
+    return filtered
+
+
+def add_external_market_balancers(
+    network,
+    interconnectors_df,
+    price_differentials_df=None,
+    modelled_year=None,
+    fes_pathway=None,
+    entsoe_prices_df=None,
+    pricing_config=None,
+):
+    """Add neutral foreign balances and construct the import/export price series."""
+    logger = logging.getLogger(__name__)
+    pricing = pricing_config or {}
+    filtered = _filter_price_differentials(
+        price_differentials_df, modelled_year, fes_pathway
+    )
+    historical_direct = modelled_year is not None and int(modelled_year) <= 2024
+    hourly_shape = str(pricing.get("hourly_shape", "entsoe")).lower()
+    # Task Y3: absent key (every scenario today) = False = unchanged behaviour.
+    # Item F13 (7 Oct 2026): "cp30_basis" (TYNDP NT2030 rebased to CP30's fuel,
+    # scripts/interconnectors/cp30_foreign_prices.py) is also used at its own level.
+    price_source = str(pricing.get("foreign_price_source", "entsoe")).strip().lower()
+    tyndp_prices = price_source in OWN_LEVEL_PRICE_SOURCES
+    if tyndp_prices and historical_direct:
+        raise ValueError(f"foreign_price_source {price_source!r} is for future scenarios, not historical ones")
+    # Item F13: one price per counterparty country instead of one per coupled
+    # market. GB then carries power between countries when their prices part by
+    # more than the hurdle, as it did in 2024 (ESPENI: 9.2 TWh of 10.6 TWh of
+    # exports in periods GB also imported). Off (absent key) = unchanged.
+    per_country = bool(pricing.get("single_price_per_country", False))
+
+    if "EU_market" not in network.carriers.index:
+        network.add("Carrier", "EU_market", nice_name="Foreign day-ahead market balance", color="#64748B")
+
+    market_prices = {}
+    market_shapes = None   # item D2 single basis: built on first use
+    external_buses = interconnectors_df[["to_bus", "counterparty_country"]].drop_duplicates()
+    for row in external_buses.itertuples(index=False):
+        external_bus, country = row.to_bus, row.counterparty_country
+        cables = interconnectors_df[interconnectors_df["to_bus"] == external_bus]
+        capacity = float(cables["capacity_mw"].sum()) * 1.1
+        import_target = _foreign_price_target(country, filtered, pricing)
+        export_target = _foreign_export_price_target(country, filtered, pricing)
+        import_reference = import_target
+        export_reference = export_target
+
+        entsoe_country = ENTSOE_COUNTRY_MAPPING.get(country.lower(), country)
+        entsoe_column = (
+            _case_insensitive_column(entsoe_prices_df, entsoe_country)
+            if entsoe_prices_df is not None and not entsoe_prices_df.empty
+            else None
+        )
+        if entsoe_column is not None:
+            floor = float(pricing.get("price_floor", -500.0))
+            cap = float(pricing.get("price_cap", 500.0))
+            hourly = entsoe_prices_df[entsoe_column]
+            if historical_direct:
+                # A historical back-test validates against actual price levels.
+                import_reference = _prepare_historical_entsoe_prices(hourly, floor, cap)
+                export_reference = import_reference
+            elif tyndp_prices:
+                # Task Y3 (FES 2050 plan): TYNDP's 2050 price at its own level,
+                # with no CP.29 re-centring. On the single basis the continent is
+                # one GB-capacity-weighted series, as for IC1; the level offset
+                # is 0 unless the scenario sets one. The annual mean becomes the
+                # import and export target, so it is also the tranche level.
+                from scripts.interconnectors.tyndp_prices import tyndp_market_reference
+                if single_foreign_price_basis(pricing):
+                    market = single_price_market_of(country, pricing)
+                    offset = float((pricing.get("single_price_level_offsets_gbp_per_mwh") or {}).get(market, 0.0))
+                    if per_country:
+                        hourly = pd.to_numeric(hourly, errors="coerce").astype(float) + offset
+                    else:
+                        if market_shapes is None:
+                            market_shapes = single_price_market_shapes(entsoe_prices_df, interconnectors_df, pricing)
+                        hourly = market_shapes[market] + offset
+                import_reference, import_target = tyndp_market_reference(
+                    hourly, country, pricing, floor, cap, _apply_price_case)
+                export_reference, export_target = import_reference, import_target
+            elif single_foreign_price_basis(pricing):
+                # Item D2: one hourly price per market, the shape plus a
+                # calibrated offset; import and export differ only by the
+                # transaction spread and the loss. The CP.29 targets stay as
+                # the tranche levels (market_import_level/export_level).
+                if market_shapes is None:
+                    market_shapes = single_price_market_shapes(entsoe_prices_df, interconnectors_df, pricing)
+                import_reference = single_price_reference(
+                    market_shapes[single_price_market_of(country, pricing)], country, pricing, floor, cap)
+                export_reference = import_reference
+            else:
+                # Future CP30/FES cases use ENTSO-E only as an hourly shape.
+                import_reference = _recenter_and_clip_prices(hourly, import_target, floor, cap)
+                export_reference = _recenter_and_clip_prices(hourly, export_target, floor, cap)
+        elif single_foreign_price_basis(pricing) and not historical_direct and hourly_shape != "flat":
+            raise ValueError(
+                f"foreign_price_basis 'single' needs an hourly ENTSO-E shape for {country}; "
+                "its level is an offset on that shape"
+            )
+        elif entsoe_prices_df is not None and not entsoe_prices_df.empty:
+            if not historical_direct:
+                # A shaped run with one counterparty left flat is silently wrong:
+                # NeuConnect (Germany) had no column until 26 Sep 2026. Add the
+                # country to fetch_entsoe_prices.COUNTRY_ZONE_MAP instead.
+                raise ValueError(
+                    f"No ENTSO-E price column for {country} (looked for {entsoe_country!r} in "
+                    f"{list(entsoe_prices_df.columns)}); every counterparty needs an hourly shape"
+                )
+            logger.warning("No ENTSO-E price column for %s; using annual trade-price targets", country)
+        if tyndp_prices and entsoe_column is None:
+            raise ValueError(f"foreign_price_source {price_source!r}: the price file has no column for {country}")
+
+        balance_name = f"EU_market_balance_{country}_{external_bus}"
+        network.add(
+            "Generator", balance_name, bus=external_bus, p_nom=capacity,
+            p_min_pu=-1.0, p_max_pu=1.0, marginal_cost=0.0,
+            carrier="EU_market", country=country,
+            foreign_market_role="market_balance", source="Neutral foreign market energy balance",
+        )
+        market_prices[external_bus] = {
+            "country": country,
+            "import_target": import_target,
+            "export_target": export_target,
+            "import_reference": import_reference,
+            "export_reference": export_reference,
+        }
+        if single_foreign_price_basis(pricing) and hourly_shape == "flat" and not historical_direct:
+            # The single basis is an offset on an hourly shape; a flat run has
+            # none, so it keeps the flat CP.29 import/export targets (declared).
+            logger.warning(
+                "%s: hourly_shape 'flat' has no shape for the single foreign price; "
+                "using the separate flat CP.29 import/export targets", country,
+            )
+        if isinstance(import_reference, pd.Series) and import_reference is export_reference and not historical_direct:
+            # Single basis: the static targets are the shaped price's own mean,
+            # one object so the spread logic treats import and export as one price.
+            single_mean = float(import_reference.mean())
+            market_prices[external_bus]["static_reference"] = single_mean
+        if historical_direct:
+            price_basis = "raw historical ENTSO-E"
+        elif tyndp_prices and price_source == "cp30_basis":
+            price_basis = "TYNDP NT2030 rebased to CP30 fuel, own level, %s (item F13)" % (
+                "per country" if per_country else "per coupled market")
+        elif tyndp_prices:
+            price_basis = "TYNDP 2050 hourly price at its own level, no CP.29 re-centring (task Y3)"
+        elif single_foreign_price_basis(pricing) and "static_reference" in market_prices[external_bus]:
+            price_basis = "single hourly price: ENTSO-E shape + calibrated offset (mean %.2f)" % float(
+                import_reference.mean())
+        elif entsoe_column is not None:
+            price_basis = "future target + ENTSO-E shape"
+        elif hourly_shape == "flat":
+            price_basis = "flat annual trade-price target"
+        else:
+            price_basis = "annual trade-price target (no hourly shape available)"
+        logger.info(
+            "%s foreign market: import target %.2f, export target %.2f GBP/MWh (%s)",
+            country, import_target, export_target,
+            price_basis,
+        )
+    return market_prices
+
+def _add_directional_interconnector_links(
+    network,
+    interconnectors_df,
+    availability_df,
+    price_differentials_df=None,
+    modelled_year=None,
+    fes_pathway=None,
+    entsoe_prices_df=None,
+    pricing_config=None,
+):
+    '''Add a loss-correct directional import/export pair for every cable.'''
+    logger = logging.getLogger(__name__)
+    pricing = pricing_config or {}
+    market_prices = add_external_market_balancers(
+        network,
+        interconnectors_df,
+        price_differentials_df,
+        modelled_year=modelled_year,
+        fes_pathway=fes_pathway,
+        entsoe_prices_df=entsoe_prices_df,
+        pricing_config=pricing,
+    )
+    added = 0
+    failed = 0
+    for row in interconnectors_df.to_dict(orient='records'):
+        try:
+            name = row['name']
+            gb_bus = row['from_bus']
+            foreign_bus = row['to_bus']
+            if pd.isna(gb_bus) or pd.isna(foreign_bus):
+                raise ValueError('invalid bus mapping')
+            if gb_bus not in network.buses.index or foreign_bus not in network.buses.index:
+                raise ValueError('mapped bus is absent from network')
+
+            capacity = (
+                ZEROED_CAPACITY_MW
+                if FORCE_ZERO_INTERCONNECTORS
+                else float(row['capacity_mw'])
+            )
+            efficiency = calculate_link_efficiency(row.get('losses_percent', 2.5))
+            counterparty = row.get('counterparty_country', 'Unknown')
+            market = market_prices.get(foreign_bus)
+            if market is None:
+                raise ValueError(f'no foreign market balance for {foreign_bus}')
+            import_ask, export_bid = _separate_import_export_prices(
+                market['import_reference'], market['export_reference'], efficiency, pricing
+            )
+            static_ask, static_bid = _separate_import_export_prices(
+                market['import_target'], market['export_target'], efficiency, pricing
+            )
+            import_name = f'IC_IMPORT_{name}'
+            export_name = f'IC_EXPORT_{name}'
+            common = {
+                'p_nom': capacity,
+                'p_min_pu': 0.0,
+                'p_max_pu': 1.0,
+                'efficiency': efficiency,
+                'carrier': 'DC',
+                'interconnector_name': name,
+                'interconnector_pair_id': name,
+                'counterparty_country': counterparty,
+                'commissioning_year': row.get('commissioning_year', np.nan),
+                'source': row.get('source', 'Unknown'),
+                'foreign_market_pricing': 'direct_link',
+            }
+            ramp_limit = pricing.get('ramp_limit_per_hour')
+            if ramp_limit is not None:
+                common['ramp_limit_up'] = float(ramp_limit)
+                common['ramp_limit_down'] = float(ramp_limit)
+
+            network.add(
+                'Link',
+                import_name,
+                bus0=foreign_bus,
+                bus1=gb_bus,
+                interconnector_direction='import',
+                marginal_cost=static_ask,
+                foreign_market_price=static_ask,
+                **common,
+            )
+            network.add(
+                'Link',
+                export_name,
+                bus0=gb_bus,
+                bus1=foreign_bus,
+                interconnector_direction='export',
+                marginal_cost=-efficiency * static_bid,
+                foreign_market_price=static_bid,
+                **common,
+            )
+            if isinstance(import_ask, pd.Series):
+                _apply_time_varying_link_mc(
+                    network, import_name, import_ask, logger
+                )
+                _apply_time_varying_link_mc(
+                    network, export_name, -efficiency * export_bid, logger
+                )
+            logger.info(
+                '%s direct link prices: import ask %.2f, export bid %.2f GBP/MWh',
+                name,
+                static_ask,
+                static_bid,
+            )
+            added += 1
+        except Exception as error:
+            logger.error('Could not add interconnector %s: %s', row.get('name'), error)
+            failed += 1
+    logger.info(
+        'Interconnectors: %d directional pairs added, %d failed', added, failed
+    )
+
+
+
+
+def _apply_time_varying_link_market_attribute(network, link_name, attribute, values):
+    """Store a custom time-varying price attribute for one Link."""
+    table = network.links_t.get(attribute, pd.DataFrame(index=network.snapshots))
+    table = table.reindex(index=network.snapshots)
+    table[link_name] = pd.Series(values).reindex(network.snapshots).ffill().bfill()
+    network.links_t[attribute] = table
+
+
+def add_interconnector_links(
+    network,
+    interconnectors_df,
+    availability_df,
+    price_differentials_df=None,
+    modelled_year=None,
+    fes_pathway=None,
+    entsoe_prices_df=None,
+    pricing_config=None,
+):
+    """Add one signed physical Link per cable with piecewise bid/ask pricing.
+
+    Link flow is positive from the foreign bus into GB (an import) and negative
+    from GB into the foreign bus (an export). The market objective is added by
+    ``build_piecewise_interconnector_cost_callback``; the native Link marginal
+    cost remains zero so it cannot incorrectly apply one price to both signs.
+    """
+    logger = logging.getLogger(__name__)
+    pricing = pricing_config or {}
+    market_prices = add_external_market_balancers(
+        network,
+        interconnectors_df,
+        price_differentials_df,
+        modelled_year=modelled_year,
+        fes_pathway=fes_pathway,
+        entsoe_prices_df=entsoe_prices_df,
+        pricing_config=pricing,
+    )
+    added = 0
+    failed = 0
+    for row in interconnectors_df.to_dict(orient="records"):
+        try:
+            name = row["name"]
+            gb_bus = row["from_bus"]
+            foreign_bus = row["to_bus"]
+            if pd.isna(gb_bus) or pd.isna(foreign_bus):
+                raise ValueError("invalid bus mapping")
+            if gb_bus not in network.buses.index or foreign_bus not in network.buses.index:
+                raise ValueError("mapped bus is absent from network")
+
+            capacity = (
+                ZEROED_CAPACITY_MW
+                if FORCE_ZERO_INTERCONNECTORS
+                else float(row["capacity_mw"])
+            )
+            efficiency = calculate_link_efficiency(row.get("losses_percent", 2.5))
+            market = market_prices.get(foreign_bus)
+            if market is None:
+                raise ValueError(f"no foreign market balance for {foreign_bus}")
+            single = "static_reference" in market
+            # The single basis trades through its own calibrated hurdle (item D2),
+            # so the separate basis keeps transaction_spread unchanged.
+            link_pricing = single_price_link_pricing(pricing) if single else pricing
+            import_ask, export_bid = _separate_import_export_prices(
+                market["import_reference"], market["export_reference"], efficiency, link_pricing
+            )
+            # Single basis only: exports keep a bid of min(foreign price, floor)
+            # when the foreign price is positive, so the hurdle cannot make GB
+            # curtail surplus it could sell (item D2 surplus floor).
+            export_bid_floor = single_price_export_bid_floor(pricing) if single else None
+            if single:
+                static_ask, static_bid = _separate_import_export_prices(
+                    market["static_reference"], market["static_reference"], efficiency, link_pricing
+                )
+                static_bid = floor_export_bid(static_bid, market["static_reference"], export_bid_floor)
+            else:
+                static_ask, static_bid = _separate_import_export_prices(
+                    market["import_target"], market["export_target"], efficiency, link_pricing
+                )
+            link_name = f"IC_{name}"
+            link_data = {
+                "bus0": foreign_bus,
+                "bus1": gb_bus,
+                "p_nom": capacity,
+                "p_min_pu": -1.0,
+                "p_max_pu": 1.0,
+                "efficiency": efficiency,
+                "marginal_cost": static_ask,
+                "carrier": "DC",
+                "interconnector_name": name,
+                "interconnector_pair_id": name,
+                "interconnector_direction": "bidirectional",
+                "counterparty_country": row.get("counterparty_country", "Unknown"),
+                "commissioning_year": row.get("commissioning_year", np.nan),
+                "source": row.get("source", "Unknown"),
+                "foreign_market_pricing": "piecewise_bidirectional",
+                "market_export_bid": static_bid,
+                "market_export_bid_offset": static_ask - static_bid,
+                # The annual levels before any spread: the volume tranches scale
+                # their price steps on these (item IC1).
+                "market_import_level": float(market["import_target"]),
+                "market_export_level": float(market["export_target"]),
+                # Separate CP.29 import/export series only on the legacy basis; the
+                # single basis (item D2) rebuilds the bid from the ask and spread.
+                "market_separate_import_export_prices": (
+                    str(pricing.get("source", "derived")).lower() == "cp30" and not single
+                ),
+                "market_price_basis": "single" if single else "separate",
+                "market_spread_half": max(float(link_pricing.get("transaction_spread_gbp_per_mwh", 1.0)) / 2.0, 0.0),
+                "market_circulation_epsilon": max(float(link_pricing.get("circulation_epsilon_gbp_per_mwh", 0.01)), 0.0),
+                # Read by piecewise_market_prices when it rebuilds the bid; NaN = no floor.
+                EXPORT_BID_FLOOR_COLUMN: np.nan if export_bid_floor is None else export_bid_floor,
+            }
+            ramp_limit = pricing.get("ramp_limit_per_hour")
+            if ramp_limit is not None:
+                link_data["ramp_limit_up"] = float(ramp_limit)
+                link_data["ramp_limit_down"] = float(ramp_limit)
+            network.add("Link", link_name, **link_data)
+            if isinstance(import_ask, pd.Series):
+                _apply_time_varying_link_mc(network, link_name, import_ask, logger)
+
+            logger.info(
+                "%s signed Link prices: import ask %.2f, export bid %.2f GBP/MWh",
+                name,
+                static_ask,
+                static_bid,
+            )
+            added += 1
+        except Exception as error:
+            logger.error("Could not add interconnector %s: %s", row.get("name"), error)
+            failed += 1
+    logger.info("Interconnectors: %d signed Links added, %d failed", added, failed)
+
+
 def apply_availability_profiles(network: pypsa.Network, availability_df: pd.DataFrame) -> None:
     """
     Apply availability profiles to interconnector links.
@@ -880,27 +1895,59 @@ def apply_availability_profiles(network: pypsa.Network, availability_df: pd.Data
     if availability_year != network_year:
         logger.info(f"Availability profiles are for {availability_year}, network is for {network_year}")
         logger.info("Mapping availability profiles using hour-of-year alignment")
+    import calendar as _calendar
+    # Exactly one of the two years a leap year (2013 onto 2040, or 2020 onto 2030): match by month, day
+    # and hour, not day of year, which reads every day from 1 March a day off. A target 29 February the
+    # source lacks takes 28 February's; a source 29 February the target lacks is unused.
+    match_by_calendar = _calendar.isleap(network_year) != _calendar.isleap(availability_year)
     
-    # Create availability time series for each link
+    # Create availability time series for each link. An outage limits both
+    # directions: a signed (bidirectional) link, static p_min_pu < 0, also gets
+    # links_t.p_min_pu = p_min_pu * availability. Before 27 Sep 2026 (fix S1)
+    # only p_max_pu was written, so an out-of-service cable could not import
+    # but could still export at full rating.
     profiles_applied = 0
     profiles_defaulted = 0
-    
+    outage_hours = {}
+
+    def _write(link_name: str, availability: pd.Series) -> None:
+        static_max = float(pd.to_numeric(ic_links.at[link_name, 'p_max_pu'], errors='coerce'))
+        static_min = float(pd.to_numeric(ic_links.at[link_name, 'p_min_pu'], errors='coerce'))
+        static_max = 1.0 if not np.isfinite(static_max) else static_max
+        static_min = 0.0 if not np.isfinite(static_min) else static_min
+        availability = availability.clip(lower=0.0, upper=1.0)
+        network.links_t.p_max_pu[link_name] = (
+            availability * static_max if static_max > 0.0 else pd.Series(static_max, index=availability.index)
+        )
+        if static_min < 0.0:
+            network.links_t.p_min_pu[link_name] = availability * static_min
+        outage_hours[link_name] = int((availability < 1.0 - 1e-9).sum())
+
     for link_name in ic_links.index:
-        # Extract interconnector name from link name
-        ic_name = link_name.replace('IC_', '')
+        # Directional pairs share the original cable name and availability.
+        if 'interconnector_name' in ic_links.columns:
+            ic_name = ic_links.at[link_name, 'interconnector_name']
+        else:
+            ic_name = link_name.replace('IC_', '')
         
         # Find matching availability profile
         link_availability = availability_df[availability_df['name'] == ic_name].copy()
         
         if len(link_availability) > 0:
-            # Create hour-of-year index for matching across years
-            link_availability['hour_of_year'] = (
-                link_availability['time'].dt.dayofyear * 24 + 
-                link_availability['time'].dt.hour
-            )
-            
-            # Create the same for network snapshots
-            network_hours = network_snapshots.dayofyear * 24 + network_snapshots.hour
+            if match_by_calendar:
+                times = link_availability['time'].dt
+                link_availability['hour_of_year'] = list(zip(times.month, times.day, times.hour))
+                source_has_leap_day = bool(((times.month == 2) & (times.day == 29)).any())
+                leap_day = (network_snapshots.month == 2) & (network_snapshots.day == 29)
+                days = np.where(leap_day & (not source_has_leap_day), 28, network_snapshots.day)
+                network_hours = list(zip(network_snapshots.month, days, network_snapshots.hour))
+            else:
+                # Hour-of-year index for matching across years
+                link_availability['hour_of_year'] = (
+                    link_availability['time'].dt.dayofyear * 24 +
+                    link_availability['time'].dt.hour
+                )
+                network_hours = network_snapshots.dayofyear * 24 + network_snapshots.hour
             
             # Build lookup dictionary from availability data
             hour_to_availability = dict(zip(
@@ -917,22 +1964,25 @@ def apply_availability_profiles(network: pypsa.Network, availability_df: pd.Data
             # Replace any NaN values with 1.0 (full availability)
             p_max_pu_values = p_max_pu_values.fillna(1.0)
             
-            # Add time-varying p_max_pu
-            network.links_t.p_max_pu[link_name] = p_max_pu_values
-            
+            # Time-varying limits in both directions
+            _write(link_name, p_max_pu_values)
+
             profiles_applied += 1
             logger.debug(f"Applied availability profile to {link_name} "
                         f"(mean={p_max_pu_values.mean():.3f})")
         else:
-            # No availability profile found - set default p_max_pu=1.0 for all snapshots
-            network.links_t.p_max_pu[link_name] = pd.Series(
-                1.0, 
-                index=network_snapshots
-            )
+            # No availability profile found - full availability for all snapshots
+            _write(link_name, pd.Series(1.0, index=network_snapshots))
             profiles_defaulted += 1
             logger.debug(f"No availability profile for {ic_name} - using default p_max_pu=1.0")
-    
+
     logger.info(f"Availability profiles: {profiles_applied} applied, {profiles_defaulted} defaulted to 1.0")
+    reduced = {name: hours for name, hours in outage_hours.items() if hours}
+    if reduced:
+        logger.info(
+            "Interconnector hours below full availability (both directions limited): "
+            + ", ".join(f"{name} {hours}" for name, hours in sorted(reduced.items()))
+        )
 
 
 def add_historical_interconnector_links(network: pypsa.Network,
@@ -1417,7 +2467,13 @@ def validate_network_with_interconnectors(network: pypsa.Network) -> bool:
         logger.info(f"✓ Network contains {len(ic_links)} interconnector links")
         
         if len(ic_links) > 0:
-            total_ic_capacity = ic_links['p_nom'].sum()
+            if 'interconnector_pair_id' in ic_links.columns:
+                paired = ic_links.dropna(subset=['interconnector_pair_id'])
+                total_ic_capacity = paired.groupby(
+                    'interconnector_pair_id'
+                )['p_nom'].first().sum()
+            else:
+                total_ic_capacity = ic_links['p_nom'].sum()
             logger.info(f"  Total interconnector capacity: {total_ic_capacity:.1f} MW")
             
             # Check for valid bus connections
@@ -1436,9 +2492,59 @@ def validate_network_with_interconnectors(network: pypsa.Network) -> bool:
             
             logger.info(f"✓ All interconnector links have valid bus connections")
             
+            direct_pricing = (
+                'foreign_market_pricing' in ic_links.columns
+                and ic_links['foreign_market_pricing']
+                .astype(str).str.lower().isin(['direct_link', 'piecewise_bidirectional']).any()
+            )
+            if direct_pricing:
+                if 'foreign_market_role' not in network.generators.columns:
+                    logger.error(
+                        'Direct-link pricing requires neutral foreign market balances'
+                    )
+                    return False
+                market_balances = network.generators[
+                    network.generators['foreign_market_role']
+                    .astype(str).str.lower().eq('market_balance')
+                ]
+                external_buses = {
+                    bus
+                    for bus in set(ic_links['bus0']) | set(ic_links['bus1'])
+                    if 'External' in str(bus)
+                }
+                missing_balances = (
+                    external_buses - set(market_balances['bus'].unique())
+                )
+                if missing_balances:
+                    logger.error(
+                        'External buses without neutral market balances: %s',
+                        missing_balances,
+                    )
+                    return False
+                invalid_balances = market_balances[
+                    (market_balances['p_min_pu'] != -1.0)
+                    | (market_balances['p_max_pu'] != 1.0)
+                    | (market_balances['marginal_cost'] != 0.0)
+                ]
+                if not invalid_balances.empty:
+                    logger.error(
+                        'Foreign market balances must be signed and zero-cost: %s',
+                        invalid_balances.index.tolist(),
+                    )
+                    return False
+                logger.info(
+                    'All %d external buses use bounded neutral market balances; '
+                    'import asks and export bids are priced directly on Links',
+                    len(external_buses),
+                )
+                return True
+
             # Check for external generators
             eu_generators = network.generators[
                 network.generators.index.str.startswith('EU_supply_')
+            ]
+            eu_export_sinks = network.generators[
+                network.generators.index.str.startswith('EU_export_sink_')
             ]
             
             if len(eu_generators) == 0:
@@ -1448,7 +2554,11 @@ def validate_network_with_interconnectors(network: pypsa.Network) -> bool:
                 logger.info(f"✓ Found {len(eu_generators)} European supply generators")
                 
                 # Check that each external bus has a generator
-                external_buses = set(ic_links['bus1'].unique())
+                external_buses = {
+                    bus
+                    for bus in set(ic_links['bus0']) | set(ic_links['bus1'])
+                    if 'External' in str(bus)
+                }
                 buses_with_generators = set(eu_generators['bus'].unique())
                 
                 missing_generators = external_buses - buses_with_generators
@@ -1457,6 +2567,20 @@ def validate_network_with_interconnectors(network: pypsa.Network) -> bool:
                 else:
                     logger.info(f"✓ All {len(external_buses)} external buses have supply generators")
                 
+                directional = (
+                    'interconnector_direction' in ic_links.columns
+                    and ic_links['interconnector_direction'].notna().any()
+                )
+                if directional:
+                    buses_with_export_sinks = set(eu_export_sinks['bus'].unique())
+                    missing_export_sinks = external_buses - buses_with_export_sinks
+                    if missing_export_sinks:
+                        logger.error(
+                            'External buses without export sinks: %s',
+                            missing_export_sinks,
+                        )
+                        return False
+
                 # Log generator details
                 for gen_name, gen in eu_generators.iterrows():
                     logger.debug(
@@ -1520,10 +2644,20 @@ def main():
         logger.info(f"Mapped interconnectors: {mapped_file}")
         logger.info(f"Scenario type: {'HISTORICAL' if is_historical_scenario else 'FUTURE'}")
         logger.info(f"Modelled year: {modelled_year}")
-        logger.info(f"FES pathway: {fes_pathway}")
+        if scenario_source == 'CP30':
+            logger.info(f"CP30 pathway: {cp30_pathway}")
+            logger.info(f"Spatial/pricing FES proxy pathway: {fes_pathway}")
+        else:
+            logger.info(f"FES pathway: {fes_pathway}")
         
         if is_historical_scenario:
-            logger.info(f"Historical flows: {historical_flows_file}")
+            if historical_flow_mode not in {'fixed', 'market_coupled'}:
+                raise ValueError(
+                    "interconnectors.historical_flow_mode must be 'fixed' or "
+                    f"'market_coupled', got {historical_flow_mode!r}"
+                )
+            logger.info(f"Historical flow mode: {historical_flow_mode}")
+            logger.info(f"Historical ESPENI reference flows: {historical_flows_file}")
         else:
             logger.info(f"Availability profiles: {availability_file}")
             logger.info(f"Price differentials: {price_diff_file}")
@@ -1562,14 +2696,36 @@ def main():
             if scenario_year is not None:
                 logger.info(f"Modelled year: {scenario_year}")
             
-            # Filter interconnectors by commissioning year for historical scenarios
-            # This ensures only interconnectors that existed in the modelled year are included
-            interconnectors_df = filter_interconnectors_by_commissioning_year(
-                interconnectors_df, 
-                scenario_year=scenario_year,
-                is_historical=is_historical_scenario
-            )
+            # The opt-in historical market-coupled calibration uses ESPENI's
+            # commissioning metadata as an availability registry. Unlike the
+            # legacy fixed-flow path, unknown-year cables are excluded rather
+            # than assumed available.
+            if is_historical_scenario and historical_flow_mode == 'market_coupled':
+                interconnectors_df = enrich_historical_commissioning_years(
+                    interconnectors_df, input_historical_flows_metadata
+                )
+                interconnectors_df = restrict_market_coupled_historical_interconnectors(
+                    interconnectors_df, scenario_year
+                )
+            else:
+                interconnectors_df = filter_interconnectors_by_commissioning_year(
+                    interconnectors_df,
+                    scenario_year=scenario_year,
+                    is_historical=is_historical_scenario,
+                )
             
+            # CP30 cable set from the declared composition (15 Oct 2026): CP30's nominal
+            # ratings, MaresConnect added, the Isle of Man cable outside the count; no
+            # pro-rata uplift. Before the external buses, so an added cable gets its own.
+            if not is_historical_scenario and scenario_source == 'CP30' and len(interconnectors_df) > 0:
+                if not input_cp30_composition:
+                    raise ValueError("A future CP30 build needs the cp30_interconnector_composition input "
+                                     "(config/defaults/method/brownfield.yaml interconnectors.cp30_composition.file)")
+                interconnectors_df = apply_cp30_interconnector_composition(
+                    interconnectors_df, network, input_cp30_composition, input_cp30_es1,
+                    cp30_pathway, modelled_year,
+                )
+
             if len(interconnectors_df) == 0:
                 logger.warning("No interconnectors remaining after commissioning year filter!")
             else:
@@ -1601,9 +2757,13 @@ def main():
                 else:
                     logger.warning("ENTSO-E price file could not be loaded — falling back to derived MC")
 
-            if is_historical_scenario and len(interconnectors_df) > 0:
-                # HISTORICAL: Use fixed flows from ESPENI
-                logger.info("=== HISTORICAL SCENARIO: Using fixed interconnector flows ===")
+            if (
+                is_historical_scenario
+                and historical_flow_mode == 'fixed'
+                and len(interconnectors_df) > 0
+            ):
+                # HISTORICAL DEFAULT: use observed ESPENI flows as fixed constraints.
+                logger.info("=== HISTORICAL SCENARIO: Using fixed ESPENI interconnector flows ===")
                 
                 if not historical_flows_file or not Path(historical_flows_file).exists():
                     raise FileNotFoundError(
@@ -1619,18 +2779,52 @@ def main():
                 )
                 
             elif len(interconnectors_df) > 0:
-                # FUTURE: Use optimizable links with availability and prices
-                logger.info("=== FUTURE SCENARIO: Using optimizable interconnector flows ===")
+                # Future and opt-in historical back-tests use optimizable Links.
+                # Historical market-coupled mode retains model-year cable capacity;
+                # it never applies FES/CP30 scaling.
+                if is_historical_scenario:
+                    logger.info(
+                        "=== HISTORICAL MARKET-COUPLED BACK-TEST: Optimizing flows against ESPENI reference ==="
+                    )
+                    if not historical_flows_file or not Path(historical_flows_file).exists():
+                        raise FileNotFoundError(
+                            "Historical market-coupled back-test requires ESPENI reference flows: "
+                            f"{historical_flows_file}"
+                        )
+                else:
+                    logger.info("=== FUTURE SCENARIO: Using optimizable interconnector flows ===")
                 
-                # Scale interconnector capacities to FES projections
-                interconnectors_df = scale_interconnectors_to_fes(
-                    interconnectors_df,
-                    modelled_year=modelled_year,
-                    fes_pathway=fes_pathway
+                # Scale only forward scenarios. CP30 uses ES1 aggregate MW; FES is
+                # only used for pricing/availability inputs.
+                if not is_historical_scenario and scenario_source == 'CP30':
+                    logger.info("CP30 interconnectors from the declared composition: no pro-rata scaling")
+                elif not is_historical_scenario:
+                    interconnectors_df = scale_interconnectors_to_fes(
+                        interconnectors_df,
+                        modelled_year=modelled_year,
+                        fes_pathway=fes_pathway,
+                        fes_data_path=input_fes_capacity_data or None,
+                    )
+                    if input_fes_capacity_data:
+                        # HT50_*: a silent fall-back to unscaled cables is wrong, not degraded.
+                        _fes_ic = pd.read_csv(input_fes_capacity_data, low_memory=False)
+                        _target = float(_fes_ic.loc[
+                            _fes_ic['Building Block ID Number'].eq('Gen_BB022')
+                            & _fes_ic['FES Pathway'].eq(fes_pathway), str(modelled_year)].sum())
+                        _total = float(interconnectors_df['capacity_mw'].sum())
+                        if abs(_total - _target) > 1.0:
+                            raise ValueError(
+                                f"Interconnectors total {_total:,.1f} MW after FES scaling, but "
+                                f"{input_fes_capacity_data} gives {_target:,.1f} MW for {fes_pathway} {modelled_year}")
+                
+                # Historical back-tests use commissioned capacity throughout.
+                # Documented outage data can later replace this all-available
+                # assumption without changing the default fixed-flow path.
+                availability_df = (
+                    pd.DataFrame()
+                    if is_historical_scenario
+                    else load_availability_profiles(availability_file)
                 )
-                
-                # Load availability profiles
-                availability_df = load_availability_profiles(availability_file)
                 
                 # Load price differentials (optional)
                 price_differentials_df = pd.DataFrame()
@@ -1639,6 +2833,34 @@ def main():
                 elif price_diff_file:
                     logger.warning(f"Price differential file not found: {price_diff_file}")
                 
+                # CP30 scenarios take boundary trade prices from the authoritative
+                # CP.29 workbook extract. FES remains only an explicitly declared
+                # spatial proxy elsewhere in the CP30 workflow.
+                effective_pricing_config = pricing_config
+                if str(effective_pricing_config.get("source", "derived")).lower() == "cp30":
+                    cp30_prices = load_cp30_interconnector_prices(input_cp30_interconnector_prices)
+                    matched = cp30_prices[
+                        (pd.to_numeric(cp30_prices["year"], errors="coerce") == int(modelled_year))
+                        & (cp30_prices["pathway"].astype(str).str.strip().str.lower()
+                           == str(cp30_pathway).strip().lower())
+                    ]
+                    if len(matched) != 1:
+                        raise ValueError(
+                            "CP30 pricing requires exactly one CP.29 price row for "
+                            f"year={modelled_year}, pathway={cp30_pathway!r}; found {len(matched)}"
+                        )
+                    effective_pricing_config = dict(effective_pricing_config)
+                    effective_pricing_config["cp30_import_price_gbp_per_mwh"] = float(
+                        matched.iloc[0]["import_price_gbp_per_mwh"]
+                    )
+                    effective_pricing_config["cp30_export_price_gbp_per_mwh"] = float(
+                        matched.iloc[0]["export_price_gbp_per_mwh"]
+                    )
+                    logger.info(
+                        "CP30 CP.29 interconnector prices: import %.2f, export %.2f GBP/MWh",
+                        effective_pricing_config["cp30_import_price_gbp_per_mwh"],
+                        effective_pricing_config["cp30_export_price_gbp_per_mwh"],
+                    )
                 # Add optimizable interconnector links
                 add_interconnector_links(
                     network, 
@@ -1647,9 +2869,26 @@ def main():
                     price_differentials_df,
                     modelled_year=modelled_year,
                     fes_pathway=fes_pathway,
-                    entsoe_prices_df=entsoe_prices_df if len(entsoe_prices_df) > 0 else None
+                    entsoe_prices_df=entsoe_prices_df if len(entsoe_prices_df) > 0 else None,
+                    pricing_config=effective_pricing_config,
                 )
-                
+                tranche_config = effective_pricing_config.get("volume_tranches") or {}
+                if tranche_config.get("enabled", False):
+                    # Item IC1: the foreign price responds to GB's trade volume.
+                    from scripts.interconnectors.volume_tranches import (
+                        apply_volume_tranches,
+                        load_market_demand_twh,
+                    )
+                    if not input_market_demand:
+                        raise ValueError("volume_tranches is enabled but no market_demand input was given")
+                    demand_twh = load_market_demand_twh(
+                        input_market_demand,
+                        tranche_config["eu_scenario"],
+                        tranche_config["pathway_alignment"],
+                        int(tranche_config["demand_year"]),
+                    )
+                    apply_volume_tranches(network, tranche_config, demand_twh, logger=logger)
+
                 # Apply availability profiles
                 if len(availability_df) > 0:
                     apply_availability_profiles(network, availability_df)
@@ -1692,7 +2931,15 @@ def main():
         logger.info(f"  Interconnector links: {len(ic_links)}")
         
         if len(ic_links) > 0:
-            total_capacity = ic_links['p_nom'].sum()
+            if 'interconnector_pair_id' in ic_links.columns:
+                total_capacity = (
+                    ic_links.dropna(subset=['interconnector_pair_id'])
+                    .groupby('interconnector_pair_id')['p_nom']
+                    .first()
+                    .sum()
+                )
+            else:
+                total_capacity = ic_links['p_nom'].sum()
             logger.info(f"  Total interconnector capacity: {total_capacity:.1f} MW")
             
             # Check if historical validation data is available

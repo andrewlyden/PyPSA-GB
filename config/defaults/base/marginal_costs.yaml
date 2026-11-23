@@ -1,0 +1,196 @@
+# Marginal costs of generators (GBP/MWh electrical unless stated).
+# Historical scenarios (modelled_year <= 2024) use built-in historical lookup tables; future scenarios use the
+# settings below unless a scenario overrides them.
+
+# Nuclear marginal cost (GBP/MWh); overrides per-generator empirical values, since ELEXON nuclear bid prices
+# reflect strategic behaviour, not short-run cost.
+nuclear_mc: 10.0
+
+# Fallback fuel prices (GBP/MWh thermal) when neither historical tables nor FES prices are available.
+fuel_prices:
+  gas: 35.0
+  coal: 30.0
+  oil: 75.0
+  biomass: 45.0
+
+# Fallback carbon price (GBP/tCO2).
+carbon_price: 85.0
+
+# Use built-in historical lookup tables for modelled_year <= 2024
+use_historical_data: true
+
+# Use FES-extracted prices for future scenarios (>2024)
+use_fes_prices: true
+
+# Future commodity-price cases (GBP real 2024 modelling assumptions). Total carbon cost is UK ETS + Carbon Price
+# Support.
+future_costs:
+  enabled: true
+  case: central                       # low | central | high | neso_cp2030
+  # Date from which Carbon Price Support no longer applies (null = it continues). A case whose modelled period starts
+  # on or after it keeps only its UK ETS price (apply_marginal_costs._apply_carbon_price_support_end). null matches
+  # CP30's own SRMCs (CP.25), which carry the full carbon price including CPS. Option: "2028-04-01", HM Treasury's
+  # end of CPS for power (written statement HLWS1528), about -6 GBP/MWh on a CCGT.
+  carbon_price_support_end: null
+  # Calorific basis of the gas emission factor: gross_cv (0.183 t/MWh) | net_cv (0.2016 t/MWh, CP30's; for net-CV
+  # efficiencies).
+  gas_emission_factor_basis: gross_cv
+  # Gas price in p/therm (GCV) replacing the case's own; null = the case's. Code default:
+  # apply_marginal_costs.DEFAULT_GAS_PRICE_OVERRIDE_PENCE_PER_THERM.
+  gas_price_override_pence_per_therm: null
+  price_year: 2024
+  currency: GBP
+  # Electrical efficiency by class (share 0-1). In an enabled future-cost case these take precedence over generic
+  # network placeholders; unit_efficiency_overrides take highest priority.
+  efficiency_defaults:
+    CCGT: 0.52
+    OCGT: 0.38
+    CHP: 0.42
+    gas_engine: 0.40
+    coal: 0.36
+    Coal: 0.36
+    oil: 0.30
+    Oil: 0.30
+    biomass: 0.35
+    Biomass: 0.35
+    waste_to_energy: 0.25
+    waste: 0.25
+    CCS Gas: 0.50
+    CCS Biomass: 0.35
+    Hydrogen: 0.55
+    H2: 0.55
+  unit_efficiency_overrides: {}       # Exact generator-name: efficiency overrides
+  cases:
+    low:
+      fuel_prices:                    # GBP/MWh thermal except hydrogen fuel input
+        gas: 20.0
+        coal: 25.0
+        oil: 60.0
+        biomass: 35.0
+        waste: 10.0
+        hydrogen: 45.0
+      carbon:
+        uk_ets: 35.0                  # GBP/tCO2
+        carbon_price_support: 18.0    # GBP/tCO2
+      variable_om:                    # GBP/MWh electrical
+        CCGT: 2.0
+        OCGT: 3.0
+        gas_engine: 3.0
+        CCS Gas: 12.0
+        CCS Biomass: 18.0
+        Hydrogen: 5.0
+    central:
+      fuel_prices:
+        gas: 30.0
+        coal: 30.0
+        oil: 75.0
+        biomass: 45.0
+        waste: 15.0
+        hydrogen: 70.0
+      carbon:
+        uk_ets: 55.0
+        carbon_price_support: 18.0
+      variable_om:
+        CCGT: 2.0
+        OCGT: 3.0
+        gas_engine: 3.0
+        CCS Gas: 15.0
+        CCS Biomass: 20.0
+        Hydrogen: 6.0
+    high:
+      fuel_prices:
+        gas: 45.0
+        coal: 40.0
+        oil: 100.0
+        biomass: 55.0
+        waste: 25.0
+        hydrogen: 100.0
+      carbon:
+        uk_ets: 80.0
+        carbon_price_support: 18.0
+      variable_om:
+        CCGT: 2.0
+        OCGT: 3.0
+        gas_engine: 3.0
+        CCS Gas: 18.0
+        CCS Biomass: 24.0
+        Hydrogen: 8.0
+
+    # Gas and carbon from NESO Clean Power 2030 Annex 4 (file written by
+    # scripts/market/fetch_neso_cp2030_annex4_costs.py); other fuels and VOM from fallback_case.
+    neso_cp2030:
+      source_file: "resources/market/neso_clean_power_2030_annex4_costs.json"
+      fallback_case: central
+
+# Carrier correction factors: multiply formula marginal costs by factors derived from historical ELEXON calibration
+# (e.g. CCGT about 0.62). File written by scripts/generators/export_correction_factors.py.
+carrier_correction_factors:
+  # Off: historical correction factors are not extrapolated to future cases.
+  enabled: false
+  file: "data/market/historical_carrier_correction_factors.csv"
+  source_year: "closest"               # "closest" | "median" | specific year (e.g. 2023)
+  fallback: 1.0                        # Factor when carrier not in file
+  # true applies historical ELEXON factors to future cases too (a sensitivity only).
+  allow_future_historical_factors: false
+
+# Empirical calibration: per-generator thermal and renewable marginal costs from ELEXON data; carrier correction
+# factors are derived inline.
+empirical_calibration:
+  enabled: false
+  window_days: 7                       # Rolling window half-width for thermal calibration
+  # Additive marginal-cost adjustments per carrier (GBP/MWh), applied after empirical calibration. Widens the
+  # coal-gas gap the switch-on method compresses: at about GBP 25/tCO2 the carbon cost of coal (341 kgCO2/MWh_th at
+  # 0.36 efficiency) and CCGT (183 kgCO2/MWh_th at 0.49) differs materially, but calibration gives only about GBP 1
+  # because both turn on at similar prices (2020 data).
+  carrier_mc_adjustments:
+    coal: 15.0                         # +GBP 15/MWh carbon cost premium
+
+# By-product adjustments for carriers whose fuel is paid for by a by-product (empty for most scenarios). Modes:
+# gate_fee_covers_fuel_and_carbon, heat_credit.
+# Energy from waste is paid 92-110 GBP a tonne to take residual waste (letsrecycle.com EfW gate fee index, 2025)
+# and must burn it under disposal contracts; the UK ETS charges only its fossil CO2 from 2028, which the gate fee
+# covers, so its electricity costs VOM only. Gas CHP sells heat: DUKES 2026 chapter 7 gives 79% of 2025 CHP output
+# as qualifying, two thirds of it heat, so about 1.1 MWh of heat per MWh of electricity; the credit is that heat at
+# the cost of an 85% efficient gas boiler, fuel plus carbon.
+byproduct_adjustments:
+  waste_to_energy:
+    mode: gate_fee_covers_fuel_and_carbon
+    source: "https://www.letsrecycle.com/prices/efw-landfill-rdf/efw-landfill-rdf-2025-gate-fees/"
+  CHP:
+    mode: heat_credit
+    heat_fuel: gas
+    heat_to_power: 1.1
+    boiler_efficiency: 0.85
+    source: "https://assets.publishing.service.gov.uk/media/6a69fa1e1bcde42205705fef/DUKES_2026_Chapter_7.pdf"
+    # Seasonal heat credit: heat demand = base_load_share (process heat, an assumption, share 0-1) + the rest in
+    # proportion to monthly heating degree days (Jan-Dec, 2010-24 ERA5 means), normalised to an annual mean of 1, so
+    # annual averages are unchanged. apply_to_min_output also scales the must-run floor (p_min_pu) by it.
+    seasonal:
+      enabled: true
+      base_load_share: 0.5
+      apply_to_min_output: true
+      monthly_heating_degree_days: [306.3, 273.2, 277.6, 219.4, 148.7, 72.0, 34.0, 32.1, 64.3, 132.8, 216.8, 274.8]
+
+# Biofuel ROC deduction: dedicated biomass, biogas, landfill gas and sewage gas generators earn ROCs per MWh, which
+# lowers their effective marginal cost below the fuel-cost formula (biomass about GBP 70-80/MWh without it, when it
+# never dispatches; with it, it runs as baseload, as in observed ESPENI dispatch of about 2,200 MW in 2020).
+# Waste-to-energy is excluded (gate-fee economics, see byproduct_adjustments).
+biofuel_subsidy:
+  enabled: false
+  # true: only generators explicitly labelled ROC take the deduction (CfD or merchant biomass is never treated as
+  # ROC on carrier alone).
+  require_support_label: false
+  # Units explicitly labelled ROC take the deduction whenever support.dispatch_costs.enabled is on, even with this
+  # block disabled: banding x buyout price, as ROC wind and solar forgo, floored at mc_floor.
+  roc_labelled_follow_subsidies: true
+  # ROC/MWh by carrier, used when a generator's own ro_banding is missing or zero.
+  default_roc_bandings:
+    biomass: 1.5                   # Ofgem dedicated biomass band
+    advanced_biofuel: 1.5          # Same band as dedicated biomass
+    biogas: 0.5                    # Ofgem standard band for AD biogas
+    landfill_gas: 0.2              # Minimal ROC support (declining sector)
+    sewage_gas: 0.5                # Ofgem standard band for sewage gas
+  # Option: roc_buyout_price: 50.05 (GBP/ROC); omitted, support.dispatch_costs.roc_buyout_prices for the modelled
+  # year is used.
+  # Floor on the deducted marginal cost (GBP/MWh), so ROC income cannot make it negative and force 100% dispatch.
+  mc_floor: 5.0

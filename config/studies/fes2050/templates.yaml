@@ -1,0 +1,1577 @@
+# Templates: named building blocks, composed by `inherits: [...]` (two may not set the same leaf).
+
+# The FES 2025 Holistic Transition 2050 study: data sources, network, costs, demand, fleet, the bill's forecast cases
+# and the public-ownership run groups. Every scenario of the study inherits it.
+ht50:
+  targets: {source: FES, edition: 2025, pathway: HT}
+  method: gsp_block
+  modelled_year: 2050
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  # labels, support-based dispatch costs and support revenue are off for the FES 2050 chain. Its support comes
+  # from the contract book (contract_book_2050.py) and the label table (build_support_labels), and the vintaged
+  # settlement refuses a network that also carries labels ("one source only").
+  # effect on dispatch (every 2050 renewable is at GBP 0 either way). The clean fix is a settlement that reads D4's
+  # labels beside the contract book; until then this exception stands.
+  support:
+    labels: {enabled: false}
+    dispatch_costs: {enabled: false}
+    revenue: {enabled: false}
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+    balancing:
+      mode: rolling
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind, EU_import, waste_to_energy, biogas, gas_supply, EV_smart_charging, V2G_fleet, HP_flexibility, DH_flexibility, IC_DSR, residential_DSR, DACCS]
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+        storage_units:
+          min_p_nom_mw: 1.0
+      window_hours: 24
+      bid_offer_source: derived
+      participation_audit:
+        enabled: true
+      interconnector_retrading: true
+      fix_interconnectors: false
+      carrier_overrides:
+        CCS Gas:
+          offer_markup: 0.29
+          mode: markup
+        EV_smart_charging:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        V2G_fleet:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        HP_flexibility:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        DH_flexibility:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        IC_DSR:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        residential_DSR:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+        DACCS:
+          mode: absolute
+          offer_price: 6000.0
+          bid_price: 6000.0
+      interconnector_counter_trade:
+        enabled: true
+        # ic_no_country_caps, ic_premium_20): GBP 20/MWh premium both ways, additive pricing on GB-gas foreign
+        # multipliers, no Stage 1 spread gate, no per-country flow caps.
+        bid_pricing: additive
+        offer_pricing: additive
+        foreign_plant_multipliers: gb_gas
+        max_deviation_share: 2.0
+        max_deviation_share_by_country:
+          Belgium: 2.0
+          Denmark: 2.0
+          France: 2.0
+          Germany: 2.0
+          Ireland: 2.0
+          Netherlands: 2.0
+          Northern Ireland: 2.0
+          Norway: 2.0
+        min_spread_gbp_per_mwh: 0.0
+        min_spread_rule: none
+        premium_gbp_per_mwh: 20.0
+        bid_premium_gbp_per_mwh: 20.0
+      # boundaries, storage anchored to its Stage 1 legs, electrolysers and hydrogen turbines held at their Stage 1
+      # schedule. Turn-down as solved: subsidy dependent, merchant renewables first, then CfD
+      # units by the support they lose (contract-value bids), not pro rata within each zone.
+      network_delivery:
+        case: fes_2050_as_built
+        description: "The FES 2050 network as built; only the outage replay applies"
+        secured_capability:
+          historic_derate:
+            enabled: true
+            file: data/network/neso_boundary_outage_generic_2022_25.csv
+            mode: replay
+            unmapped: default
+      storage_anchor: stage1_legs
+      hydrogen_links:
+        hold_carriers: [H2_turbine, electrolysis]
+      turn_down_allocation:
+        mode: cheapest_first
+    seasonal_pass:
+      hydrogen_reserve_twh: year_parameter:hydrogen_reserve_twh
+    hydrogen_store:
+      end_of_window_value_gbp_per_mwh_h2: year_parameter:hydrogen_end_of_window_value_gbp_per_mwh_h2
+      month_end: free
+  renewables:
+    embedded:
+      enabled: false
+    # Calibrated per year and pathway in data/FES/fes_year_parameters.csv (with sources); config/config_loader.py
+    # substitutes it wherever a value is written "year_parameter:<key>".
+    performance_factors:
+      factors:
+        wind_offshore: year_parameter:performance_factor_wind_offshore
+        wind_onshore: year_parameter:performance_factor_wind_onshore
+        solar_pv: year_parameter:performance_factor_solar_pv
+  network:
+    clustering:
+      method: custom
+      function_path: scripts/network_clustering/neso_zone_busmap.py
+      function_name: cluster_buses
+      convert_transformers_to_lines: true
+      neso_zone_busmap:
+        remote_km: 2.0
+        cutoff: 6
+      secured_capability:
+        # Internal HVDC links whose straight path meets a boundary line an even number of times although their
+        # ends are on opposite sides (secured_boundaries.find_boundary_crossings counts odd crossings only),
+        # declared with their flow sign. EGL3 (LOSD4M-WALP41, 4 GW, 2035) crosses B4 and B5, sign +1.
+        include:
+          B4: [{component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}, {component: link, name: LOSD4M_WALP41_HVDC_2035, sign: 1.0}]
+          B5: [{component: link, name: LOSD4M_WALP41_HVDC_2035, sign: 1.0}]
+      strategies:
+        line:
+          voltage_kv: max
+          v_nom: max
+          s_nom: sum
+          length: mean
+          length_km: mean
+          b: sum
+          s_nom_winter: sum
+          s_nom_spring: sum
+          s_nom_summer: sum
+          s_nom_autumn: sum
+          etys_licensee: first
+          etys_licensee_source: first
+          etys_topology_source: first
+          cp30_project_code: first
+          cp30_source: first
+          seasonal_rating_source: first
+    transmission:
+      outage_schedule:
+        enabled: true
+        source: secured_capability
+        secured_capability:
+          fes_pathway: HT
+          capability_year: 2050
+          # The same declared HVDC crossings as network.clustering.secured_capability.include.
+          include:
+            B4: [{component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}, {component: link, name: LOSD4M_WALP41_HVDC_2035, sign: 1.0}]
+            B5: [{component: link, name: LOSD4M_WALP41_HVDC_2035, sign: 1.0}]
+          hold_last_year: true
+          boundaries: [B1a, B2, B4, B6, B7a, B8, B9, EC5, LE1, SW1, B13]
+          branch_scaling:
+            enabled: true
+            margin: 1.25
+    reinforcements:
+      enabled: true
+      reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv
+      manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv
+      strict: false
+  marginal_costs:
+    future_costs:
+      enabled: true
+      case: fes2025_ht
+      carbon_price_support_end: '2028-04-01'
+      # Gas CCS on DESNZ Electricity Generation Costs 2025 Annex A (2050 commissioning): 47% net efficiency and
+      # variable O&M of 6 GBP/MWh, plus CO2 transport and storage at the reformer's 34.5 GBP/tCO2
+      # (hydrogen.fes.gas_reforming_ccs) on 0.183 x 0.90 / 0.47 = 0.3504 tCO2 captured per MWh (12.09 GBP/MWh):
+      # variable O&M 18.09 GBP/MWh. The plant bears the T&S charge at the margin because the DPA's variable payment
+      # is floored at zero (BEIS DPA Annex C, 2020, p.29) and in 2050 the reference CCGT costs more than the plant.
+      # Short-run cost 50.30 fuel + 4.31 carbon + 18.09 = 72.70 GBP/MWh. Values by year:
+      # data/FES/fes_year_parameters.csv.
+      efficiency_defaults:
+        CCS Gas: year_parameter:ccs_gas_efficiency
+      cases:
+        fes2025_ht:
+          source_file: resources/FES/fes2025_future_costs_2050.json
+          fallback_case: central
+        central:
+          variable_om:
+            CCS Gas: year_parameter:ccs_gas_variable_om_gbp_per_mwh
+  thermal:
+    availability_factors:
+      enabled: true
+      factors:
+        biogas: 0.55
+        biomass: 0.8
+        nuclear: 0.9
+        waste_to_energy: 0.62
+      min_output:
+        nuclear: 0.5
+        # No floor for unabated biomass: the base floor (0.40) protects ROC revenue, and the RO ends in 2037. FES 2025
+        # HT ES1 runs 2050 unabated biomass at a 5.5% load factor (0.40 TWh from 0.83 GW).
+        biomass: 0.0
+        waste_to_energy: 0.35
+        biogas: 0.35
+        CCS Biomass: 1.0
+      min_output_energy_window_hours:
+        waste_to_energy: 24
+        biogas: 24
+    outages:
+      enabled: true
+    ramping:
+      enabled: true
+  interconnectors:
+    pricing:
+      volume_tranches:
+        enabled: true
+        demand_year: 2050
+      foreign_price_source: tyndp
+      tyndp:
+        scenario: DE
+        route: tyndp_shape
+      foreign_price_basis: single
+      single_price_level_offsets_gbp_per_mwh:
+        continent: 0.0
+        norway: 0.0
+        sem: 0.0
+      single_price_transaction_spread_gbp_per_mwh: 30.0
+      single_price_export_bid_floor_gbp_per_mwh: 1.0
+  FES_year: 2025
+  FES_scenario: Holistic Transition
+  demand:
+    disaggregation:
+      components: []
+      fes:
+        enabled: true
+        # Demand above 0.90 x capacity at a bus of 132 kV or below moves to the same site's 275/400 kV bus, as in the
+        # CP30 2030 build.
+        capacity_redistribution:
+          mode: same_site
+          capacity_safety_margin: 0.9
+          min_supergrid_kv: 275.0
+        targets_file: resources/FES/fes2025_holistic_transition_2050_targets.json
+        workbook: data/FES/Future Energy Scenarios 2025 Data Workbook V005_0.xlsx
+        year_basis: calendar
+        demand_basis: system
+        residual_allocation: per_bus
+        min_share: 1.0e-06
+        temperature:
+          hdh_base_c: 15.5
+        heat_pumps:
+          hot_water_share: 0.2
+          hot_water_seasonal_amplitude: 0.1
+          space_heating_diurnal: [0.75, 0.75, 0.75, 0.75, 0.78, 0.85, 1.1, 1.3, 1.25, 1.1, 0.95, 0.95, 0.95, 0.95, 0.95, 0.98, 1.05, 1.15, 1.2, 1.2, 1.15, 1.05, 0.9, 0.8]
+          hot_water_diurnal: [0.3, 0.25, 0.25, 0.25, 0.3, 0.5, 1.0, 2.0, 1.8, 1.3, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.9, 1.2, 1.6, 1.7, 1.5, 1.3, 0.9, 0.5]
+          cop_a: 6.81
+          cop_b: 0.121
+          cop_c: 0.00063
+          space_sink_intercept_c: 40.0
+          space_sink_slope: -1.0
+          space_sink_min_c: 30.0
+          space_sink_max_c: 50.0
+          hot_water_sink_c: 50.0
+          cop_min: 1.5
+          cop_max: 6.0
+        district_heat:
+          hot_water_share: 0.3
+          sink_c: 70.0
+          carnot_efficiency: 0.5
+          cop_min: 1.5
+          cop_max: 4.5
+        electric_vehicles:
+          residential_weekday: [[0.85, 19.0, 2.0], [0.15, 8.0, 1.5]]
+          residential_weekend: [[1.0, 15.0, 3.5]]
+          public_weekday: [[0.7, 11.0, 2.5], [0.3, 14.0, 3.0]]
+          public_weekend: [[1.0, 13.5, 3.5]]
+          depot_weekday: [[1.0, 1.0, 2.5]]
+          depot_weekend: [[1.0, 1.0, 2.5]]
+          weekend_factor:
+            residential: 1.0
+            public: 0.8
+            depot: 0.6
+          driving_weekday: [[0.3, 8.0, 1.5], [0.3, 17.5, 1.5], [0.4, 13.0, 3.0]]
+          driving_weekend: [[1.0, 13.0, 3.5]]
+          driving_weekend_factor: 0.8
+          commercial_flex_share: 0.0
+          max_flex_share: 0.95
+          charger_kw: 7.0
+          battery_kwh: 60.0
+          usable_battery_fraction: 0.6
+          charge_efficiency: 0.9
+          plugged_in_max: 0.9
+          # Days of the flexible fleet's driving energy the smart-charging and V2G stores hold, so they shift load
+          # within the day (FES FLX1 gives them only as GW at peak; the full battery window would hold about 9 days).
+          store_days: 1.0
+        v2g:
+          enabled: true
+          discharge_efficiency: 0.9
+          degradation_cost_gbp_per_mwh: 50.0
+          bidirectional_charger_kw: 7.0
+        heat_pump_flexibility:
+          enabled: true
+          storage_hours_at_peak: 2.0
+          standing_loss_per_hour: 0.02
+          compressor_headroom: 1.5
+        district_heat_flexibility:
+          enabled: true
+          storage_hours_at_peak: 12.0
+          standing_loss_per_hour: 0.005
+          compressor_headroom: 2.0
+        # holding_cost_gbp_per_mwh_h: DSR holding cost, GBP/MWh per hour held (PyPSA marginal_cost_storage),
+        # marginal_cost / shift_hours = 30 / 2, so a 2-hour hold costs one activation.
+        ic_dsr:
+          enabled: true
+          shift_hours: 2.0
+          marginal_cost_gbp_per_mwh: 30.0
+          holding_cost_gbp_per_mwh_h: 15.0
+        # Residential demand-side response (FES 2025 FLX1 row 105).
+        residential_dsr:
+          enabled: true
+          shift_hours: 2.0
+          marginal_cost_gbp_per_mwh: 30.0
+          holding_cost_gbp_per_mwh_h: 15.0
+        # Storage heaters (FES 2025 FLX1 rows 130 and 155): a one-day store, charged in charge_windows.
+        storage_heater_flexibility:
+          enabled: true
+          # charge_windows: [start, end) hours of the day the heaters may charge; Economy 10 style, night
+          # 00-07 plus an afternoon boost 13-16 (Economy 10's evening hours fall in the 16-20 h peak).
+          charge_windows: [[0, 7], [13, 16]]
+        # Holding cost of every drained unit (EV, V2G, heat pump, district heat, storage heaters, DACCS),
+        # GBP/MWh per hour held: a tie-breaker so flat or zero prices do not fill the stores with unused surplus.
+        drained_holding_cost_gbp_per_mwh_h: 0.005
+        daccs:
+          enabled: true
+          utilisation: 0.5
+          buffer_hours_of_mean_load: 24.0
+          sites: [{lat: 53.62, lon: -0.23, name: Humber, share: 0.35}, {lat: 54.62, lon: -1.15, name: Teesside, share: 0.3}, {lat: 57.57, lon: -1.84, name: St Fergus, share: 0.2}, {lat: 53.25, lon: -2.9, name: HyNet North West, share: 0.15}]
+        calibration:
+          hour: 17
+          months: [11, 12, 1, 2, 3]
+          coldest_days: 10
+  fleet:
+    fes_supply:
+      enabled: true
+      targets_file: resources/FES/fes2025_holistic_transition_2050_targets.json
+      thermal:
+        technology_carriers:
+          CCGTs (non CHP): CCS Gas
+        # Gen_BB009 "CCGTs (non CHP)" holds gas CCS and unabated CCGT together; it is split in the year's ES1
+        # proportion (all CCS in HT 2050; 19.6 of 25.0 GW in HT 2040).
+        gas_ccs_split:
+          enabled: true
+          technology: CCGTs (non CHP)
+          ccs_carrier: CCS Gas
+          unabated_carrier: CCGT
+        es1_lines_file: resources/FES/fes2025_holistic_transition_2050_es1_lines.csv
+        # The year's declared Direct stations (rule build_fes_station_schedule, from
+        # data/generators/fes/station_list.csv).
+        station_schedule: resources/FES/fes2025_holistic_transition_2050_station_schedule.csv
+      offshore_landing:
+        file: data/network/ETYS/fes2050_offshore_landing.csv
+        projects_file: data/network/ETYS/fes2050_offshore_landing_projects.csv
+      storage:
+        durations_h:
+          CAES: 20.0
+        pumped_hydro_sites: data/storage/fes2050_pumped_hydro_sites.csv
+      interconnectors:
+        capacity_from_scenario_fes_year: true
+  solve:
+    solver:
+      threads: 2
+  consumer_bill:
+    forecasts:
+      cases:
+        FES25_HT_2050:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_market
+          assumptions: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+        # The private-ownership bill under central dispatch, with no solve of its own. Stage 1 is FES25_HT_2050's
+        # market months (the national price is the market twin's copperplate price); the CfD line and the RO are
+        # metered on the central-dispatch months (central_scenario_pattern); the constraint line is this case's own
+        # FTI settlement (rule build_central_dispatch_case_fti_settlement: cost recovery, firm access with the lost
+        # CfD support on this case's contract book, storage and interconnector make-whole, and fes_ht_2050's
+        # borrowed forecast-error charge at fleet ratio 2.32); post-AR7 CfDs are at the strike diagnostic's central
+        # strikes (central_dispatch_strikes; rules build_central_dispatch_strike_inputs_2050 and
+        # build_central_dispatch_contract_book_2050). Held at the market year: the DPA settlement, the LDES floor
+        # and the register-booked lines (fes_ht_2050's account). No run group projects through it.
+        FES25_HT_2050_cd:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_market
+          assumptions: resources/public_ownership/FES25_HT_2050_cd_bill_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+          recovery_case_id: FES25_HT_2050
+          institution: central_dispatch
+          institution_parent: FES25_HT_2050
+          central_scenario_pattern: FES25_HT_2050_{month}_central_dispatch
+          fti_settlement: resources/market/FES25_HT_2050_cd_year_fti_settlement_copperplate.csv
+          counter_trade_premium_on_constraint_line: true
+          central_dispatch_strikes:
+            assumptions_from: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+            market_group: fes_ht_2050
+            diagnostic: resources/public_ownership/fes_ht_2050_central_dispatch_strike_diagnostic.csv
+        FES25_HT_2050_p2_bids_25pct:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_p2_bids_25pct
+          assumptions: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050_p2_bids_25pct
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+          recovery_case_id: FES25_HT_2050
+        FES25_HT_2050_p2_bids_50pct:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_p2_bids_50pct
+          assumptions: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050_p2_bids_50pct
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+          recovery_case_id: FES25_HT_2050
+        FES25_HT_2050_p2_bids_75pct:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_p2_bids_75pct
+          assumptions: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050_p2_bids_75pct
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+          recovery_case_id: FES25_HT_2050
+        FES25_HT_2050_p2_bids_100pct:
+          modelled_year: 2050
+          model_price_year: 2024
+          source_scenario_pattern: FES25_HT_2050_{month}_p2_bids_100pct
+          assumptions: data/market/consumer_bill_benchmarks/2050_pypsa_informed_assumptions.json
+          recovery_demand_assumptions: data/market/consumer_bill_forecast/2050_recovery_demand_assumptions.json
+          annual_aggregate_study: FES25_HT_2050_p2_bids_100pct
+          turn_down_network_case: FES25_HT_2050
+          ro_scheme_parameters: data/market/consumer_bill_forecast/2050_ro_scheme_parameters.json
+          ro_relief_case: scheme_closed
+          period_alignment_note: Calendar-2050 snapshot; external lines carry their 2050 period_basis (Y13).
+          cfd_recovery:
+            method: eligible_supplier_sales
+          max_fallback_strike_share_of_payment: null
+          recovery_case_id: FES25_HT_2050
+  hydrogen:
+    fes:
+      enabled: true
+      targets_file: resources/FES/fes2025_holistic_transition_2050_targets.json
+      future_costs_file: resources/FES/fes2025_future_costs_2050.json
+      store_standing_loss_per_hour: 0.0
+      non_power_demand_basis: calendar
+      turbine_variable_om_gbp_per_mwh: 5.0
+      electrolysis_variable_om_gbp_per_mwh: 0.0
+      gas_reforming_ccs:
+        enabled: true
+        capture_rate: 0.95
+        co2_transport_storage_gbp_per_tco2: 34.5
+        variable_om_gbp_per_mwh_h2: 0.0
+  storage:
+    round_trip_efficiencies:
+      CAES: 0.601
+  public_ownership:
+    # Small-scale plant that no case owns or buys: FES 2025 HT's 2050 "Distributed - Micro" supply (rooftop solar
+    # 33.10 GW, micro wind 1.05 GW, micro hydro 0.20 GW), taken pro rata from each carrier's FES rows (the FES rows
+    # do not separate micro from distributed plant).
+    small_scale_exclusion:
+      es1_lines: resources/FES/fes2025_holistic_transition_2050_es1_lines.csv
+    support_lines:
+      ancillary_services:
+        enabled: true
+        table: data/public_ownership/financing/ancillary_services_2050.csv
+        case: central
+      efw_gate_fee:
+        enabled: true
+        file: data/public_ownership/financing/efw_gate_fees_2050.json
+        case: central
+      life_extension_top_up:
+        enabled: true
+        technologies:
+          Offshore wind: expired
+          # Life-extended onshore wind runs merchant at operating cost, topped up only where its revenue falls short.
+          Onshore wind: expired
+          Biomass - unabated: all
+          Biomass - with CCUS - mature: expired
+      battery_top_up:
+        enabled: true
+        carriers: [Battery]
+      battery_subhourly_uplift:
+        enabled: true
+        carriers: [Battery]
+        case: central
+        central: 0.2
+        high: 0.4
+    vintage_capital_2050:
+      amortisation: contract_term_with_tail
+      capture_prices: data/public_ownership/financing/capture_prices_2050.csv
+      strike_calibration: data/public_ownership/financing/strike_calibration_2050.csv
+      strike_calibration_by_rate_path:
+        neso_wind_ramp: data/public_ownership/financing/strike_calibration_2050_neso_wind_ramp.csv
+      legacy_expired_contracts:
+        labelled: true
+        technologies:
+          Biomass - unabated: [2002, 2024]
+          Hydropower: [2002, 2017]
+      beccs_carbon_cfd_term_years: 15
+      beccs_removals_after_cfd: ets_value
+      legacy_sunk_capital:
+        technologies: [Pumped hydro energy storage (PHES), Hydropower, Energy from waste]
+      rab_outside_propositions: true
+      carried_from_earlier_purchase_contracts: [HPC_UNIT_1]
+      # MW of each carried contract the 2030 purchase bought, to be derived from the final 2030 register's
+      # `Hinkley Point C::legacy` row. While the map is empty, every row labelled with a carried contract is
+      # carried whole.
+      carried_from_earlier_purchase_mw: {}
+      rab_acquired_at_rav: true
+      merchant_capital: level_annuity
+      bm_strike_basis: calibrated
+      # Share of contract revenue (0-1) post-AR7 CfD cohorts keep as rent; the installed strike calibration must
+      # carry the same margin. 0 and 0.10 are the fes_ht_2050_auction_margin_{none,high}_bound groups.
+      auction_margin_share: 0.05
+    # Each owner of a co-owned P2 row finances its own part (separate). The co-owner's halo
+    # (separate_with_private_reduction) and the pooled leakage test (pooled) are the
+    # fes_ht_2050_coownership_{reduction,pooled}_bound groups.
+    co_ownership_finance:
+      basis: separate
+    # Risk-adjusted (Lucas) columns beside the headline (off in the base defaults).
+    risk_adjusted_view:
+      enabled: true
+    lever_parameters:
+      # Wholly state-owned rows self-insure in 2050 as in 2030.
+      self_insurance_in_vintaged_registers: true
+    # The Capacity Market under ownership: state_planned (central) | market_participant (today's treatment).
+    # P2: the state's plant leaves the auction (the target falls by its de-rated eligible capacity) and the CM
+    # buys the residual at the residual clearing price; co-owned rows leave pro rata, P1's stakes stay in.
+    # P3: a targeted adequacy contract for what the state does not own, at that residual price. Today's
+    # treatment is fes_ht_2050's one-at-a-time `public_ownership@cm_market_participant` and named
+    # `fully_nationalised_market_value_cm_market_participant`. Fleet and summary from rule
+    # build_capacity_market_2050, re-cleared per case (scripts/public_ownership/capacity_market_design.py).
+    # Vintaged registers only: never combined with the 2030 CM mechanisms (state bids in the 2030/31 T-4,
+    # lever capacity_procurement).
+    capacity_market_design:
+      central: state_planned
+      fleet: resources/market/capacity_market/cm_fleet_2050.csv
+      summary: resources/market/capacity_market/cm_calendar_2050_summary.json
+    consumer_bill:
+      ldes_cap_and_floor:
+        carriers: [LAES, CAES, Pumped Storage Hydroelectricity]
+        floor_return:
+          rate_key: row_owner
+    acquisition:
+      valuation:
+        retirement_life_years_by_carrier:
+          solar_pv: 38
+          wind_offshore: 30
+          wind_onshore: 25
+          large_hydro: 100
+        # The valuation has no repowering rule: an owner's plant runs to its life (a toggle group values on its
+        # own fleet_vintages.repowering rule).
+        undated_remaining_years_by_carrier:
+          large_hydro: 40
+          pumped_hydro: 40
+    generator_costs:
+      insurance:
+        excluded_technologies: [Large-scale nuclear, Lithium batteries, Novel long duration energy storage (LDES), Small modular reactors (SMRs), Floating offshore wind]
+    network_account:
+      model_years:
+        2050:
+          distribution_roll_forward: peak_demand
+          transmission_roll_forward: declared
+          roll_forward_inputs: data/market/network_cost_sources/rav_roll_forward_2050.yaml
+          acquisition_year: 2030
+          guarantee_pass_through_table: data/market/network_cost_sources/network_guarantee_pass_through_2050.csv
+          # 2050 keeps the period-average tax allowance basis and no excess return (the 2030 basis does not apply).
+          distribution_tax_allowance_basis: period_average
+          excess_return: null
+    reference_run_groups:
+      fes_ht_2050: &po_fes_ht_2050
+        model_year: 2050
+        # Scenario 3 option carries its own 2030 purchase), as the 2030 explorer and the cumulative view read.
+        acquisition_from_group: cp30_2030_no_acceleration
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        institution_comparison:
+          central_scenario_pattern: FES25_HT_2050_{month}_central_dispatch
+          marginal_costs: resources/generators/FES25_HT_2050_marginal_costs_breakdown.csv
+          forecast_error_charge:
+            enabled: true
+            basis: renewable_capacity
+            as_simple_total: false
+            fleet_ratio: 1.714
+            price_year: 2024
+        sensitivities:
+          # case), less what a vintaged 2050 register cannot carry, plus the 2050 cases below.
+          extend_global:
+            drop_levers: [balancing_bids, capacity_procurement]
+            drop_named: []
+            drop_preset_parents: [public_ownership@state_bids_at_cost]
+            # Compromise: Scenario 3's bound grid on its four largest drivers (2 x 3 x 2 x 2).
+            bound_grid_axes:
+              public_ownership@fully_nationalised_market_value: [wacc, premium, rate-pwlb-standard, price-state-value]
+          bounding_pair: false
+          # One at a time: P2 at state deployment shares of 25-100%; the private rate path on NESO's wind ramp; the
+          # public rate at PWLB standard (workbook v2.0's lending-margin stress); the state's plant paid in the full
+          # Capacity Market auction (today's treatment); pre-2025 CfDs, HPC's included, owned and re-priced by the
+          # state (centrally P2 owns only plant contracted after the policy date).
+          one_at_a_time: [{state_deployment_share: ['0.25', '0.50', '0.75', '1.00']}, {private_rate_path: [neso_wind_ramp]}, {public_rate_basis: [pwlb_standard]}, {capacity_market_design: [market_participant]}, {pre_2025_cfd_capacity: [public_repriced]}]
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+            fully_nationalised_market_value_central_dispatch:
+              extends: fully_nationalised_market_value
+              dispatch_institution: nationalised_dispatch
+            # P3 keeping today's Capacity Market line (agreements of plant the state does not buy) instead of
+            # adequacy planning; re-accounted with no solve.
+            fully_nationalised_market_value_cm_market_participant:
+              extends: fully_nationalised_market_value
+              capacity_market_design: market_participant
+            deployment_share_25_state_bids:
+              scenario: public_ownership
+              state_deployment_share: '0.25'
+              balancing_bids: state_at_cost
+            deployment_share_50_state_bids:
+              scenario: public_ownership
+              state_deployment_share: '0.50'
+              balancing_bids: state_at_cost
+            deployment_share_75_state_bids:
+              scenario: public_ownership
+              state_deployment_share: '0.75'
+              balancing_bids: state_at_cost
+            deployment_share_100_state_bids:
+              scenario: public_ownership
+              state_deployment_share: '1.00'
+              balancing_bids: state_at_cost
+      fes_ht_2050_public_bids_p2_25:
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_p2_bids_25pct
+        forecast_case: FES25_HT_2050_p2_bids_25pct
+        balancing_bids: state_at_cost
+        state_deployment_share: '0.25'
+        sensitivities_from: fes_ht_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+      fes_ht_2050_public_bids_p2_50:
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_p2_bids_50pct
+        forecast_case: FES25_HT_2050_p2_bids_50pct
+        balancing_bids: state_at_cost
+        state_deployment_share: '0.50'
+        sensitivities_from: fes_ht_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+      fes_ht_2050_public_bids_p2_75:
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_p2_bids_75pct
+        forecast_case: FES25_HT_2050_p2_bids_75pct
+        balancing_bids: state_at_cost
+        state_deployment_share: '0.75'
+        sensitivities_from: fes_ht_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+      fes_ht_2050_public_bids_p2_100:
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_p2_bids_100pct
+        forecast_case: FES25_HT_2050_p2_bids_100pct
+        balancing_bids: state_at_cost
+        state_deployment_share: '1.00'
+        sensitivities_from: fes_ht_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+      # The law in force from 2025 instead of 2028, as the 2030 legislated_2025 bound: its own
+      # register for the headline cases, carrying that bound's 2030 purchase.
+      fes_ht_2050_legislated_2025:
+        <<: *po_fes_ht_2050
+        register_bound_of: fes_ht_2050
+        legislated_year: 2025
+        acquisition_from_group: cp30_2030_no_acceleration_legislated_2025
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+            fully_nationalised_market_value_central_dispatch:
+              extends: fully_nationalised_market_value
+              dispatch_institution: nationalised_dispatch
+      fes_ht_2050_learning_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: true
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+      fes_ht_2050_retirement_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          # Today's private life extension: onshore 30% repowered at 25 and the rest life-extended to 35; cohorts
+          # past their life in 2024 are extended.
+          retirement_rule: economic_life_with_extension
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          repowering:
+            Onshore wind:
+              share: 0.3
+              max_life_years: 35
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+      fes_ht_2050_repowering_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        fleet_vintages:
+          pathway: Holistic Transition
+          retirement_rule: economic_life_with_extension
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          repowering:
+            Onshore wind:
+              share: 0.5
+              max_life_years: 35
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+      # Co-ownership sensitivities: the co-owner's halo (0.5 bp per point of state share) and the pooled
+      # leakage stress test. They re-account the P2 share cases only, so they have no tariff.
+      fes_ht_2050_coownership_reduction_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        co_ownership_finance:
+          basis: separate_with_private_reduction
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          one_at_a_time: [{state_deployment_share: ['0.25', '0.50', '0.75']}]
+      fes_ht_2050_coownership_pooled_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        co_ownership_finance:
+          basis: pooled
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          one_at_a_time: [{state_deployment_share: ['0.25', '0.50', '0.75']}]
+      # Auction-margin sensitivities: none (0) and high (10%), each on its own re-margined strike calibration,
+      # re-accounted on the central months (the BM keeps the central support labels).
+      fes_ht_2050_auction_margin_none_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        auction_margin:
+          level: none
+          strike_calibration: data/public_ownership/financing/strike_calibration_2050_auction_margin_none.csv
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+      fes_ht_2050_auction_margin_high_bound:
+        register_bound_of: fes_ht_2050
+        acquisition_from_group: cp30_2030_no_acceleration
+        model_year: 2050
+        mode: twelve_months
+        scenario_pattern: FES25_HT_2050_{month}_market
+        forecast_case: FES25_HT_2050
+        auction_margin:
+          level: high
+          strike_calibration: data/public_ownership/financing/strike_calibration_2050_auction_margin_high.csv
+        fleet_vintages:
+          pathway: Holistic Transition
+          # At its economic life a site is repowered as new build of that year (public under P2 once the law is in
+          # force); no private life extension. Today's extension rule (onshore 30% repowered at 25, the rest to 35)
+          # is the fes_ht_2050_retirement_bound group.
+          retirement_rule: strict_economic_life
+          life_source: central
+          join_mode: pro_rata
+          life_overrides:
+            Onshore wind: 25
+          # Hydro and pumped hydro are refurbished, not rebuilt: cohorts already past their life in 2024 are
+          # refurbished oldest first, evenly over first_year to last_year.
+          refurbishment:
+            technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+            first_year: 2026
+            last_year: 2045
+            # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+            # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+            # 2025-28), which fits the even 2026-2045 schedule.
+            windows:
+              Pumped hydro energy storage (PHES): [2026, 2036]
+          no_cfd_on_repowering: [Solar PV]
+          evidence_exclude_countries: [Northern Ireland]
+          evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+        vintage_costs:
+          enabled: true
+          table: data/public_ownership/financing/technology_costs_vintage.csv
+          insurance: exclude
+          learning: false
+          # Refurbishment capex as a share of new-build capex (FES 2025 E.03). Sources: SSE Tummel Bridge
+          # GBP 50m/40 MW (Sep 2024) and Lochay GBP 70m/45 MW (Feb 2025), life +40 y; ENGIE Dinorwig ~GBP 300m for
+          # 2 x 288 MW (NCE, Mar 2026) and Dinorwig/Ffestiniog ~EUR 1.2bn for 2.1 GW (ENGIE, Jul 2025).
+          refurbishment_capex_share:
+            Hydropower: 0.35
+            Pumped hydro energy storage (PHES): 0.3
+        sensitivities:
+          bounding_pair: false
+          named:
+            fully_nationalised_market_value:
+              scenario: public_ownership
+              pre_2025_cfd_capacity: public_repriced
+              legacy_fleet: acquire_all
+              purchase_price_basis: market_value
+              # case must match the purchase it carries (nationalised_tariff.carried_case_id compares every lever).
+              acquisition_transaction_costs: two_pct
+
+# 2050 price calibration on ht50: three of the external studies' own methods, each sourced (interconnector
+# hurdle, foreign prices, hydrogen price).
+ht50_foreign_and_hydrogen_prices:
+  inherits: ht50
+  market:
+    wholesale:
+      # Interconnectors trade at losses and fees only (4 GBP/MWh round trip) in place of the CP30-fitted hurdle of
+      # 30 GBP/MWh; the external studies model Europe as one market with no hurdle.
+      interconnector_hurdle_override:
+        enabled: true
+        spread_gbp_per_mwh: 4.0
+        export_bid_floor_gbp_per_mwh: null
+        apply_in_balancing: true
+    balancing:
+      participation:
+        storage_units:
+          exclude_carriers: [EV_smart_charging, V2G_fleet, HP_flexibility, DH_flexibility, IC_DSR, residential_DSR, DACCS]
+    # Foreign prices overridden on the TYNDP shape; the scenario (TYNDP 2026 draft National Trends+ 2050, in place
+    # of TYNDP 2024 Distributed Energy) is set in ht50_tyndp_ntplus2026.
+    foreign_price_override:
+      enabled: true
+      tyndp:
+        route: tyndp_shape
+    # Hydrogen at DESNZ's blue hydrogen cost, as LCP Delta for DESNZ (2024, p.63) and FTI for NESO (2025) price it:
+    # BEIS Hydrogen Production Costs 2021, ATR + CCUS 1,000 MW commissioning 2050 on wholesale gas, about
+    # 52 GBP/MWh H2 HHV in 2020 prices (p.27), x 1.232 (ONS CPI 2020 to 2024) = 64 GBP/MWh H2. Values by year:
+    # data/FES/fes_year_parameters.csv.
+    hydrogen_supply_price:
+      enabled: true
+      gbp_per_mwh_h2: year_parameter:hydrogen_supply_price_gbp_per_mwh_h2
+      link: GB_gas_reforming_ccs
+      source: BEIS Hydrogen Production Costs 2021, ATR + CCUS 2050 on wholesale gas, about 52 GBP/MWh H2 HHV (2020 prices) x 1.232 CPI to 2024 = 64; the DESNZ blue hydrogen price LCP Delta for DESNZ (2024, p.63) uses
+
+# Foreign prices from the TYNDP 2026 draft National Trends+ 2050 scenario; the shared build FES25_HT_2050 and every
+# month family inherit it.
+ht50_tyndp_ntplus2026:
+  inherits: ht50_foreign_and_hydrogen_prices
+  market:
+    foreign_price_override:
+      tyndp:
+        scenario: NTplus2026
+
+# Solve only the scenario's solve_period (one month).
+ht50_period_on:
+  inherits: ht50_tyndp_ntplus2026
+  solve_period:
+    enabled: true
+
+# P2 bid stacks: the state's plant bids at cost in the balancing mechanism; each family names its
+# shares file and case.
+ht50_bids_p2:
+  inherits: ht50_period_on
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          enabled: true
+          public_bid_price: 0.0
+          state_first_step_gbp_per_mwh: 1.0
+
+# The balancing mechanism bounds the hydrogen store by its own level only, not a Stage 1 band.
+ht50_gate_week:
+  inherits: ht50_tyndp_ntplus2026
+  market:
+    balancing:
+      hydrogen_links:
+        store_band: none
+
+# Hydrogen store trajectory read from an alternative annual-pass file.
+ht50_reserve4_trajectory:
+  inherits: ht50_period_on
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        file: resources/market/FES25_HT_2050_seasonal_trajectory_reserve4.csv
+
+# Scarcity pricing in Stage 1.
+ht50_scarcity_pricing:
+  inherits: ht50_period_on
+  market:
+    wholesale:
+      scarcity_pricing:
+        enabled: true
+
+# The hydrogen store's period end is valued, with no end condition.
+ht50_gate_week_end_value:
+  inherits: ht50_tyndp_ntplus2026
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        end_condition: value
+
+# Solve on the shared FES25_HT_2050 network instead of building one.
+ht50_on_parent_build:
+  network_from: FES25_HT_2050
+
+# Months follow the annual pass: carried hydrogen stores start on its trajectory and each Stage 1
+# window's end level is valued at the annual dual.
+ht50_h2_annual_pass:
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        enabled: true
+        end_value: dual
+
+# Storage units also start on the annual pass's state of charge, with their period end valued at its dual.
+ht50_h2_pass_with_storage_units:
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        storage_units: true
+    storage_soc:
+      month_end: free
+
+# A window ending below the trajectory pays a shortfall premium (GBP/MWh H2) over the end value.
+ht50_h2_pass_soft_floor:
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        end_condition: soft_floor
+        shortfall_penalty_gbp_per_mwh_h2: 8.0
+        soft_floor_windows: every_window
+
+# Trajectory file: the market year's annual pass.
+ht50_h2_pass_trajectory:
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        file: resources/market/FES25_HT_2050_seasonal_trajectory.csv
+
+# Balancing-mechanism bids: contract-value bids for supported plant, merchant renewables at 20 GBP/MWh,
+# support labels from the fes_ht_2050 register group.
+ht50_bm2050_bids:
+  market:
+    balancing:
+      # NESO 2025): unabated gas at 1.6 x SRMC, storage offer
+      # floors, renewables do not offer up, hydro at 110 / -15.
+      carrier_overrides:
+        Battery:
+          offer_floor: 69.0
+        CAES:
+          offer_floor: 106.0
+        CCGT:
+          offer_markup: 0.6
+          mode: markup
+        CHP:
+          offer_markup: 0.6
+        Domestic Battery:
+          offer_floor: 69.0
+        LAES:
+          offer_floor: 106.0
+        OCGT:
+          offer_markup: 0.6
+        Pumped Storage Hydroelectricity:
+          offer_floor: 106.0
+        battery:
+          offer_floor: 69.0
+        embedded_solar:
+          offer_price: 500.0
+        embedded_wind:
+          offer_price: 500.0
+        gas_engine:
+          offer_markup: 0.6
+        large_hydro:
+          bid_price: -15.0
+          offer_price: 110.0
+        oil:
+          offer_markup: 0.6
+        pumped_hydro:
+          offer_floor: 106.0
+        solar_pv:
+          offer_price: 500.0
+        wind_offshore:
+          offer_price: 500.0
+        wind_onshore:
+          offer_price: 500.0
+      hydrogen_links:
+        # Hydrogen turbines get no DPA variable payment: the government's hydrogen-to-power response (DESNZ,
+        # Dec 2024, p.29) has not adopted one and says one "could create market distortions". They are in the BM at
+        # their resource cost, (hydrogen value + link cost) / efficiency, as every other hydrogen link is; their DPA
+        # is an availability payment only (support_regime_2050.json dpa.variable_payment_carriers).
+        dpa_pricing:
+          enabled: false
+          carriers: [H2_turbine]
+  support:
+    bm_bids:
+      enabled: true
+      # Supported renewables do not offer up.
+      cfd:
+        offer_price: 500.0
+      roc:
+        offer_price: 500.0
+      contract_value_bids:
+        enabled: true
+        # at 0, supported renewables do not offer up. The contract value is floored at zero (2030 has no floor): the
+        # label stack implements only the floor, and it binds in 6-9% of hours, about GBP 0.7 m a year in 2050.
+        negative_price_rule: none
+        cfd_offer_price: 500.0
+        contract_value_floor: zero
+        merchant:
+          bid_price: 0.0
+          carriers: [wind_onshore, wind_offshore, solar_pv, embedded_wind, embedded_solar]
+        turn_up_floor_gbp_per_mwh: 2.0
+        support_labels:
+          file: resources/market/FES25_HT_2050_support_labels.csv
+          register_group: fes_ht_2050
+          # The register group's stock-flow rule, as in public_ownership.reference_run_groups.fes_ht_2050.
+          fleet_vintages:
+            pathway: Holistic Transition
+            retirement_rule: strict_economic_life
+            life_source: central
+            join_mode: pro_rata
+            life_overrides:
+              Onshore wind: 25
+            refurbishment:
+              technologies: [Hydropower, Pumped hydro energy storage (PHES)]
+              first_year: 2026
+              last_year: 2045
+              # Pumped storage is being refurbished now (ENGIE Dinorwig/Ffestiniog programme to ~2036; Cruachan
+              # units 2026-27); SSE refurbishes conventional hydro one station at a time (Tummel 2022-24, Lochay
+              # 2025-28), which fits the even 2026-2045 schedule.
+              windows:
+                Pumped hydro energy storage (PHES): [2026, 2036]
+            no_cfd_on_repowering: [Solar PV]
+            evidence_exclude_countries: [Northern Ireland]
+            evidence_stale_records: data/public_ownership/financing/repd_stale_records_2050.csv
+          strike_variant: calibrated
+          dpa_carriers: [CCS Gas]
+
+# Gas CCS dispatches in Stage 1 on its DPA terms, from the rate-free DPA table.
+ht50_dpa_dispatch:
+  market:
+    wholesale:
+      marginal_cost_basis:
+        dpa_dispatch:
+          enabled: true
+          # The rate-free DPA table (rule build_dpa_dispatch): the label table's DPA shares, reference CCGT cost and
+          # margin without strikes, so a financing-rate change re-runs only the balancing months, not Stage 1.
+          file: resources/market/FES25_HT_2050_dpa_dispatch.csv
+          generator_carriers: [CCS Gas]
+          # No hydrogen turbines: with no DPA variable payment they dispatch at their resource cost in Stage 1 and
+          # the annual pass.
+          link_carriers: []
+          # Declared hydrogen value (GBP/MWh H2), equal to market.hydrogen_supply_price; unused while link_carriers
+          # is empty.
+          hydrogen_value_gbp_per_mwh_h2: year_parameter:hydrogen_supply_price_gbp_per_mwh_h2
+
+# CfD bids in the balancing mechanism on the strike basis.
+ht50_cfd_bids_at_strike:
+  support:
+    bm_bids:
+      contract_value_bids:
+        bid_basis: strike
+
+# The balancing mechanism holds the hydrogen store within a band around its Stage 1 path.
+ht50_h2_store_band_stage1:
+  market:
+    balancing:
+      hydrogen_links:
+        store_band: stage1
+
+# Central dispatch (overlay config/defaults/dispatch/central.yaml).
+# Hydrogen store above the annual trajectory valued 1 GBP/MWh H2 under the end value: the annual
+# dual (63.99994) ties with the reformer's hydrogen cost (64.00) within solver tolerance, and the central
+# solver profile reformed gas into the store flat out. The market families are solved without it.
+ht50_central_dispatch:
+  market:
+    dispatch: central
+    balancing:
+      carrier_overrides:
+        solar_pv:
+          bid_discount: 0.0
+          mode: markup
+          offer_markup: 0.0
+        wind_offshore:
+          bid_discount: 0.0
+          mode: markup
+          offer_markup: 0.0
+        wind_onshore:
+          bid_discount: 0.0
+          mode: markup
+          offer_markup: 0.0
+      mc_floors:
+        solar_pv: 0.01
+        wind_offshore: 0.01
+        wind_onshore: 0.01
+    # ordered by the support they lose, read from the support labels (the network carries none).
+    wholesale:
+      marginal_cost_basis:
+        mode: resource_cost
+        support_order:
+          labels_file: resources/market/FES25_HT_2050_support_labels.csv
+    hydrogen_store:
+      seasonal_trajectory:
+        surplus_discount_gbp_per_mwh_h2: 1.0
+
+# CfD bids in the balancing mechanism on the contract-value basis.
+ht50_cfd_bids_contract_value:
+  support:
+    bm_bids:
+      contract_value_bids:
+        bid_basis: contract_value
+
+# Trajectory file: the tyndp2026_prices family's annual pass.
+ht50_h2_pass_tyndp26_trajectory:
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        file: resources/market/FES25_HT_2050_tyndp2026_prices_seasonal_trajectory.csv
+
+# Hydrogen stores start at 90% of capacity.
+ht50_h2_start_90pct:
+  market:
+    hydrogen_store:
+      initial_fraction: 0.9

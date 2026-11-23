@@ -126,8 +126,10 @@ def scenario_config():
         'fes_year': 2024,
         'modelled_year': 2030,
         'network_model': 'ETYS',
-        'clustering': {
-            'enabled': False
+        'network': {
+            'clustering': {
+                'enabled': False
+            }
         }
     }
 
@@ -140,9 +142,11 @@ def clustered_scenario_config():
         'fes_year': 2024,
         'modelled_year': 2030,
         'network_model': 'Reduced',
-        'clustering': {
-            'enabled': True,
-            'n_clusters': 50
+        'network': {
+            'clustering': {
+                'enabled': True,
+                'n_clusters': 50
+            }
         }
     }
 

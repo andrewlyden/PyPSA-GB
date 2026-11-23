@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+    branches: [master, "release/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+jobs:
+  unit:
+    name: Lint, unit tests and workflow dry run
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          # The pinned envs/pypsa-gb-stable.yaml was pinned on Windows and does not solve on Linux.
+          environment-file: envs/pypsa-gb.yaml
+          environment-name: pypsa-gb
+          cache-environment: true
+
+      - name: Lint (errors only)
+        run: ruff check .
+
+      - name: Unit and smoke tests
+        # Tests that need generated workflow outputs skip on a fresh checkout (tests/helpers).
+        # -n auto: one worker per core (pytest-xdist); --dist loadfile keeps each test file on one worker.
+        run: python -m pytest -p no:cacheprovider -n auto --dist loadfile
+
+      - name: Workflow dry run on a fresh checkout
+        # Every declared input of the default scenario must be tracked or made by a rule.
+        run: python -m snakemake -n --quiet rules --config scenario=Test_Market --cores 1

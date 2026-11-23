@@ -1,0 +1,29 @@
+# FES 2025 HT 2040: NESO's Future Energy Scenarios 2025 Holistic Transition pathway in 2040, solved month by month
+# as a wholesale market (Stage 1) and a balancing mechanism, with central dispatch and the P2 bid stacks beside it.
+# The study layout is described in config/studies/README.md; the loader expands families.yaml with family_id and year.
+label: FES 2025 HT 2040
+year: 2040
+family_id: FES25_HT_2040_{Mon}_{family}
+
+
+# Complete-year aggregates: each names a family whose twelve solved months cover one calendar year; rule aggregate_CP30_months sums them into
+# resources/analysis/{name}_annual_summary.json. Declaring one does not enable a solve.
+monthly_aggregates:
+  FES25_HT_2040:
+    scenario_family: FES 2025 Holistic Transition 2040, the market year
+    family: market
+  FES25_HT_2040_p2_bids_25pct:
+    scenario_family: FES 2025 Holistic Transition 2040, P2 at 25% bidding at cost in the BM
+    family: p2_bids_25pct
+  FES25_HT_2040_p2_bids_50pct:
+    scenario_family: FES 2025 Holistic Transition 2040, P2 at 50% bidding at cost in the BM
+    family: p2_bids_50pct
+  FES25_HT_2040_p2_bids_75pct:
+    scenario_family: FES 2025 Holistic Transition 2040, P2 at 75% bidding at cost in the BM
+    family: p2_bids_75pct
+  FES25_HT_2040_p2_bids_100pct:
+    scenario_family: FES 2025 Holistic Transition 2040, P2 at 100% bidding at cost in the BM
+    family: p2_bids_100pct
+  FES25_HT_2040_tyndp2026_prices:
+    scenario_family: FES 2025 Holistic Transition 2040, the market year on TYNDP 2026 draft NT+ foreign prices
+    family: tyndp2026_prices

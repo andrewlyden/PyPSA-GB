@@ -95,7 +95,10 @@ INTERNATIONAL_LOCATIONS = {
     'Netherlands': {
         'Maasvlakte': (51.9889, 4.0581),       # BritNed terminal
         'Rotterdam': (51.9244, 4.4777),        # General area
-        'Eemshaven': (53.4506, 6.8389),        # NeuConnect terminal
+        'Eemshaven': (53.4506, 6.8389),        # NorNed / COBRAcable terminal
+    },
+    'Germany': {
+        'Fedderwarden': (53.5667, 8.0833),     # NeuConnect terminal (TenneT, Wilhelmshaven)
     },
     'Belgium': {
         'Zeebrugge': (51.2993, 3.2026),        # Nemo Link terminal

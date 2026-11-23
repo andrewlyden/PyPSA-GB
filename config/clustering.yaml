@@ -1,98 +1,92 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# PyPSA-GB Clustering Configuration
-# ══════════════════════════════════════════════════════════════════════════════
-# Predefined clustering methods that can be referenced by name in scenarios.yaml
+# Network clustering presets and aggregation strategies.
 #
-# USAGE in scenarios.yaml:
-#   clustering: gsp_spatial     # Use preset by name
-#   clustering:                 # Or inline custom config
+# A scenario sets network.clustering to a preset name, an inline config, or a preset extended with its own keys
+# (config/config_loader.py resolve_clustering):
+#   clustering: gsp_spatial     # a preset by name
+#   clustering:                 # an inline config
 #     method: kmeans
 #     n_clusters: 5
-#   clustering:                 # Extend preset and enable component aggregation
+#   clustering:                 # a preset extended
 #     preset: gsp_spatial
-#     aggregate_components:
-#       enabled: true
-#       include_storage_units: true
-# ══════════════════════════════════════════════════════════════════════════════
+#     strategies: {...}
+# Component aggregation is a separate setting, network.component_aggregation.
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CLUSTERING PRESETS
-# ──────────────────────────────────────────────────────────────────────────────
-# Reference these by name in scenarios.yaml: clustering: gsp_spatial
+# Presets: name one under network.clustering.
 
 presets:
 
-  # GSP Spatial Clustering (recommended for most use cases)
-  # NOTE: ETYS network uses OSGB36 (EPSG:27700) coordinates in x/y columns
+  # GSP regions (recommended for most uses). ETYS bus x/y are OSGB36 (EPSG:27700) metres.
   gsp_spatial:
     method: spatial
     boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
     cluster_column: "GSPs"
-    bus_crs: "EPSG:27700"  # ETYS network uses OSGB36 meters in x/y
+    bus_crs: "EPSG:27700"  # ETYS bus x/y are OSGB36 metres
     boundary_crs: "EPSG:27700"
     fallback: "nearest_centroid"
     convert_transformers_to_lines: true
 
-  # Administrative Regions (larger zones)
+  # Administrative regions (larger zones)
   admin_regions:
     method: spatial
     boundaries_path: "data/zone/uk_admin_regions.geojson"
     cluster_column: "region_name"
-    bus_crs: "EPSG:27700"  # ETYS network uses OSGB36 meters in x/y
+    bus_crs: "EPSG:27700"  # ETYS bus x/y are OSGB36 metres
     boundary_crs: "EPSG:27700"
     fallback: "nearest_centroid"
 
-  # K-means Geographical (10 clusters)
+  # K-means on bus coordinates, 10 clusters
   kmeans_10:
     method: kmeans
     n_clusters: 10
     random_state: 42
     init_method: "k-means++"
 
-  # K-means Geographical (5 clusters - for reduced networks)
+  # K-means on bus coordinates, 5 clusters (for reduced networks)
   kmeans_5:
     method: kmeans
     n_clusters: 5
     random_state: 42
     init_method: "k-means++"
 
-  # Hierarchical Clustering (15 clusters)
+  # Hierarchical clustering, 15 clusters
   hierarchical_15:
     method: hierarchical
     n_clusters: 15
     linkage: "ward"
     distance_metric: "euclidean"
 
-  # Custom Busmap (explicit bus-to-cluster mapping)
+  # Explicit bus-to-cluster mapping from a CSV
   custom_busmap:
     method: busmap
     busmap_source: "data/clustering/custom_bus_mapping.csv"
     default_cluster: "unassigned"
     validate_buses: true
 
-  # Zonal Busmap (for zonal network)
+  # Bus map for the zonal network
   zonal_busmap:
     method: busmap
     busmap_source: "data/zone/zonal_bus_mapping.csv"
 
-# ──────────────────────────────────────────────────────────────────────────────
-# AGGREGATION STRATEGIES
-# ──────────────────────────────────────────────────────────────────────────────
-# How component attributes are combined when clustering
+# Aggregation strategies: how component attributes combine when buses are clustered. These named sets are loaded
+# as aggregation_strategies; the clustering rule applies a scenario's own network.clustering.strategies.
 
 aggregation_strategies:
 
-  # Default strategy (balanced)
+  # Default (balanced)
   default:
     bus:
       x: mean
       y: mean
     line:
-      v_nom: max
+      voltage_kv: max
       s_nom: sum
       length: sum
-      r: mean
-      x: mean
+      # Line r/x/b/g are always aggregated in per unit (1 MVA base) and
+      # converted back to ohm/S at the clustered line's bus0 v_nom: parallel
+      # combination for r and x, sum for b and g (cluster_network.py enforces
+      # this and warns if a different rule is given here).
+      r: parallel_impedance
+      x: parallel_impedance
     transformer:
       v_nom: max
       s_nom: sum
@@ -113,17 +107,17 @@ aggregation_strategies:
       p_nom: sum
       efficiency: mean
 
-  # Aggressive (maximum reduction, some accuracy loss)
+  # Aggressive (maximum reduction, some accuracy lost)
   aggressive:
     bus:
       x: mean
       y: mean
     line:
-      v_nom: max
+      voltage_kv: max
       s_nom: sum
     generator:
       p_nom: sum
-      marginal_cost: min         # Dispatch cheapest first
+      marginal_cost: min         # the cheapest member's cost
     load:
       p_nom: sum
     storage_unit:
@@ -132,13 +126,13 @@ aggregation_strategies:
     link:
       p_nom: sum
 
-  # Economic (preserve dispatch economics)
+  # Economic (keeps dispatch economics)
   economic:
     bus:
       x: mean
       y: mean
     line:
-      v_nom: max
+      voltage_kv: max
       s_nom: sum
       capital_cost: sum
     generator:
@@ -152,9 +146,7 @@ aggregation_strategies:
       marginal_cost: mean
       capital_cost: mean
 
-# ──────────────────────────────────────────────────────────────────────────────
-# METHOD DOCUMENTATION
-# ──────────────────────────────────────────────────────────────────────────────
+# Method reference: each method's required and optional keys (documentation only).
 
 methods:
   spatial:

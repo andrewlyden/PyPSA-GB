@@ -185,6 +185,34 @@ def _split_gsp_codes(value) -> list[str]:
     return [part.strip() for part in str(value).split("|") if part.strip()]
 
 
+def substation_points(metadata: pd.DataFrame, fes_year: int,
+                      metadata_dir: Path = DEFAULT_METADATA_DIR) -> pd.DataFrame:
+    """Give each GSP NESO's own published point where an earlier NESO table has its GSP id.
+
+    The spatial layer's polygon centroid is the middle of a GSP's supply area, not its
+    substation: on FES 2025 it sat a median 5 km (up to 205 km) from NESO's FES 2024 point for
+    the same GSP id. User decision, 27 Oct 2026: NESO's point by GSP id (the latest earlier
+    edition's table, never a derived one); the centroid only where NESO never published one.
+    """
+    older = [(year, path) for year, path in available_metadata_files(metadata_dir) if year < int(fes_year)]
+    out = metadata.copy()
+    if not older:
+        return out
+    year, path = older[-1]
+    neso = pd.read_csv(path, encoding="utf-8-sig")
+    neso = neso[~neso.get("Comments", pd.Series("", index=neso.index)).fillna("").astype(str)
+                .str.startswith("Derived from")]
+    neso = neso.dropna(subset=["GSP ID", "Latitude", "Longitude"]).drop_duplicates("GSP ID")
+    points = neso.set_index(neso["GSP ID"].astype(str))[["Latitude", "Longitude"]]
+    hit = out["GSP ID"].astype(str).isin(points.index)
+    ids = out.loc[hit, "GSP ID"].astype(str)
+    out.loc[hit, "Latitude"] = points.loc[ids, "Latitude"].to_numpy()
+    out.loc[hit, "Longitude"] = points.loc[ids, "Longitude"].to_numpy()
+    out["Comments"] = out["Comments"].astype(object)
+    out.loc[hit, "Comments"] = f"NESO FES {year} point for this GSP id ({Path(path).name})"
+    return out
+
+
 def derive_gsp_metadata_from_spatial(
     fes_year: int,
     fes_data=None,
@@ -288,7 +316,7 @@ def derive_gsp_metadata_from_spatial(
             }
         )
 
-    metadata = pd.DataFrame(rows, columns=METADATA_COLUMNS)
+    metadata = substation_points(pd.DataFrame(rows, columns=METADATA_COLUMNS), fes_year, metadata_dir)
     logger.info(
         "Derived FES %s GSP metadata from %s: %d rows, %d with coordinates",
         fes_year,

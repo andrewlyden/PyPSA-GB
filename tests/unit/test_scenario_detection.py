@@ -19,6 +19,10 @@ from scenario_detection import (
     auto_configure_scenario,
     validate_scenario_complete,
     check_cutout_availability,
+    get_scenario_source,
+    target_source,
+    uses_brownfield,
+    uses_gsp_blocks,
 )
 
 
@@ -35,7 +39,7 @@ def historical_scenario():
         'renewables_year': 2020,
         'demand_year': 2020,
         'timestep_minutes': 60,
-        'voll': 6000.0,
+        'solve': {'voll': 6000.0},
     }
 
 
@@ -48,7 +52,7 @@ def future_scenario():
         'renewables_year': 2019,
         'demand_year': 2035,
         'timestep_minutes': 60,
-        'voll': 6000.0,
+        'solve': {'voll': 6000.0},
         'FES_year': 2024,
         'FES_scenario': 'Holistic Transition',
     }
@@ -63,7 +67,7 @@ def boundary_scenario_2024():
         'renewables_year': 2024,
         'demand_year': 2024,
         'timestep_minutes': 60,
-        'voll': 6000.0,
+        'solve': {'voll': 6000.0},
     }
 
 
@@ -76,15 +80,73 @@ def boundary_scenario_2025():
         'renewables_year': 2019,
         'demand_year': 2025,
         'timestep_minutes': 60,
-        'voll': 6000.0,
+        'solve': {'voll': 6000.0},
         'FES_year': 2024,
         'FES_scenario': 'Consumer Transformation',
+    }
+
+
+@pytest.fixture
+def cp30_scenario():
+    """Create a CP30 future scenario with explicit FES spatial proxy."""
+    return {
+        'modelled_year': 2030,
+        'network_model': 'Reduced',
+        'renewables_year': 2020,
+        'demand_year': 2020,
+        'scenario_source': 'CP30',
+        'CP30_pathway': 'Further Flex and Renewables',
+        'source_data': {
+            'workbook': 'data/CP30/Clean Power 2030 Data Workbook_V003.xlsx',
+            'files': {
+                'es1': 'resources/CP30/CP30_ES1.csv',
+                'es5': 'resources/CP30/CP30_ES5_regional.csv',
+                'ed1': 'resources/CP30/CP30_ED1.csv',
+                'reference': 'resources/CP30/CP30_reference_N1_N2_NA1.csv',
+                'validation': 'resources/CP30/CP30_validation_report.csv',
+                # Required since the CP30 interconnector price path landed (July
+                # 2026); the real config has carried it all along and only this
+                # fixture had not caught up.
+                'interconnector_prices': 'resources/CP30/CP30_interconnector_prices.csv',
+            },
+        },
+        'fleet': {
+            'spatial_proxy': {
+                'source': 'FES',
+                'FES_year': 2025,
+                'FES_scenario': 'Holistic Transition',
+            },
+        },
     }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST: is_historical_scenario
 # ══════════════════════════════════════════════════════════════════════════════
+
+
+
+class TestScenarioSource:
+    """Test authoritative source detection for historical, FES and CP30 scenarios."""
+
+    def test_historical_source(self, historical_scenario):
+        assert get_scenario_source(historical_scenario) == 'historical'
+        assert not uses_brownfield(historical_scenario) and not uses_gsp_blocks(historical_scenario)
+
+    def test_fes_future_source(self, future_scenario):
+        assert get_scenario_source(future_scenario) == 'FES'
+        assert uses_gsp_blocks(future_scenario) and not uses_brownfield(future_scenario)
+
+    def test_cp30_future_source(self, cp30_scenario):
+        assert get_scenario_source(cp30_scenario) == 'CP30'
+        assert target_source(cp30_scenario) == 'CP30'
+        assert uses_brownfield(cp30_scenario) is True
+
+    def test_written_keys_win(self, future_scenario):
+        written = {**future_scenario, 'targets': {'source': 'CP30', 'edition': 2024, 'pathway': 'FFR'},
+                   'method': 'brownfield'}
+        assert target_source(written) == 'CP30'
+        assert uses_brownfield(written) is True
 
 class TestIsHistoricalScenario:
     """Test historical vs future scenario detection."""
@@ -144,11 +206,25 @@ class TestAutoConfigureScenario:
         assert configured.get('thermal_data_source') in ['DUKES', None] or 'is_historical' in configured
     
     def test_future_adds_fes_routing(self, future_scenario):
-        """Test that future scenarios are configured for FES data."""
+        """Test that FES future scenarios are configured for FES data."""
         configured = auto_configure_scenario(future_scenario)
         
-        assert 'is_historical' in configured or 'data_source' in configured
-        # Future scenarios should use FES
+        assert configured['scenario_source'] == 'FES'
+        assert configured['generator_data_source'] == 'FES'
+        assert configured['demand_source'] == 'FES'
+        assert configured['_needs_fes'] is True
+
+    def test_cp30_adds_cp30_routing(self, cp30_scenario):
+        """Test that CP30 scenarios do not route authoritative totals to FES."""
+        configured = auto_configure_scenario(cp30_scenario)
+
+        assert configured['scenario_source'] == 'CP30'
+        assert configured['generator_data_source'] == 'CP30'
+        assert configured['demand_source'] == 'CP30_ED1'
+        assert configured['storage_data_source'] == 'CP30'
+        assert configured['interconnector_data_source'] == 'CP30'
+        assert configured['spatial_data_source'] == 'FES'
+        assert configured['_needs_fes'] is True
     
     def test_preserves_original_fields(self, historical_scenario):
         """Test that original scenario fields are preserved."""
@@ -220,6 +296,20 @@ class TestValidateScenarioComplete:
         result = validate_scenario_complete(invalid)
         assert isinstance(result, dict)
         assert len(result['errors']) > 0  # Should have errors about invalid network model
+
+    def test_valid_cp30_scenario_passes(self, cp30_scenario):
+        """Test that a complete CP30 scenario passes validation."""
+        result = validate_scenario_complete(cp30_scenario)
+        assert isinstance(result, dict)
+        assert result['errors'] == []
+
+    def test_cp30_missing_pathway_fails(self, cp30_scenario):
+        """Test that CP30 scenarios require an explicit pathway."""
+        incomplete = dict(cp30_scenario)
+        incomplete.pop('CP30_pathway')
+
+        result = validate_scenario_complete(incomplete)
+        assert any('CP30_pathway' in error for error in result['errors'])
 
 
 # ══════════════════════════════════════════════════════════════════════════════

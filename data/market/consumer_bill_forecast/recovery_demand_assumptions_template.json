@@ -1,0 +1,33 @@
+{
+  "purpose": "Required assumptions to convert a future PyPSA system run into billable domestic demand. Populate and version this file for every forecast case.",
+  "forecast_year": 2030,
+  "system_demand_mwh": {
+    "value": null,
+    "source": "PyPSA accounting.demand_MWh or full-year network demand",
+    "note": "Includes every demand sector represented by the model; it is not automatically supplier sales."
+  },
+  "supplier_sales_conversion": {
+    "value": null,
+    "source": "Explicit scenario assumption",
+    "note": "Converts system demand to metered supplier sales after the defined treatment of losses, behind-the-meter generation, storage and exports."
+  },
+  "domestic_recovery_share": {
+    "value": null,
+    "source": "Applicable Ofgem/NESO charging or levy methodology",
+    "note": "Use only for components whose recovery is not already provided as a domestic allowance."
+  },
+  "domestic_customer_accounts": {
+    "value": null,
+    "source": "ONS/Ofgem/customer forecast",
+    "note": "Required for customer- or meter-recovered components and standing-charge allocation."
+  },
+  "representative_customer_consumption_kwh": {
+    "value": 3100,
+    "source": "Scenario selection",
+    "note": "Used only to express the final representative bill; do not use it as the recovery denominator for all components."
+  },
+  "regional_and_payment_allocation": {
+    "source": "Applicable price-cap levelisation and tariff methodology",
+    "note": "Required before reporting regional standing and unit rates."
+  }
+}

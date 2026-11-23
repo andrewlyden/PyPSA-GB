@@ -1,131 +1,100 @@
-# ════════════════════════════════════════════════════════════════════════════════
-# PyPSA-GB Cutout Generation Configuration
-# ════════════════════════════════════════════════════════════════════════════════
-# This config controls the expensive weather cutout download workflow.
-# 
-# ⚠️  WARNING: Each cutout download takes 2-4 hours and ~700MB storage
-# 
-# 🎯 USAGE:
-#   snakemake -s Snakefile_cutouts --configfile config/cutouts_config.yaml --cores 4
+# Weather cutout workflow (Snakefile_cutouts): the ERA5 cutouts renewable profiles are built from.
+# A cutout downloaded through atlite takes 2-4 hours and about 700 MB; a pre-built Zenodo cutout takes minutes.
 #
-# 💡 TIP: Modify years_to_generate to control which cutouts are downloaded
-# ════════════════════════════════════════════════════════════════════════════════
+# Run: snakemake -s Snakefile_cutouts --configfile config/cutouts_config.yaml --cores 4
+#
+# Read by the workflow: years_config, zenodo.enabled and verify_checksum, paths.cutouts_dir and log_dir, and
+# safety.skip_existing (reported only). The other settings are not read at present.
 
-# ────────────────────────────────────────────────────────────
-# Years Configuration
-# ────────────────────────────────────────────────────────────
-# Control which weather years to download cutouts for
+# Years
 years_config:
-  # Method for determining years to generate:
-  # - "manual": Use years_to_generate list below
-  # - "from_scenarios": Extract from scenarios_master.yaml automatically
-  # - "all_scenarios_plus_manual": Combine both approaches
+  # Which years to fetch: "manual" (years_to_generate) | "from_scenarios" (the weather years the merged scenarios
+  # need, from config/config_loader.py) | "all_scenarios_plus_manual" (both).
   method: "manual"
   
-  # Manual list of years (used when method is "manual" or "all_scenarios_plus_manual")
+  # Years for "manual" and "all_scenarios_plus_manual"
   years_to_generate:
     - 2015
   
-  # Additional years to always include regardless of method
-  always_include: []  # Remove 2020 to focus on 2021 only
+  # Years added whatever the method
+  always_include: []
 
-# ────────────────────────────────────────────────────────────
-# Download Configuration
-# ────────────────────────────────────────────────────────────
+# Download
 download:
   # Maximum parallel cutout downloads
   max_parallel_downloads: 1
   
-  # Retry configuration for failed downloads
+  # Retries for failed downloads
   retry:
     attempts: 3
     delay_minutes: 30
   
-  # ERA5 server configuration
+  # ERA5 request
   era5:
-    # Time range for each cutout (full year)
+    # Months of each cutout (full year)
     months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     
-    # Spatial bounds for UK
+    # Spatial bounds (degrees)
     bounds:
       north: 61.0   # Northern Scotland
-      south: 49.5   # Southern England  
+      south: 49.5   # Southern England
       west: -11.0   # Western Ireland
       east: 2.5     # Eastern England
     
-    # Resolution (degrees)
-    dx: 0.25  # ~25km resolution
+    # Grid resolution (degrees)
+    dx: 0.25  # about 25 km
     dy: 0.25
     
-    # Time resolution  
-    dt: "h"   # Hourly data
+    # Time resolution
+    dt: "h"   # hourly
 
-# ────────────────────────────────────────────────────────────
-# Zenodo Pre-built Cutout Downloads
-# ────────────────────────────────────────────────────────────
-# Pre-built cutouts hosted on Zenodo can be downloaded in minutes
-# instead of the 2-4 hours required per year via ERA5/atlite.
-#
-# Repository: https://zenodo.org/records/18325225
-# Available years: 2010-2024 (~765 MB each)
-#
-# Acquisition order:
-#   1. Check data_dir (data/atlite/cutouts/)
-#   2. Download from Zenodo (this section)
-#   3. Fall back to atlite ERA5 download
-#
-# Note: Snakemake automatically skips re-downloading if the output
-# file already exists (unless --force or dependencies change)
+# Pre-built cutouts on Zenodo (https://zenodo.org/records/18325225; 2010-2024, about 765 MB each).
+# Order of acquisition: an existing file in data/atlite/cutouts/, then Zenodo, then an atlite ERA5 download.
+# Snakemake skips a year whose output file already exists (unless forced or its inputs change).
 zenodo:
-  # Enable/disable Zenodo downloads (set to false to always use atlite)
+  # false: always download through atlite
   enabled: true
   
-  # Verify MD5 checksum after download (recommended)
+  # Verify the MD5 checksum after download
   verify_checksum: true
   
-  # Zenodo record ID (update if a new version is published)
+  # Zenodo record ID (the workflow uses ZENODO_RECORD_ID in scripts/utilities/download_cutouts.py)
   record_id: "18325225"
 
-# ────────────────────────────────────────────────────────────
-# File Paths
-# ────────────────────────────────────────────────────────────
+# File paths
 paths:
   # Output directory for cutouts
   cutouts_dir: "resources/atlite/cutouts"
   
-  # Backup directory (optional - for safety)
+  # Backup directory
   backup_dir: "backup/cutouts"
   
   # Log directory for cutout generation
   log_dir: "logs/cutouts"
   
-  # Scenarios configuration file
+  # Scenario definitions (from_scenarios reads the merged scenarios through config/config_loader.py instead)
   scenarios_file: "config/scenarios.yaml"
 
-# ────────────────────────────────────────────────────────────
-# Storage Management
-# ────────────────────────────────────────────────────────────
+# Storage management
 storage:
-  # Automatically clean up temporary files
+  # Clean up temporary files
   cleanup_temp: true
   
-  # Compress cutout files (saves ~30% space but slightly slower access)
+  # Compress cutout files (about 30% smaller, slightly slower to read)
   compression:
     enabled: true
     level: 4  # 1-9, higher = more compression but slower
   
-  # Check available disk space before download
+  # Check free disk space before download
   check_disk_space: true
-  min_free_gb: 5.0  # Minimum GB free space required
+  min_free_gb: 5.0  # GB
 
-# ────────────────────────────────────────────────────────────
 # Validation
-# ────────────────────────────────────────────────────────────
 validation:
   # Validate cutout files after download
   validate_after_download: true
   
-  # Check for required variables in cutouts
+  # Variables each cutout must hold
   required_variables:
     - "temperature"
     - "wnd10m" 
@@ -133,63 +102,45 @@ validation:
     - "influx_direct"
     - "influx_diffuse"
   
-  # Check temporal coverage (ensure full year)
+  # Check the cutout covers the full year
   check_temporal_coverage: true
-  expected_hours_per_year: 8760  # 365 days * 24 hours
+  expected_hours_per_year: 8760  # 365 days x 24 hours
 
-# ────────────────────────────────────────────────────────────
-# Logging Configuration
-# ────────────────────────────────────────────────────────────
+# Logging
 logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"  # DEBUG | INFO | WARNING | ERROR | CRITICAL
   log_to_file: true
   log_directory: "logs/cutouts"
   
-  # Include detailed download progress
+  # Show download progress
   show_download_progress: true
   
-  # Log download statistics  
+  # Log download statistics
   log_download_stats: true
 
-# ────────────────────────────────────────────────────────────
-# Environment Configuration
-# ────────────────────────────────────────────────────────────
-# environment:
-#   # Conda environment for cutout generation
-#   conda_env: "envs/pypsa.yaml"
-  
-#   # Memory limits (important for large cutouts)
-#   memory:
-#     max_memory_gb: 8
-#     chunk_size_mb: 500
-
-# ────────────────────────────────────────────────────────────
-# Safety Features
-# ────────────────────────────────────────────────────────────
+# Safety
 safety:
-  # Prevent accidental re-downloads of existing cutouts
+  # Skip years whose cutout already exists
   skip_existing: true
   
-  # Backup existing cutouts before overwriting
+  # Back up existing cutouts before overwriting
   backup_before_overwrite: true
   
-  # Confirm before expensive operations
+  # Confirm before large downloads
   confirm_large_downloads: true
   large_download_threshold: 5  # GB total download size
   
-  # Lock file to prevent multiple simultaneous downloads
+  # Lock file preventing simultaneous downloads
   use_lock_file: true
   lock_file: "resources/atlite/.download_lock"
 
-# ────────────────────────────────────────────────────────────
-# Performance Tuning
-# ────────────────────────────────────────────────────────────
+# Performance
 performance:
-  # Number of workers for atlite operations  
+  # Workers for atlite operations
   atlite_workers: 1
   
-  # Chunk sizes for processing
-  time_chunk: "1M"  # Monthly chunks
+  # Processing chunk sizes
+  time_chunk: "1M"  # monthly
   spatial_chunk: "auto"
   
   # Use dask for memory management

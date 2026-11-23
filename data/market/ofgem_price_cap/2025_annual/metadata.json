@@ -1,0 +1,23 @@
+{
+  "snapshot": "2025_calendar_year_day_weighted",
+  "description": "Calendar-day-weighted annualisation of Ofgem pre-levelised electricity-cap allowances for 2025.",
+  "scope": {
+    "fuel": "electricity_only",
+    "meter": "single_rate",
+    "payment_method": "Other Payment Method",
+    "benchmark_consumption_kwh_per_year": 3100,
+    "geography": "GB average"
+  },
+  "annualisation": {
+    "method": "calendar-day weighted Q1 to Q4 2025",
+    "period_days": {"2025_Q1": 90, "2025_Q2": 91, "2025_Q3": 92, "2025_Q4": 92},
+    "vat_rate": 0.05
+  },
+  "source_sheet": "ElecSingle_Other_3100kWh; GB average rows",
+  "source_workbooks": [
+    {"period": "2025_Q1", "url": "https://www.ofgem.gov.uk/sites/default/files/2024-11/Default_tariff_cap_level_v1.24.xlsx"},
+    {"period": "2025_Q2", "url": "https://www.ofgem.gov.uk/sites/default/files/2025-02/Default-tariff-cap-level-v1.25.xlsx"},
+    {"period": "2025_Q3", "url": "https://www.ofgem.gov.uk/sites/default/files/2025-05/Energy%20price%20cap%20levels%20Pre-levelised%20rates%20model_0.xlsx"},
+    {"period": "2025_Q4", "url": "https://www.ofgem.gov.uk/sites/default/files/2025-08/energy-price-cap-levels-pre-levelised-rates-model.xlsx"}
+  ]
+}

@@ -13,6 +13,19 @@ Date: October 2025
 
 import pandas as pd
 
+# Natural gas direct-combustion CO2, tonnes per MWh of fuel input (item F24.1,
+# 13 Oct 2026). Efficiencies in a future-cost case are on net calorific value
+# (CP30's 58% CCGT), so the emission factor is too: CP30's own 0.2016 t/MWh net
+# CV (NESO Clean Power 2030 Annex 4, chart CP.25: 51.64 x 0.5807 / 0.2016 = 148.7
+# GBP/t). The gross-CV figure (UK Government conversion factor, about 0.183)
+# pairs with gross-CV efficiencies such as DUKES fleet averages, which the
+# historical marginal-cost path uses. apply_marginal_costs prices dispatch on the
+# same constants, so reported emissions and dispatch carbon agree.
+GAS_CO2_T_PER_MWH_TH_NET_CV = 0.2016
+GAS_CO2_T_PER_MWH_TH_GROSS_CV = 0.183
+# Gas CCS emits the unabated factor less 90% capture.
+CCS_GAS_CAPTURE_RATE = 0.90
+
 def get_carrier_definitions():
     """
     Return carrier definitions for all generator types.
@@ -222,35 +235,49 @@ def get_carrier_definitions():
         'gas_reciprocating': {
             'color': '#969696',  # Gray
             'nice_name': 'Gas Reciprocating',
-            'co2_emissions': 0.202,  # t_CO2/MWh_thermal for natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # t_CO2/MWh_thermal for natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
         'CCGT': {
             'color': '#8B8B8B',  # Dark gray
             'nice_name': 'Combined Cycle Gas Turbine',
-            'co2_emissions': 0.202,  # t_CO2/MWh_thermal for natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # t_CO2/MWh_thermal for natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
         'ccgt': {
             'color': '#8B8B8B',  # Dark gray
             'nice_name': 'Combined Cycle Gas Turbine',
-            'co2_emissions': 0.202,  # t_CO2/MWh_thermal for natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # t_CO2/MWh_thermal for natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
         'OCGT': {
             'color': '#A9A9A9',  # Light gray
             'nice_name': 'Open Cycle Gas Turbine',
-            'co2_emissions': 0.202,  # t_CO2/MWh_thermal for natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # t_CO2/MWh_thermal for natural gas
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'CCS Gas': {
+            'color': '#4D4D4D',
+            'nice_name': 'Gas CCS',
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV * (1.0 - CCS_GAS_CAPTURE_RATE),
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
+        'CCS Biomass': {
+            'color': '#238B45',
+            'nice_name': 'Biomass CCS',
+            'co2_emissions': -0.1,
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
         'ocgt': {
             'color': '#A9A9A9',  # Light gray
             'nice_name': 'Open Cycle Gas Turbine',
-            'co2_emissions': 0.202,  # t_CO2/MWh_thermal for natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # t_CO2/MWh_thermal for natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
@@ -316,6 +343,13 @@ def get_carrier_definitions():
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
+        'Hydrogen': {
+            'color': '#00CED1',
+            'nice_name': 'Hydrogen Generation',
+            'co2_emissions': 0.0,
+            'max_growth': float('inf'),
+            'max_relative_growth': 0.0
+        },
         'hydrogen': {
             'color': '#00CED1',  # Dark turquoise
             'nice_name': 'Hydrogen Generation',
@@ -344,6 +378,44 @@ def get_carrier_definitions():
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
+        # Hydrogen bought for the turbines at a fixed price (item OW3,
+        # hydrogen.turbine_fuel.source external_supply in add_hydrogen_system.py).
+        'H2_power_fuel': {'color': '#DB7093', 'nice_name': 'Hydrogen for power (bought)', 'co2_emissions': 0.0,
+                          'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        # FES 2050 hydrogen system (task Y6b, scripts/hydrogen/fes_hydrogen.py).
+        # The reformer's residual CO2 (5% of 0.183 t/MWh gas) and the CO2 transport
+        # and storage fee are costed on the reformer link, so these carry 0.
+        'H2_demand': {'color': '#C71585', 'nice_name': 'Hydrogen offtake', 'co2_emissions': 0.0,
+                      'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'natural_gas': {'color': '#A0522D', 'nice_name': 'Natural gas (reformer feed)', 'co2_emissions': 0.0,
+                        'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'gas_supply': {'color': '#8B4513', 'nice_name': 'Natural gas supply', 'co2_emissions': 0.0,
+                       'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'gas_reforming_ccs': {'color': '#6A5ACD', 'nice_name': 'Gas reforming with CCS', 'co2_emissions': 0.0,
+                              'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        # FES 2050 demand components and consumer flexibility (task Y6a,
+        # scripts/demand/fes_demand.py). Consumer-owned: outside every
+        # ownership case (plan decision 24).
+        'electric_vehicles': {'color': '#17BECF', 'nice_name': 'EV Charging (fixed)', 'co2_emissions': 0.0,
+                              'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'district_heat': {'color': '#D62728', 'nice_name': 'District Heat', 'co2_emissions': 0.0,
+                          'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'data_centres': {'color': '#7F7F7F', 'nice_name': 'Data Centres', 'co2_emissions': 0.0,
+                         'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'EV_smart_charging': {'color': '#4DD0E1', 'nice_name': 'EV Smart Charging', 'co2_emissions': 0.0,
+                              'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'V2G_fleet': {'color': '#00ACC1', 'nice_name': 'Vehicle-to-Grid Fleet', 'co2_emissions': 0.0,
+                      'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'HP_flexibility': {'color': '#F7B6D2', 'nice_name': 'Heat Pump Flexibility', 'co2_emissions': 0.0,
+                           'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'DH_flexibility': {'color': '#FF9896', 'nice_name': 'District Heat Flexibility', 'co2_emissions': 0.0,
+                           'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'IC_DSR': {'color': '#FF7F0E', 'nice_name': 'I&C Demand Response', 'co2_emissions': 0.0,
+                   'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'residential_DSR': {'color': '#FFBB78', 'nice_name': 'Residential Demand Response', 'co2_emissions': 0.0,
+                            'max_growth': float('inf'), 'max_relative_growth': 0.0},
+        'DACCS': {'color': '#8C564B', 'nice_name': 'Direct Air Capture (DACCS)', 'co2_emissions': 0.0,
+                  'max_growth': float('inf'), 'max_relative_growth': 0.0},
         'fuel_cell': {
             'color': '#20B2AA',  # Light sea green
             'nice_name': 'Fuel Cell',
@@ -356,14 +428,14 @@ def get_carrier_definitions():
         'CHP': {
             'color': '#B22222',  # Firebrick red
             'nice_name': 'Combined Heat & Power',
-            'co2_emissions': 0.202,  # Assumes natural gas CHP
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # Assumes natural gas CHP
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
         'micro_CHP': {
             'color': '#CD5C5C',  # Indian red
             'nice_name': 'Micro CHP',
-            'co2_emissions': 0.202,  # Assumes natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # Assumes natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },
@@ -372,7 +444,7 @@ def get_carrier_definitions():
         'gas_engine': {
             'color': '#708090',  # Slate gray
             'nice_name': 'Gas Engine',
-            'co2_emissions': 0.202,  # Natural gas
+            'co2_emissions': GAS_CO2_T_PER_MWH_TH_NET_CV,  # Natural gas
             'max_growth': float('inf'),
             'max_relative_growth': 0.0
         },

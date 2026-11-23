@@ -1,87 +1,55 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# PyPSA-GB Main Configuration
-# ══════════════════════════════════════════════════════════════════════════════
+# PyPSA-GB: what to run.
 #
-# Configuration is split into focused files:
-#   config.yaml    - THIS FILE: What to run + global overrides
-#   defaults.yaml  - Default values inherited by all scenarios
-#   scenarios.yaml - Scenario definitions (only specify differences from defaults)
-#   clustering.yaml - Clustering method presets and aggregation strategies
+# The configuration is layered (config/README.md):
+#   config/defaults/       defaults for every scenario: the base, then the overlays a scenario's targets, method and
+#                          dispatch select (method/, source/, dispatch/)
+#   config/scenarios.yaml  the canonical scenarios: tutorials, examples and quick tests
+#   config/studies/<name>/ larger studies, solved month by month (families), loaded when listed under `studies`
+#   config/clustering.yaml network clustering presets; config/cutouts_config.yaml weather cutouts (Snakefile_cutouts)
 #
-# ══════════════════════════════════════════════════════════════════════════════
+# This file says which studies to load and which scenarios to run. Run with `snakemake -j 4`; a dry run is
+# `snakemake -n`. Any key below other than `studies` and `run_scenarios` is a global override of the defaults.
 
-# ──────────────────────────────────────────────────────────────────────────────
-# SCENARIOS TO RUN
-# ──────────────────────────────────────────────────────────────────────────────
-# List scenario IDs from scenarios.yaml to execute
-# Multiple scenarios run in parallel based on Snakemake -j flag
+# Studies to load (config/studies/<name>/). Loading a study makes its scenarios and month families runnable; it
+# runs nothing by itself. The studies are large: a CP30 2030 family is twelve monthly two-stage solves on the full
+# ETYS network (days of compute and a commercial solver in practice). See docs: Studies.
+studies:
+  - tutorials          # the tutorial scenarios (Tutorial_2020_*, Tutorial_2040_HT_clustered); small, one week each
+#  - cp30_2030          # NESO Clean Power 2030, Further Flex and Renewables (CP30_FFR_2030_<Mon>_<family>); tutorial 5
+#  - fes2050            # FES 2025 Holistic Transition 2050 (FES25_HT_2050_<Mon>_<family>)
+#  - fes2040            # FES 2025 Holistic Transition 2040 (FES25_HT_2040_<Mon>_<family>)
+#  - validation_2020    # the 2020 validation year (Validation_<Mon>2020)
 
+# Scenarios to run: scenario ids, or a loaded study's family name to run all twelve of its months.
 run_scenarios:
+  - Test_Market                    # six hours of 2035 on the Reduced network, wholesale market and balancing mechanism
 
-  # ─── Tutorial scenarios used in documentation ───
-  - Historical_2015_reduced
-  - Historical_2023_etys
-  - HT35_clustered
-  - EE50_clustered
+  # ── Tutorials (docs/source/tutorials): 10-16 February in 2020, 2030 and 2040 ────────────────────────────────
+  # - Tutorial_2020_reduced        # tutorial 1: 2020 on the Reduced network (32 buses), minutes
+  # - Tutorial_2020_zonal          # tutorial 2: the same week on the Zonal network (17 zones)
+  # - Tutorial_2020_clustered      # tutorial 2: on the ETYS network clustered to GSP regions
+  # - Tutorial_2020_etys           # tutorial 2: on the full ETYS network (about 2,000 buses, 16 GB)
+  # - Tutorial_2040_HT_clustered   # tutorial 4: FES 2025 Holistic Transition 2040, clustered ETYS
+  # - CP30_FFR_2030_tutorial_week  # tutorial 5: CP30 2030, wholesale market and balancing (load cp30_2030 above)
 
-  # ─── Test: 2020 with different network configurations ───
-  # - Historical_2020_zonal       # Start with Zonal (17 zones, fastest)
-  # - Historical_2020_reduced     # Then Reduced (32 buses)
-  # - Historical_2020_ETYS         # Full ETYS with demand redistribution (no scaling)
-  # - Historical_2020_clustered     # ETYS clustered to GSP zones (test feasibility)
+  # ── Examples from config/scenarios.yaml ────────────────────────────────────────────────────────────────
+  # - EE50_clustered               # FES 2025 Electric Engagement 2050, ETYS clustered to 100 buses, one week
+  # - HT35_clustered               # FES 2024 Holistic Transition 2035, ETYS clustered to GSP regions, one week
+  # - HT35                         # FES 2024 Holistic Transition 2035, full ETYS network
+  # - HT35_flex                    # as HT35, with EV flexibility
+  # - HT30_event_response          # FES 2025 HT 2030, clustered ETYS, with event response
+  # - HT35_market                  # HT 2035 on ETYS, wholesale market and balancing mechanism
+  # - Historical_2015_reduced      # 2015 on the Reduced network (32 buses), one week
+  # - Historical_2023_etys         # 2023 on the full ETYS network, a high-renewables week
+  # - Historical_2024_market       # 2024, wholesale market and balancing mechanism
 
-  # ─── Other Historical (2010-2020 - cutouts available) ───
-  # - Historical_2010_reduced
-  # - Historical_2011_reduced
-  # - Historical_2012_reduced
-  # - Historical_2013_reduced
-  # - Historical_2014_reduced
-  # - Historical_2015_reduced
-  # - Historical_2016_reduced
-  # - Historical_2017_reduced
-  # - Historical_2018_reduced
-  # - Historical_2019_reduced
-  # - Historical_2020_reduced
-
-  # ─── Future ───
-  # - HT35
-  # - HT35_year
-  # - HT35_reduced_eload
-  # - HT35_reduced
-  # - HT35_zonal
-  # - HT35_clustered_gsp
-  # - HT35_clustered_kmeans
-  # - HT35_with_disaggregation
-  # - HT35_flex
-  # - HT30_event_response
-
-  # ─── Market simulation (two-stage dispatch: wholesale + BM) ───
-
-  # - Test_Rolling_Market          # Rolling day-ahead + per-timestep BM, 2020 historical, ETYS, 24h
-    # - HT35_two_step_dispatch_1day      # Reduced network, 24h, wholesale + BM
-  # - Validation_Jan2020_UniformNetworkBaseline # Uniform baseline: January
-  # - Validation_Feb2020_UniformNetworkBaseline # Uniform baseline: February
-  # - Validation_Mar2020_UniformNetworkBaseline # Uniform baseline: March
-  # - Validation_Apr2020_UniformNetworkBaseline # Uniform baseline: April
-  # - Validation_May2020_UniformNetworkBaseline # Uniform baseline: May
-  # - Validation_Jun2020_UniformNetworkBaseline # Uniform baseline: June
-  # - Validation_Jul2020_UniformNetworkBaseline # Uniform baseline: July
-  # - Validation_Aug2020_UniformNetworkBaseline # Uniform baseline: August
-  # - Validation_Sep2020_UniformNetworkBaseline # Uniform baseline: September
-  # - Validation_Oct2020_UniformNetworkBaseline # Uniform baseline: October
-  # - Validation_Nov2020_UniformNetworkBaseline # Uniform baseline: November
-  # - Validation_Dec2020_UniformNetworkBaseline # Uniform baseline: December
-
-  # ─── Contrasting system conditions ───
-  # - Historical_2021_highdemand        # 2021 cold snap, Jan 8-14 — high demand, thermal-dominant
-  # - Historical_2022_highdemand        # 2022 energy crisis winter peak, Dec 12-18 — high SMP
-  # - Historical_2023_highsolar         # 2023 spring renewable surge, May 15-21 — low demand/prices
-  # - Historical_2024_highwind          # 2024 Storm Isha/Jocelyn, Jan 21-27 — peak wind output
-  # - Historical_2024_fullyear          # 2024 full year (8784h), Reduced + aggregation, wholesale market
-
-  # ─── Wholesale market investigation ───
-  # - Historical_2021_lowwind           # Historical 2021, low-wind Mar 2-8, wholesale only
-  # - Historical_2022_lowwind           # Historical 2022, low-wind Mar 22-28, wholesale only
-  # - Historical_2023_lowwind           # Historical 2023, low-wind Feb 27 - Mar 5
-  # - Historical_2024_lowwind           # Historical 2024, low-wind Jan 6-12, wholesale only
-  # - HT35_wholesale_only              # Reduced network, 24h, wholesale only
+  # ── Study families (load the study above first) ─────────────────────────────────────────────────────────
+  # CP30 2030: network cases no_acceleration (central), cp30_network (recommended network), no_upgrades
+  # - no_acceleration
+  # - cp30_network
+  # - no_upgrades
+  # FES 2025 Holistic Transition 2040 and 2050: the market years
+  # - fes2040:market
+  # - fes2050:market
+  # 2020 validation
+  # - validation

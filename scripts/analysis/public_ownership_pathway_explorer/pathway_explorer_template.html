@@ -1,0 +1,353 @@
+<title>Public Ownership __FIRST_YEAR__–__LAST_YEAR__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="What public ownership of Britain's electricity adds up to from __FIRST_YEAR__ to __LAST_YEAR__: the cumulative change for bill-payers, the Exchequer and investors, year by year, from PyPSA-GB's solved years.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; controls in one row above the charts; the cumulative chart leads, the
+   yearly mechanism chart and the totals table follow. Same tokens as the Who Pays explorers. */
+:root{
+  color-scheme:light;
+  --bg:#f3f5f4; --panel:#ffffff; --panel-2:#eaeeec; --line:#dde3e0; --line-2:#c9d1cd;
+  --ink:#151a1e; --ink-2:#545e67; --ink-3:#86909a;
+  --accent:#0f6f66; --focus:#0f6f66;
+  --p1:#eb6834; --p2:#1baf7a; --p3:#4a3aa7;
+  --m-fin:#2a78d6; --m-leg:#eda100; --m-mkt:#e87ba4; --m-gap:#008300;
+  --solved:#151a1e;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px -14px rgba(20,30,40,.18);
+  --f-display:"Archivo","Source Sans 3",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --line:#2b3136; --line-2:#3a4147;
+    --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891;
+    --accent:#3fb3a6; --focus:#3fb3a6;
+    --p1:#d95926; --p2:#199e70; --p3:#9085e9;
+    --m-fin:#3987e5; --m-leg:#c98500; --m-mkt:#d55181; --m-gap:#008300;
+    --solved:#f1f3f4;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --line:#2b3136; --line-2:#3a4147;
+  --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891;
+  --accent:#3fb3a6; --focus:#3fb3a6;
+  --p1:#d95926; --p2:#199e70; --p3:#9085e9;
+  --m-fin:#3987e5; --m-leg:#c98500; --m-mkt:#d55181; --m-gap:#008300;
+  --solved:#f1f3f4;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:28px}
+.wrap > *{min-width:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4.6vw,40px);font-weight:700;line-height:1.08}
+h2{font-size:clamp(20px,2.6vw,24px);font-weight:700;line-height:1.2}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)} .small{font-size:14px} .tiny{font-size:12.5px}
+.lede{font-size:18px;color:var(--ink-2);max-width:66ch}
+.about{padding:12px 14px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:14.5px;max-width:80ch;display:grid;gap:6px}
+.solved-list{display:flex;flex-wrap:wrap;gap:6px 14px}
+.solved-list span{display:inline-flex;gap:6px;align-items:center}
+.solved-list i{width:9px;height:9px;border-radius:50%;background:var(--solved);display:inline-block}
+
+.controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+.ctl{display:grid;gap:6px;min-width:0}
+.ctl > span{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.seg{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:10px;background:var(--panel-2)}
+.seg button{all:unset;cursor:pointer;padding:6px 11px;border-radius:7px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.seg button:focus-visible,.chip:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{all:unset;cursor:pointer;display:inline-flex;gap:7px;align-items:center;padding:5px 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel);font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--ink-3)}
+.chip svg{width:22px;height:8px}
+.chip[aria-pressed="false"] svg{opacity:.35}
+select{font:inherit;font-size:14px;padding:6px 8px;border-radius:8px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);max-width:100%}
+
+.panel{display:grid;gap:12px;padding:18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0;position:relative}
+@media (max-width:640px){.panel{padding:12px}}
+.panel-h{display:grid;gap:2px}
+.panel-h .t{font-family:var(--f-display);font-weight:700;font-size:17px}
+.panel-h .s{font-size:13.5px;color:var(--ink-2)}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--f-body);font-size:12.5px;fill:var(--ink-2)}
+svg text.num{font-family:var(--f-mono);font-size:11.5px}
+svg text.ink{fill:var(--ink)}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .zero{stroke:var(--ink-3);stroke-width:1}
+svg .solved{stroke:var(--solved);stroke-width:1;stroke-dasharray:2 3;opacity:.55}
+svg text.halo{paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend svg{width:22px;height:8px;flex:none}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px}
+.tip{position:absolute;pointer-events:none;z-index:5;min-width:200px;max-width:300px;padding:9px 11px;border-radius:9px;background:var(--panel);border:1px solid var(--line-2);box-shadow:var(--shadow);font-size:13px;display:grid;gap:3px}
+.tip[hidden]{display:none}
+.tip .h{font-weight:700;font-family:var(--f-display)}
+.tip .r{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.tip .r i{width:10px;height:3px;border-radius:2px;display:inline-block}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.fact{display:grid;gap:3px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+.fact .l{font-size:13px;font-weight:700;color:var(--ink-2);display:flex;gap:7px;align-items:center}
+.fact .v{font-family:var(--f-mono);font-size:24px;font-weight:500}
+.fact .d{font-size:13px;color:var(--ink-2)}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+td.num,th.num{text-align:right;white-space:nowrap}
+.code{display:inline-block;font-family:var(--f-display);font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent);margin-right:6px}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+details summary{cursor:pointer;padding:12px 16px;font-weight:700;font-family:var(--f-display)}
+details summary:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:10px}
+details .body{padding:0 16px 14px;display:grid;gap:10px}
+ul.plain{margin:0;padding-left:18px;display:grid;gap:5px;font-size:14px;color:var(--ink-2)}
+dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+dt{font-weight:700} dd{margin:0;color:var(--ink-2)}
+@media (max-width:560px){dl{grid-template-columns:1fr}}
+footer{font-size:13px;color:var(--ink-3);display:grid;gap:6px;max-width:80ch}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:12px">
+    <p class="eyebrow">PyPSA-GB &middot; __FIRST_YEAR__ to __LAST_YEAR__ &middot; real 2024 prices</p>
+    <h1>What public ownership adds up to, __FIRST_YEAR__ to __LAST_YEAR__</h1>
+    <p class="lede">Each scenario against the same privately owned system, year by year and added up: what bill-payers, the Exchequer and investors gain or lose, and the saving to the economy as a whole.</p>
+    <div class="about" id="about"></div>
+  </header>
+
+  <div class="controls" role="group" aria-label="What the charts show">
+    <div class="ctl"><span id="lab-party">Who</span><div class="seg" id="party" aria-labelledby="lab-party"></div></div>
+    <div class="ctl"><span id="lab-money">Money</span><div class="seg" id="money" aria-labelledby="lab-money"></div></div>
+    <div class="ctl" style="flex:1 1 320px"><span id="lab-cases">Scenarios</span><div class="chips" id="cases" aria-labelledby="lab-cases"></div></div>
+  </div>
+
+  <section class="panel" aria-labelledby="h-cum" id="cum-panel">
+    <div class="panel-h"><span class="t" id="h-cum"></span><span class="s" id="s-cum"></span></div>
+    <div id="cum"></div>
+    <div class="legend" id="cum-legend"></div>
+  </section>
+
+  <div class="facts" id="facts"></div>
+
+  <section class="panel" aria-labelledby="h-year" id="year-panel">
+    <div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;justify-content:space-between">
+      <div class="panel-h"><span class="t" id="h-year"></span><span class="s" id="s-year"></span></div>
+      <label class="ctl" for="year-case"><span>Scenario</span><select id="year-case"></select></label>
+    </div>
+    <div id="yearly"></div>
+    <div class="legend" id="year-legend"></div>
+  </section>
+
+  <section style="display:grid;gap:10px" aria-labelledby="h-table">
+    <h2 id="h-table"></h2>
+    <p class="muted small" id="s-table"></p>
+    <div class="scroll"><table id="totals"></table></div>
+  </section>
+
+  <details id="method"><summary>How the years between the solved years are built</summary><div class="body" id="method-body"></div></details>
+  <footer id="foot"></footer>
+</div>
+
+<script id="pathway-data" type="application/json">/*__DATA__*/</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById('pathway-data').textContent);
+  const M = DATA.meta, CASES = DATA.cases, YEARS = M.years;
+  const SNAP = new Set(M.snapshot_years);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt = (v, d = 1) => Math.abs(v).toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
+  const sbn = (v, d) => { if (v == null || Number.isNaN(v)) return '—'; const dd = d ?? (Math.abs(v) < 10 ? 1 : 0);
+    return (v > 0.0005 ? '+' : v < -0.0005 ? '−' : '') + '£' + fmt(v, dd) + 'bn'; };
+  const sgbp = v => v == null ? '—' : (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + '£' + fmt(v, 0);
+  const COL = {S1:'var(--p1)', S2:'var(--p2)', S3:'var(--p3)'};
+  // Fixed per case: hue by scenario, dash for the variants (identity is never colour alone: labels, legend, table).
+  const DASH = {'S1':'', 'S2 (100%)':'', 'S2 75%':'7 3', 'S2 50%':'3 3', 'S2 25%':'1 3', 'S3 market':'7 3', 'S3 central':''};
+  const PARTY = [
+    {k:'gain', l:'Bill-payers + Exchequer', d:'what bill-payers and taxpayers gain together'},
+    {k:'consumers', l:'Bill-payers', d:'every bill-payer, VAT included'},
+    {k:'exchequer', l:'Exchequer', d:'the public finances'},
+    {k:'investors', l:'Investors', d:'private owners and lenders'},
+    {k:'resource', l:'Economy-wide saving', d:'the real cost saved: finance, running costs, fuel; transfers between parties net out'}];
+  // The modelled finance and existing-fleet lines, with the correction that closes each solved year shown apart.
+  const MECH = [{k:'financing_modelled', l:'Cheaper finance on new plant', c:'var(--m-fin)'},
+                {k:'legacy_modelled', l:'The existing fleet the state buys (Scenario 3)', c:'var(--m-leg)'},
+                {k:'market_and_other', l:'Markets, balancing and everything else', c:'var(--m-mkt)'},
+                {k:'correction', l:'Correction to match the solved years', c:'var(--m-gap)'}];
+  const rate = M.discount_rates[M.central_rate] ?? 0.035;
+  const MONEY = [{k:'undiscounted', l:'Undiscounted'}, {k:'pv', l:`Present value at ${(rate * 100).toFixed(1)}%`}];
+  const state = {party:'gain', money:'undiscounted', on:new Set(['S1', 'S2 (100%)', 'S3 market', 'S3 central']), yearCase:'S3 central'};
+  try { const s = JSON.parse(localStorage.getItem('po-pathway-view-v2') || '{}');
+        if (s.party) state.party = s.party; if (s.money) state.money = s.money; if (Array.isArray(s.on)) state.on = new Set(s.on);
+        if (s.yearCase) state.yearCase = s.yearCase; } catch (e) {}
+  const save = () => { try { localStorage.setItem('po-pathway-view-v2', JSON.stringify({...state, on:[...state.on]})); } catch (e) {} };
+
+  // Annual values (GBP bn) for a case, party and mechanism; 'gain' is bill-payers plus the Exchequer.
+  const ZERO = YEARS.map(() => 0);
+  const raw = (c, party, k) => { const a = p => (c.annual[p][k] || ZERO);
+    return party === 'gain' ? a('consumers').map((v, i) => v + a('exchequer')[i]) : a(party); };
+  const annual = (c, party, k = 'total') => {
+    if (k === 'financing_modelled') return raw(c, party, 'financing').map((v, i) => v - raw(c, party, 'financing_anchor')[i]);
+    if (k === 'legacy_modelled') return raw(c, party, 'legacy').map((v, i) => v - raw(c, party, 'legacy_anchor')[i]);
+    if (k === 'correction') return raw(c, party, 'financing_anchor').map((v, i) => v + raw(c, party, 'legacy_anchor')[i]);
+    return raw(c, party, k); };
+  const disc = i => state.money === 'pv' ? 1 / Math.pow(1 + rate, YEARS[i] - M.base_year) : 1;
+  const cumulative = (c, party) => { let s = 0; return annual(c, party).map((v, i) => (s += v * disc(i))); };
+  const total = (c, party, key) => party === 'gain' ? c.gain_totals[key] : c.totals[party][key];
+  const perHh = (c, party, key) => party === 'gain' ? c.gain_per_household[key] : c.per_household[party][key];
+  const partyOf = k => PARTY.find(p => p.k === k);
+  const niceStep = span => { const raw = span / 5, p = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; };
+
+  // ---------- about ----------
+  const solvedNames = M.snapshot_years.map(y => `<span><i aria-hidden="true"></i><b>${y}</b> ${esc(M.snapshot_names[y])}</span>`).join('');
+  const between = YEARS.length - M.snapshot_years.length;
+  document.getElementById('about').innerHTML = `<p><b>About these figures.</b> The model solves ${M.snapshot_years.length} years in full: ${M.snapshot_years.join(', ')}. The other ${between} are built from them: cheaper finance year by year from each power station's build year and contract, the existing fleet's income and repayments on their own schedules, and everything that depends on markets on a straight line between solved years. When another year is solved (2040 next), it becomes a fixed point the lines pass through.${M.first_year < Math.min(...M.snapshot_years) ? ` Before ${Math.min(...M.snapshot_years)} only cheaper finance counts, on state plant open by then: the purchase and the market changes start with the ${Math.min(...M.snapshot_years)} transfer.` : ''} Model results, not forecasts${M.run_label ? `, from the ${esc(M.run_label)}` : ''}.</p><div class="solved-list small">${solvedNames}</div>`;
+
+  // ---------- controls ----------
+  const seg = (id, items, key) => { const el = document.getElementById(id);
+    el.innerHTML = items.map(o => `<button type="button" data-k="${o.k}" aria-pressed="${state[key] === o.k}" title="${esc(o.d || '')}">${esc(o.l)}</button>`).join('');
+    el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { state[key] = b.dataset.k; save(); render(); })); };
+  seg('party', PARTY, 'party'); seg('money', MONEY, 'money');
+  const swatch = c => `<svg viewBox="0 0 22 8" aria-hidden="true"><line x1="1" x2="21" y1="4" y2="4" stroke="${COL[c.code]}" stroke-width="2.5" stroke-dasharray="${DASH[c.label] || ''}" stroke-linecap="round"/></svg>`;
+  const chips = document.getElementById('cases');
+  chips.innerHTML = CASES.map(c => `<button type="button" class="chip" data-l="${esc(c.label)}" aria-pressed="${state.on.has(c.label)}" title="${esc(c.name)}">${swatch(c)}${esc(c.label)}</button>`).join('');
+  chips.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    const l = b.dataset.l; if (state.on.has(l)) { if (state.on.size > 1) state.on.delete(l); } else state.on.add(l); save(); render(); }));
+  const sel = document.getElementById('year-case');
+  sel.innerHTML = CASES.map(c => `<option value="${esc(c.label)}">${esc(c.label)}: ${esc(c.name)}</option>`).join('');
+  sel.addEventListener('change', () => { state.yearCase = sel.value; save(); renderYearly(); });
+
+  // ---------- cumulative chart ----------
+  function renderCumulative(){
+    const p = partyOf(state.party), shown = CASES.filter(c => state.on.has(c.label));
+    document.getElementById('h-cum').textContent = `${p.l}: cumulative change against private ownership`;
+    document.getElementById('s-cum').textContent = `£bn added up from ${M.first_year}, ${state.money === 'pv' ? `discounted to ${M.base_year} at ${(rate * 100).toFixed(1)}% a year (HM Treasury Green Book)` : 'undiscounted'}, real 2024 prices. Above zero: ${p.k === 'resource' ? 'a real saving to the economy' : 'better off than under private ownership'}. Dots mark solved years.`;
+    const series = shown.map(c => ({c, v: cumulative(c, state.party)}));
+    const vals = series.flatMap(s => s.v).concat([0]);
+    let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
+    const W = 900, L = 58, R = 128, T = 24, B = 30, H = 380, x = y => L + (y - M.first_year) / (M.last_year - M.first_year) * (W - L - R);
+    const yv = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${p.l}: cumulative change in £bn, ${M.first_year} to ${M.last_year}, for ${shown.map(c => c.label).join(', ')}`)}">`;
+    const step = niceStep(hi - lo);
+    for (let t = Math.ceil(lo / step) * step; t <= hi; t += step){
+      g += `<line class="${Math.abs(t) < 1e-9 ? 'zero' : 'grid'}" x1="${L}" x2="${W - R}" y1="${yv(t)}" y2="${yv(t)}"/><text class="num" x="${L - 8}" y="${yv(t) + 4}" text-anchor="end">${t === 0 ? '£0' : sbn(t, step < 1 ? 1 : 0)}</text>`;
+    }
+    for (const y of YEARS) if ((y - M.first_year) % 5 === 0 || y === M.last_year) g += `<text class="num" x="${x(y)}" y="${H - 8}" text-anchor="middle">${y}</text>`;
+    for (const y of M.snapshot_years) g += `<line class="solved" x1="${x(y)}" x2="${x(y)}" y1="${T - 8}" y2="${H - B}"/><text x="${x(y)}" y="${T - 12}" text-anchor="middle" font-size="11">solved</text>`;
+    for (const s of series){
+      const col = COL[s.c.code];
+      g += `<polyline fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="${DASH[s.c.label] || ''}" points="${s.v.map((v, i) => `${x(YEARS[i]).toFixed(1)},${yv(v).toFixed(1)}`).join(' ')}"/>`;
+      s.v.forEach((v, i) => { if (SNAP.has(YEARS[i])) g += `<circle cx="${x(YEARS[i])}" cy="${yv(v)}" r="4.5" fill="${col}" stroke="var(--panel)" stroke-width="2"/>`; });
+    }
+    // End labels, spread so they never touch.
+    const ends = series.map(s => ({s, y: yv(s.v[s.v.length - 1])})).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 28) ends[i].y = ends[i - 1].y + 28;
+    const over = ends.length ? ends[ends.length - 1].y - (H - B) : 0; if (over > 0) ends.forEach(e => e.y -= over);
+    for (const e of ends){
+      const last = e.s.v[e.s.v.length - 1];
+      g += `<text class="ink halo" x="${W - R + 10}" y="${e.y - 2}" font-weight="700" font-size="12.5">${esc(e.s.c.label)}</text><text class="num halo" x="${W - R + 10}" y="${e.y + 12}">${sbn(last)}</text>`;
+    }
+    g += `<line id="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--ink-3)" stroke-width="1" visibility="hidden"/>`;
+    g += `<rect id="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg>`;
+    const host = document.getElementById('cum'); host.innerHTML = g;
+    document.getElementById('cum-legend').innerHTML = series.map(s => `<span>${swatch(s.c)}<b>${esc(s.c.label)}</b> ${esc(s.c.name)}</span>`).join('') + `<span><i class="sw" style="border-radius:50%;width:9px;height:9px;background:var(--solved)"></i>solved year</span>`;
+    // Hover: the nearest year, every shown case's running total and that year's change.
+    const svg = host.querySelector('svg'), cross = svg.querySelector('#cross'), panel = document.getElementById('cum-panel');
+    let tip = panel.querySelector('.tip'); if (!tip){ tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; panel.appendChild(tip); }
+    const show = ev => { const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width;
+      const i = Math.max(0, Math.min(YEARS.length - 1, Math.round((sx - L) / (W - L - R) * (M.last_year - M.first_year)))), yr = YEARS[i];
+      cross.setAttribute('x1', x(yr)); cross.setAttribute('x2', x(yr)); cross.setAttribute('visibility', 'visible');
+      tip.innerHTML = `<span class="h">${yr}${SNAP.has(yr) ? ' · solved' : ''}</span>` + series.map(s => `<span class="r"><i style="background:${COL[s.c.code]}"></i><span>${esc(s.c.label)}</span><span class="num">${sbn(s.v[i])}</span></span>`).join('') + `<span class="tiny faint">running total; that year alone: ${series.map(s => `${esc(s.c.label)} ${sbn(annual(s.c, state.party)[i] * disc(i))}`).join(' · ')}</span>`;
+      tip.hidden = false; const pr = panel.getBoundingClientRect(); let left = ev.clientX - pr.left + 14; if (left + 300 > pr.width) left = ev.clientX - pr.left - 314;
+      tip.style.left = Math.max(8, left) + 'px'; tip.style.top = (ev.clientY - pr.top + 10) + 'px'; };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); };
+    svg.querySelector('#hit').addEventListener('pointermove', show); svg.querySelector('#hit').addEventListener('pointerleave', hide);
+  }
+
+  // ---------- facts: the shown cases' totals ----------
+  function renderFacts(){
+    const key = state.money === 'pv' ? M.central_rate : 'undiscounted';
+    document.getElementById('facts').innerHTML = CASES.filter(c => state.on.has(c.label)).map(c => {
+      const t = total(c, state.party, key), h = perHh(c, state.party, key);
+      return `<div class="fact"><span class="l"><span class="code" style="--c:${COL[c.code]}">${esc(c.label)}</span></span><span class="v">${sbn(t)}</span><span class="d">${M.first_year}–${M.last_year}${state.money === 'pv' ? `, present value at ${(rate * 100).toFixed(1)}%` : ''}; about <span class="num">${sgbp(h)}</span> per typical household over the period</span></div>`; }).join('');
+  }
+
+  // ---------- yearly chart by mechanism ----------
+  function renderYearly(){
+    const c = CASES.find(k => k.label === state.yearCase) || CASES[0]; sel.value = c.label;
+    const p = partyOf(state.party);
+    document.getElementById('h-year').textContent = `${p.l}: change each year, by what drives it`;
+    document.getElementById('s-year').textContent = `${c.label}, ${c.name}. £bn a year${state.money === 'pv' ? `, discounted to ${M.base_year} at ${(rate * 100).toFixed(1)}%` : ''}; the dot is the year's net change.`;
+    const rows = YEARS.map((y, i) => ({y, parts: MECH.map(m => ({m, v: annual(c, state.party, m.k)[i] * disc(i)}))}));
+    rows.forEach(r => { r.pos = r.parts.filter(p => p.v > 0).reduce((a, p) => a + p.v, 0); r.neg = r.parts.filter(p => p.v < 0).reduce((a, p) => a + p.v, 0); r.net = r.pos + r.neg; });
+    let lo = Math.min(0, ...rows.map(r => r.neg)), hi = Math.max(0, ...rows.map(r => r.pos)); const pad = (hi - lo) * 0.06 || 0.5; lo -= pad; hi += pad;
+    const W = 900, L = 58, R = 16, T = 18, B = 30, H = 300, band = (W - L - R) / YEARS.length, bw = Math.max(6, band - 6);
+    const xb = i => L + i * band + (band - bw) / 2, yv = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${c.label}: ${p.l} change each year by mechanism, ${M.first_year} to ${M.last_year}`)}">`;
+    const step = niceStep(hi - lo);
+    for (let t = Math.ceil(lo / step) * step; t <= hi; t += step)
+      g += `<line class="${Math.abs(t) < 1e-9 ? 'zero' : 'grid'}" x1="${L}" x2="${W - R}" y1="${yv(t)}" y2="${yv(t)}"/><text class="num" x="${L - 8}" y="${yv(t) + 4}" text-anchor="end">${Math.abs(t) < 1e-9 ? '£0' : sbn(t, step < 1 ? 1 : 0)}</text>`;
+    rows.forEach((r, i) => {
+      let up = 0, down = 0;
+      for (const part of r.parts){ if (!part.v) continue;
+        const y0 = part.v > 0 ? up : down, y1 = y0 + part.v; if (part.v > 0) up = y1; else down = y1;
+        const top = yv(Math.max(y0, y1)), h = Math.max(0.5, Math.abs(yv(y0) - yv(y1)) - 1);
+        g += `<rect x="${xb(i)}" y="${top}" width="${bw}" height="${h}" rx="2" fill="${part.m.c}"/>`; }
+      g += `<circle cx="${xb(i) + bw / 2}" cy="${yv(r.net)}" r="3.5" fill="var(--ink)" stroke="var(--panel)" stroke-width="1.5"/>`;
+      if ((r.y - M.first_year) % 5 === 0 || r.y === M.last_year) g += `<text class="num" x="${xb(i) + bw / 2}" y="${H - 8}" text-anchor="middle">${r.y}</text>`;
+      if (SNAP.has(r.y)) g += `<text x="${xb(i) + bw / 2}" y="${T - 4}" text-anchor="middle" font-size="10.5">solved</text>`;
+      g += `<rect class="yb" data-i="${i}" x="${L + i * band}" y="${T}" width="${band}" height="${H - T - B}" fill="transparent"/>`;
+    });
+    const host = document.getElementById('yearly'); host.innerHTML = g + '</svg>';
+    document.getElementById('year-legend').innerHTML = MECH.map(m => `<span><i class="sw" style="background:${m.c}"></i>${esc(m.l)}</span>`).join('') + `<span><i class="sw" style="border-radius:50%;width:8px;height:8px;background:var(--ink)"></i>net change</span>`;
+    const panel = document.getElementById('year-panel'); let tip = panel.querySelector('.tip');
+    if (!tip){ tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; panel.appendChild(tip); }
+    host.querySelectorAll('.yb').forEach(b => {
+      b.addEventListener('pointermove', ev => { const r = rows[+b.dataset.i];
+        tip.innerHTML = `<span class="h">${r.y}${SNAP.has(r.y) ? ' · solved' : ''}</span>` + r.parts.map(p => `<span class="r"><i style="background:${p.m.c};height:10px"></i><span>${esc(p.m.l)}</span><span class="num">${sbn(p.v, 2)}</span></span>`).join('') + `<span class="r"><i style="background:var(--ink);height:10px;border-radius:50%"></i><span><b>Net</b></span><span class="num"><b>${sbn(r.net, 2)}</b></span></span>`;
+        tip.hidden = false; const pr = panel.getBoundingClientRect(); let left = ev.clientX - pr.left + 14; if (left + 300 > pr.width) left = ev.clientX - pr.left - 314;
+        tip.style.left = Math.max(8, left) + 'px'; tip.style.top = (ev.clientY - pr.top + 10) + 'px'; });
+      b.addEventListener('pointerleave', () => { tip.hidden = true; }); });
+  }
+
+  // ---------- totals table ----------
+  function renderTable(){
+    const p = partyOf(state.party), rates = Object.entries(M.discount_rates).sort((a, b) => a[1] - b[1]);
+    document.getElementById('h-table').textContent = `${p.l}: ${M.first_year}–${M.last_year} totals for every scenario`;
+    document.getElementById('s-table').textContent = `£bn, real 2024 prices, against private ownership; present values at ${M.base_year}. Per household: a typical 3,100 kWh household's share over the period (real 2025 prices). The years after ${M.last_year} are a separate memo, never added in: the cheaper finance still to come on plant built by ${M.last_year}, and Scenario 3's remaining purchase repayments.`;
+    const beyond = c => { const b = c.beyond_2050 || {}; if (state.party === 'gain') return b.consumers && b.exchequer ? {u: b.consumers.undiscounted + b.exchequer.undiscounted, v: b.consumers[M.central_rate] + b.exchequer[M.central_rate]} : null;
+      return b[state.party] ? {u: b[state.party].undiscounted, v: b[state.party][M.central_rate]} : null; };
+    document.getElementById('totals').innerHTML = `<caption class="faint tiny" style="text-align:left;caption-side:bottom;padding-top:6px">${esc(p.d)}.</caption><thead><tr><th>Scenario</th><th class="num">Undiscounted</th>${rates.map(([k, r]) => `<th class="num">PV ${(r * 100).toFixed(1)}%</th>`).join('')}<th class="num">Per household</th><th class="num">After ${M.last_year} (memo, PV ${(rate * 100).toFixed(1)}%)</th></tr></thead><tbody>` +
+      CASES.map(c => { const b = beyond(c);
+        return `<tr><td><span class="code" style="--c:${COL[c.code]}">${esc(c.label)}</span>${esc(c.name)}</td><td class="num">${sbn(total(c, state.party, 'undiscounted'))}</td>${rates.map(([k]) => `<td class="num">${sbn(total(c, state.party, k))}</td>`).join('')}<td class="num">${sgbp(perHh(c, state.party, 'undiscounted'))}</td><td class="num">${b ? sbn(b.v) : '—'}</td></tr>`; }).join('') + '</tbody>';
+  }
+
+  // ---------- method and footer ----------
+  document.getElementById('method-body').innerHTML = `<p class="small muted">Cheaper finance and the existing fleet are worked out year by year from their own records (each power station's build year, contract and rates; the fleet's income and repayments). In a solved year these can differ a little from what that year's full model run books, because the two are built separately. The difference is the <b>correction</b> in the yearly chart: fixed in each solved year so the solved years match exactly, and on a straight line between them.</p><dl>${Object.entries(M.interpolated_lines).map(([k, v]) => `<dt>${esc({financing_anchor:'Finance: the gap to a solved year', legacy_anchor:'Existing fleet: the gap to a solved year', market_and_other_interpolated:'Markets and the rest'}[k] || k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    <p class="small muted">${esc(M.anchoring.rule || '')}: ${M.anchoring.all_pass ? 'every solved year matches' : '<b>a solved year does not match</b>'}.</p>
+    <ul class="plain">${M.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>
+    ${M.beyond_rule ? `<p class="small muted"><b>After ${M.last_year}.</b> ${esc(M.beyond_rule)}</p>` : ''}`;
+  document.getElementById('foot').innerHTML = `<p><b>Source.</b> PyPSA-GB public-ownership layer: the Exchequer ledgers of the solved years (${M.snapshot_years.join(', ')}) and the 2050 asset finance register, combined year by year by the pathway model. ${esc(M.price_basis || '')}. Generated ${esc(M.generated)}.</p><p>Parties: bill-payers + Exchequer + investors = the economy-wide saving, in every year.</p>`;
+
+  function render(){
+    for (const [id, key] of [['party', 'party'], ['money', 'money']])
+      document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === state[key])));
+    document.querySelectorAll('#cases .chip').forEach(b => b.setAttribute('aria-pressed', String(state.on.has(b.dataset.l))));
+    renderCumulative(); renderFacts(); renderYearly(); renderTable();
+  }
+  render();
+})();
+</script>

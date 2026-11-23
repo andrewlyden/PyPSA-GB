@@ -1,0 +1,1146 @@
+<title>Who Pays for Public Ownership</title>
+<meta name="description" content="How a state stake in new plant, state ownership of new plant, and the state buying the existing fleet would change a typical household's __MODEL_YEAR__ electricity bill, what the Exchequer takes on, and who ends up paying. Model results from PyPSA-GB.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f5f4; --panel:#ffffff; --panel-2:#eaeeec; --panel-3:#dfe5e2;
+  --ink:#151a1e; --ink-2:#545e67; --ink-3:#86909a; --line:#dde3e0; --line-2:#c9d1cd;
+  --accent:#0f6f66; --accent-ink:#ffffff;
+  --p1:#eb6834; --p2:#1baf7a; --p3:#4a3aa7;
+  --gain:#2a78d6; --loss:#e34948;
+  --est:#9a6700; --est-bg:#fff4d6;
+  --focus:#0f6f66;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px -14px rgba(20,30,40,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --panel-3:#2f353b;
+    --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891; --line:#2b3136; --line-2:#3a4147;
+    --accent:#3fb3a6; --accent-ink:#0e1517;
+    --p1:#d95926; --p2:#199e70; --p3:#9085e9;
+    --gain:#3987e5; --loss:#e66767;
+    --est:#f0c35a; --est-bg:#3a3017;
+    --focus:#3fb3a6;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --panel-3:#2f353b;
+  --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891; --line:#2b3136; --line-2:#3a4147;
+  --accent:#3fb3a6; --accent-ink:#0e1517;
+  --p1:#d95926; --p2:#199e70; --p3:#9085e9;
+  --gain:#3987e5; --loss:#e66767;
+  --est:#f0c35a; --est-bg:#3a3017;
+  --focus:#3fb3a6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 64px;padding-inline:16px;display:grid;gap:32px}
+.wrap > *{min-width:0}
+h1,h2,h3,h4{font-family:"Archivo","Source Sans 3",system-ui,sans-serif;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4.6vw,42px);font-weight:700;line-height:1.08}
+h2{font-size:clamp(21px,2.6vw,26px);font-weight:700;line-height:1.2}
+h3{font-size:17px;font-weight:600;line-height:1.3}
+h4{font-size:15px;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+.num{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.big{font-weight:600;font-variant-numeric:proportional-nums;letter-spacing:-.01em}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+.small{font-size:14px} .tiny{font-size:12.5px}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.prose{max-width:68ch}
+.srlabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+header.top{display:grid;gap:14px}
+header.top .lede{font-size:18px;color:var(--ink-2);max-width:66ch}
+.about{padding:12px 14px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:14.5px;max-width:78ch}
+
+section.block{display:grid;gap:18px}
+section.block > *{min-width:0}
+.sec-head{display:grid;gap:6px;max-width:72ch}
+.sec-head .kicker{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+
+/* scenario introductions */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.cards{grid-template-columns:1fr}}
+.card{display:grid;gap:8px;align-content:start;padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c)}
+.card .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card .t b{font-family:"Archivo",sans-serif;font-size:16px}
+.card .lead-in{font-weight:600}
+.card .d{font-size:14.5px;color:var(--ink-2)}
+.card h4{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
+.card ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2);display:grid;gap:2px}
+.card .comp{font-size:13px;color:var(--ink-3)}
+.wires-note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--panel-2);font-size:14.5px}
+.wires-note b{white-space:nowrap}
+
+/* baseline + definitions */
+.defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.def{display:grid;gap:4px;padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line)}
+.def .t{font-weight:700;font-family:"Archivo",sans-serif;font-size:15px}
+.def .v{font-size:26px;line-height:1.1}
+.def .d{font-size:14px;color:var(--ink-2)}
+
+/* lead chart */
+.lead{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:20px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+@media (max-width:760px){.lead{padding:16px}}
+.lead .panel-h{display:grid;gap:2px;margin-bottom:6px}
+.lead .panel-h .t{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px}
+.lead .panel-h .s{font-size:13.5px;color:var(--ink-2)}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+svg text{font-family:"Source Sans 3",system-ui,sans-serif;font-size:12.5px;fill:var(--ink-2)}
+svg text.num{font-family:"IBM Plex Mono",monospace;font-size:12px}
+svg text.ink{fill:var(--ink)}
+svg text.halo{paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+svg .axis{stroke:var(--line-2);stroke-width:1}
+svg .grid{stroke:var(--line);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2);grid-column:1 / -1}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px}
+.sw.dot{width:11px;height:11px;border-radius:50%;background:var(--ink)}
+.sw.range{height:8px;border-radius:4px;background:var(--ink-3);opacity:.5}
+
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th,table.t td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.t th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+table.t td.num,table.t th.num{text-align:right;white-space:nowrap}
+table.t tr.total td{font-weight:700;border-top:2px solid var(--line-2)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.chipcode{display:inline-flex;align-items:center;justify-content:center;font-family:"Archivo",sans-serif;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);white-space:nowrap}
+
+/* scenario tabs */
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tab{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:4px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);border-top:4px solid var(--c);min-width:0}
+.tab:hover{background:var(--panel-2)}
+.tab:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.tab[aria-selected="true"]{background:color-mix(in srgb,var(--c) 10%,var(--panel));border-color:var(--c);box-shadow:var(--shadow)}
+.tab .chipcode{justify-self:start}
+.tab .name{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px}
+.tab .short{font-size:13px;color:var(--ink-2)}
+.tab .figs{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:2px}
+.tab .figs b{color:var(--ink);font-weight:600}
+@media (max-width:640px){.tabs{grid-template-columns:1fr}.tab{grid-template-columns:auto 1fr;align-items:center;column-gap:12px}.tab .figs,.tab .short{grid-column:1 / -1}}
+
+.scen{display:grid;gap:26px;padding:22px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0}
+.scen > *{min-width:0}
+@media (max-width:640px){.scen{padding:14px}}
+.scen-head{display:grid;gap:8px;max-width:76ch}
+.scen-head .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.scen-head .mech{padding:10px 14px;border-left:3px solid var(--c);color:var(--ink-2);font-size:15px}
+.showing{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-size:14px;padding:8px 12px;border-radius:10px;background:var(--panel-2)}
+.showing b{font-weight:700}
+.result{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+@media (max-width:820px){.result{grid-template-columns:1fr}}
+.sentence{font-size:19px;line-height:1.4;font-family:"Archivo",sans-serif;font-weight:500;text-wrap:pretty}
+.sentence b{font-weight:700}
+.stat{display:grid;gap:4px;padding:14px 16px;border-radius:10px;background:var(--panel-2);align-content:start}
+.stat .l{font-size:13px;font-weight:700;color:var(--ink-2)}
+.stat .v{font-size:30px;line-height:1.05}
+.stat .d{font-size:14px}
+.stat .r{font-size:12.5px;color:var(--ink-3)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.sub{display:grid;gap:12px;min-width:0}
+.sub > *{min-width:0}
+.sub-head{display:grid;gap:3px}
+.sub-head .s{font-size:14px;color:var(--ink-2)}
+
+/* who pays grid */
+.who{display:grid;gap:6px}
+.who .hdr,.who .row{display:grid;grid-template-columns:minmax(140px,1.3fr) repeat(4,minmax(0,1fr));gap:6px 10px;align-items:center}
+.who .hdr{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;padding:0 10px}
+.who .hdr span:not(:first-child){text-align:center}
+.who .row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(140px,1.3fr) repeat(4,minmax(0,1fr));gap:6px 10px;align-items:center;cursor:pointer;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+.who .row:hover{background:var(--panel-2)}
+.who .row:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.who .row[aria-checked="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--panel));box-shadow:inset 4px 0 0 var(--c)}
+.who .row.off{cursor:default;opacity:.7}
+.who .name{display:grid;gap:2px;min-width:0}
+.who .name b{font-weight:700}
+.who .name .n{font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.who .name .f{font-size:12.5px;color:var(--ink-2)}
+.cell{display:grid;gap:3px;justify-items:center;min-width:0}
+.cell .bar{position:relative;width:100%;height:12px}
+.cell .bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line-2)}
+.cell .bar i{position:absolute;top:0;height:12px;border-radius:0 4px 4px 0}
+.cell .bar i.neg{border-radius:4px 0 0 4px}
+.cell .bar i.res{background:var(--ink-2)}
+.cell .val{font-size:13px}
+.cell .plabel{display:none;font-size:12px;color:var(--ink-2)}
+@media (max-width:640px){
+  .who .hdr{display:none}
+  .who .row{grid-template-columns:1fr;gap:8px}
+  .cell{grid-template-columns:110px minmax(0,1fr) auto;justify-items:stretch;align-items:center;gap:8px}
+  .cell .plabel{display:block}
+  .cell .val{text-align:right}
+}
+.identity{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.identity .term{display:grid;gap:1px;padding:8px 12px;border-radius:9px;background:var(--panel-2);min-width:120px}
+.identity .term .l{font-size:12px;color:var(--ink-2);font-weight:600}
+.identity .term .v{font-size:18px}
+.identity .op{font-size:20px;color:var(--ink-3);font-family:"Archivo",sans-serif}
+.identity .term.res{background:color-mix(in srgb,var(--c) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+
+.whopays{display:grid;gap:14px;padding:16px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);min-width:0}
+.whopays > *{min-width:0}
+.whopays .who .row,.whopays .identity .term:not(.res),.whopays .flow{background:var(--panel)}
+.whopays .flow .track{background:var(--panel-3)}
+@media (max-width:640px){.whopays{padding:10px}}
+/* assumption controls */
+.ctl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:10px;align-items:start}
+.ctl{display:grid;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--line)}
+.ctl > h4{font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
+.seg .opt{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:2px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);min-width:0}
+.seg .opt:hover{background:var(--panel-2)}
+.seg .opt:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.seg .opt[aria-checked="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--panel));box-shadow:inset 0 -3px 0 var(--c)}
+.seg .opt .lab{font-weight:600;font-size:14.5px;line-height:1.25}
+.seg .opt .eff{font-size:12.5px;color:var(--ink-2)}
+.ctl .ex{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.tg{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+.tg:hover{background:var(--panel-2)}
+.tg:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.tg[aria-checked="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--panel))}
+.tg[aria-disabled="true"]{cursor:not-allowed;opacity:.55;background:var(--panel)}
+.tg.sub-switch{margin-left:18px}
+.tg .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--line-2);display:grid;place-items:center;background:var(--panel)}
+.tg[aria-checked="true"] .box{background:var(--c);border-color:var(--c)}
+.tg .box svg{width:13px;height:13px}
+.tg .lab{font-weight:600}
+.tg .ex{grid-column:2 / -1;font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.tg .eff{font-size:13px;text-align:right;white-space:nowrap}
+.tg .na{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.tg-result{display:grid;gap:10px;padding:14px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2)}
+.tg-result[hidden]{display:none}
+.tg-result .figs{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+.tg-result .figs .f{display:grid;gap:0}
+.tg-result .figs .l{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.tg-result .figs .v{font-size:22px}
+.notice{padding:10px 12px;border-radius:8px;background:var(--est-bg);border:1px solid color-mix(in srgb,var(--est) 40%,transparent);font-size:13.5px}
+
+/* one-at-a-time list */
+.sens{display:grid;gap:4px}
+.sens .grp{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);padding:10px 10px 2px}
+.sens .hdr,.sens .srow{display:grid;grid-template-columns:minmax(0,2.6fr) repeat(2,minmax(100px,.8fr));gap:4px 12px;align-items:center}
+.sens .hdr{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;padding:0 10px}
+.sens .hdr span:not(:first-child){text-align:right}
+.sens .srow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,2.6fr) repeat(2,minmax(100px,.8fr));gap:4px 12px;align-items:center;cursor:pointer;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel)}
+.sens .srow:hover{background:var(--panel-2)}
+.sens .srow:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sens .srow[aria-checked="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--panel));box-shadow:inset 4px 0 0 var(--c)}
+.sens .srow.off{cursor:default}
+.sens .nm{display:grid;gap:2px;min-width:0}
+.sens .nm b{font-weight:600}
+.sens .nm span{font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.sens .v{text-align:right;font-size:13.5px;white-space:nowrap}
+.sens .v .pl{display:none;font-family:"Source Sans 3",sans-serif;font-size:12px;color:var(--ink-2);margin-right:6px}
+@media (max-width:640px){
+  .sens .hdr{display:none}
+  .sens .srow{grid-template-columns:1fr 1fr}
+  .sens .nm{grid-column:1 / -1}
+  .sens .v{text-align:left;white-space:normal}
+  .sens .v .pl{display:block}
+}
+
+.sens .srow .box{display:none}
+.sens.multi .srow{grid-template-columns:auto minmax(0,2.6fr) repeat(2,minmax(100px,.8fr))}
+.sens.multi .hdr{grid-template-columns:28px minmax(0,2.6fr) repeat(2,minmax(100px,.8fr))}
+.sens.multi .srow .box{display:grid;width:20px;height:20px;border-radius:6px;border:2px solid var(--line-2);place-items:center;background:var(--panel)}
+.sens.multi .srow[aria-checked="true"] .box{background:var(--c);border-color:var(--c)}
+.sens .srow .box svg{width:13px;height:13px}
+.sens .srow[aria-disabled="true"]{cursor:not-allowed;opacity:.6}
+.sens .srow .why{display:block;font-size:12px;color:var(--ink-3)}
+@media (max-width:640px){.sens.multi .srow{grid-template-columns:auto 1fr 1fr}.sens.multi .srow .box{grid-row:1 / span 2}.sens.multi .srow .nm{grid-column:2 / -1}}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:0 6px;border-radius:999px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+.tag.best{color:var(--gain);border:1px solid color-mix(in srgb,var(--gain) 55%,transparent)}
+.tag.worst{color:var(--loss);border:1px solid color-mix(in srgb,var(--loss) 55%,transparent)}
+.tag.choice{color:var(--ink-2);border:1px solid var(--line-2)}
+.tag.unc{color:var(--est);border:1px dashed color-mix(in srgb,var(--est) 60%,transparent)}
+.tag.kind{color:var(--ink-3);border:1px solid var(--line);text-transform:none;letter-spacing:0;font-weight:600}
+.tag.inuse{color:var(--accent-ink);background:color-mix(in srgb,var(--c) 14%,var(--panel));border:1px solid var(--c)}
+.topics{display:grid;gap:8px}
+details.topic,.topic.none{border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+details.topic summary,.topic.none .sum{cursor:pointer;padding:12px 16px;list-style:none;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+.topic.none .sum{cursor:default}
+details.topic summary::-webkit-details-marker{display:none}
+.year-note{margin-top:12px}.year-note summary{font-weight:600}.year-note p{padding:0 16px;margin:0 0 10px}
+details.topic summary::after{content:"+";font-size:20px;color:var(--ink-3);line-height:1;order:1}
+details.topic[open] summary::after{content:"\2212"}
+details.topic summary:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:10px}
+.topic .q{font-weight:700;font-family:"Archivo",sans-serif;flex:1 1 260px}
+.topic .rg{font-size:13px;white-space:nowrap;color:var(--ink-2)}
+.topic .h{flex:1 1 100%;order:2;font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.topic.none .q,.topic.none .h{color:var(--ink-3)}
+.topic .tbody{padding:2px 16px 16px;display:grid;gap:10px;min-width:0}
+.topic .kindh{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin:8px 0 2px}
+.tag.prov{color:var(--est);border:1px solid color-mix(in srgb,var(--est) 55%,transparent)}
+.corner-row{display:flex;flex-wrap:wrap;gap:8px}
+.corner{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:1px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);min-width:150px}
+.corner:hover{background:var(--panel-2)}
+.corner:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.corner[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--panel));box-shadow:inset 0 -3px 0 var(--c)}
+.corner .lab{font-weight:600;font-size:14px}
+.corner .eff{font-size:12.5px;color:var(--ink-2)}
+.headline-note{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:baseline;padding:10px 14px;border-radius:10px;background:var(--est-bg);border:1px solid color-mix(in srgb,var(--est) 40%,transparent);font-size:14.5px}
+ul.plain{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px;color:var(--ink-2)}
+ul.plain b{color:var(--ink)}
+
+/* flows */
+.flows{display:grid;gap:6px}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line)}
+.flow .who-line{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.flow .who-line .pt{padding:0 7px;border-radius:999px;background:var(--panel-2);font-weight:600;color:var(--ink)}
+.flow .amt{font-size:14px;white-space:nowrap}
+.flow .lab{font-size:14px;line-height:1.3}
+.flow .track{grid-column:1 / -1;height:6px;border-radius:3px;background:var(--panel-2);position:relative;overflow:hidden}
+.flow .track i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink-3)}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:2px}
+.linkbtn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+/* extras */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.fact{padding:14px 16px;border-radius:10px;border:1px solid var(--line);display:grid;gap:6px;align-content:start;min-width:0}
+.fact .v{font-size:24px;line-height:1.1}
+.fact .d{font-size:13.5px;color:var(--ink-2)}
+.caution{border-left:3px solid var(--est);padding:4px 0 4px 12px;font-size:14.5px;color:var(--ink-2);max-width:78ch}
+
+/* drawers */
+details.drawer{border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+details.drawer summary{cursor:pointer;padding:12px 16px;font-weight:700;font-family:"Archivo",sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+details.drawer summary::-webkit-details-marker{display:none}
+details.drawer summary::after{content:"+";font-size:20px;color:var(--ink-3);line-height:1}
+details.drawer[open] summary::after{content:"\2212"}
+details.drawer summary:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:10px}
+details.drawer[open] summary{border-bottom:1px solid var(--line)}
+details.drawer .body{padding:14px 16px;display:grid;gap:12px;min-width:0}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap;letter-spacing:.02em}
+.badge.modelled{border-color:color-mix(in srgb,var(--accent) 60%,transparent);color:var(--accent)}
+.badge.informed{border-color:color-mix(in srgb,var(--p3) 55%,transparent);color:var(--p3)}
+dl.notes{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:0;font-size:14px}
+dl.notes dt{font-weight:700}
+dl.notes dd{margin:0;color:var(--ink-2)}
+@media (max-width:560px){dl.notes{grid-template-columns:1fr}dl.notes dd{margin-bottom:6px}}
+
+/* trust */
+.trust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+footer{font-size:13px;color:var(--ink-3);max-width:80ch;display:grid;gap:6px}
+@media (prefers-reduced-motion: no-preference){
+  .tab,.tg,.seg .opt,.who .row,.sens .srow,.cell .bar i,.flow .track i{transition:background-color .15s ease,border-color .15s ease,width .25s ease}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">PyPSA-GB &middot; __PATHWAY_SHORT__ &middot; GB household, 3,100 kWh a year &middot; 2025 prices</p>
+    <h1>Who pays for public ownership?</h1>
+    <p class="lede">Three ways the state could take a bigger role in Britain's electricity system, each set against the same privately owned system in __MODEL_YEAR__. For each: what happens to a typical household's bill, and then who ends up paying for it.</p>
+    <div class="about" role="note"><p><b>About these figures.</b> <span id="about-text"></span></p></div>
+  </header>
+
+  <!-- 1. The scenarios and the answer -->
+  <section class="block" aria-labelledby="h-answer">
+    <div class="sec-head">
+      <p class="kicker">1 &middot; The three scenarios and the bill</p>
+      <h2 id="h-answer"></h2>
+      <p class="muted" id="base-rule"></p>
+    </div>
+    <div class="cards" id="cards"></div>
+    <p class="wires-note" id="wires-note"></p>
+    <div class="defs" id="defs"></div>
+    <div class="lead" id="lead"></div>
+    <div class="scroll"><table class="t" id="lead-table"></table></div>
+    <div id="year-note"></div>
+  </section>
+
+  <!-- 2. Scenario explorer -->
+  <section class="block" aria-labelledby="h-explore">
+    <div class="sec-head">
+      <p class="kicker">2 &middot; One scenario at a time</p>
+      <h2 id="h-explore">Pick a scenario, then change its assumptions or who pays.</h2>
+      <p class="muted">The page shows one case at a time: the base, a combination of switches, a different settlement of who pays, or one of the other assumptions. Every combination of switches is a case the model has computed exactly, not a sum of single effects.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Scenario" id="tabs"></div>
+    <div id="scen-host"></div>
+  </section>
+
+  <!-- 3. Trust -->
+  <section class="block" aria-labelledby="h-trust">
+    <div class="sec-head">
+      <p class="kicker">3 &middot; How far to trust these numbers</p>
+      <h2 id="h-trust">What the model is checked against, and the uncertainties that move every bill, public or private alike.</h2>
+    </div>
+    <div class="trust-grid" id="trust-grid"></div>
+    <div class="sub">
+      <div class="sub-head"><h3>Uncertainties that move every scenario</h3><p class="s">These raise or lower the private bill and every public bill together. The scenario columns show where a scenario's saving against private also moves, because the scenario replaces the line in question.</p></div>
+      <div class="scroll" id="unc-table"></div>
+    </div>
+  </section>
+
+  <!-- 4. Cost of capital and sources -->
+  <section class="block" aria-labelledby="h-wacc">
+    <div class="sec-head">
+      <p class="kicker">4 &middot; Cost of capital and sources</p>
+      <h2 id="h-wacc">The rates each owner pays to finance plant, and where they come from.</h2>
+      <p class="muted" id="wacc-lede"></p>
+    </div>
+    <div class="scroll" id="wacc-table"></div>
+    <div class="two">
+      <div class="sub" id="wacc-alts"></div>
+      <div class="sub" id="wacc-outside"></div>
+    </div>
+    <p class="tiny faint" id="wacc-check"></p>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script id="explorer-data" type="application/json">/*__DATA__*/</script>
+<script>
+(function(){
+  'use strict';
+  const DATA = JSON.parse(document.getElementById('explorer-data').textContent);
+  const M = DATA.meta, CASES = DATA.cases;
+  const COL = {S1:'var(--p1)', S2:'var(--p2)', S3:'var(--p3)'};
+  const PARTY = {consumers:'Bill-payers', exchequer:'Exchequer', private_investors:'Private investors', resource:'Real resources', foreign:'Overseas'};
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt = (v, d=2) => Math.abs(v).toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
+  const money = (v, d=2) => (v < 0 ? '−' : '') + '£' + fmt(v, d);
+  const signed = (v, d=2) => (v > 0.0049 ? '+' : v < -0.0049 ? '−' : '') + '£' + fmt(v, d);
+  const cls = v => v < -0.005 ? 'gain' : v > 0.005 ? 'loss' : '';      // a cost change: lower is better
+  const pcls = v => v > 0.005 ? 'gain' : v < -0.005 ? 'loss' : '';     // a party change: positive is better off
+  const word = v => v < -0.005 ? 'less' : v > 0.005 ? 'more' : 'the same';
+  const pct = v => Math.round(v * 100) + '%';
+  const have = v => v != null && !Number.isNaN(v);
+  // The change on every consumer's bill, GBP bn a year inc VAT (cbn: a saving > 0), shown below zero as a saving.
+  const bnS = c => (c && have(c.cbn)) ? signed(-c.cbn, Math.abs(c.cbn) < 1 ? 2 : 1) + 'bn' : '—';
+  const allBills = (c, k = 'd') => (c && have(c.cbn)) ? `<span class="${k} ${cls(-c.cbn)}"><span class="num">${bnS(c)}</span> a year across all consumers' bills</span>` : '';
+  const count = n => ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][n] || String(n);
+  // P3 on central dispatch (24 Oct 2026): a view that reads each same-fleet case's I1 figure plus the measured
+  // step (the case's `i3` block, an approximation); the headline case is computed and carries none.
+  // User, 11 Nov 2026: Scenario 3 is shown on central dispatch by default (its headline institution).
+  let VIEW_I3 = true;
+  // Scenario 3's cases with no central-dispatch figure: those buying another fleet than the headline's, which the
+  // measured step does not cover (user decision, 24 Oct 2026). On the central-dispatch view they keep their market
+  // figure, tagged, and their effects are measured against the market-machinery base (like for like).
+  const MM_SCOPE = new Set();
+  DATA.scenarios.forEach(s => {
+    if (!(M.p3_i3_view && CASES[s.id] && CASES[s.id].i3)) return;
+    const ids = [...Object.values(s.grid || {}), ...(s.sensitivities || []).map(r => r.case),
+                 ...Object.values((s.bounds && s.bounds.grid) || {}), ...(s.presets || []).map(p => p.case), s.best, s.worst];
+    const computed = new Set([M.p3_i3_view.institution_case, s.headline && s.headline.case]);
+    ids.forEach(id => { if (id && CASES[id] && !CASES[id].i3 && !computed.has(id)) MM_SCOPE.add(id); });
+  });
+  const C = id => { const c = (id && CASES[id]) || null; if (!c) return c;
+    if (VIEW_I3 && c.i3) return Object.assign({}, c, c.i3, {raw: c});
+    if (VIEW_I3 && MM_SCOPE.has(id)) return Object.assign({}, c, {mm: true, raw: c});
+    return c; };
+  // A change on the bill between two cases, like for like: on the market figures where either has no central one.
+  const diff = (c, ref) => (c.mm || ref.mm) ? (c.raw || c).db - (ref.raw || ref).db : c.db - ref.db;
+  const diffB = (c, ref) => (c.mm || ref.mm) ? (c.raw || c).b - (ref.raw || ref).b : c.b - ref.b;
+  const mmTag = c => c && c.mm ? '<span class="tag prov" title="No central-dispatch figure: this case buys a different fleet from the headline case, so the measured step does not apply. Its effect is measured with the market machinery kept.">market machinery</span>' : '';
+  // The market-machinery base beside a central-dispatch headline (overview and tabs).
+  const mmAlt = s => (VIEW_I3 && i3View(s) && s.headline && CASES[s.headline.case] && CASES[s.id]) ? CASES[s.id] : null;
+  function i3View(s){ return (M.p3_i3_view && CASES[s.id] && CASES[s.id].i3) ? M.p3_i3_view : null; }
+  const xWords = x => !have(x) ? '—' : x > 0.005 ? `${money(x)} cost` : x < -0.005 ? `${money(-x)} gain` : 'no change';
+  const PRIVATE = C('private');
+  const base = s => C(s.id);
+  // A scenario's headline case, where it differs from the case its switches are computed on (P3: central dispatch)
+  const head = s => (s.headline && C(s.headline.case)) || base(s);
+  const headAlt = s => (s.headline && C(s.headline.case) && base(s) && !(VIEW_I3 && i3View(s))) ? base(s) : null;
+  const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+  const pcf = v => (Math.abs(v * 100 - Math.round(v * 100)) < 1e-6 ? v.toFixed(2) : v.toFixed(3)) + '%';
+
+  // ---------- header ----------
+  const runName = M.run_label ? `the ${M.run_label}` : `the PyPSA-GB public-ownership run built on ${M.generated}`;
+  const partial = M.case_count < M.catalogue_count ? ` This build carries numbers for ${M.case_count} of the ${M.catalogue_count} cases; a combination without numbers says so.` : '';
+  document.getElementById('about-text').textContent = `The figures come from ${runName}: one modelled year, __MODEL_YEAR__, on __PATHWAY_LONG__. They are model results, not forecasts, and each rests on the assumptions set out in the notes.${partial}`;
+
+  // ---------- 1. scenarios, best and worst, definitions ----------
+  const allLower = DATA.scenarios.every(s => head(s) && head(s).db < -0.005);
+  document.getElementById('h-answer').textContent = allLower
+    ? 'All three scenarios lower the __MODEL_YEAR__ bill against private ownership.'
+    : 'What each scenario does to the __MODEL_YEAR__ bill against private ownership.';
+  document.getElementById('base-rule').textContent = M.base_rule;
+  const list = arr => arr && arr.length ? `<ul>${arr.map(w => `<li>${esc(w.charAt(0).toUpperCase() + w.slice(1))}</li>`).join('')}</ul>` : '<p class="small faint">Not in this build.</p>';
+  function boundBlock(words, kind){
+    if (!words) return `<h4>${kind} case</h4><p class="small faint">Not in this build.</p>`;
+    const comp = words.comparator_moves, chg = words.comparator_bill_change;
+    const way = !have(chg) ? 'change the private bill too' : chg > 0.005 ? 'make the private system dearer' : chg < -0.005 ? 'make the private system cheaper' : 'apply to the private system too';
+    const verb = comp.length === 1 ? way.replace(/^make/, 'makes').replace(/^change/, 'changes').replace(/^apply/, 'applies') : way;
+    const note = comp.length
+      ? `<p class="comp">${cap(count(comp.length))} of these assumptions also ${verb}${have(chg) && Math.abs(chg) > 0.005 ? ` (${money(Math.abs(chg))} a year)` : ''}, so the ${kind.toLowerCase()} case is set against a private system built on the same assumptions.</p>`
+      : `<p class="comp">Measured against today's private system.</p>`;
+    return `<h4>${kind} case</h4>${list(words.moves)}${note}`;
+  }
+  document.getElementById('cards').innerHTML = DATA.scenarios.map(s => `<article class="card" style="--c:${COL[s.code]}">
+      <div class="t"><span class="chipcode" style="--c:${COL[s.code]}">${s.code}</span><b>${esc(s.label)}</b></div>
+      <p class="lead-in">${esc(s.short)}.</p><p class="d">${esc(s.sub)}</p>
+      ${boundBlock(s.best_words, 'Best')}${boundBlock(s.worst_words, 'Worst')}</article>`).join('');
+  document.getElementById('wires-note').innerHTML = `<b>The wires.</b> <span>${esc(M.networks_note)}</span>`;
+  const defs = [
+    {t:'Scenario 0: private ownership', v:PRIVATE ? money(PRIVATE.b) : '', d:`a year including VAT for a typical 3,100 kWh household in __MODEL_YEAR__, with today's owners and today's cost of borrowing. Every change on this page is measured against it.`},
+    {t:'The bill', v:'', d:`What the household pays its supplier: wholesale power, the subsidy contracts, the wires, balancing the grid and the supplier's own costs.`},
+    {t:'Best and worst', v:'', d:`Named sets of assumptions, listed under each scenario above, not statistical bounds. Each is measured against its own private comparator.`},
+    {t:'Who pays', v:'', d:`The bill is not the whole story: the base rules leave the public costs with the Exchequer. What that means for taxpayers and investors is set out for each scenario in section 2.`},
+  ];
+  document.getElementById('defs').innerHTML = defs.map(d => `<div class="def"><span class="t">${d.t}</span>${d.v ? `<span class="v big num">${d.v}</span>` : ''}<span class="d">${d.d}</span></div>`).join('');
+
+  function niceStep(span){ const raw = span / 4; const m = Math.pow(10, Math.floor(Math.log10(raw))); const n = raw / m; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * m; }
+  function rangePanel(o = {}){
+    // o.get: the figure per case (default the bill change per household); o.fv / o.ft: value and tick text;
+    // o.padAbs: the margin in the figure's own units; o.aria: the chart's accessible name.
+    const get = o.get || (c => c.db), fv = o.fv || (v => signed(v)), ft = o.ft || (v => signed(v, 0));
+    const val = c => { if (!c) return null; const v = get(c); return have(v) ? v : null; };
+    // One row per scenario: the bill change's best..worst swathe and the base dot.
+    const rows = DATA.scenarios.map(s => { const b = C(s.best), w = C(s.worst), c = head(s), alt = headAlt(s) || mmAlt(s);
+      return {s, c: val(c), alt: val(alt), b: val(b), w: val(w)}; });
+    const vals = rows.flatMap(r => [r.c, r.alt, r.b, r.w].filter(have)).concat([0]);
+    let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.10 + (o.padAbs ?? 3); lo -= pad; hi += pad;
+    const W = 760, L = 46, R = 18, top = 30, rowH = 66, H = top + rows.length * rowH + 22;
+    const x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+    let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria || 'Change in the bill against private ownership for each scenario, with its best to worst range'}" style="max-width:${W}px">`;
+    const step = niceStep(hi - lo);
+    for (let t = Math.ceil(lo / step) * step; t <= hi; t += step){
+      if (Math.abs(t) < 1e-9) continue;
+      g += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top - 6}" y2="${top + rows.length * rowH - 12}"/><text class="num" x="${x(t)}" y="${H - 6}" text-anchor="middle">${ft(t)}</text>`;
+    }
+    g += `<line class="axis" x1="${x(0)}" x2="${x(0)}" y1="${top - 16}" y2="${top + rows.length * rowH - 10}" style="stroke:var(--ink-3)"/><text x="${x(0)}" y="${top - 19}" text-anchor="middle" font-size="11.5">private</text><text class="num" x="${x(0)}" y="${H - 6}" text-anchor="middle">${ft(0)}</text>`;
+    rows.forEach((r, i) => {
+      const y = top + i * rowH + 16; const col = COL[r.s.code];
+      g += `<text class="ink" x="${L - 40}" y="${y + 4}" font-weight="700" font-family="Archivo, sans-serif">${r.s.code}</text>`;
+      if (!have(r.c)){ g += `<text x="${L}" y="${y + 4}" font-size="11.5">not in this build</text>`; return; }
+      let note = 'best and worst not in this build', noteX = x(r.c);
+      if (have(r.b) && have(r.w)){
+        g += `<line x1="${x(Math.min(r.b, r.w))}" x2="${x(Math.max(r.b, r.w))}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="10" stroke-linecap="round" opacity=".32"/>`;
+        note = `best ${fv(r.b)} · worst ${fv(r.w)}`; noteX = x(Math.min(r.b, r.w, have(r.alt) ? r.alt : Infinity));
+      }
+      if (have(r.alt)){
+        g += `<circle cx="${x(r.alt)}" cy="${y}" r="5" fill="var(--panel)" stroke="${col}" stroke-width="2"><title>${esc(r.s.headline.alt_label)}: ${fv(r.alt)}</title></circle>`;
+        note = `${r.s.headline.status ? r.s.headline.status.split(' ')[0] + ' · ' : ''}market machinery ${fv(r.alt)} · ${note}`;
+      }
+      g += `<circle cx="${x(r.c)}" cy="${y}" r="7" fill="${col}" stroke="var(--panel)" stroke-width="2"><title>${r.s.code} ${esc(r.s.label)}: ${fv(r.c)}</title></circle>`;
+      g += `<text class="num ink halo" x="${x(r.c)}" y="${y - 12}" text-anchor="middle" font-weight="600" style="font-size:13px">${fv(r.c)}</text>`;
+      const est = note.length * 6.1; const fits = noteX + est <= W - R;
+      g += `<text class="num halo" x="${fits ? Math.max(noteX, L) : W - R}" y="${y + 26}" text-anchor="${fits ? 'start' : 'end'}" font-size="11">${note}</text>`;
+    });
+    return g + '</svg>';
+  }
+  document.getElementById('lead').innerHTML = `
+    ${DATA.scenarios.some(sc => have((head(sc) || {}).cbn)) ? `<div><div class="panel-h"><span class="t">Change across all consumers' bills</span><span class="s">£bn a year against private ownership, including VAT, for every bill-payer: homes, businesses and industry. Below zero is a saving.</span></div>${rangePanel({
+      get: c => have(c.cbn) ? -c.cbn : null, padAbs: 0.3,
+      fv: v => signed(v, Math.abs(v) < 1 ? 2 : 1) + 'bn', ft: v => signed(v, 0) + 'bn',
+      aria: "Change across all consumers' bills against private ownership for each scenario, GBP bn a year, with its best to worst range"})}</div>` : ''}
+    <div><div class="panel-h"><span class="t">Change in a household's bill</span><span class="s">£ a year for a typical 3,100 kWh household against private ownership, including VAT. Below zero is a saving.</span></div>${rangePanel()}</div>
+    <div class="legend"><span><i class="sw dot"></i>base (bill-payers first)</span><span><i class="sw range"></i>best to worst, each against its own private comparator</span>${DATA.scenarios.some(headAlt) ? `<span><i class="sw dot" style="background:var(--panel);border:2px solid var(--ink-2)"></i>Scenario 3 with the market machinery kept: its best and worst are computed on this case</span>` : DATA.scenarios.some(mmAlt) ? `<span><i class="sw dot" style="background:var(--panel);border:2px solid var(--ink-2)"></i>Scenario 3 with the market machinery kept, for comparison</span>` : ''}</div>
+    ${DATA.scenarios.filter(mmAlt).map(s => `<p class="tiny faint" style="grid-column:1 / -1">${s.code}'s headline is ${esc(s.headline.label)}${s.headline.status ? `, <b>${esc(s.headline.status)}</b>` : ''}, and its best to worst range and every assumption below are shown on central dispatch: ${esc(M.p3_i3_view.basis)}. With the market machinery kept instead it is ${signed(CASES[s.id].db)}; the scenario panel switches between the two.</p>`).join('')}
+    ${DATA.scenarios.filter(headAlt).map(s => `<p class="tiny faint" style="grid-column:1 / -1">${s.code}'s headline is ${esc(s.headline.label)}${s.headline.status ? `, <b>${esc(s.headline.status)}</b>` : ''}. Its switches, best and worst cases and other assumptions are computed ${esc(s.headline.alt_label)} (${signed(base(s).db)}).</p>`).join('')}
+    <p class="tiny faint" style="grid-column:1 / -1">Source: PyPSA-GB public-ownership layer, ${esc(runName.replace(/^the /, ''))}. The range comes from the named assumptions under each scenario above, not from a probability distribution.</p>`;
+
+  document.getElementById('lead-table').innerHTML = `<caption class="srlabel">Bill by scenario</caption>
+    <thead><tr><th>Scenario</th><th class="num">Bill</th><th class="num">All bills, a year</th><th class="num">vs private</th><th class="num">Best case</th><th class="num">Worst case</th></tr></thead><tbody>
+    <tr><td><b>Scenario 0: private ownership</b></td><td class="num">${PRIVATE ? money(PRIVATE.b) : '—'}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>` +
+    DATA.scenarios.map(s => { const c = head(s), alt = headAlt(s), b = C(s.best), w = C(s.worst), mm = mmAlt(s);
+      const bw = `<td class="num ${b ? cls(b.db) : ''}">${b ? signed(b.db) : '—'}${mmTag(b)}</td><td class="num ${w ? cls(w.db) : ''}">${w ? signed(w.db) : '—'}${mmTag(w)}</td>`;
+      const first = `<tr><td><span class="chipcode" style="--c:${COL[s.code]}">${s.code}</span> ${esc(s.label)}${alt ? ` <span class="small muted">${esc(s.headline.label)}</span>${s.headline.status ? `<span class="tag prov">${esc(s.headline.status)}</span>` : ''}` : ''}</td><td class="num">${c ? money(c.b) : '—'}</td><td class="num ${c && have(c.cbn) ? cls(-c.cbn) : ''}">${bnS(c)}</td><td class="num ${c ? cls(c.db) : ''}">${c ? signed(c.db) : '—'}</td>${alt ? '<td class="num">—</td><td class="num">—</td>' : bw}</tr>`;
+      const bi = CASES[s.best] && CASES[s.best].i3, wi = CASES[s.worst] && CASES[s.worst].i3;
+      const i3Row = alt && i3View(s) && (bi || wi) ? `<tr><td class="small" style="padding-left:28px">${esc(M.p3_i3_view.label)}: the range on central dispatch</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num ${bi ? cls(bi.db) : ''}">${bi ? signed(bi.db) : '—'}</td><td class="num ${wi ? cls(wi.db) : ''}">${wi ? signed(wi.db) : '—'}</td></tr>` : '';
+      const mmRow = mm ? `<tr><td class="small" style="padding-left:28px">${esc(cap(s.headline.alt_label))}, for comparison</td><td class="num">${money(mm.b)}</td><td class="num ${have(mm.cbn) ? cls(-mm.cbn) : ''}">${bnS(mm)}</td><td class="num ${cls(mm.db)}">${signed(mm.db)}</td><td class="num">${CASES[s.best] ? signed(CASES[s.best].db) : '—'}</td><td class="num">${CASES[s.worst] ? signed(CASES[s.worst].db) : '—'}</td></tr>` : '';
+      return first + mmRow + (alt ? `<tr><td class="small" style="padding-left:28px">${esc(cap(s.headline.alt_label))} (switches and range computed here)</td><td class="num">${money(alt.b)}</td><td class="num ${have(alt.cbn) ? cls(-alt.cbn) : ''}">${bnS(alt)}</td><td class="num ${cls(alt.db)}">${signed(alt.db)}</td>${bw}</tr>` : '') + i3Row; }).join('') +
+    `</tbody>`;
+
+  // User (11 Nov 2026): a year after the purchase, why Scenario 3 saves less than Scenario 2.
+  if (DATA.year_note) document.getElementById('year-note').innerHTML = `<details class="topic year-note"><summary>${esc(DATA.year_note.title)}</summary>${DATA.year_note.paragraphs.map(p => `<p class="small">${esc(p)}</p>`).join('')}</details>`;
+
+  // ---------- 2. tabs ----------
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = DATA.scenarios.map((s, i) => { const c = head(s), alt = headAlt(s) || mmAlt(s);
+    return `<button type="button" class="tab" role="tab" id="tab-${i}" aria-selected="false" aria-controls="scen-host" style="--c:${COL[s.code]}" data-i="${i}">
+      <span class="chipcode" style="--c:${COL[s.code]}">${s.code}</span><span class="name">${esc(s.label)}</span><span class="short">${esc(s.short)}</span>
+      <span class="figs">${c && have(c.cbn) ? `<span>All bills <b class="num">${bnS(c)}</b> a year</span>` : ''}<span>Bill <b class="num">${c ? signed(c.db) : '—'}</b> a year against private${alt && s.headline.status ? ` (${esc(s.headline.status.split(' ')[0])})` : ''}</span>${alt ? `<span>market machinery kept <b class="num">${signed(alt.db)}</b></span>` : ''}</span></button>`; }).join('');
+  tabs.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => selectScenario(+b.dataset.i, true)));
+  tabs.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); const n = (state.scen + (e.key === 'ArrowRight' ? 1 : -1) + DATA.scenarios.length) % DATA.scenarios.length; selectScenario(n, true); document.getElementById('tab-' + n).focus(); } });
+
+  // ---------- state: one case at a time ----------
+  // The panel shows one case: the base, a switch-grid position, a who-pays preset, ticked one-at-a-time
+  // options (one case, a computed combination, or an approximation), or a best-to-worst position.
+  const state = {scen: 1, sel: {}, showAll: null, lineView: 'functional'};
+  const live = (ax, vec) => Object.entries(ax.when || {}).every(([k, want]) => want.includes(vec[k]));
+  // vectors over any list of axes (the switch grid's or the bound grid's)
+  function baseV(axes){ const v = {}; axes.forEach(ax => { v[ax.token] = ax.kind === 'selector' ? ax.base : (live(ax, v) ? 0 : null); }); return v; }
+  function settleV(axes, v){ axes.forEach(ax => { if (ax.kind === 'switch'){ if (!live(ax, v)) v[ax.token] = null; else if (v[ax.token] == null) v[ax.token] = 0; } }); return v; }
+  const keyV = (axes, v) => axes.map(ax => ax.kind === 'selector' ? v[ax.token] : (v[ax.token] == null ? '-' : String(v[ax.token]))).join('|');
+  function vecFromKey(axes, key){ const parts = String(key).split('|'), v = {}; axes.forEach((ax, i) => { const p = parts[i]; v[ax.token] = ax.kind === 'selector' ? p : (p === '-' || p == null ? null : +p); }); return v; }
+  const baseVector = s => baseV(s.axes);
+  const settle = (s, v) => settleV(s.axes, v);
+  const keyOf = (s, v) => keyV(s.axes, v);
+  const isBaseVec = (s, v) => keyOf(s, v) === keyOf(s, baseVector(s));
+  const bAxes = s => (s.bounds && s.bounds.axes) || [];
+  function sel(s){ return state.sel[s.id] = state.sel[s.id] || {vec: baseVector(s), preset: 'as_designed', picks: [], bvec: null}; }
+  const bActive = s => { const st = sel(s); return !!(s.bounds && st.bvec && keyV(bAxes(s), st.bvec) !== keyV(bAxes(s), baseV(bAxes(s)))); };
+  // leave every other kind of choice at its base before making one
+  function clearOthers(s, keep){ const st = sel(s); if (keep !== 'grid') st.vec = baseVector(s); if (keep !== 'preset') st.preset = 'as_designed'; if (keep !== 'picks') st.picks = []; if (keep !== 'bounds') st.bvec = null; return st; }
+  function presetOf(s, key){ return s.presets.find(p => p.key === key); }
+  const sensRow = (s, i) => s.sensitivities.find(r => r.i === i);
+  function active(s){
+    const st = sel(s);
+    if (st.picks.length === 1){ const r = sensRow(s, st.picks[0]); return {id: r.case, source: 'pick', label: r.label}; }
+    if (st.picks.length > 1){
+      const rows = st.picks.map(i => sensRow(s, i)); const key = [...st.picks].sort((x, y) => x - y).join('+');
+      const exact = (s.sens_combos || {})[key] || null; const label = rows.map(r => r.label).join('; ');
+      if (exact && C(exact)) return {id: exact, source: 'combo', label, rows};
+      return {id: null, source: 'approx', label, rows, exact};
+    }
+    if (st.preset !== 'as_designed'){ const p = presetOf(s, st.preset); return {id: p && p.case, source: 'preset', label: p ? p.label : ''}; }
+    if (bActive(s)){ const key = keyV(bAxes(s), st.bvec); return {id: s.bounds.grid[key] || null, source: 'bounds', label: '', bkey: key}; }
+    const id = s.grid[keyOf(s, st.vec)] || null;
+    return {id, source: isBaseVec(s, st.vec) ? 'base' : 'grid', label: ''};
+  }
+  function bChanged(s){
+    const st = sel(s), axes = bAxes(s), v = st.bvec || baseV(axes), b = baseV(axes);
+    return axes.filter(ax => v[ax.token] !== b[ax.token] && !(ax.kind === 'switch' && !v[ax.token])).map(ax => ax.kind === 'selector' ? ax.options.find(o => o.token === v[ax.token]).label : ax.label);
+  }
+  function describe(s, a){
+    if (a.source === 'base') return 'the base (bill-payers first)';
+    if (a.source === 'preset') return `the "${a.label}" settlement of who pays`;
+    if (a.source === 'pick') return `"${a.label}"`;
+    if (a.source === 'combo') return `the ${count(a.rows.length)} options you ticked together, a case the model has computed`;
+    if (a.source === 'approx') return `the ${count(a.rows.length)} options you ticked together, added up (approximate)`;
+    if (a.source === 'bounds'){ const n = bChanged(s).length; return `${count(n)} change${n === 1 ? '' : 's'} between the best and worst assumptions`; }
+    const n = changedAxes(s).length; return `the ${count(n)} change${n === 1 ? '' : 's'} you have made to the assumptions`;
+  }
+  function phrase(s, a){
+    if (a.source === 'base') return 'at its base (bill-payers first)';
+    if (a.source === 'preset') return `settled "${a.label}"`;
+    if (a.source === 'pick') return `with "${a.label}"`;
+    if (a.source === 'combo' || a.source === 'approx') return `with ${count(a.rows.length)} options ticked together`;
+    if (a.source === 'bounds'){ const n = bChanged(s).length; return `with ${count(n)} best-to-worst change${n === 1 ? '' : 's'}`; }
+    const n = changedAxes(s).length; return `with ${count(n)} change${n === 1 ? '' : 's'} to the assumptions`;
+  }
+  function changedAxes(s){
+    const v = sel(s).vec, b = baseVector(s);
+    return s.axes.filter(ax => v[ax.token] !== b[ax.token] && !(ax.kind === 'switch' && !v[ax.token])).map(ax => ax.kind === 'selector' ? ax.options.find(o => o.token === v[ax.token]).label : ax.label);
+  }
+  // the case at the base with some axes moved
+  function caseAt(s, moves){ const v = settle(s, Object.assign(baseVector(s), moves)); settle(s, v); return C(s.grid[keyOf(s, v)]); }
+  function caseAtB(s, moves){ const axes = bAxes(s); const v = settleV(axes, Object.assign(baseV(axes), moves)); settleV(axes, v); return C(s.bounds.grid[keyV(axes, v)]); }
+
+  function selectScenario(i, push){
+    state.scen = i;
+    tabs.querySelectorAll('.tab').forEach(b => { const on = +b.dataset.i === i; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+    renderScenario();
+    if (push){ try { history.replaceState(null, '', '#' + DATA.scenarios[i].code.toLowerCase()); } catch(e){} }
+  }
+  // keep keyboard focus on the same control across a re-render
+  function keepFocus(fn){ const fk = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.fk : null; fn(); if (fk){ const el = document.querySelector(`[data-fk="${CSS.escape(fk)}"]`); if (el) el.focus(); } }
+  function rerender(){ keepFocus(() => { renderShowing(); renderResult(); renderControls(); renderWho(); renderSens(); renderBounds(); markTopics(); renderFlows(); renderExtra(); renderLines(); }); }
+
+  // ---------- scenario panel ----------
+  function renderScenario(){
+    const s = DATA.scenarios[state.scen]; const col = COL[s.code];
+    const host = document.getElementById('scen-host');
+    const alt = headAlt(s), hc = alt ? head(s) : null;
+    const iv = i3View(s), b3 = iv && VIEW_I3 ? base(s) : null;
+    const viewHtml = iv ? `<div role="radiogroup" aria-label="How the system is run in the figures below"><p class="small" style="font-weight:600;margin:8px 0 6px">Figures below</p><div class="seg">${[[true, iv.label], [false, iv.alt_label]].map(([on, lab]) => `<button type="button" class="opt" role="radio" aria-checked="${VIEW_I3 === on}" data-fk="i3:${on ? 1 : 0}" data-i3="${on ? 1 : 0}"><span class="lab">${esc(lab)}</span></button>`).join('')}</div>${b3 ? `<p class="headline-note"><span><b>${esc(iv.label)}.</b> The base is <span class="num">${signed(b3.db)}</span> a year against private, the headline case itself.</span><span class="small">${esc(iv.note)}${have(b3.step) ? ` The step is <span class="num">${signed(b3.step)}</span> on the bill.` : ''} ${esc(iv.market_bill_note)} Where the money goes is itemised for the computed cases only. A case that buys a different fleet from the headline (energy from waste included, Hinkley Point C left out, contracts cancelled) has no central-dispatch figure: it shows its market figure, tagged <span class="tag prov">market machinery</span>, and its effect against the market-machinery base.</span></p>` : ''}</div>` : '';
+    host.innerHTML = `<section class="scen" role="tabpanel" aria-labelledby="tab-${state.scen}" style="--c:${col}">
+      <div class="scen-head">
+        <div class="row"><span class="chipcode" style="--c:${col}">${s.code}</span><h2>${esc(s.label)}</h2></div>
+        <p class="muted">${esc(s.sub)}</p>
+        <p class="mech"><b>How it saves money.</b> ${esc(s.mechanism)}</p>
+        ${hc ? `<p class="headline-note"><span><b>Headline: <span class="num">${signed(hc.db)}</span></b> a year against private, ${esc(s.headline.label)}.</span>${s.headline.status ? `<span class="tag prov">${esc(s.headline.status)}</span>` : ''}${s.headline.note ? `<span class="small"><b>Central dispatch itself is <span class="num">${signed(hc.db - alt.db)}</span> of it.</b> ${esc(s.headline.note)}</span>` : ''}<span class="small">Everything below is computed ${esc(s.headline.alt_label)} (<span class="num">${signed(alt.db)}</span>), where the switches, the best and worst cases and the other assumptions were run. The central-dispatch case is one of the other assumptions.</span></p>` : ''}
+        ${viewHtml}
+      </div>
+      <div class="showing" id="showing" aria-live="polite"></div>
+      <div class="result" id="result"></div>
+      <div class="sub">
+        <div class="sub-head"><h3>Change the assumptions</h3><p class="s">Grouped by the question each one answers, in the same order for every scenario; the figure beside each question is the range its single changes give on the bill against the base, £ a year per household. Each item is marked <span class="tag choice">policy choice</span> (something the scheme decides) or <span class="tag unc">uncertain</span> (something nobody knows yet). The best and worst cases move only uncertain assumptions. Three kinds of runs sit under the questions: <b>switches</b>, whose every combination the model has computed; <b>alternatives</b>, one at a time, which you can tick together (exact where the model has the combination, otherwise added up and marked approximate); and <b>best-to-worst steps</b>, a separate set of runs between the best and worst cases. One kind is used at a time: choosing from another puts the first back to the base.${alt ? ` Computed ${esc(s.headline.alt_label)}.` : ''}</p></div>
+        <div id="bound-corners"></div>
+        <div class="tg-result" id="tg-result"></div>
+        <div class="tg-result" id="sens-result" hidden></div>
+        <div class="tg-result" id="b-result"></div>
+        <div class="topics" id="topics"></div>
+        <p class="tiny faint" id="topics-status"></p>
+        <details class="drawer" style="margin-top:8px"><summary>Model checks and earlier versions</summary><div class="body"><p class="small muted">The scheme as first set up, and runs that report a saving without putting it on the bill. They check the model; they are not alternatives to the base.</p><div class="sens multi" data-host="sens" data-topic="checks" role="group" aria-label="Model checks and earlier versions"></div></div></details>
+      </div>
+      <section class="whopays" aria-labelledby="h-who">
+        <div class="sub-head"><h3 id="h-who">Who pays? The same real saving, split different ways</h3><p class="s">The bill is only part of the story. The base rules leave the public costs with the Exchequer, and taxpayers are the same households. Each row settles who keeps the public savings and who carries the public costs, on the base assumptions. Change against private ownership, £ a year per household; positive means that party is better off. Choose a row to see it.</p></div>
+        <div class="who" id="who" role="radiogroup" aria-label="Who pays"></div>
+        <p class="tiny faint" id="who-note"></p>
+        <div class="sub">
+          <div class="sub-head"><h4>Where the money goes</h4><p class="s" id="flows-sub"></p></div>
+          <div class="identity" id="identity"></div>
+          <div class="flows" id="flows"></div>
+          <div id="flows-more"></div>
+        </div>
+      </section>
+      <div id="extra"></div>
+      <details class="drawer"><summary>The bill, line by line, with sources</summary><div class="body" id="lines"></div></details>
+      <details class="drawer"><summary>Notes, definitions and method</summary><div class="body">${notes(s)}</div></details>
+    </section>`;
+    host.querySelectorAll('[data-i3]').forEach(b => b.addEventListener('click', () => { VIEW_I3 = b.dataset.i3 === '1'; keepFocus(renderScenario); }));
+    renderTopics();
+    rerender();
+  }
+
+  function renderShowing(){
+    const s = DATA.scenarios[state.scen]; const a = active(s); const el = document.getElementById('showing');
+    el.innerHTML = `<span>Showing <b>${esc(describe(s, a))}</b>.</span>${a.source !== 'base' ? `<button type="button" class="linkbtn" id="to-base" data-fk="to-base">Back to the base</button>` : ''}`;
+    const b = document.getElementById('to-base'); if (b) b.addEventListener('click', () => { state.sel[s.id] = null; rerender(); });
+  }
+
+  // The sum of the ticked options' single effects, each on its own comparator basis.
+  function approxOf(s, rows){
+    const b0 = base(s); const cs = rows.map(r => C(r.case));
+    if (!b0 || cs.some(c => !c)) return null;
+    return {b: b0.b + cs.reduce((t, c) => t + diffB(c, b0), 0), db: b0.db + cs.reduce((t, c) => t + diff(c, b0), 0),
+            moved: cs.some(c => c.c)};
+  }
+  const ieText = s => { const ie = s.interaction; return ie ? `On this scenario's switches, where every combination has been computed, adding up single effects misses the exact answer by a median of <span class="num">${money(ie.median)}</span> and at most <span class="num">${money(ie.max)}</span> a household (over ${ie.n} combinations of two or more switches).` : ''; };
+
+  function renderResult(){
+    const s = DATA.scenarios[state.scen]; const a = active(s); const c = C(a.id);
+    const el = document.getElementById('result');
+    const b0 = base(s), B = C(s.best), Wc = C(s.worst);
+    const rangeStat = `<div class="stat"><span class="l">The scenario's range on the bill</span>${B && Wc ? `<span class="d">best <span class="num ${cls(B.db)}">${signed(B.db)}</span></span><span class="d">worst <span class="num ${cls(Wc.db)}">${signed(Wc.db)}</span></span><span class="r">against private, each against its own comparator</span>` : `<span class="d faint">not in this build</span>`}</div>`;
+    if (a.source === 'approx'){
+      const ap = approxOf(s, a.rows);
+      if (!ap){ el.innerHTML = `<p class="sentence" style="grid-column:1 / -1">Not every ticked option has numbers in this build, so they cannot be added up.</p>`; return; }
+      const vsWhat = ap.moved ? 'a private system with the same changes' : 'private ownership';
+      el.innerHTML = `
+        <p class="sentence">In <b>${s.code} (${esc(s.label.toLowerCase())})</b>, ${esc(phrase(s, a))}, a typical household's __MODEL_YEAR__ bill is about <b class="num">${money(ap.b)}</b>, roughly <b class="num">${money(Math.abs(ap.db))}</b> ${word(ap.db)} than under ${vsWhat}.</p>
+        <div class="stat"><span class="l">Bill <span class="tag prov">approximate</span></span><span class="v big num">${money(ap.b)}</span><span class="d ${cls(ap.db)}"><span class="num">${signed(ap.db)}</span> against ${ap.moved ? 'its comparator' : 'private'}</span><span class="d ${cls(ap.db - b0.db)}"><span class="num">${signed(ap.db - b0.db)}</span> against the base</span></div>
+        <div class="stat"><span class="l">Approximate: not a computed case</span><span class="d small">The single effects of the ticked options, added together.${ap.moved ? ' Options that also change the private bill are each counted against a private system with the same change.' : ''} ${ieText(s)}${a.exact ? ' The model has this combination, but its numbers are not in this build.' : ''}</span></div>`;
+      return;
+    }
+    if (!c){
+      const msg = a.id || a.source === 'bounds' ? 'The model has this case, but its numbers are not in this build.' : 'This choice is not a separate case for this scenario.';
+      el.innerHTML = `<p class="sentence" style="grid-column:1 / -1">${msg}</p>`; return;
+    }
+    const vsWhat = c.c ? 'a private system with the same change' : 'private ownership';
+    const vsBase = a.source === 'base' || !b0 ? '' : `<span class="d ${cls(diff(c, b0))}"><span class="num">${signed(diff(c, b0))}</span> against the base</span>`;
+    // User, 13 Nov 2026: the same case for a home with a heat pump and an electric car (the bill's own standing
+    // and unit split: savings on per-kWh lines grow with use, savings on the standing charge do not).
+    const PART = {base: 'lights and appliances', heat_pump: 'heat pump', electric_vehicle: 'electric car'};
+    const homeStat = (E, ce, title) => {
+      if (!(E && ce && have(ce.b))) return '';
+      const parts = E.parts && E.parts.length ? ': ' + E.parts.map(p => `${PART[p.part] || esc(p.part)} ${Math.round(p.kwh).toLocaleString('en-GB')}`).join(' + ') + ' kWh' : '';
+      return `<div class="stat"><span class="l">${title}</span><span class="v big num">${money(ce.b)}</span><span class="d ${cls(ce.db)}"><span class="num">${signed(ce.db)}</span> against private</span>${have(ce.dh) ? `<span class="d ${cls(ce.dh)}">with its taxpayer share <span class="num">${signed(ce.dh)}</span></span>` : ''}<span class="r">${Math.round(E.kwh).toLocaleString('en-GB')} kWh a year${parts}, on a single-rate tariff. Savings on the unit rate grow with use; the standing charge does not.</span></div>`; };
+    const T = DATA.trust || {};
+    const eStat = homeStat(T.electrified, c.e, 'A home with a heat pump and an electric car')
+      + homeStat(T.electrified_high, c.eh, 'A high-use home with a heat pump and an electric car');
+    el.innerHTML = `
+      <p class="sentence">In <b>${s.code} (${esc(s.label.toLowerCase())})</b>, ${esc(phrase(s, a))}, a typical household's __MODEL_YEAR__ bill is <b class="num">${money(c.b)}</b>, <b class="num">${money(Math.abs(c.db))}</b> ${word(c.db)} than under ${vsWhat}.</p>
+      <div class="stat"><span class="l">Bill${a.source === 'combo' ? ' <span class="tag best">computed</span>' : ''}${mmTag(c)}</span><span class="v big num">${money(c.b)}</span>${allBills(c)}<span class="d ${cls(c.db)}"><span class="num">${signed(c.db)}</span> against ${c.c ? 'its comparator' : 'private'}</span>${vsBase}</div>
+      ${eStat}
+      ${rangeStat}`;
+  }
+
+  // ---------- assumption controls ----------
+  const TICK = '<svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function effectOf(s, moves, against){
+    const c = caseAt(s, moves), ref = against ? caseAt(s, against) : base(s);
+    return c && ref ? diff(c, ref) : null;
+  }
+  const effTxt = d => have(d) ? `<span class="num ${cls(d)}">${signed(d)}</span> on the bill` : '<span class="faint">not in this build</span>';
+  // one axis (switch or selector) as controls; `at` gives the case for a set of moves on this grid
+  function axisControls(ax, v, onGrid, at, b0, prefix, tags){
+    const tagHtml = o => tags ? `${o.best ? '<span class="tag best">best</span>' : ''}${o.worst ? '<span class="tag worst">worst</span>' : ''}` : '';
+    const kindTag = tagOf(ax);
+    if (ax.kind === 'selector'){
+      const optHtml = ax.options.map(o => { const on = onGrid && v[ax.token] === o.token || (!onGrid && o.token === ax.base);
+        const c = o.token === ax.base ? null : at({[ax.token]: o.token}); const d = c && b0 ? diff(c, b0) : null;
+        return `<button type="button" class="opt" role="radio" aria-checked="${on}" data-fk="${prefix}${ax.token}:${o.token}" data-axis="${ax.token}" data-opt="${o.token}"><span class="lab">${esc(o.label)}${tagHtml(o)}</span><span class="eff">${o.token === ax.base ? 'the base' : effTxt(d) + mmTag(c)}</span></button>`; }).join('');
+      const cur = ax.options.find(o => o.token === (onGrid ? v[ax.token] : ax.base));
+      return `<div role="radiogroup" aria-label="${esc(ax.label)}"><p class="small" style="font-weight:600;margin-bottom:6px">${esc(ax.label)}${kindTag}</p><div class="seg">${optHtml}</div><p class="ex" style="margin-top:6px">${esc(cur ? cur.explain : '')}</p>${ax.note ? `<p class="ex" style="margin-top:6px">${esc(ax.note)}</p>` : ''}</div>`;
+    }
+    const ok = live(ax, v); const on = onGrid && !!v[ax.token];
+    const against = ax.when ? Object.fromEntries(Object.entries(ax.when).map(([k, w]) => [k, w[0]])) : null;
+    const c = at(Object.assign({}, against || {}, {[ax.token]: 1})), ref = against ? at(against) : b0;
+    const d = c && ref ? diff(c, ref) : null;
+    return `<button type="button" class="tg${ax.when ? ' sub-switch' : ''}" role="checkbox" aria-checked="${on}" aria-disabled="${!ok}" data-fk="${prefix}${ax.token}" data-token="${ax.token}"><span class="box" aria-hidden="true">${on ? TICK : ''}</span><span class="lab">${esc(ax.label)}${kindTag}${tagHtml(ax)}</span><span class="eff" title="effect on the bill on its own">${ok || !ax.when ? effTxt(d) + mmTag(c) : ''}</span><span class="ex">${esc(ax.explain)}${ax.when ? ` <b>${esc(ax.requires)}</b>` : ''}${ax.note ? ` ${esc(ax.note)}` : ''}</span></button>`;
+  }
+  function radioKeys(el){ el.querySelectorAll('[role="radiogroup"]').forEach(g => g.addEventListener('keydown', e => { if (!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(e.key)) return; const opts = [...g.querySelectorAll('.opt')]; const i = opts.indexOf(document.activeElement); if (i < 0) return; e.preventDefault(); const n = opts[(i + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length]; n.focus(); n.click(); })); }
+  function renderControls(){
+    const s = DATA.scenarios[state.scen]; const st = sel(s);
+    const onGrid = st.preset === 'as_designed' && !st.picks.length && !bActive(s);
+    const v = onGrid ? st.vec : baseVector(s);
+    const at = moves => caseAt(s, moves);
+    document.querySelectorAll('[data-host="grid"]').forEach(el => {
+      const axes = s.axes.filter(ax => ax.topic === el.dataset.topic);
+      let notes = '';
+      if (axes.some(ax => ax.token === 'strike')){ const cost = caseAt(s, {strike: 'cost'}), auc = caseAt(s, {strike: 'auction'});
+        if (cost && auc && Math.abs(cost.db - auc.db) < 0.01) notes += '<p class="ex">At the base assumptions "cut to cost" and "keep the auction price" give the same bill: both leave the private co-owners’ share of the financing saving with them, so the bill falls less.</p>'; }
+      if (axes.some(ax => ax.token === 'pre-2025-repriced') && s.grid_note) notes += `<p class="ex">${esc(s.grid_note)}</p>`;
+      el.innerHTML = axes.length ? `<div class="ctl" style="grid-column:1 / -1">${axes.map(ax => axisControls(ax, v, onGrid, at, base(s), '', false)).join('')}${notes}</div>` : '';
+      el.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => { const st = clearOthers(s, 'grid'); st.vec[b.dataset.axis] = b.dataset.opt; settle(s, st.vec); rerender(); }));
+      radioKeys(el);
+      el.querySelectorAll('.tg').forEach(b => b.addEventListener('click', () => { if (b.getAttribute('aria-disabled') === 'true') return; const st = clearOthers(s, 'grid'); st.vec[b.dataset.token] = st.vec[b.dataset.token] ? 0 : 1; settle(s, st.vec); rerender(); }));
+    });
+    // the combination's result, shown only while a switch is moved
+    const out = document.getElementById('tg-result'); const a = active(s);
+    const total = Object.keys(s.grid).length; const withNums = Object.values(s.grid).filter(id => CASES[id]).length;
+    const status = withNums === total ? `All ${total} combinations of the switches are in this build.` : `${withNums} of the ${total} combinations of the switches have numbers in this build.`;
+    statusParts.grid = status;
+    if (!onGrid || a.source !== 'grid'){ out.hidden = true; out.innerHTML = ''; return; }
+    out.hidden = false;
+    const c = C(a.id), b0 = base(s);
+    const changed = changedAxes(s);
+    if (!c){ out.innerHTML = `<p class="notice" data-case="${esc(a.id || '')}"><b>Not in this build.</b> The model has this combination (${esc(changed.join('; '))}), but its numbers are not in this build. ${status}</p>`; return; }
+    out.innerHTML = `<div class="figs"><div class="f"><span class="l">Bill <span class="tag best">computed</span></span><span class="v big num">${money(c.b)}</span>${allBills(c, 'small')}<span class="small ${cls(c.db)} num">${signed(c.db)} vs private</span></div><div class="f"><span class="l">Against the base</span><span class="v big num ${b0 ? cls(diff(c, b0)) : ''}">${b0 ? signed(diff(c, b0)) : '—'}</span><span class="small muted">on the bill</span></div></div>
+      ${rangeStrip(s, c)}<p class="tiny faint">Switches changed: ${esc(changed.join('; '))}. ${status}</p>`;
+  }
+  const statusParts = {};
+  const tagOf = x => x && x.tag ? (x.tag === 'choice' ? '<span class="tag choice">policy choice</span>' : '<span class="tag unc">uncertain</span>') : '';
+  // ---------- the questions ----------
+  // A card per question, in the same order in every scenario; its range is the single changes' effects on the bill.
+  function topicItems(s, t){
+    return {grid: s.axes.filter(ax => ax.topic === t), sens: s.sensitivities.filter(r => r.topic === t),
+            bounds: ((s.bounds && s.bounds.axes) || []).filter(ax => ax.topic === t)};
+  }
+  function topicRange(s, t){
+    const b0 = base(s); if (!b0) return null;
+    const it = topicItems(s, t); const ds = [];
+    const push = c => { if (c) ds.push(diff(c, b0)); };
+    it.grid.forEach(ax => { if (ax.kind === 'selector') ax.options.filter(o => o.token !== ax.base).forEach(o => push(caseAt(s, {[ax.token]: o.token}))); else if (!ax.when) push(caseAt(s, {[ax.token]: 1})); });
+    it.sens.forEach(r => push(C(r.case)));
+    it.bounds.forEach(ax => { if (ax.kind === 'selector') ax.options.filter(o => o.token !== ax.base).forEach(o => push(caseAtB(s, {[ax.token]: o.token}))); else if (!ax.when) push(caseAtB(s, {[ax.token]: 1})); });
+    if (!ds.length) return null;
+    return [Math.min(...ds), Math.max(...ds)];
+  }
+  function renderTopics(){
+    const s = DATA.scenarios[state.scen]; const el = document.getElementById('topics');
+    state.open = state.open || {};
+    el.innerHTML = (M.topics || []).map(T => {
+      const it = topicItems(s, T.id); const n = it.grid.length + it.sens.length + it.bounds.length;
+      if (!n && T.id !== 'who_pays'){
+        return `<div class="topic none"><div class="sum"><span class="q">${esc(T.title)}</span><span class="h">${esc((T.none || {})[s.code] || 'Nothing to change here in this scenario.')}</span></div></div>`;
+      }
+      const r = topicRange(s, T.id);
+      const rg = r ? (Math.abs(r[1] - r[0]) < 0.005 ? `<span class="num ${cls(r[0])}">${signed(r[0])}</span>` : `<span class="num ${cls(r[0])}">${signed(r[0])}</span> to <span class="num ${cls(r[1])}">${signed(r[1])}</span>`) : '';
+      const blocks = [];
+      if (it.grid.length) blocks.push(`<p class="kindh">Switches <span class="tag kind">every combination computed</span></p><div class="ctl-grid" data-host="grid" data-topic="${T.id}"></div>`);
+      if (it.sens.length) blocks.push(`<p class="kindh">Alternatives <span class="tag kind">one at a time; tick several to combine</span></p><div class="sens multi" data-host="sens" data-topic="${T.id}" role="group" aria-label="${esc(T.title)}"></div>`);
+      if (it.bounds.length) blocks.push(`<p class="kindh">Best-to-worst steps <span class="tag kind">a separate set of runs</span></p><div class="ctl-grid" data-host="bounds" data-topic="${T.id}"></div>`);
+      if (T.id === 'who_pays') blocks.push(`<p class="small muted">The settlements of who pays, below, set these together with the scenario's other incidence rules; they leave the real saving unchanged.</p>`);
+      const key = s.id + '|' + T.id;
+      return `<details class="topic" data-topic="${T.id}"${state.open[key] ? ' open' : ''}><summary><span class="q">${esc(T.title)}</span><span class="rg">${rg ? rg + ' a year' : ''}</span><span class="inuse-slot"></span><span class="h">${esc(T.help)} ${n} item${n === 1 ? '' : 's'}.</span></summary><div class="tbody">${blocks.join('')}</div></details>`;
+    }).join('');
+    el.querySelectorAll('details.topic').forEach(d => d.addEventListener('toggle', () => { state.open[s.id + '|' + d.dataset.topic] = d.open; }));
+  }
+  // mark the question whose item is in use, and open it
+  function markTopics(){
+    const s = DATA.scenarios[state.scen]; const st = sel(s); const a = active(s); const used = new Set();
+    if (a.source === 'grid'){ const b = baseVector(s); s.axes.forEach(ax => { if (st.vec[ax.token] !== b[ax.token] && !(ax.kind === 'switch' && !st.vec[ax.token])) used.add(ax.topic); }); }
+    if (st.picks.length) st.picks.forEach(i => { const r = sensRow(s, i); if (r) used.add(r.topic); });
+    if (a.source === 'bounds'){ const axes = bAxes(s), v = st.bvec, b = baseV(axes); axes.forEach(ax => { if (v[ax.token] !== b[ax.token] && !(ax.kind === 'switch' && !v[ax.token])) used.add(ax.topic); }); }
+    document.querySelectorAll('details.topic').forEach(d => {
+      const on = used.has(d.dataset.topic); const slot = d.querySelector('.inuse-slot');
+      if (slot) slot.innerHTML = on ? '<span class="tag inuse">in use</span>' : '';
+      if (on && !d.open){ d.open = true; state.open[s.id + '|' + d.dataset.topic] = true; }
+    });
+    const parts = [statusParts.grid, statusParts.bounds].filter(Boolean);
+    const stEl = document.getElementById('topics-status'); if (stEl) stEl.textContent = parts.join(' ');
+  }
+  function rangeStrip(s, c){
+    const B = C(s.best), Wc = C(s.worst), b0 = base(s); if (!B || !Wc || !b0) return '';
+    const b = B.db, w = Wc.db, lo = Math.min(b, w, c.db, b0.db), hi = Math.max(b, w, c.db, b0.db); const span = (hi - lo) || 1;
+    const x = v => (8 + (v - lo) / span * 84) * 4;
+    return `<svg viewBox="0 0 400 44" role="img" aria-label="Where this combination sits between the best and worst case on the bill" style="max-width:420px"><line x1="${x(Math.min(b,w))}" x2="${x(Math.max(b,w))}" y1="20" y2="20" stroke="${COL[s.code]}" stroke-width="8" stroke-linecap="round" opacity=".32"/><circle cx="${x(b0.db)}" cy="20" r="4" fill="var(--panel)" stroke="var(--ink-3)" stroke-width="1.5"/><circle cx="${x(c.db)}" cy="20" r="6" fill="${COL[s.code]}" stroke="var(--panel)" stroke-width="2"/><text class="num" x="${x(b)}" y="40" text-anchor="${b <= w ? 'start' : 'end'}" font-size="11">best ${signed(b)}</text><text class="num" x="${x(w)}" y="40" text-anchor="${w >= b ? 'end' : 'start'}" font-size="11">worst ${signed(w)}</text><text class="num ink" x="${x(c.db)}" y="9" text-anchor="middle" font-size="11">${signed(c.db)}</text></svg>`;
+  }
+
+  // ---------- best to worst, one assumption at a time ----------
+  function renderBounds(){
+    const s = DATA.scenarios[state.scen]; const el = document.getElementById('bound-corners'); const out = document.getElementById('b-result');
+    const Bd = s.bounds;
+    if (!Bd || !Bd.axes.length){ el.innerHTML = '<p class="small faint">There is no best-to-worst grid for this scenario in this build.</p>'; out.innerHTML = ''; out.hidden = true; statusParts.bounds = ''; return; }
+    const st = sel(s); const axes = Bd.axes; const on = bActive(s) && st.preset === 'as_designed' && !st.picks.length;
+    const v = on ? st.bvec : baseV(axes); const b0 = base(s);
+    const at = moves => caseAtB(s, moves);
+    const curKey = keyV(axes, v);
+    const corners = [['base', 'All at the base', keyV(axes, baseV(axes))], ['best', 'All at their best', Bd.corners.best], ['worst', 'All at their worst', Bd.corners.worst]];
+    const cornerHtml = `<div class="ctl"><h4>Jump to the scenario's best or worst case</h4><div class="corner-row">${corners.map(([k, lab, key]) => { const c = key == null ? null : C(Bd.grid[key]);
+      return `<button type="button" class="corner" aria-pressed="${key === curKey}" data-fk="bc:${k}" data-key="${esc(key || '')}"><span class="lab">${lab}</span><span class="eff">${c ? `<span class="num ${cls(c.db)}">${signed(c.db)}</span> against ${c.c ? 'its comparator' : 'private'}` : '<span class="faint">not in this build</span>'}</span></button>`; }).join('')}</div></div>`;
+    el.innerHTML = cornerHtml;
+    el.querySelectorAll('.corner').forEach(b => b.addEventListener('click', () => { const st = clearOthers(s, 'bounds'); st.bvec = b.dataset.key ? vecFromKey(axes, b.dataset.key) : baseV(axes); rerender(); }));
+    document.querySelectorAll('[data-host="bounds"]').forEach(h => {
+      const ax2 = axes.filter(ax => ax.topic === h.dataset.topic);
+      h.innerHTML = ax2.length ? `<div class="ctl" style="grid-column:1 / -1">${ax2.map(ax => axisControls(ax, v, true, at, b0, 'b:', true)).join('')}</div>` : '';
+      h.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => { const st = clearOthers(s, 'bounds'); if (!st.bvec) st.bvec = baseV(axes); st.bvec[b.dataset.axis] = b.dataset.opt; settleV(axes, st.bvec); rerender(); }));
+      radioKeys(h);
+      h.querySelectorAll('.tg').forEach(b => b.addEventListener('click', () => { if (b.getAttribute('aria-disabled') === 'true') return; const st = clearOthers(s, 'bounds'); if (!st.bvec) st.bvec = baseV(axes); st.bvec[b.dataset.token] = st.bvec[b.dataset.token] ? 0 : 1; settleV(axes, st.bvec); rerender(); }));
+    });
+    const status = Bd.with_numbers === Bd.positions ? `All ${Bd.positions} best-to-worst positions are in this build.` : `${Bd.with_numbers} of the ${Bd.positions} best-to-worst positions have numbers in this build.`;
+    statusParts.bounds = status;
+    if (!on){ out.hidden = true; out.innerHTML = ''; return; }
+    out.hidden = false;
+    const c = C(Bd.grid[curKey]); const changed = bChanged(s);
+    if (!c){ out.innerHTML = `<p class="notice"><b>Not in this build.</b> The model has this combination (${esc(changed.join('; '))}), but its numbers are not in this build. ${status}</p>`; return; }
+    out.innerHTML = `<div class="figs"><div class="f"><span class="l">Bill</span><span class="v big num">${money(c.b)}</span>${allBills(c, 'small')}<span class="small ${cls(c.db)} num">${signed(c.db)} vs ${c.c ? 'its comparator' : 'private'}</span></div><div class="f"><span class="l">Against the base</span><span class="v big num ${b0 ? cls(diff(c, b0)) : ''}">${b0 ? signed(diff(c, b0)) : '—'}</span><span class="small muted">on the bill</span></div></div>
+      ${rangeStrip(s, c)}<p class="tiny faint">Best-to-worst steps changed: ${esc(changed.join('; '))}.${c.c ? ' This position also changes the private bill, so it is measured against a private system with the same changes.' : ''} ${status}</p>`;
+  }
+
+  // ---------- who pays ----------
+  function renderWho(){
+    const s = DATA.scenarios[state.scen]; const st = sel(s); const el = document.getElementById('who');
+    const rows = s.presets.map(p => ({p, c: C(p.case)}));
+    const got = rows.filter(r => r.c);
+    const maxAbs = Math.max(1, ...got.flatMap(r => r.c.p.map(v => Math.abs(v || 0))));
+    const cell = (label, v, res) => { const w = Math.min(50, Math.abs(v) / maxAbs * 50); const style = v >= 0 ? `left:50%;width:${w}%` : `right:50%;width:${w}%`;
+      return `<div class="cell"><span class="plabel">${label}</span><span class="bar" aria-hidden="true"><i class="${v < 0 ? 'neg' : ''}${res ? ' res' : ''}" style="${style}${res ? '' : `;background:var(--${v >= 0 ? 'gain' : 'loss'})`}"></i></span><span class="val num ${res ? '' : pcls(v)}">${signed(v)}</span></div>`; };
+    const onPreset = !st.picks.length && !bActive(s);
+    el.innerHTML = `<div class="hdr" aria-hidden="true"><span>Settlement</span><span>Bill-payers</span><span>Exchequer</span><span>Private investors</span><span>= Real saving</span></div>` +
+      rows.map(({p, c}) => {
+        const on = onPreset && st.preset === p.key && (p.key !== 'as_designed' || isBaseVec(s, st.vec));
+        if (!c) return `<div class="row off" role="radio" aria-checked="false" aria-disabled="true"><span class="name"><b>${esc(p.label)}</b><span class="n">${esc(p.note)}${p.case ? ' Its numbers are not in this build.' : ''}</span></span></div>`;
+        const same = p.key !== 'as_designed' && base(s) && Math.abs(c.db - base(s).db) < 0.005 && Math.abs(c.dh - base(s).dh) < 0.005;
+        return `<button type="button" class="row" role="radio" aria-checked="${on}" data-key="${p.key}" data-fk="who:${p.key}"><span class="name"><b>${esc(p.label)}</b><span class="n">${esc(p.note)}${same ? ' Here it gives the same result as the base.' : ''}</span><span class="f num">Bill ${signed(c.db)} · Exchequer ${xWords(c.x)} · Household total ${signed(c.dh)}</span></span>${cell('Bill-payers', c.p[0])}${cell('Exchequer', c.p[1])}${cell('Private investors', c.p[2])}${cell('Real saving', c.p[3], true)}</button>`; }).join('');
+    el.querySelectorAll('button.row').forEach(b => b.addEventListener('click', () => { const st = clearOthers(s, 'preset'); st.preset = b.dataset.key; rerender(); }));
+    const res = got.map(r => r.c.p[3]); const distinct = new Set(res.map(v => v.toFixed(2))).size; const b0 = base(s);
+    document.getElementById('who-note').innerHTML = (distinct === 1 && b0
+      ? `Every row is the same ${money(b0.p[3])} a year of real saving per household (${fmt(b0.rm, 0)} million across the system), split differently. In each row the three party columns add up to it. `
+      : got.length ? `The real saving differs between rows in this build (${res.map(v => money(v)).join(', ')}); by design it should not. ` : '') +
+      `The <b>Exchequer</b> figure is its change against private ownership, shared across households in proportion to their electricity use, the key the bill itself uses. The <b>household total</b> adds it to the bill change. It sits here rather than in the headline because how the Treasury would recover a cost, or pass on a gain, is a separate choice the model does not make.` +
+      (b0 && have(b0.dhl) ? ` Shared by tax paid instead (households pay about ${have(M.legal_incidence_theta) ? pct(M.legal_incidence_theta) : 'most'} of taxes), the base's household total changes by <span class="num">${signed(b0.dhl)}</span> rather than <span class="num">${signed(b0.dh)}</span>.` : '') +
+      (s.contested ? ` Two contested fiscal costs are left out of every figure here: the effect of extra state borrowing on all gilt yields (<span class="num">${money(s.contested.gilt)}</span>) and the deadweight cost of raising tax (<span class="num">${money(s.contested.mcpf)}</span>), per household in the worst case.` : '');
+  }
+
+  // ---------- one at a time (several may be ticked) ----------
+  function renderSens(){
+    const s = DATA.scenarios[state.scen]; const st = sel(s); const b0 = base(s);
+    const out = document.getElementById('sens-result');
+    const ticked = st.picks.map(i => sensRow(s, i));
+    const clash = r => ticked.find(t => t.i !== r.i && t.levers.some(l => r.levers.includes(l)));
+    const rowHtml = r => {
+      const c = C(r.case); const on = st.picks.includes(r.i); const other = on ? null : clash(r);
+      const vals = c ? `<span class="v num ${cls(c.db)}"><span class="pl">Bill vs ${c.c ? 'comparator' : 'private'}</span>${signed(c.db)}${c.c ? '*' : ''}</span><span class="v num ${b0 ? cls(diff(c, b0)) : ''}"><span class="pl">Against the base</span>${b0 ? signed(diff(c, b0)) : '—'}</span>`
+                     : `<span class="v faint" style="grid-column:span 2">not in this build</span>`;
+      const why = other ? `<span class="why">Cannot be ticked with "${esc(other.label)}": both change the same assumption.</span>` : '';
+      const nm = `<span class="nm"><b>${esc(r.label)}${tagOf(r)}${mmTag(c)}</b><span>${esc(r.explain)}</span>${why}</span>`;
+      const box = `<span class="box" aria-hidden="true">${on ? TICK : ''}</span>`;
+      return c ? `<button type="button" class="srow" role="checkbox" aria-checked="${on}" aria-disabled="${!!other}" data-i="${r.i}" data-fk="sens:${r.i}">${box}${nm}${vals}</button>`
+               : `<div class="srow off" role="checkbox" aria-checked="false" aria-disabled="true">${box}${nm}${vals}</div>`;
+    };
+    document.querySelectorAll('[data-host="sens"]').forEach(el => {
+      const rows = s.sensitivities.filter(r => r.topic === el.dataset.topic);
+      if (!rows.length){ el.innerHTML = el.dataset.topic === 'checks' ? '<p class="small faint">None for this scenario.</p>' : ''; return; }
+      let html = `<div class="hdr" aria-hidden="true"><span></span><span>Assumption</span><span>Bill vs private</span><span>Against the base</span></div>`; let group = null;
+      rows.forEach(r => { if (el.dataset.topic === 'purchase' && r.group !== group){ group = r.group; html += `<div class="grp">${esc(group)}</div>`; } html += rowHtml(r); });
+      const starred = rows.some(r => C(r.case) && C(r.case).c);
+      el.innerHTML = html + (starred ? `<p class="tiny faint" style="padding:4px 10px">* Against a private system with the same change, because the change moves the private bill too.</p>` : '');
+      el.querySelectorAll('button.srow').forEach(b => b.addEventListener('click', () => {
+        if (b.getAttribute('aria-disabled') === 'true') return;
+        const i = +b.dataset.i; const st = clearOthers(s, 'picks');
+        st.picks = st.picks.includes(i) ? st.picks.filter(x => x !== i) : st.picks.concat([i]); rerender(); }));
+    });
+    // the ticked set's result
+    if (ticked.length < 2){ out.hidden = true; out.innerHTML = ''; return; }
+    out.hidden = false; const a = active(s);
+    if (a.source === 'combo'){ const c = C(a.id);
+      out.innerHTML = `<div class="figs"><div class="f"><span class="l">Bill <span class="tag best">computed</span></span><span class="v big num">${money(c.b)}</span>${allBills(c, 'small')}<span class="small ${cls(c.db)} num">${signed(c.db)} vs ${c.c ? 'its comparator' : 'private'}</span></div><div class="f"><span class="l">Against the base</span><span class="v big num ${cls(diff(c, b0))}">${signed(diff(c, b0))}</span><span class="small muted">on the bill</span></div></div><p class="tiny faint">This combination is a case the model has computed, so the figure is exact.</p>`;
+      return; }
+    const ap = approxOf(s, a.rows);
+    if (!ap){ out.innerHTML = `<p class="small muted">Not every ticked option has numbers in this build.</p>`; return; }
+    out.innerHTML = `<div class="figs"><div class="f"><span class="l">Bill <span class="tag prov">approximate</span></span><span class="v big num">${money(ap.b)}</span><span class="small ${cls(ap.db)} num">${signed(ap.db)} vs ${ap.moved ? 'its comparator' : 'private'}</span></div><div class="f"><span class="l">Against the base</span><span class="v big num ${cls(ap.db - b0.db)}">${signed(ap.db - b0.db)}</span><span class="small muted">the single effects added</span></div></div>
+      <p class="notice"><b>Approximate: not a computed case.</b> ${ieText(s)}${ap.moved ? ' Options that also change the private bill are each counted against a private system with the same change.' : ''}${a.exact ? ' The model has this combination, but its numbers are not in this build.' : ''}</p>`;
+  }
+
+  // ---------- flows ----------
+  function flowsOf(id){ return (DATA.flows[id] || []).map(([i, hh, m]) => { const d = DATA.flow_defs[i]; return {label: d[0], payer: d[1], payee: d[2], cat: d[3], hh, m}; }); }
+  function renderFlows(){
+    const s = DATA.scenarios[state.scen]; const a = active(s); const c = C(a.id);
+    const sub = document.getElementById('flows-sub'), id = document.getElementById('identity'), el = document.getElementById('flows'), more = document.getElementById('flows-more');
+    if (!c){ sub.textContent = a.source === 'approx' ? 'Where the money goes is shown for computed cases only; the ticked combination is an approximation. Tick a single option, or a combination the model has computed, to see it.' : 'This case’s numbers are not in this build.'; id.innerHTML = ''; el.innerHTML = ''; more.innerHTML = ''; return; }
+    sub.textContent = `${s.label}, ${describe(s, a)}. Change against private ownership, £ a year per household. Bill-payers, the Exchequer and private investors add up to the real saving; the rest is money moving between them.`;
+    const p = c.p;
+    id.innerHTML = [['Bill-payers', p[0]], ['Exchequer', p[1]], ['Private investors', p[2]]].map((t, i) => `${i ? '<span class="op" aria-hidden="true">+</span>' : ''}<div class="term"><span class="l">${t[0]}</span><span class="v num ${pcls(t[1])}">${signed(t[1])}</span></div>`).join('') + `<span class="op" aria-hidden="true">=</span><div class="term res"><span class="l">Real saving</span><span class="v num">${signed(p[3])}</span></div>`;
+    // The base on central dispatch is the headline case itself, which is computed: its own flows.
+    const viaHead = VIEW_I3 && a.id === s.id && s.headline && CASES[s.headline.case];
+    if (VIEW_I3 && CASES[a.id] && CASES[a.id].i3 && !viaHead){ el.innerHTML = `<p class="small faint">On central dispatch this case is its market-machinery figure plus the measured step, so its flows are not itemised; the totals above add the step to each party. Choose "${esc(M.p3_i3_view.alt_label)}" to see the case's flows.</p>`; more.innerHTML = ''; return; }
+    const flows = flowsOf(viaHead ? s.headline.case : a.id);
+    if (!flows.length){ el.innerHTML = `<p class="small faint">${a.source === 'bounds' && !M.bound_detail ? 'This build carries the figures for each best-to-worst position, not its itemised flows; the best and worst cases themselves have them.' : 'The itemised flows for this case are not included in this build.'}</p>`; more.innerHTML = ''; return; }
+    const maxAbs = Math.max(0.01, ...flows.map(f => Math.abs(f.hh)));
+    const N = 8; const k = s.id + '|' + a.id; const show = state.showAll === k ? flows : flows.slice(0, N);
+    const who = f => f.payer === 'resource' ? `<span class="pt">Real saving</span> → <span class="pt">${PARTY[f.payee] || f.payee}</span>` : f.payee === 'resource' ? `<span class="pt">${PARTY[f.payer] || f.payer}</span> → <span class="pt">a real cost</span>` : `<span class="pt">${PARTY[f.payer] || f.payer}</span> → <span class="pt">${PARTY[f.payee] || f.payee}</span>`;
+    el.innerHTML = show.map(f => `<div class="flow"><span class="lab">${esc(f.label)}</span><span class="amt num">${money(Math.abs(f.hh))}</span><span class="who-line">${who(f)}<span class="faint">· ${esc(f.cat)}</span></span><span class="track" aria-hidden="true"><i style="width:${Math.abs(f.hh) / maxAbs * 100}%"></i></span></div>`).join('');
+    more.innerHTML = flows.length > N ? `<button type="button" class="linkbtn" id="more-btn" data-fk="more">${show.length < flows.length ? `Show all ${flows.length} flows` : 'Show fewer'}</button>` : '';
+    const btn = document.getElementById('more-btn'); if (btn) btn.addEventListener('click', () => { state.showAll = state.showAll === k ? null : k; keepFocus(renderFlows); });
+  }
+
+  // ---------- scenario extras ----------
+  function renderExtra(){
+    const s = DATA.scenarios[state.scen]; const el = document.getElementById('extra'); const e = s.extra || {};
+    if (s.code === 'S3'){
+      if (!e.series){ el.innerHTML = hpcNote(s); return; }
+      const ser = e.series.filter(r => typeof r.year === 'number');
+      const b0 = base(s);
+      const pw = e.pathway || null; const bc = e.basis_cases || [];
+      const gc = v => `${v < 0 ? 'a cost of' : 'a gain of'} <span class="num">£${fmt(v, 1)}bn</span>`;   // 13 Nov 2026: keep the sign
+      const pwBlock = pw && pw.s3 ? `<div class="facts">
+          <div class="fact"><span class="eyebrow">Read this scenario over 2027-2050</span><span class="v big num ${cls(-pw.s3.public_bn)}">${signed(pw.s3.public_bn, 1)}bn</span><span class="d">to households as bill-payers and taxpayers together (present value at 3.5%): ${gc(pw.s3.consumers_bn)} on bills and ${gc(pw.s3.exchequer_bn)} to the Exchequer.${pw.s2 ? ` Scenario 2 with all new build state-owned gives <span class="num">${signed(pw.s2.public_bn, 1)}bn</span> (${gc(pw.s2.consumers_bn)} on bills, ${gc(pw.s2.exchequer_bn)} to the Exchequer): most of this scenario's gain is the same new-build financing; buying the existing fleet adds little once its cost to the Exchequer is counted.` : ''} After 2050 (not in these totals) a further <span class="num">${signed(pw.s3.after_2050_public_bn, 1)}bn</span>${pw.s2 ? ` (Scenario 2: <span class="num">${signed(pw.s2.after_2050_public_bn, 1)}bn</span>)` : ''}: the financing saving still to come on plant built by 2050, and for this scenario the purchase's last repayments set against the fleet's last earnings. A single year's figure, including the one above, can mislead: the purchase is repaid over decades while the fleet's subsidy income runs off.</span></div></div>` : `<p class="caution">Read this scenario on the 2027-2050 pathway (the pathway page): a single year's figure can mislead, because the purchase is repaid over decades while the fleet's subsidy income runs off.</p>`;
+      const bcBlock = bc.length ? `<div class="sub-head"><h3>How much the price and the risk matter</h3><p class="s">The same scenario with one assumption changed, against the private bill (household total, bill plus taxpayer share, a year in __MODEL_YEAR__). The base is <span class="num">${signed((DATA.cases[s.id] || {}).dh)}</span>.</p></div><div class="facts">${bc.map(r => `<div class="fact"><span class="eyebrow">${esc(r.label)}</span><span class="v big num ${cls(r.dh)}">${signed(r.dh)}</span><span class="d">bill alone <span class="num">${signed(r.db)}</span></span></div>`).join('')}</div>` : '';
+      el.innerHTML = `<div class="sub"><div class="sub-head"><h3>What makes buying the existing fleet different</h3><p class="s">${(M.model_year || 2030) === 2030 ? 'The base, bill-payers first. The 2030 saving is the largest the scenario shows in any year. Two things sit behind it: the price the state pays for the existing fleet, and the subsidy income that fleet earns in 2030 and then loses.' : 'The base, bill-payers first. Two things set it: the price the state pays for the existing fleet, and what that fleet earns in __MODEL_YEAR__.'}</p></div>
+        ${pwBlock}
+        ${bcBlock}
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">__MODEL_YEAR__ against the long run</span><span class="v big num ${cls(e.snapshot)}">${signed(e.snapshot)}</span><span class="d">in __MODEL_YEAR__. Averaged over 15 years the change is <span class="num">${signed(e.avg_15)}</span>; over 30 years <span class="num">${signed(e.avg_30)}</span>.${(M.model_year || 2030) === 2030 ? ' 2030 flatters the case: the old subsidy contracts the purchase takes over are still paying out while the purchase is being repaid, and they run off through the 2030s.' : ''}</span>${ser.length > 1 ? longRunChart(ser, e) : ''}${e.series_basis ? `<span class="d tiny faint">${esc(e.series_basis)}</span>` : ''}</div>
+          <div class="fact"><span class="eyebrow">What the state pays</span><span class="v big">£${fmt(e.purchase_bn)}bn</span><span class="d">for the existing power stations: £${fmt(e.purchase_renewables_nuclear_bn)}bn for renewables and nuclear at market value, and £${fmt(e.purchase_thermal_storage_bn)}bn for gas, biomass and storage at ${e.thermal_basis === 'market_value' ? 'market' : 'book'} value. ${e.term_basis === 'remaining_life' ? `Each plant is repaid over its own remaining life (about ${Math.round(e.term_years)} years on average, weighted by price)` : `Repaid over ${e.term_years ? Math.round(e.term_years) : 30} years`} at the public rate${have(e.annuity_bn) ? `, about £${fmt(e.annuity_bn)}bn a year` : ''}. Britain's half of the interconnectors costs a further £${fmt(e.interconnector_bn)}bn, bought in every case of this scenario. ${e.wires === 'private' ? 'The wires stay private in the base; the state buying them, or guaranteeing their debt, is one of the switches above.' : ''}</span></div>
+          <div class="fact"><span class="eyebrow">Break-even purchase price</span><span class="v big">£${fmt(e.break_even_bill_bn, 0)}bn</span><span class="d">Over the life of the purchase: pay more than this for the existing fleet and the cash it brings in, valued at the public rate, no longer covers the repayments.${have(e.break_even_snapshot_bill_bn) ? ` (On 2030 alone the break-even is £${fmt(e.break_even_snapshot_bill_bn, 0)}bn, a snapshot that counts one year of the old subsidies against a level repayment.)` : ''} Each extra £10bn on the price adds <span class="num">${money(e.per_10bn)}</span> to the bill.${have(e.thermal_at_market_value_effect) ? ` Buying the gas, biomass and storage plant at market value rather than book value would change the bill by <span class="num">${signed(e.thermal_at_market_value_effect)}</span>.` : ''}</span></div>
+        </div>
+        ${e.three_parts ? `<div class="facts">${['new_build_ownership', 'legacy_purchase', 'rest'].map(k => `<div class="fact"><span class="eyebrow">${{new_build_ownership: 'New-build ownership', legacy_purchase: 'Buying the existing fleet', rest: 'Everything else'}[k]}</span><span class="v big num ${cls(e.three_parts[k])}">${signed(e.three_parts[k])}</span><span class="d">${(e.three_parts_labels || {})[k] || ''}${k === 'legacy_purchase' && have(e.legacy_purchase_pv_bn) ? ` Over its life, at the public rate, the purchase is worth <span class="num">£${fmt(e.legacy_purchase_pv_bn)}bn</span> to bill-payers in today's money (negative is a saving), about <span class="num">${signed(e.legacy_purchase_level_inc_vat)}</span> a year.` : ''}</span></div>`).join('')}</div>` : ''}
+        ${have(e.ro_relief_gap) && have(e.ro_relief_share_of_saving) ? `<p class="caution"><b>Renewables Obligation relief.</b> The private bill assumes the Exchequer stops paying part of the Obligation for households in March 2029. If that relief continued, the private bill would fall by <span class="num">${money(e.ro_relief_gap)}</span> and this scenario's saving would shrink by the same amount, about ${pct(e.ro_relief_share_of_saving)} of it, because the state's tariff replaces that line.</p>` : ''}
+        ${hpcNote(s)}
+      </div>`;
+      return;
+    }
+    const a = active(s); const own = DATA.strikes[a.id]; const rowsAll = own || DATA.strikes[s.id] || [];
+    const rows = rowsAll.map(r => ({tech: r[0], private: r[1], case: r[2], twh: r[3]})).filter(r => Math.abs(r.case - r.private) > 0.05);
+    if (!rows.length){ el.innerHTML = hpcNote(s); return; }
+    el.innerHTML = `<div class="sub"><div class="sub-head"><h3>Why the bill falls: cheaper contracts for new plant</h3><p class="s">New wind and solar farms are paid a fixed contract price per megawatt-hour (a "contract for difference"). Borrowing at the government's rate lowers the price they need. Output-weighted, £ per MWh in 2024 prices, for ${own ? esc(describe(s, a)) : 'the base'}.</p></div>${strikeChart(rows, s)}
+      <p class="tiny faint">Source: PyPSA-GB contract re-pricing. Technologies whose price does not change (nuclear, biomass) are left out. ${rows.some(r => r.tech === 'tidal') ? 'Tidal stream is a small volume. Its contracts from allocation rounds 4 to 7a are calibrated to their auction prices; 16 MW of tidal contracts with no allocation round keep the model’s own cost.' : ''}</p>
+      ${hpcNote(s)}</div>`;
+  }
+  function hpcNote(s){
+    const h = DATA.trust.hpc_schedule; if (!h) return '';
+    const p3 = s.code === 'S3';
+    const v = p3 ? h.p3_bill_change : h.market_bill_change; const rng = p3 ? h.p3_bill_range : h.market_bill_range;
+    if (!have(v)) return '';
+    return `<p class="caution"><b>Hinkley Point C on EDF's schedule.</b> The model follows NESO's pathway, with unit 1 running all year and unit 2 from August 2030. EDF now expects unit 1 in mid-2030 and unit 2 in 2031. On that schedule this scenario's bill moves by <span class="num">${signed(v)}</span> (range <span class="num">${signed(rng[0])}</span> to <span class="num">${signed(rng[1])}</span>)${p3 && have(h.p3_saving_narrows_by) ? `, and its saving against private narrows by about <span class="num">${money(h.p3_saving_narrows_by)}</span>` : ''}.</p>`;
+  }
+  function longRunChart(ser, e){
+    const W = 300, H = 120, L = 8, R = 8, T = 14, B = 22;
+    const ys = ser.map(r => r.delta_inc_vat).concat([0]); const lo = Math.min(...ys) * 1.08, hi = Math.max(...ys, 6);
+    const years = ser.map(r => r.year); const x0 = Math.min(...years), x1 = Math.max(...years);
+    const x = yr => L + (yr - x0) / (x1 - x0) * (W - L - R); const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    const pts = ser.map(r => `${x(r.year)},${y(r.delta_inc_vat)}`).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Change in the bill against private ownership by year, ${x0} to ${x1}" style="margin-top:6px"><line class="axis" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/><text class="num" x="${W - R}" y="${y(0) - 4}" text-anchor="end" font-size="10.5">private</text>
+      ${have(e.avg_30) ? `<line x1="${L}" x2="${W - R}" y1="${y(e.avg_30)}" y2="${y(e.avg_30)}" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3"/><text class="num" x="${L}" y="${y(e.avg_30) - 4}" font-size="10.5">30-year average ${signed(e.avg_30, 0)}</text>` : ''}
+      <polyline points="${pts}" fill="none" stroke="var(--p3)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${ser.map(r => `<circle cx="${x(r.year)}" cy="${y(r.delta_inc_vat)}" r="3.5" fill="var(--p3)" stroke="var(--panel)" stroke-width="1.5"><title>${r.year}: ${signed(r.delta_inc_vat)}</title></circle>`).join('')}
+      <text class="num ink" x="${x(ser[0].year)}" y="${y(ser[0].delta_inc_vat) + 14}" font-size="10.5">${signed(ser[0].delta_inc_vat, 0)}</text>
+      ${ser.filter(r => [2035, 2040, 2050, 2060].includes(r.year)).map(r => `<text class="num" x="${x(r.year)}" y="${H - 6}" text-anchor="${r.year === x1 ? 'end' : 'middle'}" font-size="10.5">${r.year}</text>`).join('')}<text class="num" x="${x(x0)}" y="${H - 6}" text-anchor="start" font-size="10.5">${x0}</text></svg>
+      <span class="tiny faint">Year points are read excluding VAT and shown with VAT at ${pct(M.vat_rate)}. The last point is after the purchase has been repaid.</span>`;
+  }
+  function strikeChart(rows, s){
+    const W = 560, L = 118, R = 60, rowH = 34, T = 22, H = T + rows.length * rowH + 10;
+    const vals = rows.flatMap(r => [r.private, r.case]); const lo = 0, hi = Math.max(...vals) * 1.08;
+    const x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+    let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Contract prices by technology, private against ${esc(s.code)}">`;
+    g += `<text x="${L}" y="12" font-size="11">£/MWh, 2024 prices</text>`;
+    rows.forEach((r, i) => { const y = T + i * rowH + 14; const name = r.tech.replace(/_/g, ' ').replace(/^offshore$/, 'offshore wind').replace(/^onshore$/, 'onshore wind').replace(/^tidal$/, 'tidal stream').replace(/^beccs$/, 'bioenergy with CCS');
+      g += `<text class="ink" x="${L - 10}" y="${y + 4}" text-anchor="end" font-weight="600">${esc(name)}</text>`;
+      g += `<line x1="${x(Math.min(r.private, r.case))}" x2="${x(Math.max(r.private, r.case))}" y1="${y}" y2="${y}" stroke="var(--line-2)" stroke-width="3"/>`;
+      g += `<circle cx="${x(r.private)}" cy="${y}" r="6" fill="var(--panel)" stroke="var(--ink-2)" stroke-width="2"/><circle cx="${x(r.case)}" cy="${y}" r="6" fill="${COL[s.code]}" stroke="var(--panel)" stroke-width="2"/>`;
+      g += `<text class="num" x="${x(Math.max(r.private, r.case)) + 10}" y="${y + 4}" style="fill:var(--ink)">${r.case.toFixed(1)} <tspan style="fill:var(--ink-3)">was ${r.private.toFixed(1)}</tspan></text>`;
+      g += `<text class="num" x="${W - 2}" y="${y + 4}" text-anchor="end" font-size="11">${r.twh.toFixed(1)} TWh</text>`; });
+    g += `</svg><div class="legend"><span><i class="sw dot" style="background:var(--panel);border:2px solid var(--ink-2)"></i>private owner</span><span><i class="sw dot" style="background:${COL[s.code]}"></i>${esc(s.code)} ${esc(s.label.toLowerCase())}</span></div>`;
+    return g;
+  }
+
+  // ---------- drawers ----------
+  function linesOf(id){ return new Map((DATA.lines[id] || []).map(([i, v]) => [i, v])); }
+  function renderLines(){
+    const s = DATA.scenarios[state.scen]; const a = active(s); const host = document.getElementById('lines');
+    const cm = linesOf(a.id), pm = linesOf('private');
+    if (!cm.size){ host.innerHTML = `<p class="small faint">${a.source === 'approx' ? 'The bill lines are shown for computed cases only; the ticked combination is an approximation.' : a.source === 'bounds' && !M.bound_detail ? 'This build carries the figures for each best-to-worst position, not its bill lines; the best and worst cases themselves have them.' : 'The bill lines for this case are not in this build.'}</p>`; return; }
+    const idx = [...new Set([...cm.keys(), ...pm.keys()])];
+    // Two groupings from bill_groupings.csv: what each cost pays for (default) and Ofgem's price-cap categories.
+    const views = M.line_groupings || {}; const view = views[state.lineView] ? state.lineView : 'functional'; const gi = view === 'ofgem' ? 7 : 2;
+    const rows = idx.map(i => { const d = DATA.line_defs[i]; return {name: d[1], group: d[gi] || 'Other', formal: d[3], src: {type: d[4], label: d[5], url: d[6]}, private: pm.get(i) || 0, case: cm.get(i) || 0}; })
+      .sort((x, y) => Math.abs(y.case - y.private) - Math.abs(x.case - x.private));
+    const groups = {}; rows.forEach(l => { (groups[l.group] = groups[l.group] || []).push(l); });
+    const declared = (views[view] && views[view].order) || [];
+    const rank = g => { const k = declared.indexOf(g); return k < 0 ? declared.length : k; };
+    const order = Object.keys(groups).sort((x, y) => rank(x) - rank(y));
+    const viewOpt = (v, lab) => views[v] ? `<button type="button" class="opt" role="radio" aria-checked="${v === view}" data-fk="lv:${v}" data-lineview="${v}"><span class="lab">${esc(lab)}</span><span class="eff">${esc(views[v].title)}</span></button>` : '';
+    const viewHtml = views.ofgem ? `<div role="radiogroup" aria-label="Group the bill lines by" style="margin-bottom:10px"><div class="seg">${viewOpt('functional', 'What each cost pays for')}${viewOpt('ofgem', "Ofgem's price-cap categories")}</div></div>` : '';
+    const totP = rows.reduce((t, l) => t + l.private, 0), totC = rows.reduce((t, l) => t + l.case, 0);
+    const badge = src => { const t = (src && src.type) || ''; return t ? `<span class="badge ${t === 'modelled' ? 'modelled' : t === 'model-informed' ? 'informed' : ''}">${esc(t)}</span>` : ''; };
+    host.innerHTML = viewHtml + `<p class="small muted">For ${esc(describe(s, a))}. Per 3,100 kWh household a year, excluding VAT (the headline bills add ${pct(M.vat_rate)}). "Modelled" lines come from the hourly dispatch of the 2030 system; "model-informed" lines apply a published rule to a modelled quantity; "published" lines are Ofgem, NESO or government figures taken as they stand.</p>
+      <div class="scroll"><table class="t"><thead><tr><th>Bill line</th><th class="num">Private</th><th class="num">${esc(s.code)}</th><th class="num">Change</th><th>Source</th></tr></thead><tbody>` +
+      order.map(gname => `<tr><td colspan="5" style="padding-top:12px"><b>${esc(gname)}</b></td></tr>` + groups[gname].map(l => { const d = l.case - l.private; const src = l.src || {};
+        const formal = l.formal && l.formal !== l.name ? l.formal : '';
+        return `<tr><td>${esc(l.name)}${formal || src.label ? `<br><span class="tiny faint">${esc([formal, src.label].filter(Boolean).join(' · '))}</span>` : ''}</td><td class="num">${Math.abs(l.private) < 0.005 ? '—' : money(l.private)}</td><td class="num">${Math.abs(l.case) < 0.005 ? '—' : money(l.case)}</td><td class="num ${cls(d)}">${Math.abs(d) < 0.005 ? '—' : signed(d)}</td><td>${badge(src)}${src.url ? ` <a class="tiny" href="${esc(src.url)}" target="_blank" rel="noopener">source</a>` : ''}</td></tr>`; }).join('')).join('') +
+      `<tr class="total"><td>Total, excluding VAT</td><td class="num">${money(totP)}</td><td class="num">${money(totC)}</td><td class="num ${cls(totC - totP)}">${signed(totC - totP)}</td><td></td></tr></tbody></table></div>`;
+    host.querySelectorAll('[data-lineview]').forEach(b => b.addEventListener('click', () => { state.lineView = b.dataset.lineview; keepFocus(renderLines); }));
+  }
+  function notes(s){
+    const nPos = Object.keys(s.grid).length;
+    return `<dl class="notes">
+      <dt>Household</dt><dd>A typical GB household using 3,100 kWh of electricity a year and paying by direct debit, in calendar __MODEL_YEAR__, in 2025 prices, including 5% VAT. The 3,100 kWh is held fixed in every year, so it is a measure of what a unit of electricity costs, not a typical future bill${DATA.trust && DATA.trust.electrified ? `: a home with a heat pump and an electric car uses about <span class="num">${Math.round(DATA.trust.electrified.kwh).toLocaleString('en-GB')}</span> kWh, shown beside it` : ''}. At Ofgem's newer 2,500 kWh typical use the private bill is ${have(DATA.trust.bill_2500kwh) ? `<span class="num">${money(DATA.trust.bill_2500kwh)}</span>` : 'lower'}.</dd>
+      <dt>The base</dt><dd>${esc(M.base_rule)} The wires are private in every base.</dd>
+      <dt>The headline</dt><dd>The change in the bill against private ownership. What the Exchequer takes on, and the household total, appear only under "Who pays".</dd>
+      <dt>The Exchequer's share</dt><dd>Under "Who pays", the Exchequer's change against private ownership is shared across households in proportion to their electricity use: ${esc(M.per_household_key)}. A system amount of £1 million is about ${have(M.households_equivalent_m) ? money(1 / M.households_equivalent_m, 2) : '—'} per household on this key (${M.households_equivalent_m} million household-equivalents).</dd>
+      <dt>Household total</dt><dd>The bill plus that Exchequer share. It is not a headline, because how the Treasury would recover a cost or pass on a gain is a separate choice. Sharing the Exchequer's change by tax paid instead makes every public scenario look worse for households, because households pay a larger share of taxes than of electricity levies; the "Who pays" note gives that figure.</dd>
+      <dt>Best and worst</dt><dd>Named sets of assumptions, not statistical bounds; they are listed under each scenario in section 1. Each is measured against its own private comparator: where the best case moves an assumption that also changes the private bill, the comparator is a private system with the same change, so the range is a like-for-like gap. Contested fiscal costs (the effect of state borrowing on gilt yields, and the deadweight cost of tax) are not in any figure.</dd>
+      <dt>Real saving</dt><dd>The change in the country's resource cost, mostly the gap between the government's borrowing rate and private investors' required returns on the plant the state finances. Corporation tax the state no longer pays and VAT on a lower bill are transfers, not savings, and are shown as flows.</dd>
+      <dt>Private investors</dt><dd>Measured at the return they would require. A gain here means investors are relieved of plant that would have earned them less than that return; a loss means returns they would have earned now go elsewhere.</dd>
+      <dt>Who pays</dt><dd>Each settlement changes only who keeps the state's surplus, who funds its losses, whether it pays tax equivalents, and where the contract price is set. The physical system and the real saving do not change, which the model checks to the pound.</dd>
+      <dt>Switches</dt><dd>Each switch or choice moves one assumption to a stress value. The model recomputes the whole bill for every combination (${nPos} for this scenario), so any mix is an exact model result, not a sum of single effects. A switch that only makes sense with another choice (the guarantee reaching all network debt, the high premium for the wires) is off unless that choice is made.</dd>
+      <dt>Other assumptions together</dt><dd>Ticking several of the other assumptions shows the model's exact figure where it has computed that combination (often a best-to-worst position). Otherwise the page adds up the single effects and says so. ${s.interaction ? `Measured on the switches above, where every combination is computed, that sum misses the exact answer by a median of ${money(s.interaction.median)} and at most ${money(s.interaction.max)} a household.` : ''} An assumption that also changes the private bill adds its effect against a private system with the same change.</dd>
+      <dt>Best to worst</dt><dd>${s.bounds ? `Every assumption the best and worst cases move, as its own exact grid of ${s.bounds.positions} combinations.` : 'Not in this build.'} Which option is "best" and which "worst" is taken from the best and worst cases themselves.${s.bounds && !M.bound_detail ? ' For these positions the build carries the figures, not the line-by-line bill or the itemised flows.' : ''}</dd>
+      <dt>Data</dt><dd>The public-ownership outputs of PyPSA-GB: household totals, party flows, bill lines by case, contract prices, the state tariff's summary and the Exchequer ledger.</dd>
+    </dl>`;
+  }
+
+  // ---------- 3. trust ----------
+  function renderTrust(){
+    const t = DATA.trust; const grid = document.getElementById('trust-grid'); const tiles = [];
+    if (have(t.constraint_cost_bn) && !have(t.neso_cp30_constraint_bn)) tiles.push(`<div class="fact"><span class="eyebrow">Grid constraint costs, __MODEL_YEAR__</span><span class="v big">£${fmt(t.constraint_cost_bn)}bn</span><span class="d">The model's cost of managing grid bottlenecks (2025 prices). NESO publishes no figure for this year to set it against.</span></div>`);
+    if (have(t.constraint_cost_bn) && have(t.neso_cp30_constraint_bn)) tiles.push(`<div class="fact"><span class="eyebrow">Grid constraint costs, __MODEL_YEAR__</span><span class="v big">£${fmt(t.constraint_cost_bn)}bn <span class="faint" style="font-size:15px">vs NESO £${fmt(t.neso_cp30_constraint_bn)}bn</span></span><span class="d">The model's cost of managing grid bottlenecks (2025 prices), against NESO's own figure for the same pathway and network (2024 prices): ${pct(1 - t.constraint_cost_bn / t.neso_cp30_constraint_bn)} lower before the price years are aligned. Source: ${esc(t.neso_cp30_source)}.</span></div>`);
+    if (have(t.constraint_line_hh)) tiles.push(`<div class="fact"><span class="eyebrow">Constraint payments on the bill</span><span class="v big">${money(t.constraint_line_hh)} <span class="faint" style="font-size:15px">vs ${money(t.neso_outturn_hh)} in ${esc(t.neso_outturn_year)}</span></span><span class="d">A household's 2030 share of the payments to manage grid bottlenecks, against NESO's published outturn for ${esc(t.neso_outturn_year)}. They rise as more wind connects ahead of the wires.</span></div>`);
+    if (t.wholesale) tiles.push(`<div class="fact"><span class="eyebrow">Wholesale price: today against __MODEL_YEAR__</span><span class="v big">£${fmt(t.wholesale.today_real, 0)} <span class="faint" style="font-size:15px">today → £${fmt(t.wholesale.model_mean, 0)} in __MODEL_YEAR__</span></span><span class="d">£ per MWh in 2024 prices. Today: ${esc(t.wholesale.source)}, £${fmt(t.wholesale.today_nominal, 1)} in ${t.wholesale.today_year} prices. ${'__MODEL_YEAR__'}: the model's average over its ${t.wholesale.hours.toLocaleString('en-GB')} hours. The purchase of the existing fleet values each technology's income on a path through today's level and every solved year.</span></div>`);
+    if (t.energy) tiles.push(`<div class="fact"><span class="eyebrow">Energy against NESO's pathway</span><span class="v big">within ${(t.energy.available_max_rel_diff * 100).toFixed(3)}%</span><span class="d">Available wind, solar, hydro and marine output is calibrated to NESO's Clean Power 2030 totals before curtailment, and demand (${fmt(t.energy.demand_twh, 1)} TWh) matches within ${(t.energy.demand_rel_diff * 100).toFixed(4)}%. That match is by construction. ${t.dispatch ? (t.dispatch.basis === 'market' ? `NESO's energy table is its market dispatch, before network constraints, so the model's market stage is compared with it. There, offshore wind is ${pct(Math.abs(t.dispatch.rel_diff.wind_offshore))} ${t.dispatch.rel_diff.wind_offshore < 0 ? 'below' : 'above'} NESO's figure, solar ${pct(Math.abs(t.dispatch.rel_diff.solar_pv))} ${t.dispatch.rel_diff.solar_pv < 0 ? 'below' : 'above'} and onshore wind ${pct(Math.abs(t.dispatch.rel_diff.wind_onshore))} ${t.dispatch.rel_diff.wind_onshore < 0 ? 'below' : 'above'}, and the market curtails ${fmt(t.dispatch.curtailment_model_twh, 1)} TWh of wind and solar where NESO has ${fmt(t.dispatch.curtailment_cp30_twh, 1)} TWh. The balancing stage then turns down ${fmt(t.dispatch.constraint_model_twh, 1)} TWh of clean power for network constraints, where NESO's redispatch turns down ${fmt(t.dispatch.constraint_cp30_twh, 1)} TWh${t.dispatch.constraint_cp30_note ? ' ' + esc(t.dispatch.constraint_cp30_note) : ''}. Of the post-solve energy checks, ${t.dispatch.status.PASS} pass, ${t.dispatch.status.WARN} carry a warning and ${t.dispatch.status.FAIL} fail.` : `After the solve, dispatched offshore wind is ${pct(Math.abs(t.dispatch.rel_diff.wind_offshore))} below NESO's figure, solar ${pct(Math.abs(t.dispatch.rel_diff.solar_pv))} below and onshore wind ${pct(Math.abs(t.dispatch.rel_diff.wind_onshore))} below: the model curtails ${fmt(t.dispatch.curtailment_model_twh, 1)} TWh of wind and solar where NESO has ${fmt(t.dispatch.curtailment_cp30_twh, 1)} TWh. Of the post-solve energy checks, ${t.dispatch.status.PASS} pass, ${t.dispatch.status.WARN} carry a warning and ${t.dispatch.status.FAIL} fail.`) : ''}</span></div>`);
+    if (have(t.modelled_share)) tiles.push(`<div class="fact"><span class="eyebrow">What the bill is built from</span><span class="v big">${pct(t.modelled_share)} modelled</span><span class="d">${pct(t.informed_share)} more is model-informed. The rest comes from published figures: Ofgem's price-cap allowances, network price controls and levies. Every bill line lists its source in each scenario's drawer.</span></div>`);
+    grid.innerHTML = tiles.join('');
+    const u = DATA.private.uncertainties || [];
+    const gapFor = (s, key) => { const r = (s.uncertainties || []).find(x => x.key === key); return r ? r.gap : null; };
+    // User, 11 Nov 2026: the background alternatives (they move the private bill too) sit here, beside the other
+    // uncertainties that move every bill; each scenario's column is how its saving against the same private system moves.
+    const bg = {};
+    DATA.scenarios.forEach(s => s.sensitivities.filter(r => r.topic === 'background').forEach(r => {
+      const c = CASES[r.case]; if (!c) return; const e = bg[r.label] = bg[r.label] || {label: r.label, explain: r.explain, priv: null, gaps: {}};
+      const pc = c.c && CASES[c.c]; if (pc && PRIVATE && e.priv == null) e.priv = pc.b - PRIVATE.b;
+      const b0 = CASES[s.id]; if (b0) e.gaps[s.id] = c.db - b0.db; }));
+    const rowsB = Object.values(bg).map(e => `<tr><td>${esc(e.label)}<br><span class="tiny faint">${esc(e.explain)}</span></td><td class="num ${have(e.priv) ? cls(e.priv) : ''}">${have(e.priv) ? signed(e.priv) : '—'}</td>${DATA.scenarios.map(s => { const g = e.gaps[s.id]; return `<td class="num ${!have(g) ? '' : (g > 0.005 ? 'loss' : g < -0.005 ? 'gain' : '')}">${!have(g) ? '—' : Math.abs(g) < 0.005 ? 'no change' : (g > 0 ? 'saving shrinks ' : 'saving grows ') + money(Math.abs(g))}</td>`; }).join('')}</tr>`).join('');
+    const rowsU = rowsB + u.map(r => `<tr><td>${esc(r.label)}</td><td class="num ${cls(r.private)}">${signed(r.private)}</td>${DATA.scenarios.map(s => { const g = gapFor(s, r.key); return `<td class="num ${!have(g) ? '' : (g > 0.005 ? 'loss' : g < -0.005 ? 'gain' : '')}">${!have(g) ? '—' : Math.abs(g) < 0.005 ? 'no change' : (g > 0 ? 'saving shrinks ' : 'saving grows ') + money(Math.abs(g))}</td>`; }).join('')}</tr>`).join('');
+    document.getElementById('unc-table').innerHTML = `<table class="t"><thead><tr><th>What could be different</th><th class="num">Effect on every bill</th>${DATA.scenarios.map(s => `<th class="num">${s.code} saving</th>`).join('')}</tr></thead><tbody>${rowsU}</tbody></table>
+      <p class="tiny faint" style="margin-top:8px">£ a year per household including VAT, each scenario at its base. "Effect on every bill" is computed on the private bill; the public bills move with it except where a scenario replaces the line. Source: the Exchequer ledger's uncertainty results.</p>`;
+  }
+
+  // ---------- 4. cost of capital and sources ----------
+  function renderWacc(){
+    const w = DATA.wacc; const sec = document.getElementById('h-wacc').closest('section');
+    if (!w){ sec.hidden = true; return; }
+    document.getElementById('wacc-lede').textContent = `Real rates (CPI basis, ${w.price_year} prices) from the model workbook, by technology. They set what each owner needs to earn on new and existing plant. Private investors' rates are the comparator every scenario is measured against.`;
+    const r = w.rows;
+    document.getElementById('wacc-table').innerHTML = `<table class="t"><caption class="srlabel">Cost of capital by technology and owner</caption>
+      <thead><tr><th>Technology</th><th class="num">Private<br><span style="text-transform:none;letter-spacing:0;font-weight:600">observed borrowing, tax relief</span></th><th class="num">Scenario 1 new plant<br><span style="text-transform:none;letter-spacing:0;font-weight:600">30% state stake</span></th><th class="num">Scenarios 2 and 3 new plant<br><span style="text-transform:none;letter-spacing:0;font-weight:600">public rate + construction premium</span></th><th class="num">Scenario 3 existing fleet<br><span style="text-transform:none;letter-spacing:0;font-weight:600">public rate</span></th></tr></thead>
+      <tbody>${r.map(x => `<tr><td>${esc(x.tech)}<br><span class="tiny faint">workbook: ${esc(x.workbook)}; construction risk ${esc(x.risk)}</span></td><td class="num">${pcf(x.private / 100)}</td><td class="num">${pcf(x.p1 / 100)}</td><td class="num">${pcf(x.p2 / 100)}</td><td class="num">${pcf(x.p3 / 100)}</td></tr>`).join('')}</tbody></table>
+      <p class="tiny faint" style="margin-top:8px">Private: the workbook's Sc1 (WACC Calculator column Y), each technology's observed share of debt with tax relief on interest. Scenario 1: the workbook's Sc2 (column AB), the joint venture's rate with a 30% state stake, on CEPA's split (debt 0.75 points cheaper, no equity premium on the state's share). Scenario 2: the workbook's Sc3 (column K), the public borrowing rate plus a construction premium graded by risk; Scenario 3 owns all new plant too and finances it the same way. Its existing fleet: the public rate alone (Assumptions C82), since its construction risk has passed.</p>`;
+    const casesTxt = n => n == null ? '' : n === 0 ? '<span class="faint">not run</span>' : `<span class="num">${n.toLocaleString('en-GB')}</span> case${n === 1 ? '' : 's'}`;
+    document.getElementById('wacc-alts').innerHTML = `<div class="sub-head"><h3>The workbook's alternatives</h3><p class="s">Each is a choice in the case list. The count is how many of the model's cases use it, where it can make a difference.</p></div>
+      ${w.alternatives.map(a => `<div><p class="small" style="font-weight:700;margin-bottom:4px">${esc(a.title)}</p><ul class="plain">${a.options.map(o => `<li>${esc(o.text)}: ${casesTxt(o.cases)}</li>`).join('')}</ul></div>`).join('')}
+      <div><p class="small" style="font-weight:700;margin-bottom:4px">In the workbook but not used</p><ul class="plain">${w.unused.map(u => `<li>${esc(u)}</li>`).join('')}</ul></div>`;
+    document.getElementById('wacc-outside').innerHTML = `<div class="sub-head"><h3>Rates from outside the workbook</h3><p class="s">Two parts of the system are financed at rates the workbook does not set.</p></div>
+      <div class="scroll"><table class="t"><thead><tr><th>What</th><th class="num">Rate</th><th>Source</th></tr></thead><tbody>${w.outside.map(o => `<tr><td>${esc(o.what)}</td><td class="num">${esc(o.rate)}</td><td class="small muted">${esc(o.source)}</td></tr>`).join('')}</tbody></table></div>`;
+    const short = w.sha256 ? w.sha256.slice(0, 12) + '…' : '';
+    document.getElementById('wacc-check').innerHTML = `The model reads these rates from a snapshot of the workbook (${esc((w.workbook || '').split('/').pop())}, extracted ${esc(w.extracted_on)}). The snapshot records the workbook's SHA-256 hash (<span class="num" title="${esc(w.sha256 || '')}">${esc(short)}</span>)${w.hash_checked === true ? ', and this build checked it against the workbook itself: they match.' : w.hash_checked === false ? '; <b>this build found the workbook does not match it</b>.' : '; this build did not have the workbook to check it against.'}`;
+  }
+
+  document.getElementById('foot').innerHTML = `<p><b>Source.</b> PyPSA-GB __PATHWAY_SHORT__ model, twelve months of the __MODEL_YEAR__ system solved with full network constraints; public-ownership layer, ${esc(runName.replace(/^the /, ''))}. Figures are per 3,100 kWh household a year including VAT in 2025 prices unless stated. Analysis by the PyPSA-GB team at the University of Edinburgh. Generated ${esc(M.generated)}.</p><p>Bill changes below zero are savings. Under "Who pays", party changes above zero mean that party is better off.</p>`;
+
+  renderTrust();
+  renderWacc();
+  const hash = (location.hash || '').replace('#', '').toLowerCase();
+  const start = DATA.scenarios.findIndex(s => s.code.toLowerCase() === hash);
+  selectScenario(start >= 0 ? start : 1, false);
+})();
+</script>

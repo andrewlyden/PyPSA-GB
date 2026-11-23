@@ -1,0 +1,544 @@
+# Single-period scenarios.
+
+CP30_FFR_2030_reduced:
+  inherits: archive_cp30r_base
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-01 23:00
+  description: CP30 Further Flex and Renewables 2030 - Reduced Network, 1-day smoke run
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+
+CP30_FFR_2030_ETYS_kmeans30_market_1day:
+  inherits: [archive_cp30r_except_CP30_FFR_2030_reduced_CP30_ND_2030_reduced, archive_cp30r_clustering_method__cp30_ffr_2030_etys_kmeans30_market]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-01 23:00
+  description: 'CP30 FFR 2030 market baseline: ETYS kmeans30, one-day smoke test'
+  renewables_year: 2020
+  demand_year: 2020
+
+CP30_FFR_2030_ETYS_kmeans30_market_1month:
+  inherits: [archive_cp30r_except_CP30_FFR_2030_reduced_CP30_ND_2030_reduced, archive_cp30r_clustering_method__cp30_ffr_2030_etys_kmeans30_market]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  description: 'CP30 FFR 2030 market production run: January 2030, ETYS kmeans30'
+  renewables_year: 2020
+  demand_year: 2020
+
+CP30_FFR_2030_ETYS_kmeans30_market_2day_topology_control_retrading:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_clustering_method__cp30_ffr_2030_etys_kmeans30_market]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: clustered topology control with interconnector re-trading, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+
+CP30_FFR_2030_ETYS_unclustered_market_2day_topology_check:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_unclustered_market_2day_topology, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: full ETYS topology control with frozen offshore allocation, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+
+CP30_FFR_2030_ETYS_unclustered_market_2day_topology_fallbacks:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_unclustered_market_2day_topology, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: full ETYS topology with transparent TBC engineering fallbacks, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+  network:
+    upgrades:
+      engineering_fallbacks:
+        enabled: true
+
+CP30_FFR_2030_ETYS_unclustered_market_2day_yorkshire_terminal_control:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  solve_period:
+    enabled: true
+    start: 2030-01-20 00:00
+    end: 2030-01-21 23:00
+  description: 'CP30 FFR 2030: two-day ETYS Yorkshire terminal-reconciliation control (disabled)'
+  renewables_year: 2020
+  demand_year: 2020
+  network:
+    upgrades:
+      documented_topology_corrections:
+        yorkshire_green_2027_terminal_reconciliation: false
+
+CP30_FFR_2030_ETYS_unclustered_market_2day_yorkshire_terminal_remap:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  solve_period:
+    enabled: true
+    start: 2030-01-20 00:00
+    end: 2030-01-21 23:00
+  description: 'CP30 FFR 2030: two-day ETYS Yorkshire terminal-reconciliation test (enabled)'
+  renewables_year: 2020
+  demand_year: 2020
+  market:
+    wholesale:
+      position_source:
+        scenario: CP30_FFR_2030_ETYS_unclustered_market_2day_yorkshire_terminal_control
+
+CP30_ND_2030_reduced:
+  inherits: archive_cp30r_base
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-01 05:00
+  description: CP30 New Dispatch 2030 - Reduced Network
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+  fleet:
+    spatial_proxy:
+      FES_scenario: Electric Engagement
+  CP30_pathway: New Dispatch
+
+CP30_FFR_2030_ETYS_market_2day_offshore_connection_baseline:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: full ETYS offshore-connection baseline, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+
+CP30_FFR_2030_ETYS_market_2day_offshore_landing_sensitivity:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: full ETYS high-voltage offshore-landing sensitivity, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        file: data/network/ETYS/cp30_offshore_landing_point_sensitivity.csv
+        purpose: etys_high_voltage_landing_point_sensitivity
+
+CP30_FFR_2030_ETYS_market_2day_offshore_landing_profile_preserving:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: ETYS offshore landing-bus sensitivity with original wind profiles, 6-7 January'
+  renewables_year: 2020
+  demand_year: 2020
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        purpose: etys_high_voltage_landing_point_profile_preserving_sensitivity
+
+CP30_FFR_2030_ETYS_market_2day_neso_comparator:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso_2, archive_cp30r_pricing_hourly_shape__cp30_ffr_2030_etys_market_neso]
+  solve_period:
+    enabled: true
+    start: 2030-01-06 00:00
+    end: 2030-01-07 23:00
+  description: 'CP30 FFR 2030: NESO-comparator smoke test (2013 weather, ES5 spatial, export links, flat CP.29 trade prices)'
+
+CP30_FFR_2030_ETYS_market_1week_hnd_hybrid:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_1week, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_reinforcements_components_file__63_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day ETYS--HND hybrid sensitivity (inactive pending reviewed DND and CP30 crosswalk)'
+  network:
+    hnd_hybrid:
+      enabled: true
+
+CP30_FFR_2030_ETYS_market_1week_hnd1_public_portfolio_proxy:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_1week, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_reinforcements_components_file__63_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day HND1 public-portfolio placement sensitivity (not HND topology)'
+  fleet:
+    spatial_proxy:
+      hnd_project_allocation:
+        allocation_mode: public_portfolio_proxy
+        crosswalk_file: data/network/HND/hnd1_public_portfolio_proxy.csv
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_reinforced_no_export_links:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_reinforcements_components_file__63_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day ES5 regional-allocation baseline with CP30 reinforcement and no offshore export links'
+
+CP30_FFR_2030_ETYS_market_full_year_neso_es5_landing_reassignment_reinforced:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_solver_accepted_conditions__58_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-12-31 23:00
+  description: 'CP30 FFR 2030: final full-year direct landing-bus comparator with CP30 reinforcement (2013 profiles)'
+
+CP30_FFR_2030_ETYS_market_1week_central_dispatch_fe_uc:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_solver_DualReductions__dispatch, archive_cp30r_wholesale_forecast_error__dispatch, archive_cp30r_balancing_commitment_proxy__central_dispatch_fe_uc]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: one week central dispatch on a forecast, real time under a commitment proxy'
+
+CP30_FFR_2030_ETYS_market_1week_central_dispatch_fe_uc_icfix:
+  inherits: [archive_cp30r_except_CP30_FFR_2030_reduced_CP30_ND_2030_reduced, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_solver_DualReductions__dispatch, archive_cp30r_wholesale_forecast_error__dispatch, archive_cp30r_balancing_commitment_proxy__central_dispatch_fe_uc]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: one week central dispatch on a forecast, commitment proxy, interconnectors fixed in real time'
+  market:
+    balancing:
+      interconnector_retrading: false
+
+CP30_FFR_2030_ETYS_market_1week_nationalised_dispatch:
+  inherits: [archive_cp30r_dispatch, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_solver_DualReductions__dispatch, archive_cp30r_wholesale_forecast_error__dispatch]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: one week centrally dispatched on a forecast at resource cost (nationalised operator)'
+
+CP30_FFR_2030_ETYS_market_1week_neso_spatial_control:
+  inherits: [archive_cp30r_bm_bids_mode, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso, archive_cp30r_pricing_hourly_shape__cp30_ffr_2030_etys_market_neso]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day matched spatial/topology control (2013 profiles, FES placement, flat CP.29 prices)'
+  fleet:
+    spatial_proxy:
+      regional_allocation:
+        enabled: false
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_export_links_80pct:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_1week_neso_es5_export_links, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day offshore-link capacity sensitivity (80% of connected generation)'
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        export_capacity_factor: 0.8
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_export_links_120pct:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_1week_neso_es5_export_links, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day offshore-link capacity sensitivity (120% of connected generation)'
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        export_capacity_factor: 1.2
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_only:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day attribution step 1 (ES5 regional allocation only)'
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_export_links:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso, archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso_2]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day attribution step 2 (ES5 allocation plus offshore export links)'
+
+CP30_FFR_2030_ETYS_market_wk_h1_w24:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_w24, {"premium": 28.4, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true} + {"window_hours": 24}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_icall:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_wk_h1_icall, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_icall, {"premium": 100.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "offer_rule": "all_in"} + {}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_icall_w24:
+  inherits: [archive_cp30r_cp30_ffr_2030_etys_market_wk_h1_icall, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_icall_w24, {"premium": 100.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "offer_rule": "all_in"} + {"window_hours": 24}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_p45:
+  inherits: [archive_cp30r_balancing_interconnector_counter_trade, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_p45, {"premium": 45.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true} + {}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_p60:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_p60, {"premium": 60.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true} + {}'
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 60.0
+
+CP30_FFR_2030_ETYS_market_wk_h1_p75:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_p75, {"premium": 75.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true} + {}'
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 75.0
+
+CP30_FFR_2030_ETYS_market_wk_h1_p90:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_p90, {"premium": 90.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true} + {}'
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 90.0
+
+CP30_FFR_2030_ETYS_market_wk_h1_lcp28:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_lcp28, {"cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "premium": 28.4} + {}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_lcp45:
+  inherits: [archive_cp30r_balancing_interconnector_counter_trade, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_lcp45, {"cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "premium": 45.0} + {}'
+
+CP30_FFR_2030_ETYS_market_wk_h1_lcp28g:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-31 23:00
+  wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+  description: 'CP30 FFR 2030: week test h1_lcp28g, {"cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "premium": 28.4, "ic_gate": true} + {}'
+
+# Moved from the live study, written fully resolved.
+
+CP30_FFR_2030_ETYS_market_1week_neso_comparator:
+  modelled_year: 2030
+  network_model: ETYS
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+      regional_allocation: {enabled: true, region_anchor_file: data/network/ETYS/cp30_es5_region_anchors.csv, missing_proxy_policy: anchor_proxy}
+      offshore_connection_allocation: {enabled: true, min_bus_voltage_kv: 275, file: data/network/ETYS/cp30_offshore_landing_point_profile_preserving.csv,
+        mode: explicit_export_links_preserve_profile, purpose: cp30_es5_regional_proxy_with_explicit_export_links, link_efficiency: 1.0,
+        export_capacity_factor: 1.0}
+    station_registry: {enabled: true}
+  scenario_source: CP30
+  CP30_pathway: Further Flex and Renewables
+  renewables_year: 2013
+  demand_year: 2013
+  market:
+    enabled: true
+    balancing: {bid_offer_source: derived, interconnector_retrading: true, fix_interconnectors: false}
+    wholesale:
+      renewable_curtailment_order: {mode: contract_aware}
+  network:
+    reinforcements: {enabled: true, reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv, manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv,
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv, strict: false}
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2024
+      shape_conditioning: {enabled: true}
+      volume_tranches: {enabled: true}
+  solve_period: {enabled: true, start: '2030-01-03 00:00', end: '2030-01-09 23:00'}
+  description: 'CP30 FFR 2030: seven-day NESO comparator (2013 profiles, ES5 allocation, direct anchor fallback, CP.29 prices
+    with volume tranches)'
+  support:
+    bm_bids:
+      mode: fixed
+      contract_value_bids: {enabled: true}
+
+CP30_FFR_2030_ETYS_market_1week_central_dispatch_hold:
+  modelled_year: 2030
+  network_model: ETYS
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+      regional_allocation: {enabled: true, region_anchor_file: data/network/ETYS/cp30_es5_region_anchors.csv, missing_proxy_policy: anchor_proxy,
+        region_method: gsp_polygon, gsp_polygon_file: data/network/GSP/GSP_regions_27700_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      offshore_connection_allocation: {enabled: true, min_bus_voltage_kv: 275, file: data/network/ETYS/cp30_offshore_landing_point_profile_preserving.csv,
+        mode: reassign_bus_preserve_profile, audit_mapping: true, audit_project_crosswalk: true, project_evidence_register: data/network/ETYS/cp30_offshore_landing_evidence_register.csv,
+        tec_register: data/generators/tec-register-02-september-2025.csv, purpose: etys_landing_bus_mechanism_test_no_artificial_export_links_reinforced}
+      storage_regional_allocation: {enabled: true, gsp_polygon_file: data/network/GSP/GSP_regions_4326_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      brownfield:
+        enabled: true
+        statuses: [Operational, Under Construction, Awaiting Construction]
+        overshoot_policy: trim_least_mature
+        offshore_landing_policy: nearest_bus_fallback
+        offshore_landing_crosswalk: data/network/ETYS/repd_offshore_landing_crosswalk.csv
+      nuclear_station_schedule: data/market/CP30/nuclear_station_schedule_2030.csv
+      gas_station_schedule: data/market/CP30/gas_station_schedule_2030.csv
+      ccs_biomass_station_schedule: data/market/CP30/ccs_biomass_station_schedule_2030.csv
+      cfd_station_schedule: data/market/CP30/cfd_station_schedule_2030.csv
+      biomass_station_schedule: data/market/CP30/biomass_station_schedule_2030.csv
+      committed_overlay: data/market/CP30/committed_overlay_2030.csv
+      committed_overlay_carve_out:
+        CCS Gas: {cp30_line: gas, from_carrier: CCGT, reason: 'user decision 14 Oct 2026: NZT inside CP30''s 31,253 MW Gas
+            line, so total gas capacity equals CP30''s'}
+    station_registry: {enabled: true}
+  scenario_source: CP30
+  CP30_pathway: Further Flex and Renewables
+  renewables_year: 2013
+  demand_year: 2013
+  market:
+    enabled: true
+    balancing:
+      bid_offer_source: derived
+      interconnector_retrading: true
+      fix_interconnectors: false
+      mc_floors: {wind_offshore: 0.01, wind_onshore: 0.01, solar_pv: 0.01}
+      carrier_overrides:
+        wind_onshore: {mode: markup, offer_markup: 0.0, bid_discount: 0.0}
+        wind_offshore: {mode: markup, offer_markup: 0.0, bid_discount: 0.0}
+        solar_pv: {mode: markup, offer_markup: 0.0, bid_discount: 0.0}
+      min_output_energy_budget: hold
+      storage_anchor: stage1_legs
+      network_delivery:
+        secured_capability:
+          historic_derate: {enabled: true, mode: replay, unmapped: default, file: data/network/neso_boundary_outage_generic_2022_25.csv}
+        case: outage_neso
+        description: Full CP30 2030 network; NESO-style generic maintenance outages (2022/23 day-ahead limits).
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 20.0
+        bid_premium_gbp_per_mwh: 20.0
+        offer_pricing: additive
+        bid_pricing: additive
+        max_deviation_share: 2.0
+        max_deviation_share_by_country: {Belgium: 2.0, Denmark: 2.0, France: 2.0, Germany: 2.0, Netherlands: 2.0, Ireland: 2.0,
+          Northern Ireland: 2.0, Norway: 2.0}
+        min_spread_gbp_per_mwh: 0.0
+        min_spread_rule: none
+        foreign_plant_multipliers: gb_gas
+    wholesale:
+      marginal_cost_basis: {mode: resource_cost}
+      storage_marginal_cost_floor: 15.0
+      interconnector_hurdle_override: {enabled: true, spread_gbp_per_mwh: 13.5, export_bid_floor_gbp_per_mwh: 1.0, level_offset_gbp_per_mwh: 6.75,
+        apply_in_balancing: true}
+      central_constraint_screening: {enabled: true}
+    dispatch: central
+    storage_round_trip_override: {Battery: 0.7}
+    must_take_generation:
+      data_sources: [CP30_small_scale_solar_gsp]
+    hydrogen_offtake_scale: 0.9353
+  network:
+    reinforcements: {enabled: true, reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv, manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv,
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv, strict: false}
+    transmission:
+      outage_schedule:
+        enabled: true
+        source: secured_capability
+        secured_capability:
+          fes_pathway: HT
+          capability_file: data/network/etys2024_cp30_boundary_capability.csv
+          capability_year: 2030
+          include:
+            B4:
+            - {component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}
+      line_rating_overrides: {ELST4A_ELST41_ETYS_UPG_2029: 4000, BRNX4Q_TORN4-_ETYS_UPG_2029: 1415, BRNX4R_TORN4-_ETYS_UPG_2029: 1360}
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2024
+      shape_conditioning: {enabled: true}
+      volume_tranches: {enabled: true}
+  solve_period: {enabled: true, start: '2030-01-03 00:00', end: '2030-01-09 23:00'}
+  description: 'CP30 FFR 2030: gate week, centrally dispatched (perfect foresight), BM holding the must-run energy budget'
+  renewables:
+    hydro:
+      large_hydro:
+        power_ceiling: availability
+        availability_pu: 0.906
+        month_end: trajectory
+        trajectory: {mean_level_hours: 84.0, smoothing_days: 30}
+    performance_factor_registry: {enabled: true}
+  support:
+    labels:
+      cfd_vintage_schedule_file: data/market/CP30/cfd_vintage_schedule_2030.csv
+      cfd_strike_table:
+        file: data/market/lccc/cfd_strike_prices_by_round.csv
+        model_price_year: 2024
+        indexation: {from_price_year: 2012, to_price_year: 2024, from_index: 96.1, to_index: 133.9, factor: 1.393340270551509,
+          index: 'ONS CPI annual average, all items, 2015=100 (CDID D7BT)'}
+    bm_bids: {enabled: false}
+  thermal:
+    availability_factors:
+      enabled: true
+      factors: {biogas: 0.55, biomass: 0.8, CHP: 0.45, nuclear: 0.854, waste_to_energy: 0.607, CCS Biomass: 0.958}
+      min_output: {nuclear: 0.5, biomass: 0.35, waste_to_energy: 0.55, biogas: 0.45, CHP: 0.345, CCS Biomass: 0.958}
+      min_output_energy_window_hours: {biomass: 24, waste_to_energy: 24, CHP: 24, biogas: 24}
+      group_overrides:
+      - {carrier: biomass, data_source: CP30_biomass_station_schedule, min_output: 0.396}
+      - {carrier: biomass, data_source: CP30, factor: 0.382}
+  solve:
+    solver:
+      threads: 2
+      accepted_conditions: [optimal, suboptimal]
+      NumericFocus: 1
+      DualReductions: 1
+  hydrogen: {turbine_availability: 0.642}
+  network_from: CP30_FFR_2030

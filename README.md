@@ -1,55 +1,73 @@
 # PyPSA-GB
 
-PyPSA-GB is an open-source electricity system model for Great Britain, built on PyPSA (Python for Power Systems Analysis). It provides detailed power system optimization for both historical analysis and future scenario planning.
+PyPSA-GB is an open-source model of Great Britain's electricity system, built on
+[PyPSA](https://pypsa.org) and run as a [Snakemake](https://snakemake.readthedocs.io) workflow. It represents the
+transmission network in detail, from the full ETYS network with its boundary limits to reduced and clustered
+versions, and dispatches it either in a single network-constrained solve or as a two-stage market: wholesale trading
+followed by the balancing mechanism. Scenarios cover historical years and NESO's Clean Power 2030 and Future Energy
+Scenarios.
 
-## Features
+| 2030: where the network binds | 2040: what gets built | 2050: flexibility at net zero |
+|---|---|---|
+| ![Wind turned down and plant turned up in the 2030 balancing mechanism](docs/source/_static/landing/constraints_2030.png) | ![Installed generation by zone in 2040](docs/source/_static/landing/generation_2040.png) | ![Storage, electrolysers and hydrogen turbines by zone in 2050](docs/source/_static/landing/flexibility_2050.png) |
 
-- **Multiple Network Models**: ETYS (2000+ buses), Reduced (32 buses), and Zonal (17 zones) representations
-- **Historical & Future Scenarios**: Automatic data routing for years ≤2024 (historical) and >2024 (future projections)
-- **Comprehensive Data Sources**: DUKES, REPD, NESO FES, ETYS, ESPENI demand profiles
-- **Technology Coverage**: Thermal generation, wind/solar/marine renewables, storage (batteries, pumped hydro), interconnectors
-- **Workflow Automation**: Snakemake-based pipeline for reproducible scenario generation
-- **Network Planning**: ETYS infrastructure upgrades through 2031
+**Documentation: [pypsa-gb.readthedocs.io](https://pypsa-gb.readthedocs.io)**
 
-## Quick Start
+## What it does
+
+- **Network:** the full ETYS transmission network (about 2,400 buses), a Reduced 32-bus network or a Zonal network,
+  optionally clustered; ETYS Appendix B upgrades by year, seasonal line ratings, secured boundary limits with
+  NESO's outage pattern, and network-delivery cases.
+- **Supply and demand:** DUKES, REPD and ESPENI for historical years; NESO Clean Power 2030 and FES for future
+  years, placed on the network site by site or by grid supply point; storage, hydrogen and interconnectors.
+- **Dispatch:** a single least-cost network-constrained solve, or a two-stage market: a GB wholesale market
+  (copperplate), then the balancing mechanism on the real network, with bids and offers that reflect CfD, RO and
+  merchant support, interconnector re-trading and a central-dispatch alternative.
+- **Studies** (in `config/studies/`): Clean Power 2030 network constraints and balancing costs, FES 2025 Holistic
+  Transition 2040 and 2050, the 2020 validation year, and research layers for household bills and public
+  ownership.
+
+## Quick start
 
 ```bash
-# Create environment
-conda env create -f envs/pypsa-gb-stable.yaml
+# The repository history is large: a blob-less clone downloads file contents only as needed
+git clone --filter=blob:none https://github.com/andrewlyden/PyPSA-GB.git
+cd PyPSA-GB
 
-# Activate environment 
-conda activate pypsa-gb-stable
+conda env create -f envs/pypsa-gb.yaml
+conda activate pypsa-gb
 
-# Run active scenarios from config/config.yaml
-snakemake --cores 4
+snakemake -n          # dry run: the default runs Test_Market, six hours of 2035 on the Reduced network
+snakemake --cores 4   # build and solve it (wholesale market, then balancing mechanism)
 ```
 
-Configure scenarios in `config/scenarios.yaml` and active runs in `config/config.yaml`.
+`config/config.yaml` says what to run and which studies to load; `config/scenarios.yaml` holds the canonical
+scenarios. Gurobi is the default solver and HiGHS the open-source alternative. Weather cutouts and some NESO
+documents are downloaded by the workflow when first needed. See
+[Getting Started](https://pypsa-gb.readthedocs.io/en/latest/getting_started/index.html).
 
 ## Citation
 
-If you use PyPSA-GB in your research, please cite:
+If you use PyPSA-GB in your research, please cite (see also `CITATION.cff`):
 
-**Lyden, A., Sun, W., Struthers, I., Franken, L., Hudson, S., Wang, Y. and Friedrich, D., 2024.** PyPSA-GB: An open-source model of Great Britain's power system for simulating future energy scenarios. *Energy Strategy Reviews*, 53, p.101375.
+**Lyden, A., Sun, W., Struthers, I., Franken, L., Hudson, S., Wang, Y. and Friedrich, D., 2024.** PyPSA-GB: An
+open-source model of Great Britain's power system for simulating future energy scenarios. *Energy Strategy
+Reviews*, 53, p.101375. [doi:10.1016/j.esr.2024.101375](https://doi.org/10.1016/j.esr.2024.101375)
 
-## Papers Using PyPSA-GB
+## Papers using PyPSA-GB
 
-- **Dergunova, T. and Lyden, A., 2024.** Great Britain's hydrogen infrastructure development—Investment priorities and locational flexibility. *Applied Energy*, 375, p.124017.
+- **Dergunova, T. and Lyden, A., 2024.** Great Britain's hydrogen infrastructure development—Investment priorities
+  and locational flexibility. *Applied Energy*, 375, p.124017.
+- **Desguers, T., Lyden, A. and Friedrich, D., 2024.** Integration of curtailed wind into flexible electrified
+  heating networks with demand-side response and thermal storage: Practicalities and need for market mechanisms.
+  *Energy Conversion and Management*, 304, p.118203.
+- **Lyden, A., Alene, S., Connor, P., Renaldi, R. and Watson, S., 2024.** Impact of locational pricing on the roll
+  out of heat pumps in the UK. *Energy Policy*, 187, p.114043.
+- **Lyden, A., Sun, W., Friedrich, D. and Harrison, G., 2023.** Electricity system security of supply in Scotland.
+  Study for the Scottish Government via ClimateXChange.
 
-- **Desguers, T., Lyden, A. and Friedrich, D., 2024.** Integration of curtailed wind into flexible electrified heating networks with demand-side response and thermal storage: Practicalities and need for market mechanisms. *Energy Conversion and Management*, 304, p.118203.
+## Licence and data
 
-- **Lyden, A., Alene, S., Connor, P., Renaldi, R. and Watson, S., 2024.** Impact of locational pricing on the roll out of heat pumps in the UK. *Energy Policy*, 187, p.114043.
-
-- **Lyden, A., Sun, W., Friedrich, D. and Harrison, G., 2023.** Electricity system security of supply in Scotland. Study for the Scottish Government via ClimateXChange.
-
-## Documentation
-
-See [full documentation](https://pypsa-gb.readthedocs.io) for detailed usage.
-
-### Network Model Visualisations
-
-The PyPSA-GB ETYS full network model represents Great Britain's transmission system with 2000+ buses, capturing the detailed topology of the high-voltage grid. The figures below show the network for a historical year (2023) and a future scenario year (2035), including planned infrastructure upgrades from the ETYS.
-
-![PyPSA-GB ETYS Full Network Model (2023)](pics/ETYS_full_2023.png)
-
-![PyPSA-GB ETYS Full Network Model (2035)](pics/ETYS_full_2035.png)
+PyPSA-GB is released under the MIT licence. Input data keep their own licences and attributions; see
+[Data licences and attribution](https://pypsa-gb.readthedocs.io/en/latest/reference/licences.html). What changed in
+this version: [release notes](https://pypsa-gb.readthedocs.io/en/latest/development/release_notes.html).

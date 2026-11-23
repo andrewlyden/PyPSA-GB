@@ -1,0 +1,16 @@
+# Install once with `pre-commit install` (pre-commit is in envs/pypsa-gb.yaml).
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Large inputs belong on the Zenodo data record or behind a download rule,
+      # not in git history (see data/README.md).
+      - id: check-added-large-files
+        args: ["--maxkb=10240"]
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: ["--unsafe"]  # config/*.yaml use anchors and merge keys
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.2
+    hooks:
+      - id: ruff

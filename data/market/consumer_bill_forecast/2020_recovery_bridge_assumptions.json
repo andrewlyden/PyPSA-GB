@@ -1,0 +1,41 @@
+{
+  "purpose": "2020 calibration case for operational consumer-bill indices. Published allowances remain the historical bill baseline; same-year indices are diagnostics, not independent validation or automatic bill substitutions.",
+  "representative_customer_consumption_kwh": 3100,
+  "bsuos": {
+    "use_current_run_as_calibration_baseline": true,
+    "settlement_outturn_file": "data/market/consumer_bill_forecast/2020_bsuos_sf_settlement_outturn.json",
+    "historical_settlement_cost_gbp": 1992748248.4,
+    "historical_settlement_volume_mwh": 439206084.7381834,
+    "settlement_run": "SF",
+    "settlement_periods": 17568,
+    "source": "Published 2020 NESO Historic SF BSUoS dataset, aggregated over 1 January-31 December (GBP 1,992,748,248.40 / 439,206,084.74 MWh); and the published 2020 Ofgem BSUoS allowance. The bridge indexes the allowance to gross PyPSA redispatch MWh per MWh demand, not PyPSA bid/offer cost. Pre-April 2023 BSUoS allocation differs from current final-demand-only recovery, so this outturn is a comparator, not a household allocation."
+  },
+  "losses": {
+    "use_current_run_as_calibration_baseline": true,
+    "assumed_multiplier": 1.0,
+    "source": "Use the resistance-weighted flow-squared (I2R) proxy from the complete physical balancing runs as a same-year calibrated index for the published 2020 GB-average allowance. The LP's represented AC losses remain zero, so the proxy is not a physical power-flow result. It excludes distribution and regional supplier loss factors; future use needs a second historical calibration or a validated lossy network formulation."
+  },
+  "imbalance": {
+    "use_current_run_as_calibration_baseline": true,
+    "source": "Published 2020 Ofgem imbalance allowance in the component register; gross PyPSA redispatch MWh per MWh demand is the same-year calibration index."
+  },
+  "capacity_market": {
+    "use_current_run_as_calibration_baseline": true,
+    "source": "2020 published Capacity Market allowance indexed only to modelled wind-and-solar residual peak. This is a scenario assumption, not a Capacity Market auction-payment calculation."
+  },
+  "tnuos": {
+    "use_current_run_as_calibration_baseline": true,
+    "source": "2020 published TNUoS allowance indexed only to represented transmission capacity. Replace with NESO allowed-revenue and charging allocation for future bill use."
+  },
+  "duos_unit": {
+    "assumed_multiplier": 1.0,
+    "source": "2020 published DUoS volumetric allowance held at baseline. The transmission model does not represent DNO assets or charging allocation."
+  },
+  "duos_fixed": {
+    "assumed_multiplier": 1.0,
+    "source": "2020 published DUoS fixed allowance held at baseline. The transmission model does not represent domestic accounts, meters or DNO charging allocation."
+  },
+  "fit": {
+    "source": "FiT remains unrepresented in the current support labels. Add FiT-labelled generation and Ofgem tariff/levelisation inputs before using this bridge."
+  }
+}

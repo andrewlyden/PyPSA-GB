@@ -1,0 +1,62 @@
+# Central dispatch (market.dispatch: central). Attached by the scenario's market.dispatch, merged after
+# the method and source overlays and before the scenario's own entry. Stage 1 meets demand at least cost
+# on the real network instead of clearing a copperplate; Stage 2 is the operator correcting its own
+# schedule at cost, not a market paying bid and offer prices.
+#
+# One switch rather than five settings: central dispatch needs the copperplate off, the real-time stage
+# priced at cost, support-based bids off, renewable marginal costs floored so that spilling subsidised
+# wind cannot book as income, and a solver profile that copes with a harder LP; setting only some of them
+# silently gives a wrong answer.
+#
+# Fixed (config_loader.CENTRAL_DISPATCH_FIXED; check_dispatch_mode refuses a central scenario that
+# changes them): the copperplate setting, scarcity pricing, the balancing pricing basis and support-based
+# BM bids. A scenario that wants an operator paying a premium should set copperplate_mode itself and stay
+# on dispatch: self. A scenario's own choice: the renewable floors and the solver settings.
+#
+# Left alone: market.balancing.interconnector_counter_trade (premium, flow limit, spread rule). Moving a
+# cross-border cable off its day-ahead schedule pays a foreign counterparty whoever scheduled GB's side,
+# so both institutions counter-trade on the same terms. Its foreign_plant_multipliers borrow the CCGT
+# markups, which the at-cost basis sets to zero.
+market:
+  wholesale:
+    # Stage 1 keeps the real network (scripts/market/solve_wholesale.py).
+    copperplate_mode: "none"
+    # The scarcity curve prices the mark-up generators bid when margins are tight; an operator
+    # instructing its own plant at cost pays no such rent.
+    scarcity_pricing:
+      enabled: false
+  balancing:
+    # Every unit offers and bids at its marginal cost: no default markup or discount, every
+    # carrier_overrides entry read as markup mode at zero (scripts/market/pricing_basis.py).
+    pricing_basis: "at_cost"
+    # Marginal cost floors (GBP/MWh). Supported renewables carry negative marginal costs to represent
+    # subsidy-backed bidding; at cost that would make turning wind down look like income.
+    mc_floors:
+      wind_offshore: 0.01
+      wind_onshore: 0.01
+      solar_pv: 0.01
+      embedded_wind: 0.01
+      embedded_solar: 0.01
+      marine: 0.01
+      small_hydro: 0.01
+      large_hydro: 0.01
+# An operator instructing its own schedule pays no support-based bids. The balancing stage reads
+# contract_value_bids on its own (not gated by bm_bids.enabled), so both are off.
+support:
+  bm_bids:
+    enabled: false
+    contract_value_bids:
+      enabled: false
+# Solver profile for the central-dispatch LP: numeric focus 1 with the homogeneous barrier, accepting a
+# suboptimal termination (about 3.5x faster than the conservative barrier, objectives within 0.04%).
+# BarIterLimit is 400 because this LP frees every unit against the full power flow, and a barrier
+# stopped by the iteration cap is accepted as "suboptimal", so the cap must not be what ends the solve.
+solve:
+  solver:
+    threads: 2
+    NumericFocus: 1
+    BarHomogeneous: 1
+    ScaleFlag: 2
+    DualReductions: 1
+    BarIterLimit: 400
+    accepted_conditions: ["optimal", "suboptimal"]

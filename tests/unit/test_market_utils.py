@@ -19,6 +19,7 @@ from scripts.market.market_utils import (
     compute_redispatch_volumes,
     identify_congested_boundaries,
 )
+from config.config_loader import load_defaults
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -75,7 +76,7 @@ def market_network():
 
 @pytest.fixture
 def default_market_config():
-    """Default market config dict matching defaults.yaml structure."""
+    """Default market config dict matching the config/defaults/ market structure."""
     return {
         "enabled": True,
         "wholesale": {"transmission_relaxation": 1e6},
@@ -111,9 +112,72 @@ class TestCalculateBidOfferPrices:
             market_network, default_market_config, logger
         )
 
-        # CCGT: marginal_cost=50, default markup=10%, discount=10%
+        # CCGT: marginal_cost=50, default markup=10%, discount=10%. The bid is
+        # ESO-cost: turning the unit down saves 50, NESO receives 45 (the raw
+        # ELEXON bid of 0.9 x mc, negated as the ELEXON path does).
         assert gen_offer["ccgt_1"] == pytest.approx(55.0)
+        assert gen_bid["ccgt_1"] == pytest.approx(-45.0)
+
+    def test_legacy_bid_convention_charges_neso_for_turn_down(
+        self, market_network, default_market_config
+    ):
+        """derived_bid_convention legacy_cost restores the pre-26 Sep 2026 +mc x 0.9 bid."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {**default_market_config["balancing"], "derived_bid_convention": "legacy_cost"},
+        }
+        _, gen_bid, _, su_bid = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market")
+        )
         assert gen_bid["ccgt_1"] == pytest.approx(45.0)
+        assert su_bid["battery_1"] == pytest.approx(0.1 * 0.85)
+
+    def test_unknown_bid_convention_is_refused(self, market_network, default_market_config):
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {**default_market_config["balancing"], "derived_bid_convention": "maybe"},
+        }
+        with pytest.raises(ValueError, match="derived_bid_convention"):
+            calculate_bid_offer_prices(market_network, cfg, logging.getLogger("test_market"))
+
+    def test_bid_sign_leaves_absolute_bids_alone_and_negates_round_trip_storage(
+        self, market_network, default_market_config
+    ):
+        """Absolute bids are configured in ESO-cost convention and kept; a round_trip
+        storage bid_price is what the unit pays (raw ELEXON sign), so it is negated."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "carrier_overrides": {
+                    "nuclear": {"mode": "absolute", "offer_price": 999.0, "bid_price": 150.0},
+                    "battery": {"mode": "round_trip", "bid_price": 50.0},
+                },
+            },
+        }
+        _, gen_bid, _, su_bid = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market")
+        )
+        assert gen_bid["nuclear_1"] == pytest.approx(150.0)
+        assert su_bid["battery_1"] == pytest.approx(-50.0)
+
+    def test_negative_marginal_cost_bid_pays_the_unit_its_loss(
+        self, market_network, default_market_config
+    ):
+        """A markup-mode unit with mc -50 (a ROC unit) loses 50 when turned down: NESO pays 55."""
+        import logging
+
+        market_network.generators.loc["ccgt_1", "marginal_cost"] = -50.0
+        _, gen_bid, _, _ = calculate_bid_offer_prices(
+            market_network, default_market_config, logging.getLogger("test_market")
+        )
+        assert gen_bid["ccgt_1"] == pytest.approx(55.0)
 
     def test_carrier_overrides(self, market_network, default_market_config):
         """Per-carrier overrides are applied correctly."""
@@ -127,7 +191,7 @@ class TestCalculateBidOfferPrices:
         # Nuclear: offer_markup=0.50, bid_discount=0.05
         # marginal_cost=8.0
         assert gen_offer["nuclear_1"] == pytest.approx(12.0)  # 8 * 1.50
-        assert gen_bid["nuclear_1"] == pytest.approx(7.6)  # 8 * 0.95
+        assert gen_bid["nuclear_1"] == pytest.approx(-7.6)  # NESO receives 8 * 0.95
 
     def test_wind_offer_zero_markup(self, market_network, default_market_config):
         """Wind generators with offer_markup=0.0 have offer_price == mc."""
@@ -150,8 +214,8 @@ class TestCalculateBidOfferPrices:
             market_network, default_market_config, logger
         )
 
-        # Wind: mc=0.5, bid_discount=0.05 → 0.5*0.95=0.475
-        assert gen_bid["wind_1"] == pytest.approx(0.475)
+        # Wind: mc=0.5, bid_discount=0.05 → NESO receives 0.5*0.95=0.475
+        assert gen_bid["wind_1"] == pytest.approx(-0.475)
 
     def test_storage_prices(self, market_network, default_market_config):
         """Storage units receive bid/offer prices."""
@@ -165,6 +229,263 @@ class TestCalculateBidOfferPrices:
         # battery: mc=0.1, offer_markup=0.15, bid_discount=0.15
         assert len(su_offer) == 1
         assert su_offer["battery_1"] == pytest.approx(0.1 * 1.15)
+
+    def test_round_trip_mode_derives_offer_from_bid(
+        self, market_network, default_market_config
+    ):
+        """offer = bid_price / (eta_store * eta_dispatch) + offer_premium; bid = -bid_price."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_churn_guard_gbp_per_mwh": 0.0,
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_price": 50.0},
+                },
+            },
+        }
+        _, _, su_offer, su_bid = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market")
+        )
+        # battery_1: efficiency 0.9 per leg -> round trip 0.81
+        assert su_bid["battery_1"] == pytest.approx(-50.0)
+        assert su_offer["battery_1"] == pytest.approx(50.0 / 0.81)
+
+    def test_round_trip_premium_is_additive(self, market_network, default_market_config):
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_churn_guard_gbp_per_mwh": 0.0,
+                "carrier_overrides": {
+                    "battery": {
+                        "mode": "round_trip", "bid_price": 50.0, "offer_premium": 10.0,
+                    },
+                },
+            },
+        }
+        _, _, su_offer, _ = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market")
+        )
+        assert su_offer["battery_1"] == pytest.approx(50.0 / 0.81 + 10.0)
+
+    def test_churn_guard_raises_a_short_premium(self, market_network, default_market_config, caplog):
+        """A pair that leaves SoC unchanged costs (offer x eta_rt + bid) per MWh charged and
+        destroys (1 - eta_rt); the offer is lifted until that is >= the guard per MWh destroyed."""
+        import logging
+
+        guard = 250.0
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_churn_guard_gbp_per_mwh": guard,
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_price": 40.0, "offer_premium": 10.0},
+                },
+            },
+        }
+        logger = logging.getLogger("test_market_guard")
+        with caplog.at_level(logging.WARNING, logger=logger.name):
+            _, _, su_offer, su_bid = calculate_bid_offer_prices(market_network, cfg, logger)
+        eta = 0.81
+        assert su_offer["battery_1"] == pytest.approx((guard * (1 - eta) + 40.0) / eta)
+        churn_cost = (su_offer["battery_1"] * eta + su_bid["battery_1"]) / (1 - eta)
+        assert churn_cost == pytest.approx(guard)
+        assert any("offer_premium too small" in r.getMessage() for r in caplog.records)
+
+    def test_a_sufficient_premium_is_kept(self, market_network, default_market_config):
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_churn_guard_gbp_per_mwh": 250.0,
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_price": 40.0, "offer_premium": 70.0},
+                },
+            },
+        }
+        _, _, su_offer, _ = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market")
+        )
+        assert su_offer["battery_1"] == pytest.approx(40.0 / 0.81 + 70.0)
+
+    def test_cross_unit_arbitrage_is_refused(self, market_network, default_market_config):
+        """Condition (b): no storage offer may sit below what another storage unit pays to
+        charge, or the BM discharges one unit into the other for profit."""
+        import logging
+
+        market_network.add(
+            "StorageUnit", "dear_charger", bus="bus_B", p_nom=50, carrier="Domestic Battery",
+            marginal_cost=0.1, max_hours=2, efficiency_store=0.95, efficiency_dispatch=0.95,
+        )
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_churn_guard_gbp_per_mwh": 0.0,
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_price": 10.0},     # offer 12.3
+                    "Domestic Battery": {"mode": "round_trip", "bid_price": 40.0},  # pays 40
+                },
+            },
+        }
+        with pytest.raises(ValueError, match="cross-unit arbitrage"):
+            calculate_bid_offer_prices(market_network, cfg, logging.getLogger("test_market"))
+        # a premium that lifts the cheap offer to the dear charger's bid clears it
+        cfg["balancing"]["carrier_overrides"]["battery"]["offer_premium"] = 40.0 - 10.0 / 0.81
+        calculate_bid_offer_prices(market_network, cfg, logging.getLogger("test_market"))
+
+    def test_storage_bids_follow_the_stage1_price(self, market_network, default_market_config):
+        """storage_bid_reference stage1_price: paid = price - bid_margin per snapshot, so at a
+        zero Stage 1 price NESO pays the battery to charge (no receipt to farm against
+        curtailed wind) and at 100 the battery pays 56; the churn cost per MWh destroyed
+        is the same in every snapshot."""
+        import logging
+
+        price = pd.Series([0.0, 0.0, 50.0, 100.0, 100.0, 0.0], index=market_network.snapshots)
+        market_network._bm_reference_price = price
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_bid_reference": "stage1_price",
+                "storage_churn_guard_gbp_per_mwh": 250.0,
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_margin": 44.0, "bid_price": 40.0,
+                                "offer_premium": 67.0},
+                },
+            },
+        }
+        calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market"), time_varying=True
+        )
+        bid = market_network._bm_su_bid_tv["battery_1"]
+        offer = market_network._bm_su_offer_tv["battery_1"]
+        eta = 0.81
+        assert bid.tolist() == pytest.approx((44.0 - price).tolist())
+        assert offer.tolist() == pytest.approx(((price - 44.0) / eta + 67.0).tolist())
+        churn = (offer * eta + bid) / (1 - eta)
+        assert churn.tolist() == pytest.approx([67.0 * eta / (1 - eta)] * len(price))
+
+    def test_fixed_reference_keeps_static_storage_prices(self, market_network, default_market_config):
+        import logging
+
+        market_network._bm_reference_price = pd.Series(0.0, index=market_network.snapshots)
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "storage_bid_reference": "fixed",
+                "carrier_overrides": {
+                    "battery": {"mode": "round_trip", "bid_margin": 44.0, "bid_price": 40.0,
+                                "offer_premium": 67.0},
+                },
+            },
+        }
+        _, _, _, su_bid = calculate_bid_offer_prices(
+            market_network, cfg, logging.getLogger("test_market"), time_varying=True
+        )
+        assert getattr(market_network, "_bm_su_bid_tv", None) is None
+        assert su_bid["battery_1"] == pytest.approx(-40.0)
+
+    def test_configured_indexed_prices_hold_the_cross_unit_condition(self):
+        """At every Stage 1 price the 2030 runs clear (0-215, sampled to 300) the cheapest
+        configured storage offer is at least the most any storage unit pays to charge."""
+        from pathlib import Path
+
+        import numpy as np
+        import yaml
+
+        root = Path(__file__).resolve().parents[2]
+        defaults = load_defaults()
+        overrides = defaults["market"]["balancing"]["carrier_overrides"]
+        trips = dict(defaults["storage"]["round_trip_efficiencies"])
+        trips.update({"LAES": trips["LDES"], "CAES": trips["LDES"], "battery": trips["Battery"],
+                      "pumped_hydro": trips["Pumped Storage Hydroelectricity"]})
+        for lam in np.linspace(0.0, 300.0, 61):
+            offers, paid = [], []
+            for carrier, spec in overrides.items():
+                if spec.get("mode") != "round_trip":
+                    continue
+                pay = lam - spec["bid_margin"]
+                paid.append(pay)
+                offers.append(pay / trips[carrier] + spec["offer_premium"])
+            assert min(offers) >= max(paid), lam
+
+    def test_configured_storage_prices_pass_both_guards(self):
+        """config/defaults/base/market/balancing.yaml storage prices, on the configured round trips, clear the
+        churn guard unaided and satisfy the cross-unit condition."""
+        from pathlib import Path
+
+        import yaml
+
+        root = Path(__file__).resolve().parents[2]
+        defaults = load_defaults()
+        balancing = defaults["market"]["balancing"]
+        guard = float(balancing["storage_churn_guard_gbp_per_mwh"])
+        overrides = balancing["carrier_overrides"]
+        trips = dict(defaults["storage"]["round_trip_efficiencies"])
+        trips["LAES"] = trips["LDES"]          # the CP30 LDES fleet is built as carrier LAES
+        trips["CAES"] = trips["LDES"]
+        trips["battery"] = trips["Battery"]
+        trips["pumped_hydro"] = trips["Pumped Storage Hydroelectricity"]
+        offers, paid = {}, {}
+        for carrier, spec in overrides.items():
+            if spec.get("mode") != "round_trip":
+                continue
+            eta = trips[carrier]
+            offers[carrier] = spec["bid_price"] / eta + spec.get("offer_premium", 0.0)
+            paid[carrier] = spec["bid_price"]
+            churn = (offers[carrier] * eta - spec["bid_price"]) / (1 - eta)
+            assert churn >= guard, carrier
+        assert min(offers.values()) >= max(paid.values())
+
+    def test_round_trip_without_bid_price_is_refused(
+        self, market_network, default_market_config
+    ):
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "carrier_overrides": {"battery": {"mode": "round_trip"}},
+            },
+        }
+        with pytest.raises(ValueError, match="bid_price"):
+            calculate_bid_offer_prices(
+                market_network, cfg, logging.getLogger("test_market")
+            )
+
+    def test_inconsistent_absolute_storage_prices_are_warned(
+        self, market_network, default_market_config, caplog
+    ):
+        """An offer below bid / round trip lets the BM charge for less than the
+        energy the round trip loses; legacy absolute config still works but says so."""
+        import logging
+
+        cfg = {
+            **default_market_config,
+            "balancing": {
+                **default_market_config["balancing"],
+                "carrier_overrides": {
+                    "battery": {"mode": "absolute", "offer_price": 50.0, "bid_price": 60.0},
+                },
+            },
+        }
+        logger = logging.getLogger("test_market_inconsistent")
+        with caplog.at_level(logging.WARNING, logger=logger.name):
+            _, _, su_offer, su_bid = calculate_bid_offer_prices(market_network, cfg, logger)
+        assert su_offer["battery_1"] == pytest.approx(50.0)
+        assert su_bid["battery_1"] == pytest.approx(60.0)
+        assert any("round-trip-consistent" in r.getMessage() for r in caplog.records)
 
     def test_csv_source_without_files_raises(self, market_network):
         """bid_offer_source='csv' without file paths raises ValueError."""
@@ -231,7 +552,7 @@ class TestCalculateBidOfferPrices:
         )
 
         assert gen_offer["wind_1"] == pytest.approx(0.5)
-        assert gen_bid["wind_1"] == pytest.approx(0.475)
+        assert gen_bid["wind_1"] == pytest.approx(-0.475)
         assert "wind_1" in market_network._bm_fixed_generators
         assert "wind_1" not in market_network._bm_participating_generators
 
@@ -257,10 +578,17 @@ class TestCalculateBidOfferPrices:
         logger = logging.getLogger("test_market")
         calculate_bid_offer_prices(market_network, cfg, logger)
 
-        assert list(market_network._bm_eligible_generators) == ["ccgt_1"]
-        assert list(market_network._bm_participating_generators) == ["ccgt_1"]
+        # Only the directly matched unit is eligible on its own merits.
+        assert list(market_network._bm_eligible_generators) == ["ccgt_1", "load_shed"]
+        assert list(market_network._bm_participating_generators) == ["ccgt_1", "load_shed"]
         assert "wind_1" in market_network._bm_fixed_generators
         assert "nuclear_1" in market_network._bm_fixed_generators
+        # Load shedding is carved out of `behavior: fixed` on purpose: it is the
+        # slack that keeps the balancing LP feasible, so fixing it at its
+        # wholesale position would make an infeasible hour unsolvable rather than
+        # expensive. It stays available and priced out, not eligible in the
+        # Elexon sense. This assertion is what the test originally missed.
+        assert "load_shed" not in market_network._bm_fixed_generators
 
 
 # ══════════════════════════════════════════════════════════════════════════════

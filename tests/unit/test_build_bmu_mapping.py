@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 import pandas as pd
 
@@ -11,8 +10,8 @@ from scripts.generators.build_bmu_mapping import (
 )
 
 
-def test_load_power_station_dictionary_normalises_columns():
-    csv_path = Path("tests/.tmp_power_station_dictionary_bmu_crosswalk.csv")
+def test_load_power_station_dictionary_normalises_columns(tmp_path):
+    csv_path = tmp_path / "power_station_dictionary_bmu_crosswalk.csv"
     pd.DataFrame(
         [
             {

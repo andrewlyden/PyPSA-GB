@@ -32,7 +32,7 @@ def _get_clustering_config(wildcards):
     so we can access properties like 'method', 'boundaries_path', etc. directly.
     """
     scenario_config = scenarios.get(wildcards.scenario, {})
-    clustering = scenario_config.get('clustering', {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
     
     if not isinstance(clustering, dict):
         return {}
@@ -50,7 +50,7 @@ def _get_clustered_network_output(wildcards):
 def _get_aggregation_strategies(wildcards):
     """Get aggregation strategies for clustering."""
     scenario_config = scenarios.get(wildcards.scenario, {})
-    clustering = scenario_config.get('clustering', {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
     
     if not isinstance(clustering, dict):
         return None
@@ -63,7 +63,7 @@ def _get_clustering_method(wildcards):
     The config_loader.py resolves presets to full dicts with 'method' key.
     """
     scenario_config = scenarios.get(wildcards.scenario, {})
-    clustering = scenario_config.get('clustering', {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
     
     if not isinstance(clustering, dict):
         return 'spatial'  # Default method
@@ -76,7 +76,7 @@ def _get_clustering_boundaries(wildcards):
     The config_loader.py resolves presets to full dicts with 'boundaries_path' key.
     """
     scenario_config = scenarios.get(wildcards.scenario, {})
-    clustering = scenario_config.get('clustering', {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
     
     if not isinstance(clustering, dict):
         return []
@@ -100,7 +100,7 @@ def _get_clustering_busmap(wildcards):
     The config_loader.py resolves presets to full dicts with 'busmap_source' key.
     """
     scenario_config = scenarios.get(wildcards.scenario, {})
-    clustering = scenario_config.get('clustering', {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
     
     if not isinstance(clustering, dict):
         return []
@@ -116,6 +116,15 @@ def _get_clustering_busmap(wildcards):
         return []
     
     return busmap
+
+
+def _get_clustering_custom_function(wildcards):
+    """Return a custom clustering function so Snakemake tracks code changes."""
+    scenario_config = scenarios.get(wildcards.scenario, {})
+    clustering = scenario_config.get('network', {}).get('clustering', {})
+    if not isinstance(clustering, dict) or clustering.get('method') != 'custom':
+        return []
+    return clustering.get('function_path', [])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -138,7 +147,8 @@ rule cluster_network:
     input:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc",
         boundaries=_get_clustering_boundaries,
-        busmap=_get_clustering_busmap
+        busmap=_get_clustering_busmap,
+        custom_function=_get_clustering_custom_function
     output:
         clustered_network=f"{resources_path}/network/{{scenario}}_network_clustered_demand_renewables_thermal_generators_storage_hydrogen_interconnectors.nc",
         busmap_csv=f"{resources_path}/network/{{scenario}}_clustering_busmap.csv"

@@ -1,0 +1,33 @@
+{
+  "benchmark_consumption_mwh": 3.1,
+  "vat_rate": 0.05,
+  "forward_price_basis": {
+    "method": "carry_forward_2020_additive_model_to_forward_basis",
+    "description": "The 2020 demand-weighted difference between the published Ofgem forward index and the PyPSA clearing price is added to the CP30 delivery-period clearing price."
+  },
+  "procurement_uplifts_and_losses": {
+    "method": "scale_2020_named_allowances_with_forward_price_proxy",
+    "description": "Seasonal and hourly shaping, re-hedging/forecast error, transaction, basis/risk and loss allowances retain their 2020 intensity relative to the forward-price proxy."
+  },
+  "balancing": {
+    "central_method": "volume_indexed_to_2020_published_imbalance_allowance",
+    "central_recovery_factor": 1.0,
+    "stress_method": "cost_indexed_to_2020_published_imbalance_allowance",
+    "stress_recovery_factor": 1.0,
+    "description": "The central case scales the published 2020 supplier imbalance allowance with gross PyPSA redispatch as a share of demand. The cost-indexed case is diagnostic only: model bid/offer costs are not total NESO balancing expenditure."
+  },
+  "non_wholesale": {
+    "method": "hold_2020_nominal_allowances_fixed",
+    "description": "Network, policy, Capacity Market, adjustment, supplier operating, smart-metering, payment, margin and headroom allowances are held at their 2020 nominal benchmark values."
+  },
+  "recovery_demand": {
+    "template": "data/market/consumer_bill_forecast/recovery_demand_assumptions_template.json",
+    "status": "input_required_before_full_2030_bill_forecast",
+    "description": "A full-year consumer bill must convert PyPSA system demand into component-specific billable supplier sales, customer accounts and domestic recovery shares. The H1 sensitivity does not yet make this conversion."
+  },
+  "component_registry": {
+    "forecast_driver_fields": ["forecast_driver", "forecast_method", "recovery_denominator", "required_input"],
+    "description": "Use the forecast component registry to prevent treating system-transition, policy or retail changes as direct PyPSA pass-throughs."
+  },
+  "scope_warning": "This is a January-June 2030 CP30 scenario sensitivity. It is not a full-year 2030 Default Tariff Cap forecast."
+}

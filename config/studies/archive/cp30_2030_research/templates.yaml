@@ -1,0 +1,743 @@
+# Templates: named building blocks, composed by `inherits: [...]` (two may not set the same leaf, D8).
+
+archive_cp30r_base:
+  modelled_year: 2030
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+  scenario_source: CP30
+  CP30_pathway: Further Flex and Renewables
+
+archive_cp30r_except_CP30_FFR_2030_reduced_CP30_ND_2030_reduced:
+  inherits: archive_cp30r_base
+  market:
+    enabled: true
+  fleet:
+    station_registry:
+      enabled: true
+
+archive_cp30r_balancing_fix_interconnectors:
+  inherits: archive_cp30r_except_CP30_FFR_2030_reduced_CP30_ND_2030_reduced
+  market:
+    balancing:
+      interconnector_retrading: true
+      fix_interconnectors: false
+
+archive_cp30r_bm_bids_mode:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  support:
+    bm_bids:
+      mode: fixed
+
+archive_cp30r_wholesale_renewable_curtailment_order:
+  inherits: archive_cp30r_bm_bids_mode
+  market:
+    wholesale:
+      renewable_curtailment_order:
+        mode: contract_aware
+  support:
+    bm_bids:
+      contract_value_bids:
+        enabled: true
+
+archive_cp30r_bm_bids_contract_value_bids:
+  inherits: archive_cp30r_wholesale_renewable_curtailment_order
+  support:
+    bm_bids:
+      contract_value_bids:
+        negative_price_rule: none
+
+archive_cp30r_wholesale_storage_churn_share:
+  inherits: archive_cp30r_bm_bids_contract_value_bids
+  market:
+    wholesale:
+      storage_marginal_cost_floor: 0.0
+      storage_churn_share: 0.39
+
+archive_cp30r_balancing_network_delivery:
+  inherits: archive_cp30r_wholesale_storage_churn_share
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          phase_in:
+            enabled: true
+            before_year: 2029
+            from: '2030-04-01'
+
+archive_cp30r_balancing_network_delivery_2:
+  inherits: archive_cp30r_balancing_network_delivery
+  market:
+    balancing:
+      network_delivery:
+        case: outage_neso_phase_in
+
+archive_cp30r_bm_bids_contract_value_bids_2:
+  inherits: archive_cp30r_bm_bids_contract_value_bids
+  support:
+    bm_bids:
+      contract_value_bids:
+        bid_basis: contract_value
+        contract_value_floor: none
+        merchant:
+          bid_price: 0.0
+
+archive_cp30r_fin5_no_acceleration:
+  inherits: archive_cp30r_bm_bids_contract_value_bids_2
+  market:
+    balancing:
+      network_delivery:
+        case: no_acceleration_outage_neso
+
+archive_cp30r_cal:
+  inherits: archive_cp30r_balancing_network_delivery_2
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 22.6
+        bid_premium_gbp_per_mwh: 22.6
+
+archive_cp30r_fin5_no_acceleration_2:
+  inherits: archive_cp30r_fin5_no_acceleration
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            EC5: 2029
+            LE1: 2029
+
+archive_cp30r_balancing_interconnector_counter_trade:
+  inherits: archive_cp30r_balancing_network_delivery_2
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 45.0
+
+archive_cp30r_cal_2:
+  inherits: archive_cp30r_balancing_network_delivery_2
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 20.4
+
+archive_cp30r_s1:
+  inherits: archive_cp30r_wholesale_renewable_curtailment_order
+  market:
+    wholesale:
+      storage_marginal_cost_floor: 30.0
+
+archive_cp30r_fin:
+  inherits: archive_cp30r_balancing_network_delivery
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            EC5: 2030
+            B8: 2029
+
+archive_cp30r_cal_3:
+  inherits: archive_cp30r_cal
+  market:
+    balancing:
+      storage_bid_reference: stage1_daily_mean
+
+archive_cp30r_dispatch:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  market:
+    wholesale:
+      marginal_cost_basis:
+        mode: resource_cost
+
+archive_cp30r_fin5_no_acceleration_3:
+  inherits: archive_cp30r_fin5_no_acceleration
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides: {}
+
+archive_cp30r_cp30_ffr_2030_etys_market_1week:
+  inherits: archive_cp30r_wholesale_renewable_curtailment_order
+  fleet:
+    spatial_proxy:
+      hnd_project_allocation:
+        enabled: true
+
+archive_cp30r_cp30_ffr_2030_etys_market_1week_neso_es5_export_links:
+  inherits: archive_cp30r_wholesale_renewable_curtailment_order
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        purpose: cp30_es5_regional_proxy_with_explicit_export_links_capacity_sensitivity
+
+archive_cp30r_cp30_ffr_2030_etys_market_wk_h1_icall:
+  inherits: archive_cp30r_balancing_network_delivery_2
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 100.0
+
+archive_cp30r_cp30_ffr_2030_etys_unclustered_market_2day_topology:
+  inherits: archive_cp30r_balancing_fix_interconnectors
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        file: data/network/ETYS/cp30_offshore_connection_allocation_frozen_topology_control.csv
+
+archive_cp30r_spatial_proxy_regional_allocation__67_members:
+  fleet:
+    spatial_proxy:
+      regional_allocation:
+        enabled: true
+        region_anchor_file: data/network/ETYS/cp30_es5_region_anchors.csv
+        missing_proxy_policy: anchor_proxy
+
+archive_cp30r_balancing_bid_offer_source__67_members:
+  market:
+    balancing:
+      bid_offer_source: derived
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        enabled: true
+
+archive_cp30r_pricing_hourly_shape_year__66_members:
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2024
+      shape_conditioning:
+        enabled: true
+      volume_tranches:
+        enabled: true
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        min_bus_voltage_kv: 275
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        file: data/network/ETYS/cp30_offshore_landing_point_profile_preserving.csv
+
+archive_cp30r_reinforcements_components_file__63_members:
+  network:
+    reinforcements:
+      enabled: true
+      reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv
+      manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv
+      strict: false
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        mode: reassign_bus_preserve_profile
+
+archive_cp30r_labels_cfd_strike_table__59_members:
+  renewables:
+    hydro:
+      large_hydro:
+        power_ceiling: availability
+        availability_pu: 0.906
+        month_end: trajectory
+        trajectory:
+          mean_level_hours: 84.0
+          smoothing_days: 30
+  network:
+    transmission:
+      outage_schedule:
+        enabled: true
+        source: secured_capability
+        secured_capability:
+          fes_pathway: HT
+          capability_file: data/network/etys2024_cp30_boundary_capability.csv
+          capability_year: 2030
+          include:
+            B4: [{component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}]
+      line_rating_overrides:
+        ELST4A_ELST41_ETYS_UPG_2029: 4000
+        BRNX4Q_TORN4-_ETYS_UPG_2029: 1415
+        BRNX4R_TORN4-_ETYS_UPG_2029: 1360
+  support:
+    labels:
+      cfd_vintage_schedule_file: data/market/CP30/cfd_vintage_schedule_2030.csv
+      cfd_strike_table:
+        file: data/market/lccc/cfd_strike_prices_by_round.csv
+        model_price_year: 2024
+        indexation:
+          from_price_year: 2012
+          to_price_year: 2024
+          from_index: 96.1
+          to_index: 133.9
+          factor: 1.393340270551509
+          index: ONS CPI annual average, all items, 2015=100 (CDID D7BT)
+  thermal:
+    availability_factors:
+      enabled: true
+      factors:
+        biogas: 0.55
+        biomass: 0.8
+        CHP: 0.45
+        nuclear: 0.854
+        waste_to_energy: 0.607
+        CCS Biomass: 0.958
+      min_output:
+        nuclear: 0.5
+        biomass: 0.35
+        waste_to_energy: 0.55
+        biogas: 0.45
+        CHP: 0.345
+        CCS Biomass: 0.958
+      min_output_energy_window_hours:
+        biomass: 24
+        waste_to_energy: 24
+        CHP: 24
+        biogas: 24
+      group_overrides: [{carrier: biomass, data_source: CP30_biomass_station_schedule, min_output: 0.396}, {carrier: biomass, data_source: CP30, factor: 0.382}]
+  fleet:
+    spatial_proxy:
+      regional_allocation:
+        region_method: gsp_polygon
+        gsp_polygon_file: data/network/GSP/GSP_regions_27700_20250109.geojson
+        gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv
+      offshore_connection_allocation:
+        audit_mapping: true
+        audit_project_crosswalk: true
+        project_evidence_register: data/network/ETYS/cp30_offshore_landing_evidence_register.csv
+        tec_register: data/generators/tec-register-02-september-2025.csv
+        purpose: etys_landing_bus_mechanism_test_no_artificial_export_links_reinforced
+      storage_regional_allocation:
+        enabled: true
+        gsp_polygon_file: data/network/GSP/GSP_regions_4326_20250109.geojson
+        gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv
+      brownfield:
+        enabled: true
+        statuses: [Operational, Under Construction, Awaiting Construction]
+        overshoot_policy: trim_least_mature
+        offshore_landing_policy: nearest_bus_fallback
+        offshore_landing_crosswalk: data/network/ETYS/repd_offshore_landing_crosswalk.csv
+      nuclear_station_schedule: data/market/CP30/nuclear_station_schedule_2030.csv
+      gas_station_schedule: data/market/CP30/gas_station_schedule_2030.csv
+      ccs_biomass_station_schedule: data/market/CP30/ccs_biomass_station_schedule_2030.csv
+      cfd_station_schedule: data/market/CP30/cfd_station_schedule_2030.csv
+      biomass_station_schedule: data/market/CP30/biomass_station_schedule_2030.csv
+      committed_overlay: data/market/CP30/committed_overlay_2030.csv
+      committed_overlay_carve_out:
+        CCS Gas:
+          cp30_line: gas
+          from_carrier: CCGT
+          reason: 'user decision 14 Oct 2026: NZT inside CP30''s 31,253 MW Gas line, so total gas capacity equals CP30''s'
+  hydrogen:
+    turbine_availability: 0.642
+
+archive_cp30r_network_from__58_members:
+  renewables:
+    performance_factor_registry:
+      enabled: true
+  solve:
+    solver:
+      threads: 2
+  network_from: CP30_FFR_2030
+
+archive_cp30r_solver_accepted_conditions__58_members:
+  solve:
+    solver:
+      accepted_conditions: [optimal, suboptimal]
+
+archive_cp30r_solve_period_enabled__45_members:
+  solve_period:
+    enabled: true
+
+archive_cp30r_balancing_network_delivery__44_members:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          historic_derate:
+            enabled: true
+            mode: replay
+            unmapped: default
+
+archive_cp30r_balancing_interconnector_counter_trade__42_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        min_spread_gbp_per_mwh: 0.0
+        min_spread_rule: none
+
+archive_cp30r_balancing_interconnector_counter_trade__42_members_2:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        offer_pricing: additive
+
+archive_cp30r_balancing_interconnector_counter_trade__39_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        max_deviation_share: 2.0
+        max_deviation_share_by_country:
+          Ireland: 2.0
+          Northern Ireland: 2.0
+          Norway: 2.0
+
+archive_cp30r_balancing_storage_anchor__37_members:
+  market:
+    balancing:
+      storage_anchor: stage1_legs
+
+archive_cp30r_balancing_interconnector_counter_trade__36_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        max_deviation_share_by_country:
+          Belgium: 2.0
+          Denmark: 2.0
+          France: 2.0
+          Germany: 2.0
+          Netherlands: 2.0
+
+archive_cp30r_wholesale_renewable_curtailment_order__35_members:
+  market:
+    wholesale:
+      renewable_curtailment_order:
+        ar4_plus_bid_gbp_per_mwh: -10.0
+
+archive_cp30r_balancing_network_delivery__35_members:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          historic_derate:
+            file: data/network/neso_boundary_outage_generic_2022_25.csv
+
+archive_cp30r_balancing_network_delivery__32_members:
+  market:
+    balancing:
+      network_delivery:
+        description: Full CP30 2030 network; NESO-style generic maintenance outages (2022/23 day-ahead limits).
+
+archive_cp30r_balancing_carrier_overrides__28_members:
+  market:
+    balancing:
+      carrier_overrides:
+        CCS Gas:
+          offer_markup: 0.6
+        CHP:
+          offer_markup: 0.6
+        CCGT:
+          offer_markup: 0.6
+        OCGT:
+          offer_markup: 0.6
+        gas_engine:
+          offer_markup: 0.6
+        oil:
+          offer_markup: 0.6
+
+archive_cp30r_balancing_carrier_overrides__26_members:
+  market:
+    balancing:
+      carrier_overrides:
+        wind_onshore:
+          offer_price: 500.0
+        wind_offshore:
+          offer_price: 500.0
+        solar_pv:
+          offer_price: 500.0
+        embedded_solar:
+          offer_price: 500.0
+        embedded_wind:
+          offer_price: 500.0
+        large_hydro:
+          offer_price: 110.0
+          bid_price: -15.0
+        Pumped Storage Hydroelectricity:
+          offer_floor: 106.0
+        pumped_hydro:
+          offer_floor: 106.0
+        battery:
+          offer_floor: 69.0
+        Battery:
+          offer_floor: 69.0
+        Domestic Battery:
+          offer_floor: 69.0
+        LAES:
+          offer_floor: 106.0
+        CAES:
+          offer_floor: 106.0
+  support:
+    bm_bids:
+      contract_value_bids:
+        cfd_offer_price: 500.0
+      cfd:
+        offer_price: 500.0
+      roc:
+        offer_price: 500.0
+
+archive_cp30r_balancing_interconnector_counter_trade__23_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        bid_pricing: additive
+
+archive_cp30r_balancing_interconnector_counter_trade__21_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        bid_premium_gbp_per_mwh: 100.0
+        bid_pricing: all_in
+
+archive_cp30r_storage_round_trip_override_Battery__18_members:
+  market:
+    storage_round_trip_override:
+      Battery: 0.7
+
+archive_cp30r_wholesale_storage_marginal_cost_floor__17_members:
+  market:
+    wholesale:
+      storage_marginal_cost_floor: 15.0
+
+archive_cp30r_wholesale_churn_sink__15_members:
+  market:
+    wholesale:
+      churn_sink:
+        enabled: true
+
+archive_cp30r_wholesale_renewable_curtailment_order__14_members:
+  market:
+    wholesale:
+      renewable_curtailment_order:
+        ar4_plus_bid_gbp_per_mwh: -0.01
+
+archive_cp30r_wholesale_interconnector_hurdle_override__13_members:
+  market:
+    wholesale:
+      interconnector_hurdle_override:
+        enabled: true
+        spread_gbp_per_mwh: 13.5
+        export_bid_floor_gbp_per_mwh: 1.0
+        level_offset_gbp_per_mwh: 6.75
+        apply_in_balancing: true
+    balancing:
+      interconnector_counter_trade:
+        foreign_plant_multipliers: gb_gas
+    must_take_generation:
+      data_sources: [CP30_small_scale_solar_gsp]
+    hydrogen_offtake_scale: 0.9353
+
+archive_cp30r_wholesale_churn_sink__13_members:
+  market:
+    wholesale:
+      churn_sink:
+        share_of_storage_power: 0.2
+
+archive_cp30r_balancing_interconnector_counter_trade__11_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 28.4
+
+archive_cp30r_balancing_network_delivery__9_members:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          historic_derate:
+            file: data/network/neso_boundary_outage_generic_2022_23.csv
+
+archive_cp30r_balancing_interconnector_counter_trade__8_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 20.0
+        bid_premium_gbp_per_mwh: 20.0
+
+archive_cp30r_balancing_network_delivery__no:
+  market:
+    balancing:
+      network_delivery:
+        remove_components: [{component: line, prefix: CP30_AENC_}, {component: line, prefix: CP30_ATNC_}, {component: link, name: CP30_SCD1_RICH41_SIZE41}]
+
+archive_cp30r_balancing_network_delivery__no_acceleration:
+  market:
+    balancing:
+      network_delivery:
+        description: 'CP30''s three essential accelerations not delivered: Norwich-Tilbury (AENC, ATNC) and Sea Link (SCD1) on their published 2031-33 dates (NESO CP30 / NAO Fig. 4: 6.58-7.79 bn).'
+
+archive_cp30r_balancing_carrier_overrides__dispatch:
+  market:
+    balancing:
+      mc_floors:
+        wind_offshore: 0.01
+        wind_onshore: 0.01
+        solar_pv: 0.01
+      carrier_overrides:
+        wind_onshore:
+          mode: markup
+          offer_markup: 0.0
+          bid_discount: 0.0
+        wind_offshore:
+          mode: markup
+          offer_markup: 0.0
+          bid_discount: 0.0
+        solar_pv:
+          mode: markup
+          offer_markup: 0.0
+          bid_discount: 0.0
+    dispatch: central
+  support:
+    bm_bids:
+      enabled: false
+
+archive_cp30r_balancing_network_delivery__6_members:
+  market:
+    balancing:
+      network_delivery:
+        case: outage_neso
+
+archive_cp30r_balancing_network_delivery__6_members_2:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_file: data/network/etys2024_cp30_boundary_capability_noacc_etys2025_ec5_le1.csv
+
+archive_cp30r_solver_DualReductions__dispatch:
+  solve:
+    solver:
+      NumericFocus: 1
+      DualReductions: 1
+
+archive_cp30r_wholesale_forecast_error__dispatch:
+  market:
+    wholesale:
+      forecast_error:
+        enabled: true
+
+archive_cp30r_reinforcements_enabled__cp30_ffr_2030_etys_market_1week_neso:
+  network:
+    reinforcements:
+      enabled: false
+
+archive_cp30r_balancing_network_delivery__seven_late:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            B6: 2028
+            B7a: 2025
+            B9: 2029
+        description: 'NESO''s seven most critical projects not delivered by 2030 (NAO para 2.8: Norwich-Tilbury (two projects), Sea Link, Eastern Green Link 1 and 2, Yorkshire Green, Brinsworth-Chesterfield-High Marnham; up to +6.7 bn). Yorkshire Green and Brinsworth-Chesterfield-High Marnham are reverted in the topology (their Appendix B rows, data/network/ETYS/appendix_b_projects.csv) as well as held at the boundary capability of the year before them.'
+        remove_components: [{component: line, prefix: CP30_AENC_}, {component: line, prefix: CP30_ATNC_}, {component: link, name: CP30_SCD1_RICH41_SIZE41}, {component: link, name: BRNX4A_HAWP41_HVDC_2029}, {component: link, name: DRAX41_PEHE4J_HVDC_2029}]
+        revert_appendix_b:
+          projects: [yorkshire_green, brinsworth_chesterfield_high_marnham]
+
+archive_cp30r_bm_bids_contract_value_bids__public_bids:
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          enabled: true
+          shares_file: resources/public_ownership/cp30_2030_cp30_network_generator_state_shares.csv
+          public_bid_price: 0.0
+          storage_at_cost: true
+          thermal_at_cost: true
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        mode: explicit_export_links_preserve_profile
+        link_efficiency: 1.0
+        audit: true
+
+archive_cp30r_balancing_interconnector_counter_trade__4_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 0.0
+        bid_premium_gbp_per_mwh: 0.0
+
+archive_cp30r_balancing_network_delivery__seven_late_2:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            B2: 2028
+            B4: 2028
+            B5: 2028
+        case: seven_critical_late_outage_neso
+
+archive_cp30r_clustering_method__cp30_ffr_2030_etys_kmeans30_market:
+  network:
+    clustering:
+      method: kmeans
+      n_clusters: 30
+      random_state: 42
+      init_method: k-means++
+
+archive_cp30r_balancing_commitment_proxy__central_dispatch_fe_uc:
+  market:
+    balancing:
+      commitment_proxy:
+        enabled: true
+
+archive_cp30r_balancing_network_delivery__fin:
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            LE1: 2030
+
+archive_cp30r_bm_bids_contract_value_bids__public_bids_p3:
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          case_id: public_ownership@fully_nationalised_market_value
+          tie_break:
+            enabled: true
+            rule: lifo_commissioning
+            step_gbp_per_mwh: 0.05
+            years_file: resources/public_ownership/cp30_2030_cp30_network_generator_commissioning_years.csv
+            turn_up_floor_gbp_per_mwh: 2.0
+
+archive_cp30r_bm_bids_contract_value_bids__public_bids_p2:
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          case_id: public_ownership
+          state_first_step_gbp_per_mwh: 1.0
+
+archive_cp30r_spatial_proxy_offshore_connection_allocation__cp30_ffr_2030_etys_market_neso_2:
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        purpose: cp30_es5_regional_proxy_with_explicit_export_links
+        export_capacity_factor: 1.0
+
+archive_cp30r_balancing_interconnector_counter_trade__2_members:
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 40.0
+
+archive_cp30r_pricing_hourly_shape__cp30_ffr_2030_etys_market_neso:
+  interconnectors:
+    pricing:
+      hourly_shape: flat

@@ -1,0 +1,103 @@
+# Method overlay: brownfield (method: brownfield).
+#
+# Merged over the base for every scenario whose method is brownfield, never by scenario name
+# (config/defaults/README.md). It holds how a brownfield fleet is built, whatever the source: named
+# projects placed first, proxies filling the regional envelope, the demand build's machinery, electrolyser
+# siting and its import relief, proxy-profile pooling. Which publication's files, editions and targets
+# those use is the source overlay's (source/<source>.yaml); a test keeps CP30 data out of this file.
+fleet:
+  spatial_proxy:
+    source: "FES"
+    brownfield:
+      # true: FES small-scale (G98/G83, Gen_BB013) solar is held at its GSP node before the named REPD
+      # pipeline fills the regional envelope, so rooftop solar keeps its GSP placement. Room is made by
+      # trimming the named pipeline least mature first, uncontracted projects before any holding a CfD
+      # round; operational plant is never trimmed and regional totals stay exact. The rows are merchant.
+      # Code default false: the named pipeline fills the envelope first.
+      small_scale_solar_reservation: true
+    use_for:
+      - "gsp_spatial_allocation"
+      - "missing_technical_defaults"
+hydrogen:
+  # Electrolyser siting (scripts/hydrogen/add_hydrogen_system.py).
+  # method: fes_gsp | h2_turbine_pro_rata (code default). fes_gsp places networked electrolysis by GSP node
+  # from the FES edition and pathway the source overlay names (hydrogen.electrolyser_siting.fes_year,
+  # fes_scenario); FES's Direct(NGET/SHETL/SPTL) rows go pro rata to their licence area's GSP rows. Scaled
+  # to the source's electrolysis capacity, so the total and the hydrogen offtake are unchanged.
+  # Import relief (relieve_electrolyser_import_headroom): every node's peak load plus electrolysis, in every
+  # month, is held within max_loading (share of capacity; code default 1.0) x what the node can import at
+  # the BM's ratings (the model of locational check 11). Electrolysers are held at their Stage 1 schedule in
+  # the BM, so a node that cannot import them is balanced only by load shedding; 0.9 also leaves room for
+  # through-flow. Excess goes to a higher-voltage node of the same substation, else the nearest node at or
+  # above min_target_voltage_kv (kV) in the same CP30 ES5 region and on the same side of each listed
+  # boundary. 0 switches the relief off.
+  electrolyser_siting:
+    method: "fes_gsp"
+    max_loading: 0.9
+    min_target_voltage_kv: 275.0
+    boundaries: ["B4", "B6", "B8"]
+# Proxy renewable units with no site profile of their own take the capacity-weighted profile of the named
+# sites of their carrier in their own area (scripts/generators/proxy_profiles.py): onshore wind and solar by
+# CP30 ES5 region; offshore by sea basin, then the CP30 region of the landing bus. A group with fewer than
+# proxy_profile_min_sites named sites or proxy_profile_min_mw MW falls back a level, finally to GB. With
+# preserve_carrier_energy, one scalar per carrier keeps the proxy fleet's energy on the national basis, so
+# the performance-factor calibration to the source's available energy still holds.
+# proxy_profile_basis: regional | national (code default; the CP30 New Dispatch pathway pins it).
+renewables:
+  proxy_profile_basis: "regional"
+  proxy_profile_min_sites: 3
+  proxy_profile_min_mw: 300
+  proxy_profile_preserve_carrier_energy: true
+demand:
+  # Component-built demand (scripts/demand/cp30_demand.py, read by rule build_base_demand); its
+  # DEFAULT_CONFIG matches these values. The FES edition, files and peak target are the source overlay's.
+  build:
+    enabled: true
+    # Consumer flexibility: EV smart charging, V2G, heat-pump, district-heat and storage-heater flexibility,
+    # I&C and residential DSR, carved from the component demand and calibrated to the source's ED1
+    # (scripts/demand/cp30_flexibility.py). Dispatched in Stage 1 and held at its Stage 1 schedule in the BM
+    # (market.balancing.participation.storage_units.hold_consumer_flexibility).
+    flexibility:
+      enabled: true
+      # DSR holding cost, GBP/MWh per hour held (PyPSA marginal_cost_storage): marginal_cost / shift_hours
+      # = 30 / 2, so a 2-hour hold costs one activation.
+      ic_dsr: {holding_cost_gbp_per_mwh_h: 15.0}
+      residential_dsr: {holding_cost_gbp_per_mwh_h: 15.0}
+      # Storage-heater charge windows, [start, end) hours of the day: Economy 10 style, night 00-07 plus an
+      # afternoon boost 13-16; Economy 10's evening hours are left out because they fall in the 16-20 h peak.
+      storage_heater_flexibility: {charge_windows: [[0, 7], [13, 16]]}
+      # Holding cost of the drained units (EV, V2G, heat pump, district heat, storage heaters), GBP/MWh per
+      # hour held: a tie-breaker so flat or zero prices do not fill their stores with surplus never used
+      # . 0.005 and 0.05 both clear it; 0.005
+      # keeps more surplus absorption.
+      drained_holding_cost_gbp_per_mwh_h: 0.005
+    # GSP demand shares from FES Dem_BB003 of the edition in demand.build.spatial (not the generation
+    # spatial proxy's edition). FES's Direct(SPTL) and Direct(SHETL) rows are spread within their own TO area.
+    spatial:
+      direct_rows: {"Direct(SPTL)": "SPEN", "Direct(SHETL)": "SSEN (SHEPD)"}
+    # Transmission-connected named loads sit at their ETYS nodes; group_lines maps each load group to the
+    # FES ED1 line that sets its annual energy, split by site peak. Losses go pro rata on every load (one
+    # factor, ED1 system / consumer); only the residual is scaled onto the GSP shares. The load file comes
+    # from rule extract_cp30_demand_inputs (rules/demand.smk), built from the FES workbooks and
+    # data/demand/cp30_named_load_nodes.csv (each node choice with its evidence).
+    named_loads:
+      enabled: true
+      group_lines: {data_centre: "data_centres_transmission_gwh", other: "direct_transmission_customers_gwh"}
+    # capacity_redistribution: same_site | pro_rata. same_site moves demand above capacity_safety_margin x
+    # min(transformer, line) capacity at a <=132 kV bus to the same site's bus at or above min_supergrid_kv
+    # (kV); pro_rata spreads it over every GB demand bus.
+    capacity_redistribution: "same_site"
+    capacity_safety_margin: 0.90
+    min_supergrid_kv: 275.0
+    # Demand shape from components on the weather year (renewables_year cutout): EVs (smart-charged share
+    # on a fixed overnight window, ev_smart_share fes_at_peak = solved to FES "EVs at peak", capped at
+    # ev_smart_max_share), heat pumps and district heat (temperature-driven) and distribution data centres
+    # (flat). The ESPENI base takes the rest of each GSP's energy and is raised to a power within
+    # exponent_bounds (energy exact) so the GB peak equals shape.peak_target (set by the source overlay).
+    shape:
+      enabled: true
+      components: ["electric_vehicles", "heat_pumps", "district_heat", "data_centres"]
+      ev_smart_share: "fes_at_peak"
+      ev_smart_max_share: 0.95
+      ev_smart_window: [[1.0, 2.5, 2.0]]
+      exponent_bounds: [0.2, 4.0]

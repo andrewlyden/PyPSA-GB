@@ -26,7 +26,7 @@ import time
 import sys
 import warnings
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import geopandas as gpd
 from shapely.geometry import Point
 from shapely.ops import nearest_points
@@ -40,6 +40,12 @@ warnings.filterwarnings('ignore', message='The network has not been optimized ye
 
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary
 from scripts.network_build.etys_file_registry import VOLTAGE_LEVELS, GSP_REGIONS_FILE
+from scripts.network_build.branch_attributes import finalize_branch_attributes
+from scripts.network_build.branch_units import (
+    BRANCH_UNITS_META_KEY, UNITS_PU100, set_branch_units,
+    convert_network_pu100_to_pypsa, log_branch_impedance_summary,
+)
+from scripts.network_build.appendix_b_record import APPENDIX_B_META_KEY
 
 # Land boundary checking constants
 LAND_BUFFER_KM = 0.5  # Buffer distance from coastline
@@ -257,7 +263,7 @@ def guess_GSP_location_of_remaining_buses(df: pd.DataFrame, df_buses: pd.DataFra
     # HVDC links have r=x=0 (correct for Link type), so assign minimum values here to
     # avoid spurious consistency_check warnings about zero-impedance lines.
     df_with_length = df.copy()
-    df_with_length = df_with_length.drop(columns=[col for col in ['component', 'lon', 'lat', 'carrier'] if col in df_with_length.columns])
+    df_with_length = df_with_length.drop(columns=[col for col in ['component', 'lon', 'lat', 'carrier', 'v_nom'] if col in df_with_length.columns])
     df_with_length.loc[df_with_length['x'] == 0, 'x'] = 0.02   # HVDC entries: apply line default
     df_with_length.loc[df_with_length['r'] == 0, 'r'] = 0.002  # HVDC entries: apply line default
     network.add("Line", df_with_length.index, **df_with_length)
@@ -683,14 +689,203 @@ def validate_network_topology(network: pypsa.Network,
         logger.debug(f"  Duplicate component check failed: {e}")
 
 
+def load_bus_coordinate_overrides(overrides_file: Optional[str]) -> pd.DataFrame:
+    """Read and validate ``bus_coordinate_overrides.csv`` (bus, lat, lon, is_offshore, source).
+
+    Returns an empty frame without a file. Refuses missing columns, rows without a
+    source, non-numeric positions and a bus named twice.
+    """
+    cols = ['bus', 'lat', 'lon', 'is_offshore', 'source']
+    if not overrides_file:
+        return pd.DataFrame(columns=cols)
+    overrides = pd.read_csv(overrides_file)
+    missing = set(cols) - set(overrides.columns)
+    if missing:
+        raise ValueError(f"Bus coordinate overrides {overrides_file} missing columns: {sorted(missing)}")
+    if overrides['source'].isna().any() or (overrides['source'].astype(str).str.strip() == '').any():
+        raise ValueError("Every bus coordinate override needs a source")
+    overrides['bus'] = overrides['bus'].astype(str).str.strip()
+    if overrides['bus'].duplicated().any():
+        dup = sorted(overrides.loc[overrides['bus'].duplicated(), 'bus'])
+        raise ValueError(f"Bus coordinate overrides {overrides_file} name {dup} more than once")
+    for c in ('lat', 'lon'):
+        overrides[c] = pd.to_numeric(overrides[c], errors='raise').astype(float)
+    overrides['is_offshore'] = overrides['is_offshore'].astype(str).str.strip().str.lower().isin(('true', '1', 'yes'))
+    return overrides[cols]
+
+
+def bus_coordinate_override_positions(overrides_file: Optional[str]) -> dict:
+    """bus -> (lat, lon) of every override row (the Appendix B bus placer's first source)."""
+    ov = load_bus_coordinate_overrides(overrides_file)
+    return {b: (float(la), float(lo)) for b, la, lo in zip(ov['bus'], ov['lat'], ov['lon'])}
+
+
+def apply_bus_coordinate_overrides(df_buses: pd.DataFrame, offshore_wf_buses: set,
+                                   overrides_file: Optional[str],
+                                   logger: Optional[logging.Logger] = None):
+    """Set reviewed per-bus coordinates on the base buses, after coordinate guessing.
+
+    ``substation_coordinates.csv`` works per four-character site; a few buses
+    still land in the wrong place (a GSP match or a guess in the wrong region,
+    or an offshore platform moved onto land). A misplaced bus makes its branches
+    cross ETYS boundaries they do not cross. Each row of ``overrides_file``
+    (bus, lat, lon, is_offshore, source) replaces the bus's position, and its
+    ``is_offshore`` sets the bus's offshore flag both ways (true keeps it off the
+    land check downstream; false clears a sheet's offshore flag on an onshore
+    substation, e.g. Walney Extension's at Heysham). The flag is set for every row,
+    so a bus added later (Appendix B, the CP30 layer) takes it too.
+
+    Rows for buses that are not base buses are applied later: by the Appendix B
+    bus placer (``ETYS_upgrades.add_missing_buses_from_upgrades``) and by
+    :func:`apply_bus_coordinate_overrides_to_network` on the finished network,
+    which refuses a row naming a bus that no stage builds.
+
+    Returns:
+        (df_buses, offshore_wf_buses), both updated.
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+    overrides = load_bus_coordinate_overrides(overrides_file)
+    if overrides.empty:
+        return df_buses, offshore_wf_buses
+    df_buses = df_buses.copy()
+    offshore_wf_buses = set(offshore_wf_buses)
+    for _, row in overrides.iterrows():
+        bus = row['bus']
+        if row['is_offshore']:
+            offshore_wf_buses.add(bus)
+        else:
+            offshore_wf_buses.discard(bus)
+        if bus not in df_buses.index:
+            logger.info(f"Bus coordinate override for {bus}: not a base bus, applied after the upgrade stages")
+            continue
+        old = (df_buses.at[bus, 'lat'], df_buses.at[bus, 'lon'])
+        df_buses.at[bus, 'lat'] = float(row['lat'])
+        df_buses.at[bus, 'lon'] = float(row['lon'])
+        logger.info(f"Bus coordinate override {bus}: ({old[0]}, {old[1]}) -> "
+                    f"({row['lat']}, {row['lon']}) [{str(row['source'])[:80]}]")
+    return df_buses, offshore_wf_buses
+
+
+def apply_bus_coordinate_overrides_to_network(network: pypsa.Network, overrides_file: Optional[str],
+                                              logger: Optional[logging.Logger] = None,
+                                              known_buses=None) -> Tuple[List[str], List[str]]:
+    """Apply every override row to the finished network (base, Appendix B, CP30 layer and HND buses alike).
+
+    Sets lon/lat and the OSGB36 x/y of each named bus present. A row naming a bus
+    the network does not hold is a warning when the bus is in ``known_buses``
+    (a node some stage builds in another year or scenario: a callable returning a
+    set, or a set) and an error otherwise, so a mistyped or stale row is never
+    silently skipped.
+
+    Returns:
+        (applied, absent): the buses set here and the known buses not built.
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+    overrides = load_bus_coordinate_overrides(overrides_file)
+    if overrides.empty:
+        return [], []
+    from pyproj import Transformer
+    to_osgb = Transformer.from_crs("EPSG:4326", "EPSG:27700", always_xy=True)
+    present = overrides[overrides['bus'].isin(network.buses.index)]
+    absent = overrides.loc[~overrides['bus'].isin(network.buses.index), 'bus'].tolist()
+    if len(present):
+        x, y = to_osgb.transform(present['lon'].to_numpy(), present['lat'].to_numpy())
+        idx = present['bus'].tolist()
+        moved_km = np.hypot(network.buses.loc[idx, 'x'].to_numpy(float) - x,
+                            network.buses.loc[idx, 'y'].to_numpy(float) - y) / 1e3
+        network.buses.loc[idx, 'lon'] = present['lon'].to_numpy()
+        network.buses.loc[idx, 'lat'] = present['lat'].to_numpy()
+        network.buses.loc[idx, 'x'] = x
+        network.buses.loc[idx, 'y'] = y
+        late = [b for b, d in zip(idx, moved_km) if d > 0.01]
+        if late:
+            logger.info(f"Bus coordinate overrides applied to the finished network: {len(idx)} buses, "
+                        f"{len(late)} moved here (added after the base stage): {', '.join(late)}")
+    if absent:
+        known = known_buses() if callable(known_buses) else (known_buses or set())
+        unknown = sorted(set(absent) - set(known))
+        if unknown:
+            raise ValueError(
+                f"Bus coordinate overrides {overrides_file} name buses that no network stage builds "
+                f"(base, Appendix B, CP30 layer, HND): {unknown}. Fix or remove the rows.")
+        logger.warning(f"Bus coordinate overrides not applied (buses not built in this network): "
+                       f"{', '.join(sorted(absent))}")
+    return present['bus'].tolist(), absent
+
+
+def override_known_buses(base_buses, etys_file: Optional[str] = None, cp30_reinforcement_config=None,
+                         hnd_hybrid_config=None, logger: Optional[logging.Logger] = None) -> set:
+    """Every bus name some network stage can build: base buses, Appendix B nodes (all years and sheets),
+    the CP30 layer's components and the HND register. Used to tell a stale override row from a bus that is
+    simply not built in this year or scenario."""
+    known = set(map(str, base_buses))
+    if etys_file:
+        from scripts.network_build.ETYS_upgrades import load_etys_upgrade_data
+        data = load_etys_upgrade_data(str(etys_file), logger or logging.getLogger(__name__))
+        for df in data.values():
+            for col in ("Node1", "Node2", "Node 1", "Node 2"):
+                if col in getattr(df, "columns", []):
+                    known |= set(df[col].dropna().astype(str).str.strip())
+    for cfg, cols in ((cp30_reinforcement_config or {}, ("bus0", "bus1", "source_bus0", "source_bus1")),
+                      (hnd_hybrid_config or {}, ("bus", "bus0", "bus1", "node", "onshore_bus", "offshore_bus"))):
+        for key in ("components_file", "asset_register"):
+            f = cfg.get(key)
+            if f and Path(f).exists():
+                df = pd.read_csv(f, dtype=str, comment="#")
+                for col in cols:
+                    if col in df.columns:
+                        known |= set(df[col].dropna().astype(str).str.strip())
+    return known
+
+
+def drop_reversed_duplicate_branches(df: pd.DataFrame,
+                                     logger: Optional[logging.Logger] = None) -> pd.DataFrame:
+    """Drop base branches that repeat another branch with bus0 and bus1 swapped.
+
+    The ETYS 2024 base sheets list four SHE transformers twice, once in each
+    orientation, with the same R, X and rating (B differs in the last digit):
+    BEAU1J/BEAU2J (360 and 120 MVA), BEAU2K/BEAU4- (1,200 MVA) and
+    PEHE1-/PEHE2R (240 MVA). Each was built twice (network audit 15 Oct 2026,
+    issue 10a). Parallel units are listed in the same orientation (e.g.
+    TEAL1-_TEAL2K_0/_1), so only swapped-bus repeats are dropped. Same rule as
+    ``ETYS_upgrades.drop_reversed_duplicate_records`` for Appendix B rows.
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+    seen = {}
+    drop = []
+    for name, row in df.iterrows():
+        if row['component'] not in ('line', 'transformer') or row['bus0'] == row['bus1']:
+            continue
+        key = (row['component'], round(float(row['r']), 9), round(float(row['x']), 9), float(row['s_nom']))
+        twin = seen.get((row['bus1'], row['bus0']) + key)
+        if twin is not None and (row['bus0'], row['bus1']) + key not in seen:
+            drop.append(name)
+            logger.info(f"Dropping {name}: repeats {twin} with swapped buses")
+            continue
+        seen.setdefault((row['bus0'], row['bus1']) + key, name)
+    return df.drop(index=drop)
+
+
 def create_network(df: pd.DataFrame,
                    df_buses_with_locs: pd.DataFrame,
                    logger: Optional[logging.Logger] = None,
                    export_path: Optional[str] = None,
+                   etys_upgrade_audit_path: Optional[str] = None,
+                   cp30_reinforcement_config=None,
+                   cp30_reinforcement_audit_path: Optional[str] = None,
+                   hnd_hybrid_config=None,
+                   hnd_hybrid_audit_path: Optional[str] = None,
                    etys_upgrades_enabled: Optional[bool] = None,
                    upgrade_year: Optional[int] = None,
                    etys_upgrade_file: Optional[str] = None,
-                   substation_coords_file: Optional[str] = None) -> pypsa.Network:
+                   substation_coords_file: Optional[str] = None,
+                   topology_sensitivities: Optional[List[str]] = None,
+                   documented_topology_corrections=None,
+                   engineering_fallbacks=None,
+                   bus_coordinate_overrides_file: Optional[str] = None) -> pypsa.Network:
     """
     Create the final PyPSA network with all components and export to NetCDF.
 
@@ -700,15 +895,28 @@ def create_network(df: pd.DataFrame,
         logger: Optional logger instance
         export_path: Optional NetCDF output path. If omitted, falls back to
             snakemake.output[0] when running under Snakemake.
+        etys_upgrade_audit_path: Optional CSV path for the source-row audit of
+            additions/removals/changes that were not representable in the
+            model. When omitted, falls back to the named Snakemake output.
+        cp30_reinforcement_config: Optional CP30 N1 dated-reinforcement audit
+            configuration.  This audits project-code coverage; ETYS Appendix B
+            remains the source for electrical component parameters.
+        cp30_reinforcement_audit_path: Optional CSV path for the CP30 N1 audit.
         etys_upgrades_enabled: Whether to apply ETYS upgrades. If omitted,
             falls back to snakemake.params.etys_upgrades_enabled.
         upgrade_year: Year through which to apply upgrades. If omitted,
             falls back to snakemake.params.etys_upgrade_year or modelled_year.
         etys_upgrade_file: Path to the ETYS Appendix B file used for upgrades.
+        topology_sensitivities: Explicit non-default ETYS topology sensitivity names.
             If omitted, falls back to snakemake.input.etys_file.
         substation_coords_file: Optional path to substation coordinates used
             for upgrade bus placement. If omitted, falls back to
             snakemake.input.substation_coords.
+        bus_coordinate_overrides_file: Optional path to the reviewed per-bus
+            positions. Applied to the Appendix B bus placer and, at the end, to
+            every bus of the finished network (base, upgrade, CP30 layer, HND);
+            a row naming a bus no stage builds is an error. If omitted, falls
+            back to snakemake.input.bus_coordinate_overrides.
 
     Returns:
         Complete PyPSA Network object
@@ -717,9 +925,19 @@ def create_network(df: pd.DataFrame,
         logger = logging.getLogger(__name__)
 
     logger.info("Creating final PyPSA network")
+    if bus_coordinate_overrides_file is None and 'snakemake' in globals():
+        bus_coordinate_overrides_file = getattr(snakemake.input, 'bus_coordinate_overrides', None)
+        if bus_coordinate_overrides_file:
+            bus_coordinate_overrides_file = str(bus_coordinate_overrides_file)
+    base_bus_names = list(map(str, df_buses_with_locs.index))
+    df = drop_reversed_duplicate_branches(df, logger)
     # new network with updated locations of buses
     network2 = pypsa.Network()
     network2.set_snapshots(range(1))
+    # Every branch source below (base CSV, ETYS upgrades, documented bus
+    # sections, HND register, CP30 layer) is in pu on 100 MVA until the single
+    # conversion to PyPSA units just before export.
+    set_branch_units(network2, UNITS_PU100)
 
     logger.info(f"Adding {len(df_buses_with_locs)} buses to network")
     network2.add("Bus", df_buses_with_locs.index, **df_buses_with_locs)
@@ -744,6 +962,8 @@ def create_network(df: pd.DataFrame,
     df_line = df_line[df_line['bus0'].isin(df_buses_with_locs.index) & df_line['bus1'].isin(df_buses_with_locs.index)]
     # Drop metadata columns (geolocation only) - keep electrical attributes 'r', 'x', 'b'
     df_line = df_line.drop(columns=[col for col in ['component', 'lon', 'lat', 'carrier'] if col in df_line.columns])
+    if 'v_nom' in df_line.columns:
+        df_line = df_line.rename(columns={'v_nom': 'voltage_kv'})
     logger.info(f"Adding {len(df_line)} lines to network")
     network2.add("Line", df_line.index, **df_line)
     # set DC to AC
@@ -766,7 +986,9 @@ def create_network(df: pd.DataFrame,
     # rename s_nom to p_nom
     df_link = df_link.rename(columns={'s_nom': 'p_nom'})
     # Drop metadata columns that aren't PyPSA Link attributes (avoid PyPSA 1.0.2 warnings)
-    df_link = df_link.drop(columns=[col for col in ['component', 'x', 'y', 'b', 'r'] if col in df_link.columns])
+    df_link = df_link.drop(columns=[col for col in ['component', 'x', 'y', 'b', 'r',
+                                                    's_nom_spring', 's_nom_summer', 's_nom_autumn']
+                                    if col in df_link.columns])
 
     # CRITICAL: Make internal HVDC links bidirectional (p_min_pu=-1)
     # Without this, links can only transfer power FROM bus0 TO bus1, which causes
@@ -800,6 +1022,28 @@ def create_network(df: pd.DataFrame,
         else:
             etys_upgrades_enabled = False
 
+    if etys_upgrade_audit_path is None and 'snakemake' in globals():
+        etys_upgrade_audit_path = getattr(
+            snakemake.output, 'etys_upgrade_audit', None
+        )
+        if etys_upgrade_audit_path:
+            etys_upgrade_audit_path = str(etys_upgrade_audit_path)
+    if cp30_reinforcement_config is None and 'snakemake' in globals():
+        cp30_reinforcement_config = getattr(
+            snakemake.params, 'cp30_reinforcements', {}
+        )
+    if cp30_reinforcement_audit_path is None and 'snakemake' in globals():
+        cp30_reinforcement_audit_path = getattr(
+            snakemake.output, 'cp30_reinforcement_audit', None
+        )
+        if cp30_reinforcement_audit_path:
+            cp30_reinforcement_audit_path = str(cp30_reinforcement_audit_path)
+    if hnd_hybrid_config is None and 'snakemake' in globals():
+        hnd_hybrid_config = getattr(snakemake.params, 'hnd_hybrid', {})
+    if hnd_hybrid_audit_path is None and 'snakemake' in globals():
+        hnd_hybrid_audit_path = getattr(snakemake.output, 'hnd_hybrid_audit', None)
+        if hnd_hybrid_audit_path:
+            hnd_hybrid_audit_path = str(hnd_hybrid_audit_path)
     # NOTE: Land boundary validation ran during coordinate guessing (above).
     # Upgrade buses get coordinates from OSGB36 (x/y) via same-site matching,
     # NOT from lat/lon guessing, so they bypass land boundary checks.
@@ -826,6 +1070,20 @@ def create_network(df: pd.DataFrame,
             if substation_coords_file:
                 substation_coords_file = str(substation_coords_file)
 
+        if topology_sensitivities is None and 'snakemake' in globals():
+            topology_sensitivities = getattr(
+                snakemake.params, 'etys_topology_sensitivities', []
+            )
+        topology_sensitivities = list(topology_sensitivities or [])
+        if documented_topology_corrections is None and 'snakemake' in globals():
+            documented_topology_corrections = getattr(snakemake.params, 'etys_documented_topology_corrections', {})
+        if engineering_fallbacks is None and 'snakemake' in globals():
+            engineering_fallbacks = getattr(snakemake.params, 'etys_engineering_fallbacks', {})
+        busbar_alias_fallback = True
+        prune_dead_islands_enabled = True
+        if 'snakemake' in globals():
+            busbar_alias_fallback = bool(getattr(snakemake.params, 'etys_busbar_alias_fallback', True))
+            prune_dead_islands_enabled = bool(getattr(snakemake.params, 'etys_prune_dead_islands', True))
         logger.info("="*70)
         logger.info(f"APPLYING ETYS NETWORK UPGRADES through year {upgrade_year}")
         logger.info("="*70)
@@ -835,7 +1093,20 @@ def create_network(df: pd.DataFrame,
             modelled_year=upgrade_year,
             etys_file=etys_upgrade_file,
             substation_coords_file=substation_coords_file,
-            logger=logger
+            topology_sensitivities=topology_sensitivities,
+            documented_topology_corrections=documented_topology_corrections,
+            engineering_fallbacks=engineering_fallbacks,
+            busbar_alias_fallback=busbar_alias_fallback,
+            prune_dead_islands_enabled=prune_dead_islands_enabled,
+            audit_path=etys_upgrade_audit_path,
+            logger=logger,
+            # CP30-dated Appendix B works (2032/2033 snapshot rows CP30 N1
+            # requires by 2030); CP30 scenarios only.
+            cp30_dated_works_file=(
+                (cp30_reinforcement_config or {}).get("appendix_b_dated_works_file")
+                if (cp30_reinforcement_config or {}).get("enabled", False) else None
+            ),
+            bus_coordinate_overrides_file=bus_coordinate_overrides_file,
         )
 
         # Ensure all buses (including newly added ones) have country='GB'
@@ -862,7 +1133,87 @@ def create_network(df: pd.DataFrame,
 
         logger.info(f"Network upgrades applied successfully (through {upgrade_year})")
     else:
-        logger.info("ETYS network upgrades: DISABLED (set etys_upgrades.enabled: true to enable)")
+        logger.info("ETYS network upgrades: DISABLED (set network.upgrades.enabled: true to enable)")
+        if etys_upgrade_audit_path:
+            pd.DataFrame([{
+                "audit_status": "upgrades_disabled",
+                "modelled_year": upgrade_year,
+                "message": "ETYS upgrades were disabled for this scenario; no Appendix B upgrade rows were assessed.",
+            }]).to_csv(etys_upgrade_audit_path, index=False)
+
+    hnd_hybrid_config = hnd_hybrid_config or {}
+    if hnd_hybrid_config.get("enabled", False) and not hnd_hybrid_audit_path:
+        raise ValueError("HND hybrid audit output path was not provided")
+    if hnd_hybrid_audit_path:
+        from scripts.CP30.hnd_hybrid import apply_hnd_hybrid_topology
+        apply_hnd_hybrid_topology(
+            network2, hnd_hybrid_config,
+            getattr(snakemake.params, "modelled_year", upgrade_year)
+            if 'snakemake' in globals() else upgrade_year,
+            hnd_hybrid_audit_path, logger,
+        )
+    if hnd_hybrid_config.get("enabled", False):
+        network2.consistency_check()
+        validate_network_topology(network2, logger)
+
+    cp30_reinforcement_config = cp30_reinforcement_config or {}
+    if cp30_reinforcement_config.get("enabled", False):
+        if not cp30_reinforcement_audit_path:
+            raise ValueError(
+                "CP30 reinforcement audit is enabled but no output path was provided"
+            )
+        from scripts.CP30.reinforcement_layer import apply_cp30_reinforcement_layer
+        from scripts.CP30.reinforcements import audit_cp30_reinforcements
+
+        audit_year = int(cp30_reinforcement_config.get(
+            "modelled_year",
+            getattr(snakemake.params, "modelled_year", upgrade_year)
+            if 'snakemake' in globals() else upgrade_year,
+        ))
+        applied_projects = apply_cp30_reinforcement_layer(
+            network2, cp30_reinforcement_config, audit_year, logger
+        )
+        audit_cp30_reinforcements(
+            cp30_reinforcement_config.get("reference_file", ""),
+            cp30_reinforcement_config.get("manifest_file", ""),
+            audit_year,
+            cp30_reinforcement_audit_path,
+            logger,
+            strict=bool(cp30_reinforcement_config.get("strict", False)),
+            applied_projects=applied_projects,
+            network=network2,
+        )
+    elif cp30_reinforcement_audit_path:
+        pd.DataFrame([{
+            "audit_status": "cp30_reinforcements_disabled",
+            "message": "No CP30 dated-reinforcement audit was requested for this scenario.",
+        }]).to_csv(cp30_reinforcement_audit_path, index=False)
+
+    # Reviewed per-bus positions on every bus of the finished network (bus position
+    # audit, 19 Oct 2026): buses added by Appendix B, the CP30 layer or the HND
+    # register take their override row too, and a row naming no buildable bus fails.
+    apply_bus_coordinate_overrides_to_network(
+        network2, bus_coordinate_overrides_file, logger,
+        known_buses=lambda: override_known_buses(
+            base_bus_names,
+            etys_upgrade_file or (str(snakemake.input.etys_file)
+                                  if 'snakemake' in globals() and hasattr(snakemake.input, 'etys_file') else None),
+            cp30_reinforcement_config, hnd_hybrid_config, logger),
+    )
+
+    # Identical parallel internal DC links are one LP asset; apart, a lossless
+    # free two-way pair runs a free loop (the twin Sofia poles, items F3/F14).
+    from scripts.network_build.parallel_links import merge_parallel_internal_links
+    merge_parallel_internal_links(network2, logger)
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # BRANCH IMPEDANCE UNITS: pu on 100 MVA -> PyPSA (exactly once)
+    # Lines: ohm/siemens at bus0 v_nom; transformers: pu on their own s_nom.
+    # ──────────────────────────────────────────────────────────────────────────
+    convert_network_pu100_to_pypsa(network2, logger)
+    log_branch_impedance_summary(network2, logger)
+    # Seasonal ratings and ETYS licensee on every branch (branch_attributes.py)
+    finalize_branch_attributes(network2, logger)
 
     if export_path is None and 'snakemake' in globals():
         export_path = str(snakemake.output[0])
@@ -871,7 +1222,14 @@ def create_network(df: pd.DataFrame,
         logger.info(f"Exporting network to {export_path}")
 
         # Set version metadata before export to prevent compatibility warnings
-        network2.meta = {"pypsa_version": pypsa.__version__}
+        network2.meta = {
+            "pypsa_version": pypsa.__version__,
+            BRANCH_UNITS_META_KEY: network2.meta[BRANCH_UNITS_META_KEY],
+            # What every applied Appendix B row did (ETYS_upgrades.record_appendix_b_works),
+            # read by the network-delivery revert in the balancing stage.
+            **{key: network2.meta[key] for key in (APPENDIX_B_META_KEY,)
+               if key in (network2.meta or {})},
+        }
 
         # Suppress PyPSA warnings about unoptimized network during export
         pypsa_logger = logging.getLogger('pypsa.networks')
@@ -922,6 +1280,10 @@ if __name__ == "__main__":
 
         logger.info("Step 3: Guessing remaining bus locations")
         df_buses = guess_GSP_location_of_remaining_buses(df, df_buses, offshore_wf_buses, logger)
+        # Reviewed per-bus positions (network audit 15 Oct 2026).
+        df_buses, offshore_wf_buses = apply_bus_coordinate_overrides(
+            df_buses, offshore_wf_buses, str(snakemake.input.bus_coordinate_overrides), logger
+        )
 
         logger.info("Step 4: Creating final network")
         network = create_network(df, df_buses, logger)

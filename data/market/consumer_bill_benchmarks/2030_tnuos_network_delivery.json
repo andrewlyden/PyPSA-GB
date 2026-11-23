@@ -1,0 +1,51 @@
+{
+  "schema": "tnuos_network_delivery_v1",
+  "purpose": "The 2030 TNUoS line under each network-delivery case of the CP30 2030 bill (user decision, 18-19 Oct 2026: CENTRAL = no_acceleration, LOWER = the recommended CP30 network, UPPER = no_upgrades). A forecast case names one case here (consumer_bill_forecasts.cases.<case>.tnuos_network_delivery); scripts/consumer_bill/project_future_bill.py (apply_tnuos_network_delivery) moves the onshore TOs' TNUoS income by the case's share in each fiscal year of the calendar-2030 blend, puts the whole change on the demand residual (generation TNUoS is capped) and carries it to the household at the residual's own per-site share of that year (domestic residual per site over demand residual revenue, the tnuos line's NESO derivation), before the line's own calendar blend and CPIH deflation.",
+  "what_the_source_includes": "The 2030 TNUoS line is NESO's Five-Year View of TNUoS Tariffs 2027/28-2031/32 v1.0 (9 Oct 2026). Its onshore TO revenue is the TOs' January 2026 STCP24-1 submissions, their view of allowed revenue after the RIIO-ET3 Final Determinations (Dec 2025), updated by NESO for inflation (FYV pp.53-54, 'Transmission Owner revenue forecasts'). It is a total per TO (Table 23: NGET, SPT, SHET); no project is itemised and ASTI is not named. Under RIIO, capitalised totex (85% for re-opener spend, RIIO-3 FD Finance Annex Table 27) enters the RAV as it is spent and earns the allowed return and 45-year depreciation from then (para 9.12), with 15% recovered as fast money in the year of spend; ASTI early-construction funding is already granted (Sea Link 48%, Ofgem minded-to decision Sep 2026; Norwich to Tilbury 45.7% of the licence cost, Ofgem ECF decision 3 Feb 2026). So TNUoS in 2030 carries the spend incurred to 2030 whatever the commissioning date, and a delay moves it only through the spend that slips past 2030.",
+  "units": "to_income_gbp_m: onshore TO income from TNUoS, GBP m nominal (money of the day) per fiscal year; change_share: the declared change in that income under the case (negative lowers it).",
+  "to_income_gbp_m": {
+    "FY2029/30": 10734.407395415348,
+    "FY2030/31": 11491.191083792335
+  },
+  "to_income_source": "NESO FYV 2027/28-2031/32 v1.0 tables workbook (data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1_tables.xlsx), sheet T23 'Allowed Revenues', row 'Total TO Income from TNUoS' (NGET + SPT + SHET), GBP m nominal; Sheet S1-4 Revenue Sensitivity 1 is 0.9 times these to the pound.",
+  "cases": {
+    "cp30": {
+      "network": "LOWER: the recommended CP30 network (CP30 N1 accelerated components and the CP30-dated Appendix B works built by 2030).",
+      "change_share": 0.0,
+      "status": "source_as_published",
+      "rationale": "The bill's TNUoS line as published, held for continuity with every earlier CP30 2030 bill. Strictly the accelerated network would add the spend CP30 brings forward into 2030 (Norwich to Tilbury and Sea Link are on 2031 delivery dates in the TOs' submissions); that would raise TNUoS a little in this case, and it is not modelled."
+    },
+    "no_acceleration": {
+      "network": "CENTRAL: NESO's 'expected network' (Norwich to Tilbury, ETYS AENC/ATNC, and Sea Link, SCD1, not built by 2030).",
+      "change_share": 0.0,
+      "status": "no_adjustment_source_already_on_this_network",
+      "rationale": "NESO's revenue forecast is the TOs' January 2026 submissions, built on the projects' own delivery dates, not on CP30's acceleration: Norwich to Tilbury has an 'operational date of 2031' (Ofgem ECF decision, 3 Feb 2026) and Sea Link a 'December 2031 ASTI Output Delivery Incentive Target Date' (Ofgem minded-to decision, Sep 2026). Both are spending through 2030 on early-construction funding either way, and that spend sits in the RAV and earns from when it is incurred. The published line is therefore already the expected network's; taking the two projects' capital out would double-count (and could have the wrong sign).",
+      "memo_ceiling_not_applied": {
+        "description": "Both projects wholly out of the RAV in 2030 (wrong in principle: it treats a delay as a cancellation and ignores sunk and early-construction spend).",
+        "capital_gbp_m": 4091.5,
+        "capital_basis": "Sea Link final allowance GBP 2,891.5 m (2023/24 prices; Ofgem minded-to decision, Sep 2026) + Norwich to Tilbury about GBP 1,200 m (2025/26 prices; NGET Funding Statement Rev C, Apr 2026, EN020027); mixed price bases, rounded",
+        "annual_revenue_gbp_m": 236.0,
+        "annual_revenue_basis": "0.85 capitalised x (4.57% allowed return CPIH-real + 1/45 depreciation) x capital (RIIO-3 FD Finance Annex Table 27 and para 9.12; network_account.allowed_wacc_cpih_real)",
+        "gbp_per_household_approx": 2.89,
+        "timing_sensitivity_note": "If 20-40% of the two projects' 2030 spend slipped past 2030: about GBP 47-95 m a year, GBP 0.58-1.15 a household."
+      },
+      "sources": [
+        "https://www.ofgem.gov.uk/sites/default/files/2026-02/N2T-decision.pdf",
+        "https://www.ofgem.gov.uk/sites/default/files/2026-08/Sea-Link-minded-to-decision-FINAL-redacted.pdf",
+        "https://nsip-documents.planninginspectorate.gov.uk/published-documents/EN020027-002332-4.2%20Funding%20Statement_Revision%20C_Clean%20Version.pdf"
+      ]
+    },
+    "no_upgrades": {
+      "network": "UPPER: no Appendix B transmission reinforcement after 2025 built by 2030 (1,016 applied rows reverted, EGL1 and EGL2 among them; NESO GBP 12.7 bn).",
+      "change_share": -0.10,
+      "status": "labelled_assumption",
+      "assumption": "LABELLED ASSUMPTION (no source gives this figure): with nothing after 2025 delivered by 2030, the onshore TOs' 2030 TNUoS income is 10% below their January 2026 submissions. The 10% is NESO's own low revenue case (FYV 2027/28-2031/32 Revenue Sensitivity 1, Table S1: 'revenue is 10% below the January 2026 STCP24-1 submissions'), used as a proxy because no TO, Ofgem or NESO publication gives the revenue of a no-upgrades 2030 and the repo holds no project capex. The other pass-through items are held (Sensitivity 1 also lowers them).",
+      "plausibility": "Onshore TO income grows from GBP 8,290.4 m (2027/28) to 11,491.2 m (2030/31) nominal (Table 23), about GBP 2.5 bn real, which matches RIIO-3's 'about GBP 30' of additional ET investment on a household bill by 2031 (FD Overview, Dec 2025). The 10% cut (GBP 1,149 m in 2030/31) is about 36% of that nominal growth: the rest is taken to be spent by 2030 anyway (delay is not cancellation; early-construction funding and capitalised spend stay in the RAV) or non-load-related. Range: 0 (all spend sunk by 2030) to about GBP 31 a household (all growth since 2027/28 removed).",
+      "sources": [
+        "data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1.pdf (Revenue sensitivities, Table S1, p.46; TO revenue forecasts, pp.53-54)",
+        "data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1_tables.xlsx (sheets T23, S1 - 4)",
+        "data/market/network_cost_sources/price_controls/ofgem_riio3_final_determinations_overview_2025_12.pdf (p.11)"
+      ]
+    }
+  }
+}

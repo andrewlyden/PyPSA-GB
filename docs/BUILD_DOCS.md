@@ -4,10 +4,21 @@ This guide explains how to build and serve the Sphinx documentation locally.
 
 ## Prerequisites
 
-The documentation build tools are included in the `pypsa-gb` conda environment:
+The documentation build tools, including the Shibuya theme and the pandoc program the notebook pages need, are
+included in the `pypsa-gb` conda environment:
 
 ```bash
 conda activate pypsa-gb
+```
+
+If the build stops with `no theme named 'shibuya'`, your environment was created from an older
+`envs/pypsa-gb.yaml`; install the theme with `pip install shibuya`, or recreate the environment.
+
+To build the documentation without the model environment, install `docs/requirements.txt` (the list Read the Docs
+uses) and the pandoc program (`conda install -c conda-forge pandoc`, or from pandoc.org):
+
+```bash
+pip install -r docs/requirements.txt
 ```
 
 ## Building HTML Documentation

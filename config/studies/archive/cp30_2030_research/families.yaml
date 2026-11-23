@@ -1,0 +1,929 @@
+# Month families: one entry per family, expanded by the loader into one scenario per month.
+
+central_dispatch_fe_cons:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_wholesale_forecast_error__dispatch]
+  months: [Jan, Jul]
+  solve:
+    solver:
+      accepted_conditions: [optimal]
+      NumericFocus: 3
+      DualReductions: 0
+
+central_dispatch_fe_uc:
+  inherits: [archive_cp30r_balancing_fix_interconnectors, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_solver_DualReductions__dispatch, archive_cp30r_wholesale_forecast_error__dispatch, archive_cp30r_balancing_commitment_proxy__central_dispatch_fe_uc]
+  months: [Jan, Jul]
+
+method_ic_neso:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_interconnector_counter_trade__4_members]
+  months: [Jul, Dec]
+  month_overrides:
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_neso_es5_landing_reassignment_reinforced
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_neso_es5_landing_reassignment_reinforced
+
+method_gas_160:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_carrier_overrides__28_members]
+  months: [Jul, Dec]
+  month_overrides:
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_neso_es5_landing_reassignment_reinforced
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_neso_es5_landing_reassignment_reinforced
+
+outage_neso:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_network_delivery__9_members, archive_cp30r_balancing_network_delivery__6_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_neso_es5_landing_reassignment_reinforced
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_neso_es5_landing_reassignment_reinforced
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_neso_es5_landing_reassignment_reinforced
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_neso_es5_landing_reassignment_reinforced
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_neso_es5_landing_reassignment_reinforced
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_neso_es5_landing_reassignment_reinforced
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_neso_es5_landing_reassignment_reinforced
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_neso_es5_landing_reassignment_reinforced
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_neso_es5_landing_reassignment_reinforced
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_neso_es5_landing_reassignment_reinforced
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_neso_es5_landing_reassignment_reinforced
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_neso_es5_landing_reassignment_reinforced
+
+cal_a:
+  inherits: [archive_cp30r_wholesale_storage_churn_share, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members, archive_cp30r_balancing_network_delivery__6_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 12.7
+        bid_premium_gbp_per_mwh: 12.7
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_r2:
+  inherits: [archive_cp30r_cal, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_r3:
+  inherits: [archive_cp30r_cal, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_r4:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 31.5
+        bid_premium_gbp_per_mwh: 31.5
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_r4x:
+  inherits: [archive_cp30r_cal_3, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_r4y:
+  inherits: [archive_cp30r_cal_3, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_l1:
+  inherits: [archive_cp30r_cal, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_l2:
+  inherits: [archive_cp30r_balancing_interconnector_counter_trade, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        bid_premium_gbp_per_mwh: 45.0
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_l3:
+  inherits: [archive_cp30r_cal_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_balancing_network_delivery__9_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        bid_premium_gbp_per_mwh: 20.4
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_l6a:
+  inherits: [archive_cp30r_cal_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_network_delivery__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_l6b:
+  inherits: [archive_cp30r_cal_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+fin_no_acceleration:
+  inherits: [archive_cp30r_fin, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_network_delivery__fin]
+  market:
+    balancing:
+      network_delivery:
+        case: no_acceleration_outage_neso_phase_in
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+fin_seven_late:
+  inherits: [archive_cp30r_fin, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members, archive_cp30r_balancing_network_delivery__seven_late, archive_cp30r_balancing_network_delivery__fin]
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            B2: 2029
+            B4: 2029
+            B5: 2029
+        case: seven_critical_late_outage_neso_phase_in
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+fin_no_upgrades:
+  inherits: [archive_cp30r_wholesale_storage_churn_share, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__fin]
+  market:
+    balancing:
+      network_delivery:
+        secured_capability:
+          capability_year_overrides:
+            NW4: 2030
+            SC1: 2030
+          capability_year: 2025
+        case: no_upgrades_outage_neso
+        description: 'No transmission upgrades after 2025 (NESO CP30 / NAO Fig. 4: 10.9-12.7 bn): every ETYS Appendix B row dated after 2025 reverted in the topology (circuits, transformers and HVDC links, the CP30-dated works and HVDC enabling works included), the CP30 layer off, and every secured boundary at the lower of its 2025 and central capability. A reverted circuit a 2030 generator needs to connect stays (NESO assumes every generator connects).'
+        revert_appendix_b:
+          after_year: 2025
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+fin_public_bids_p2:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members, archive_cp30r_bm_bids_contract_value_bids__public_bids, archive_cp30r_bm_bids_contract_value_bids__public_bids_p2]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+fin_public_bids_p3:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members, archive_cp30r_bm_bids_contract_value_bids__public_bids, archive_cp30r_bm_bids_contract_value_bids__public_bids_p3]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_h1:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_h2:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        premium_gbp_per_mwh: 50.0
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_c1:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+cal_c2:
+  inherits: [archive_cp30r_balancing_network_delivery_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__21_members, archive_cp30r_balancing_interconnector_counter_trade__11_members]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jan2030_churn_neso
+    Feb:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Feb2030_churn_neso
+    Mar:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Mar2030_churn_neso
+    Apr:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Apr2030_churn_neso
+    May:
+      wholesale_from: CP30_FFR_2030_ETYS_market_May2030_churn_neso
+    Jun:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jun2030_churn_neso
+    Jul:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Jul2030_churn_neso
+    Aug:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Aug2030_churn_neso
+    Sep:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Sep2030_churn_neso
+    Oct:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Oct2030_churn_neso
+    Nov:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Nov2030_churn_neso
+    Dec:
+      wholesale_from: CP30_FFR_2030_ETYS_market_Dec2030_churn_neso
+
+s1_f15:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members]
+  months: [Apr, Sep]
+
+s1_f30:
+  inherits: [archive_cp30r_s1, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members]
+  months: [Apr, Sep]
+
+s1_r15:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members]
+  months: [Jan, Apr, Jul, Sep]
+
+s1_r30:
+  inherits: [archive_cp30r_s1, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_storage_round_trip_override_Battery__18_members]
+  months: [Jan, Apr, Jul, Sep]
+
+s1_r30s:
+  inherits: [archive_cp30r_s1, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_wholesale_renewable_curtailment_order__35_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_churn_sink__15_members]
+  months: [Jan, Apr, Jul, Sep]
+  market:
+    wholesale:
+      churn_sink:
+        share_of_storage_power: 0.3
+
+s1_z20:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_churn_sink__13_members]
+  months: [Jan, Apr, Jul, Sep]
+
+s1_z25:
+  inherits: [archive_cp30r_wholesale_renewable_curtailment_order, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members]
+  months: [Jan, Apr, Jul, Sep]
+  market:
+    wholesale:
+      churn_sink:
+        share_of_storage_power: 0.25
+
+fin5_public_bids_p2_seven_late:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__6_members_2, archive_cp30r_balancing_network_delivery__seven_late, archive_cp30r_bm_bids_contract_value_bids__public_bids, archive_cp30r_balancing_network_delivery__seven_late_2, archive_cp30r_bm_bids_contract_value_bids__public_bids_p2]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Feb:
+      wholesale_from: CP30_FFR_2030_Feb_stage1
+    Mar:
+      wholesale_from: CP30_FFR_2030_Mar_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    May:
+      wholesale_from: CP30_FFR_2030_May_stage1
+    Jun:
+      wholesale_from: CP30_FFR_2030_Jun_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+    Aug:
+      wholesale_from: CP30_FFR_2030_Aug_stage1
+    Sep:
+      wholesale_from: CP30_FFR_2030_Sep_stage1
+    Oct:
+      wholesale_from: CP30_FFR_2030_Oct_stage1
+    Nov:
+      wholesale_from: CP30_FFR_2030_Nov_stage1
+    Dec:
+      wholesale_from: CP30_FFR_2030_Dec_stage1
+
+fin5_public_bids_p3_seven_late:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__6_members_2, archive_cp30r_balancing_network_delivery__seven_late, archive_cp30r_bm_bids_contract_value_bids__public_bids, archive_cp30r_balancing_network_delivery__seven_late_2, archive_cp30r_bm_bids_contract_value_bids__public_bids_p3]
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          renewables_at_cost: true
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Feb:
+      wholesale_from: CP30_FFR_2030_Feb_stage1
+    Mar:
+      wholesale_from: CP30_FFR_2030_Mar_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    May:
+      wholesale_from: CP30_FFR_2030_May_stage1
+    Jun:
+      wholesale_from: CP30_FFR_2030_Jun_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+    Aug:
+      wholesale_from: CP30_FFR_2030_Aug_stage1
+    Sep:
+      wholesale_from: CP30_FFR_2030_Sep_stage1
+    Oct:
+      wholesale_from: CP30_FFR_2030_Oct_stage1
+    Nov:
+      wholesale_from: CP30_FFR_2030_Nov_stage1
+    Dec:
+      wholesale_from: CP30_FFR_2030_Dec_stage1
+
+central_dispatch_seven_late:
+  inherits: [archive_cp30r_dispatch, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_carrier_overrides__dispatch, archive_cp30r_balancing_network_delivery__6_members_2, archive_cp30r_solver_DualReductions__dispatch, archive_cp30r_balancing_network_delivery__seven_late, archive_cp30r_balancing_network_delivery__seven_late_2]
+  market:
+    wholesale:
+      central_constraint_screening:
+        enabled: true
+    balancing:
+      min_output_energy_budget: hold
+
+cal_bc1_nocap:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_network_delivery__6_members, archive_cp30r_balancing_interconnector_counter_trade__4_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+cal_bc1_np20:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__6_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+cal_bc1_np40:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_network_delivery__6_members, archive_cp30r_balancing_interconnector_counter_trade__2_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+fin5_no_acceleration_p40:
+  inherits: [archive_cp30r_fin5_no_acceleration_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_interconnector_counter_trade__2_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+fin5_no_acceleration_c0:
+  inherits: [archive_cp30r_fin5_no_acceleration_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_interconnector_counter_trade__4_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+fin5_no_acceleration_c20:
+  inherits: [archive_cp30r_fin5_no_acceleration_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+cal_bc1_c20:
+  inherits: [archive_cp30r_bm_bids_contract_value_bids_2, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_network_delivery__32_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__6_members]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+fin5_no_acceleration_e25:
+  inherits: [archive_cp30r_fin5_no_acceleration, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_network_delivery__6_members_2]
+  months: [Jan, Apr, Jul]
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+
+fin5_no_acceleration_ic0:
+  inherits: [archive_cp30r_fin5_no_acceleration_3, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_network_delivery__6_members_2, archive_cp30r_balancing_interconnector_counter_trade__4_members]
+  market:
+    balancing:
+      interconnector_counter_trade:
+        foreign_uplift_scale: 0.0
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Feb:
+      wholesale_from: CP30_FFR_2030_Feb_stage1
+    Mar:
+      wholesale_from: CP30_FFR_2030_Mar_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    May:
+      wholesale_from: CP30_FFR_2030_May_stage1
+    Jun:
+      wholesale_from: CP30_FFR_2030_Jun_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+    Aug:
+      wholesale_from: CP30_FFR_2030_Aug_stage1
+    Sep:
+      wholesale_from: CP30_FFR_2030_Sep_stage1
+    Oct:
+      wholesale_from: CP30_FFR_2030_Oct_stage1
+    Nov:
+      wholesale_from: CP30_FFR_2030_Nov_stage1
+    Dec:
+      wholesale_from: CP30_FFR_2030_Dec_stage1
+
+fin5_no_acceleration_sinkfree:
+  inherits: [archive_cp30r_fin5_no_acceleration_3, archive_cp30r_spatial_proxy_regional_allocation__67_members, archive_cp30r_balancing_bid_offer_source__67_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__67_members, archive_cp30r_pricing_hourly_shape_year__66_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__65_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__64_members, archive_cp30r_reinforcements_components_file__63_members, archive_cp30r_spatial_proxy_offshore_connection_allocation__60_members, archive_cp30r_labels_cfd_strike_table__59_members, archive_cp30r_network_from__58_members, archive_cp30r_solver_accepted_conditions__58_members, archive_cp30r_solve_period_enabled__45_members, archive_cp30r_balancing_network_delivery__44_members, archive_cp30r_balancing_interconnector_counter_trade__42_members, archive_cp30r_balancing_interconnector_counter_trade__42_members_2, archive_cp30r_balancing_interconnector_counter_trade__39_members, archive_cp30r_balancing_storage_anchor__37_members, archive_cp30r_balancing_interconnector_counter_trade__36_members, archive_cp30r_balancing_network_delivery__35_members, archive_cp30r_balancing_carrier_overrides__28_members, archive_cp30r_balancing_carrier_overrides__26_members, archive_cp30r_balancing_interconnector_counter_trade__23_members, archive_cp30r_storage_round_trip_override_Battery__18_members, archive_cp30r_wholesale_storage_marginal_cost_floor__17_members, archive_cp30r_wholesale_churn_sink__15_members, archive_cp30r_wholesale_renewable_curtailment_order__14_members, archive_cp30r_wholesale_interconnector_hurdle_override__13_members, archive_cp30r_wholesale_churn_sink__13_members, archive_cp30r_balancing_interconnector_counter_trade__8_members, archive_cp30r_balancing_network_delivery__no, archive_cp30r_balancing_network_delivery__no_acceleration, archive_cp30r_balancing_network_delivery__6_members_2]
+  market:
+    balancing:
+      carrier_overrides:
+        churn_sink:
+          mode: absolute
+          offer_price: 0.0
+          bid_price: 0.0
+      churn_sink: free
+  month_overrides:
+    Jan:
+      wholesale_from: CP30_FFR_2030_Jan_stage1
+    Feb:
+      wholesale_from: CP30_FFR_2030_Feb_stage1
+    Mar:
+      wholesale_from: CP30_FFR_2030_Mar_stage1
+    Apr:
+      wholesale_from: CP30_FFR_2030_Apr_stage1
+    May:
+      wholesale_from: CP30_FFR_2030_May_stage1
+    Jun:
+      wholesale_from: CP30_FFR_2030_Jun_stage1
+    Jul:
+      wholesale_from: CP30_FFR_2030_Jul_stage1
+    Aug:
+      wholesale_from: CP30_FFR_2030_Aug_stage1
+    Sep:
+      wholesale_from: CP30_FFR_2030_Sep_stage1
+    Oct:
+      wholesale_from: CP30_FFR_2030_Oct_stage1
+    Nov:
+      wholesale_from: CP30_FFR_2030_Nov_stage1
+    Dec:
+      wholesale_from: CP30_FFR_2030_Dec_stage1

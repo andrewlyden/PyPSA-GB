@@ -20,8 +20,8 @@ Outputs:
 
 See Also:
   - solve.smk - Produces solved networks that these rules analyze
-  - scripts/analyze_solved_network.py - Spatial plotting and dashboard generation
-  - scripts/generate_analysis_notebook.py - Notebook generation
+  - scripts/analysis/analyze_solved_network.py - Spatial plotting and dashboard generation
+  - scripts/analysis/generate_analysis_notebook.py - Notebook generation
 """
 
 import re
@@ -139,7 +139,7 @@ rule generate_analysis_notebook:
     """
     input:
         network=f"{resources_path}/network/{{scenario}}_solved.nc",
-        generators_summary=f"{resources_path}/generators/{{scenario}}_generators_summary_by_carrier.csv"
+        generators_summary=lambda wildcards: f"{resources_path}/generators/{_build_source(wildcards.scenario)}_generators_summary_by_carrier.csv"
     output:
         notebook=f"{resources_path}/analysis/{{scenario}}_notebook.ipynb"
     params:

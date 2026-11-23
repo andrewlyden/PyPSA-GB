@@ -462,3 +462,23 @@ class TestETYSNetworkConstruction:
             network.consistency_check()
         except AssertionError as e:
             pytest.fail(f"Constructed network failed consistency check: {e}")
+
+
+def test_substation_geocodes_audited_on_2026_09_26_stay_corrected():
+    """Nominatim put several ETYS substations at a same-named place elsewhere
+    (Windyhill near Moffat, Mark Hill on the Dumfries coast, Sandford in Devon).
+    The corrected rows are checked against the source-backed locations."""
+    import pandas as pd
+    from pathlib import Path
+    path = Path(__file__).parent.parent.parent / "data/network/ETYS/substation_coordinates.csv"
+    coords = pd.read_csv(path).set_index("site_code")
+    assert not coords.index.duplicated().any()
+    expected = {  # site: (lat, lon) from DUKES / REPD / FES GSP metadata / ETYS circuit neighbours
+        "WIYH": (55.96, -4.37), "MAHI": (55.13, -4.75), "SAFO": (51.32, -2.68),
+        "CRDY": (55.18, -3.17), "EWEH": (55.11, -3.33), "BLKL": (55.76, -3.76),
+        "CLYN": (55.48, -3.59), "WLEE": (55.68, -4.28), "YAXL": (52.38, 1.11),
+        "HOWA": (53.66, -0.24), "FNLN": (57.45, -4.53),
+    }
+    for site, (lat, lon) in expected.items():
+        assert abs(coords.at[site, "lat"] - lat) < 0.02, site
+        assert abs(coords.at[site, "lon"] - lon) < 0.02, site

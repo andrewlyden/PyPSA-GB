@@ -1,327 +1,124 @@
 # Architecture
 
-Overview of PyPSA-GB's software architecture and design decisions.
+PyPSA-GB is a Snakemake workflow around PyPSA. Snakemake decides what to build from the requested outputs; each
+rule runs one Python script; the scripts share helper modules under `scripts/`. Nothing is installed as a package:
+everything runs from the repository root.
 
-## High-Level Architecture
+## Folder layout
+
+```
+PyPSA-GB/
+├── Snakefile              main workflow (assumes weather cutouts exist)
+├── Snakefile_cutouts      weather cutouts: Zenodo download or ERA5 build (run first, separately)
+├── Snakefile_consumer_bill  rebuilds historical bill comparisons from saved model outputs
+├── config/                what to run and the settings (see below)
+├── rules/                 Snakemake rules, one file per stage (*.smk)
+├── scripts/               the Python code, one folder per stage (module index: reference/api)
+├── data/                  inputs: published datasets and registries (versioned)
+├── resources/             everything the workflow builds (not versioned)
+├── logs/                  rule logs (not versioned)
+├── tests/                 pytest suite: smoke, unit and workflow tests
+├── envs/                  conda environments (pypsa-gb.yaml)
+└── docs/                  this documentation (Sphinx, MyST Markdown)
+```
+
+The `Snakefile` loads the configuration, works out which scenarios to run, and includes the rule files in stage
+order: renewables, network build, clustering, demand, FES, NESO documents, CP30, FES long-range, generator data
+preparation, generators, storage, hydrogen, interconnectors, solve, analysis, market, turn-down allocation, consumer
+bill and public ownership.
+
+## The rule chain
+
+A scenario's network is built in steps, each adding one part of the system and writing the network under a longer
+file name (see {doc}`/reference/outputs`):
 
 ```{mermaid}
-flowchart TB
-    subgraph Config["Configuration Layer"]
-        YAML["YAML Config Files"]
-        SCENARIOS["Scenario Definitions"]
+flowchart TD
+    subgraph r1["Network and demand"]
+        direction LR
+        A["build_ETYS_base_network<br/>build_reduced_base_network<br/>build_zonal_base_network"] --> B["build_base_demand"]
     end
-    
-    subgraph Workflow["Workflow Layer"]
-        SNAKE["Snakemake"]
-        RULES["Rule Definitions"]
+    subgraph r2["Generation"]
+        direction LR
+        C["finalize_demand"] --> D["add_renewables_to_network"]
     end
-    
-    subgraph Core["Core Layer"]
-        SCRIPTS["Python Scripts"]
-        PYPSA["PyPSA"]
+    subgraph r3[" "]
+        direction LR
+        E["add_thermal_generators_to_network"] --> F["finalize_generator_integration"]
     end
-    
-    subgraph Data["Data Layer"]
-        RAW["Raw Data"]
-        RESOURCES["Generated Resources"]
+    subgraph r4["Costs and storage"]
+        direction LR
+        G["apply_marginal_costs_to_network"] --> H["add_storage_to_network"]
     end
-    
-    YAML --> SNAKE
-    SCENARIOS --> SNAKE
-    SNAKE --> RULES
-    RULES --> SCRIPTS
-    SCRIPTS --> PYPSA
-    RAW --> SCRIPTS
-    SCRIPTS --> RESOURCES
-```
-
-## Design Principles
-
-### 1. Declarative Configuration
-
-Users declare *what* they want, not *how* to build it:
-
-```yaml
-# User specifies desired outcome
-HT35:
-  modelled_year: 2035
-  network_model: "ETYS"
-  FES_scenario: "Holistic Transition"
-```
-
-Snakemake determines the execution path automatically.
-
-### 2. Reproducibility
-
-- All inputs are versioned or documented
-- Configuration is explicit
-- Random seeds are fixed where needed
-- Logs capture execution details
-
-### 3. Modularity
-
-Each script does one thing well:
-
-| Script | Single Responsibility |
-|--------|----------------------|
-| `network_build/ETYS_network.py` | Assemble ETYS network from preprocessed data |
-| `network_build/process_ETYS_data.py` | Parse raw ETYS Excel to CSVs |
-| `network_build/ETYS_upgrades.py` | Apply planned network reinforcements |
-| `network_build/etys_file_registry.py` | Map ETYS publication years to files |
-| `network_build/build_network.py` | Create Reduced/Zonal networks |
-| `integrate_thermal_generators.py` | Add thermal capacity |
-| `solve_network.py` | Run optimization |
-| `market/solve_wholesale.py` | Run copperplate wholesale dispatch |
-| `market/solve_balancing.py` | Run anchored balancing redispatch |
-
-### 4. Data Source Abstraction
-
-The same workflow handles historical and future scenarios:
-
-```{mermaid}
-flowchart LR
-    SCENARIO["Scenario Config"] --> DETECT["Scenario Detection"]
-    DETECT -->|"≤2024"| HIST["Historical Sources"]
-    DETECT -->|">2024"| FUTURE["FES Sources"]
-    HIST --> INTEGRATE["Integration"]
-    FUTURE --> INTEGRATE
-```
-
-## Component Architecture
-
-### Configuration System
-
-```
-config/
-├── config.yaml       # What to run
-├── scenarios.yaml    # Scenario definitions
-├── defaults.yaml     # Default values
-└── config_loader.py  # Python interface
-```
-
-**Loading flow**:
-1. Load `defaults.yaml`
-2. Override with `scenarios.yaml` values
-3. Override with `config.yaml` values
-4. Override with command-line arguments
-
-### Workflow System
-
-```
-Snakefile              # Main entry point
-├── rules/
-│   ├── network_build.smk
-│   ├── generators.smk
-│   ├── renewables.smk
-│   ├── storage.smk
-│   ├── solve.smk
-│   └── analysis.smk
-```
-
-Rules define:
-- Input/output file relationships
-- Script to execute
-- Parameters from config
-- Log file locations
-
-### Script Organization
-
-```
-scripts/
-├── Network Build Package
-│   ├── network_build/
-│   │   ├── ETYS_network.py          # ETYS network assembly (stage 2)
-│   │   ├── process_ETYS_data.py     # Raw Excel → CSV preprocessing (stage 1)
-│   │   ├── ETYS_upgrades.py         # Network upgrade application
-│   │   ├── etys_file_registry.py    # File/sheet name registry and constants
-│   │   └── build_network.py         # Reduced/Zonal network builders
-├── Core Modules
-│   ├── solve_network.py
-│   └── scenario_detection.py
-├── Integration Modules
-│   ├── integrate_thermal_generators.py
-│   ├── integrate_renewable_generators.py
-│   └── add_storage.py
-├── Utility Modules
-│   ├── spatial_utils.py
-│   ├── logging_config.py
-│   └── carrier_definitions.py
-└── Analysis Modules
-    ├── analyze_results.py
-    └── plotting.py
-```
-
-### Market Workflow Modules
-
-Market dispatch is an optional branch from the finalized network. The main
-entry points are `rules/market.smk` and `scripts/market/`:
-
-| Module | Role |
-|--------|------|
-| `solve_wholesale.py` | Copperplate Stage 1 wholesale solve |
-| `solve_balancing.py` | Constrained Stage 2 balancing redispatch |
-| `market_utils.py` | Bid/offer pricing, ELEXON loading, redispatch metrics |
-| `analyze_market.py` | Dashboard and summary outputs |
-| `validate_bm.py` | Historical ELEXON BM validation |
-| `validate_neso_constraints.py` | NESO constraint validation |
-
-## Data Flow
-
-### Network Building Pipeline
-
-```{mermaid}
-flowchart LR
-    subgraph Build
-        BASE["Base Network\n(buses, lines)"]
-        DEMAND["+ Demand\n(loads)"]
-        RENEW["+ Renewables\n(generators)"]
-        THERMAL["+ Thermal\n(generators)"]
-        STORAGE["+ Storage\n(storage_units)"]
-        HYDRO["+ Hydrogen\n(electrolysis, H2)"]
-        INTER["+ Interconnectors\n(links)"]
+    subgraph r5["Hydrogen and interconnectors"]
+        direction LR
+        I["add_hydrogen_system"] --> J["add_interconnectors_to_network"]
     end
-    
-    BASE --> DEMAND --> RENEW --> THERMAL --> STORAGE --> HYDRO --> INTER
+    r1 --> r2 --> r3 --> r4 --> r5
+    r5 --> K["cluster_network (optional)"]
+    r5 --> L["finalize_network"]
+    K --> L
+    L --> M["solve_network"]
+    L --> N["solve_wholesale_market"]
+    N --> O["solve_balancing_mechanism"]
+    O --> P["analyze_market_results"]
 ```
 
-Each step:
-1. Loads the previous network state
-2. Adds new components
-3. Saves updated network
+- **Inputs to the chain** come from data rules: renewable profiles from weather cutouts
+  (`generate_renewable_profiles`), FES tables (`FES_data`), CP30 tables, interconnector availability and foreign
+  prices, and NESO documents (`retrieve_neso_document`).
+- **Without the market**, `solve_network` solves the finished network once.
+- **With the market** (`market.enabled: true`), Stage 1 (`solve_wholesale_market`) solves a copperplate wholesale
+  dispatch and Stage 2 (`solve_balancing_mechanism`) redispatches it on the constrained network at bid and offer
+  prices. See {doc}`/model/dispatch/index`.
+- **Studies** solved month by month share one network build: each month's market rules read the build's finished
+  network, and a family's months can share a Stage 1 (`wholesale_from`). Twelve months are summed by study-level
+  rules (for example `aggregate_CP30_months`).
+- **After the solve**, validation rules compare the results with published data, and the consumer-bill and
+  public-ownership layers (`rules/consumer_bill.smk`, `rules/public_ownership.smk`) read completed market outputs.
+  They never trigger a solve.
 
-### File Naming Convention
+Historical years (up to 2024) and future years take different data at several steps (DUKES and REPD against FES or
+CP30); the routing is decided by the scenario's `targets` and `method`, through
+`scripts/utilities/scenario_detection.py`.
 
-```
-{scenario}_network.nc                           # Base
-{scenario}_network_demand.pkl                   # + demand
-{scenario}_network_demand_renewables.pkl        # + renewables
-{scenario}_..._thermal_generators.pkl           # + thermal
-{scenario}_..._storage.pkl                      # + storage
-{scenario}_..._hydrogen.pkl                     # + hydrogen
-{scenario}_..._interconnectors.nc               # + interconnectors
-{scenario}_solved.nc                            # Optimized
-```
+## The configuration system
 
-Market-enabled scenarios branch from the finalized network rather than from
-`{scenario}_solved.nc`:
+`config/config.yaml` says which studies to load and which scenarios to run (`run_scenarios`). Each scenario's settings
+are merged in layers: the complete defaults in `config/defaults/base.yaml` and `config/defaults/base/**` (file path =
+key path), the overlays chosen by the scenario's declared axes (`method/`, `source/`, `dispatch/`), then the
+scenario's own entry in `config/scenarios.yaml` or a study under `config/studies/`. `config/config_loader.py` does the
+merge, refuses renamed keys and unknown values, and derives `targets` and `method` for older scenarios. See
+{doc}`/model/scenarios_configuration`; every key is listed on {doc}`/reference/configuration_keys`.
 
-```
-resources/network/{scenario}.nc                 # Finalized physical network
-resources/market/{scenario}_wholesale.nc        # Copperplate wholesale solve
-resources/market/{scenario}_balancing.nc        # Constrained BM solve
-resources/analysis/{scenario}_market_dashboard.html
-```
+Rules pass the merged scenario to their script as a parameter. Build and solve rules exclude the reporting-only blocks
+from that parameter, so editing a report setting does not re-run a solve.
 
-## PyPSA Integration
+## Code conventions
 
-### Network Structure
+- **Scripts run by rules** read inputs, outputs, parameters and the log path from the `snakemake` object. Many also
+  run from the command line for checks and rebuilds.
+- **Shared helpers** live beside the scripts that use them, or in `scripts/utilities/` when several stages share them
+  (spatial mapping, logging, calendars, scenario detection).
+- **Configuration** is read only through `config_loader` (`load_config`, `load_defaults`, `load_scenario_entries`),
+  never by loading a YAML file directly. Code defaults equal the base defaults.
+- **Coordinates**: network buses are in OSGB36 (British National Grid, metres); site data is usually WGS84
+  (degrees). `scripts/utilities/spatial_utils.py` converts between them; never compare the two directly.
+- **Branch impedances** are carried through the build in per unit on 100 MVA and converted to PyPSA's units once,
+  at the end of the ETYS build (`scripts/network_build/branch_units.py`); the solve refuses a network without that
+  conversion.
+- **Logging** goes through `scripts/utilities/logging_config.py`; each rule writes its own log under `logs/`.
+- **Fail loudly.** A missing input, an unknown configuration value or a failed check stops the rule with a message
+  naming the cause; the workflow does not fall back silently to other data.
 
-PyPSA-GB uses standard PyPSA components:
+## Performance
 
-| Component | Usage |
-|-----------|-------|
-| `Bus` | Substations/nodes |
-| `Line` | Transmission circuits |
-| `Transformer` | Voltage transformation |
-| `Generator` | Power plants |
-| `StorageUnit` | Batteries, pumped hydro |
-| `Load` | Demand |
-| `Link` | HVDC, interconnectors |
+| Network | Buses | Typical use |
+|---|---|---|
+| Zonal | 17 | quick tests, teaching |
+| Reduced | 32 | fast runs, `Test_Market` |
+| ETYS clustered | 100-300 | studies of a week to a year on a workstation |
+| ETYS | about 2,000 | the CP30 and FES studies, solved month by month |
 
-### Component Naming
-
-```python
-# Generators: {carrier}_{bus}_{index}
-"wind_offshore_BEAU41_0"
-"CCGT_PADI41_1"
-
-# Storage: {carrier}_{bus}_{index}
-"battery_LOND41_0"
-
-# Lines: {bus0}_{bus1}_{circuit}
-"BEAU41_DOUN41_1"
-```
-
-## Error Handling Strategy
-
-### Levels of Handling
-
-1. **Validation**: Catch errors before processing
-   ```python
-   validate_scenario_complete(scenario)
-   ```
-
-2. **Graceful Degradation**: Handle missing optional data
-   ```python
-   try:
-       extra_data = load_optional_data()
-   except FileNotFoundError:
-       logger.warning("Optional data not found, using defaults")
-       extra_data = defaults
-   ```
-
-3. **Fail Fast**: Stop on critical errors
-   ```python
-   if not network.buses.any():
-       raise ValueError("Network has no buses!")
-   ```
-
-### Logging Strategy
-
-```python
-# DEBUG: Detailed diagnostic info
-logger.debug(f"Processing bus {bus_name} with {n_gens} generators")
-
-# INFO: Progress milestones
-logger.info(f"Added {n_generators} generators to network")
-
-# WARNING: Recoverable issues
-logger.warning(f"Missing coordinates for {n_missing} sites, skipping")
-
-# ERROR: Problems requiring attention
-logger.error(f"Solver returned infeasible status")
-```
-
-## Extension Points
-
-### Adding New Technologies
-
-1. Define carrier in `carrier_definitions.py`
-2. Add data processing in integration module
-3. Update profile generation if needed
-4. Add configuration options
-
-### Adding New Data Sources
-
-1. Place raw data in `data/`
-2. Create processing script
-3. Add Snakemake rule
-4. Update scenario detection if needed
-
-### Adding New Analysis
-
-1. Create analysis script
-2. Add rule in `analysis.smk`
-3. Define output format (HTML, CSV, etc.)
-
-## Performance Considerations
-
-### Memory Management
-
-- Large networks use ~8GB RAM
-- Time series stored efficiently (NetCDF)
-- Profile caching to avoid recomputation
-
-### Computation Scaling
-
-| Factor | Impact |
-|--------|--------|
-| More buses | O(n²) for LOPF |
-| More timesteps | Linear |
-| More generators | Sublinear (grouped) |
-
-### Optimization
-
-- Network clustering for faster solving
-- Parallel rule execution
-- Profile pre-generation
+Full ETYS networks need 8 GB of memory or more. Solve time grows with buses and hours: use `solve_period` to solve a
+short window, a rolling mode to solve in windows, or clustering to reduce the network.

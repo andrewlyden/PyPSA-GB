@@ -20,7 +20,7 @@
 #
 # Configuration:
 #   - Base demand: scenarios_master.yaml (FES year, demand year, timeseries source)
-#   - Disaggregation: scenarios_master.yaml (demand_disaggregation section)
+#   - Disaggregation: scenarios_master.yaml (demand.disaggregation section)
 #   - Flexibility: scenarios_master.yaml (flexibility section, if enabled)
 #
 # Dependencies:
@@ -32,7 +32,7 @@
 
 
      # CSV demand profile no longer produced; network NetCDF contains base demand.
-     # The script `scripts/load.py` writes the network to `network_with_base_demand`.
+     # The script `scripts/demand/load.py` writes the network to `network_with_base_demand`.
 # HELPER FUNCTIONS
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -43,6 +43,113 @@ def scenario_is_historical(scenario_id):
     return modelled_year <= 2024
 
 
+def scenario_has_cp30_targets(scenario_id):
+    """True when the scenario's targets come from CP30 (its FES data is then a spatial proxy)."""
+    from scripts.utilities.scenario_detection import target_source
+    return target_source(scenarios.get(scenario_id, {})) == "CP30"
+
+
+def scenario_uses_brownfield(scenario_id):
+    """True when the scenario is built brownfield (the method whose defaults carry demand.build)."""
+    from scripts.utilities.scenario_detection import uses_brownfield
+    return uses_brownfield(scenarios.get(scenario_id, {}))
+
+
+def get_demand_fes_proxy(scenario_id):
+    """Return FES proxy config used by demand for future scenarios."""
+    scenario = scenarios.get(scenario_id, {})
+    if scenario_has_cp30_targets(scenario_id):
+        return scenario.get("fleet", {}).get("spatial_proxy", {})
+    return scenario
+
+
+def get_fes_capacity_redistribution(scenario_id):
+    """demand.disaggregation.fes.capacity_redistribution of a gsp_block ETYS scenario, else {}.
+
+    F25.8 (user, 27 Oct 2026): the FES long-range chain moves demand above a capped <=132 kV bus to the
+    same site's supergrid bus, as the CP30 2030 demand build does; {} keeps the pro rata step (and the
+    params) of every other scenario.
+    """
+    sc = scenarios.get(scenario_id, {})
+    if scenario_uses_brownfield(scenario_id) or str(sc.get("network_model", "")).upper() != "ETYS":
+        return {}
+    return ((((sc.get("demand") or {}).get("disaggregation") or {}).get("fes") or {})
+            .get("capacity_redistribution") or {})
+
+
+def get_cp30_demand_config(scenario_id):
+    """demand.build of a brownfield scenario when enabled (CP30 2030 demand build), else {}.
+
+    {} keeps build_base_demand's behaviour (and its params) unchanged for every scenario
+    that does not enable it.
+    """
+    if not scenario_uses_brownfield(scenario_id):
+        return {}
+    # Named loads sit on ETYS nodes; Reduced/Zonal CP30 builds keep the original method.
+    if str(scenarios.get(scenario_id, {}).get("network_model", "")).upper() != "ETYS":
+        return {}
+    cfg = (scenarios.get(scenario_id, {}).get("demand") or {}).get("build") or {}
+    return cfg if cfg.get("enabled", False) else {}
+
+
+def _demand_regex_from_list(items):
+    """A regex matching exactly the given ids (never-matching when the list is empty)."""
+    import re
+    if not items:
+        return r"(?!x)x"
+    return r"(?:%s)" % "|".join(map(re.escape, items))
+
+
+def get_demand_fes_year(scenario_id):
+    # The CP30 demand build takes its GSP shares from its own FES vintage (FES 2024, the
+    # one CP30 was built on), not the generation spatial proxy (demand audit, fix 1).
+    spatial = get_cp30_demand_config(scenario_id).get("spatial") or {}
+    if spatial.get("FES_year"):
+        return spatial["FES_year"]
+    proxy = get_demand_fes_proxy(scenario_id)
+    return proxy.get("FES_year")
+
+
+def get_demand_fes_scenario(scenario_id):
+    spatial = get_cp30_demand_config(scenario_id).get("spatial") or {}
+    if spatial.get("FES_scenario"):
+        return spatial["FES_scenario"]
+    proxy = get_demand_fes_proxy(scenario_id)
+    return proxy.get("FES_scenario")
+
+
+# Outputs of rule extract_cp30_demand_inputs (below); cp30_demand.DEFAULT_CONFIG names the same files.
+CP30_NAMED_LOADS_FILE = f"{resources_path}/demand/cp30_2030_named_large_loads.csv"
+CP30_DEMAND_LINES_FILE = f"{resources_path}/demand/fes24_ht_2030_demand_lines.csv"
+# FES24 ETYS HT 2030/31 winter peak by ETYS id, located: read by validate_CP30_locational only.
+CP30_ETYS_PEAK_FILE = f"{resources_path}/demand/fes24_etys_ht_2030_peak_by_gsp.csv"
+
+
+def cp30_demand_inputs(scenario_id):
+    """Data files the CP30 demand build reads (empty unless demand.build.enabled)."""
+    cfg = get_cp30_demand_config(scenario_id)
+    if not cfg:
+        return {}
+    out = {
+        "cp30_national_lines": cfg.get("national_lines_file", CP30_DEMAND_LINES_FILE),
+        "cp30_logic": "scripts/demand/cp30_demand.py",
+    }
+    named = cfg.get("named_loads") or {}
+    if named.get("enabled", True):
+        out["cp30_named_loads"] = named.get("file", CP30_NAMED_LOADS_FILE)
+    if (cfg.get("shape") or {}).get("enabled", True):
+        year = scenarios[scenario_id].get("renewables_year", 2020)
+        out["cutout"] = f"{resources_path}/atlite/cutouts/uk-{year}.nc"
+    # F5 consumer flexibility (demand.build.flexibility, off by default): its logic re-runs the build.
+    if (cfg.get("flexibility") or {}).get("enabled", False):
+        out["cp30_flex_logic"] = "scripts/demand/cp30_flexibility.py"
+    return out
+
+
+def get_demand_cp30_resource(scenario_id, key):
+    return scenarios.get(scenario_id, {}).get("source_data", {}).get("files", {}).get(key)
+
+
 def get_fes_data_input(wildcards):
     """Return FES data path for future scenarios, or placeholder for historical."""
     scenario_id = wildcards.scenario
@@ -51,7 +158,7 @@ def get_fes_data_input(wildcards):
         # Return espeni file as placeholder (it's always required anyway)
         return "data/demand/espeni.csv"
     else:
-        fes_year = scenarios[scenario_id].get("FES_year", 2024)
+        fes_year = get_demand_fes_year(scenario_id) or 2024
         return f"{resources_path}/FES/FES_{fes_year}_data.csv"
 
 
@@ -102,7 +209,7 @@ def get_component_config(scenario, component_name):
 def get_flexibility_config(scenario):
     """Get demand flexibility config for a scenario."""
     scenario_config = scenarios.get(scenario, {})
-    return scenario_config.get("demand_flexibility", config.get("demand_flexibility", {}))
+    return scenario_config.get("demand", {}).get("flexibility", config.get("demand", {}).get("flexibility", {}))
 
 
 def is_flexibility_enabled(scenario):
@@ -163,6 +270,52 @@ def requires_fes_data_for_flexibility(scenario):
     return is_v2g_with_fes_enabled(scenario) or is_event_response_with_fes_enabled(scenario)
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# FES long-range demand components (any FES year)
+# ──────────────────────────────────────────────────────────────────────────────
+# Settings live under demand.disaggregation.fes (with demand.disaggregation.enabled:
+# false), so finalize_demand's params are unchanged for every scenario without them.
+
+def get_fes_demand_config(scenario):
+    """demand.disaggregation.fes of a scenario, or {} (disabled)."""
+    from scripts.demand.fes_demand import fes_demand_config
+    return fes_demand_config(get_disaggregation_config(scenario))
+
+
+def is_fes_demand_enabled(scenario):
+    return bool(get_fes_demand_config(scenario).get("enabled", False))
+
+
+def fes_demand_path(scenario, kind):
+    # Keyed by scenario id; the directory keeps its first name so existing outputs keep theirs.
+    return f"{resources_path}/demand/fes2050/{scenario}_{kind}"
+
+
+def fes_demand_targets_file(scenario):
+    """The targets JSON the components are pinned to: the block's ``targets_file``, else the
+    scenario's own FES edition, pathway and year (rule build_fes2025_energy_targets)."""
+    block = get_fes_demand_config(scenario)
+    if block.get("targets_file"):
+        return block["targets_file"]
+    return fes_targets_path(scenarios[scenario])
+
+
+def fes_demand_workbook(scenario):
+    """The FES Data Workbook of the block (``workbook``), else of the scenario's FES edition."""
+    block = get_fes_demand_config(scenario)
+    if block.get("workbook"):
+        return block["workbook"]
+    from scripts.sources.fes_adapter import WORKBOOKS
+    edition = int(scenarios[scenario]["targets"]["edition"])
+    if edition not in WORKBOOKS:
+        raise ValueError(f"{scenario}: no FES {edition} Data Workbook registered (scripts/sources/fes_adapter.WORKBOOKS)")
+    return str(WORKBOOKS[edition].relative_to(WORKBOOKS[edition].parents[2])).replace("\\", "/")
+
+
+# The scenarios that build the components (exact ids, never a name pattern).
+FES_DEMAND_SCENARIO_REGEX = _demand_regex_from_list(sorted(s for s in scenarios if is_fes_demand_enabled(s)))
+
+
 def get_final_demand_network(wildcards):
     """Return the finalized demand-side network for downstream rules."""
     scenario = wildcards.scenario
@@ -192,7 +345,7 @@ rule build_base_demand:
        - GSP names are mapped to ETYS node IDs (for ETYS networks)
        - Uses Dem_per_node weights from GB_network.xlsx
        
-    3. TEMPORAL PROFILE (configurable via demand_timeseries):
+    3. TEMPORAL PROFILE (configurable via demand.timeseries):
        - "ESPENI": Historical ESPENI half-hourly demand profile
          → Real GB demand data, scaled to FES annual total
          → Uses demand_year for profile shape selection (default: 2020)
@@ -249,28 +402,45 @@ rule build_base_demand:
     
     See Also:
       - Stage 2: Demand disaggregation (heat pumps, EVs, etc.)
-      - scripts/load.py for implementation details
+      - scripts/demand/load.py for implementation details
     """
     input:
         fes_data=get_fes_data_input,
         espeni="data/demand/espeni.csv",
         egy="data/demand/egy_7649_mmc1.xlsx",
-        base_network=f"{resources_path}/network/{{scenario}}_network.nc"
+        # Declared locations for FES GSPs without a Dem_per_node row (read by load.py)
+        gsp_location_overrides="data/demand/gsp_location_overrides.csv",
+        base_network=f"{resources_path}/network/{{scenario}}_network.nc",
+        # CP30 demand build (demand.build.enabled): FES 2024 lines and named large loads (rule
+        # extract_cp30_demand_inputs), weather-year cutout for the heat shapes. Empty for
+        # every other scenario.
+        cp30_national_lines=lambda w: cp30_demand_inputs(w.scenario).get("cp30_national_lines", []),
+        cp30_named_loads=lambda w: cp30_demand_inputs(w.scenario).get("cp30_named_loads", []),
+        cp30_logic=lambda w: cp30_demand_inputs(w.scenario).get("cp30_logic", []),
+        cp30_flex_logic=lambda w: cp30_demand_inputs(w.scenario).get("cp30_flex_logic", []),
+        cutout=lambda w: cp30_demand_inputs(w.scenario).get("cutout", [])
     output:
         network_with_base_demand=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
         base_demand_profile=f"{resources_path}/demand/{{scenario}}_base_profile.csv"
     params:
-        fes_year=lambda wildcards: scenarios[wildcards.scenario].get("FES_year"),
-        fes_scenario=lambda wildcards: scenarios[wildcards.scenario].get("FES_scenario"),
+        fes_year=lambda wildcards: get_demand_fes_year(wildcards.scenario),
+        fes_scenario=lambda wildcards: get_demand_fes_scenario(wildcards.scenario),
         modelled_year=lambda wildcards: scenarios[wildcards.scenario]["modelled_year"],
         demand_year=lambda wildcards: scenarios[wildcards.scenario]["demand_year"],
-        demand_timeseries=lambda wildcards: scenarios[wildcards.scenario].get("demand_timeseries", "ESPENI"),
+        demand_timeseries=lambda wildcards: scenarios[wildcards.scenario].get("demand", {}).get("timeseries", "ESPENI"),
         profile_year=lambda wildcards: scenarios[wildcards.scenario].get("profile_year", None),
         network_model=lambda wildcards: scenarios[wildcards.scenario]["network_model"],
         timestep_minutes=lambda wildcards: scenarios[wildcards.scenario].get("timestep_minutes", 60),
         scenario=lambda wildcards: wildcards.scenario,
+        scenario_source=lambda wildcards: scenarios[wildcards.scenario].get("scenario_source"),
+        cp30_pathway=lambda wildcards: scenarios[wildcards.scenario].get("CP30_pathway"),
+        cp30_ed1=lambda wildcards: get_demand_cp30_resource(wildcards.scenario, "ed1"),
+        cp30_es1=lambda wildcards: get_demand_cp30_resource(wildcards.scenario, "es1"),
         is_historical=lambda wildcards: scenario_is_historical(wildcards.scenario),
-        embedded_generation=lambda wildcards: scenarios[wildcards.scenario].get("embedded_generation", config.get("embedded_generation", {})),
+        embedded_generation=lambda wildcards: scenarios[wildcards.scenario].get("renewables", {}).get(
+            "embedded", config.get("renewables", {}).get("embedded", {})),
+        cp30_demand=lambda wildcards: get_cp30_demand_config(wildcards.scenario),
+        fes_capacity_redistribution=lambda wildcards: get_fes_capacity_redistribution(wildcards.scenario),
     message:
         "Building base demand for {wildcards.scenario} (Year: {params.demand_year}, Source: {params.demand_timeseries})"
     benchmark:
@@ -285,6 +455,41 @@ rule build_base_demand:
         "../scripts/demand/load.py"
 
 
+rule extract_cp30_demand_inputs:
+    """
+    CP30 2030 demand inputs from the FES 2024 workbooks (demand audit fix 2, 15 Oct 2026).
+
+    Writes the transmission-connected named large loads (FES24 ETYS Holistic Transition
+    2030/31, demand type T: data centres, HS2 and Network Rail feeders, St Fergus INTOG,
+    Port Talbot, the industrial direct connects) with their ETYS nodes, and the FES 2024
+    ED1 Holistic Transition 2030 lines the CP30 demand build uses, and the FES24 ETYS HT
+    2030/31 winter peak by ETYS id (all types, located). Nodes: GB_network.xlsx
+    Dir_con_BMUs_to_node for BMUs; data/demand/cp30_named_load_nodes.csv (hand choices,
+    each with its evidence) for the B_EXTRA rows. Read by build_base_demand
+    (demand.build.enabled) and validate_CP30_locational (the demand check's references), so
+    a change to a workbook or to the node choices re-runs both.
+    scripts/demand/extract_cp30_demand_inputs.py (also a CLI).
+    """
+    input:
+        etys_breakdown="data/network/ETYS/Regional breakdown of FES24 data.xlsx",
+        gb_network="data/network/ETYS/GB_network.xlsx",
+        node_choices="data/demand/cp30_named_load_nodes.csv",
+        fes24_workbook="data/FES/Future Energy Scenarios 2024 Data Workbook_V006_0.xlsx",
+        logic="scripts/demand/extract_cp30_demand_inputs.py"
+    output:
+        named_loads=CP30_NAMED_LOADS_FILE,
+        national_lines=CP30_DEMAND_LINES_FILE,
+        etys_peak=CP30_ETYS_PEAK_FILE
+    log:
+        "logs/demand/extract_cp30_demand_inputs.log"
+    benchmark:
+        "benchmarks/demand/extract_cp30_demand_inputs.txt"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/demand/extract_cp30_demand_inputs.py"
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # STAGE 2: DEMAND DISAGGREGATION
 # ══════════════════════════════════════════════════════════════════════════════
@@ -297,7 +502,7 @@ rule build_base_demand:
 #   3. finalize_demand -> Combine components + flexibility into final demand network
 #
 # To Add a New Component:
-#   1. Create scripts/demand_components/your_component.py
+#   1. Create scripts/demand/your_component.py
 #   2. Add rule disaggregate_your_component (copy template below)
 #   3. Update integrate rule inputs
 #   4. Configure in scenarios_master.yaml
@@ -398,7 +603,7 @@ rule disaggregate_electric_vehicles:
       - allocation: Spatial distribution across buses (GWh per bus per year)
     
     See Also:
-      - scripts/demand_components/electric_vehicles.py for implementation
+      - scripts/demand/electric_vehicles.py for implementation
     """
     input:
         # Use the network pickle that contains base demand (fast I/O)
@@ -456,7 +661,11 @@ rule finalize_demand:
         ev_availability=lambda w: f"{resources_path}/demand/ev_availability_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
         ev_dsm=lambda w: f"{resources_path}/demand/ev_dsm_{w.scenario}.csv" if is_ev_flexibility_enabled(w.scenario) else [],
         # FES data for V2G capacity and event response DSR capacity (conditional)
-        fes_data=lambda w: get_fes_data_input(w) if requires_fes_data_for_flexibility(w.scenario) else []
+        fes_data=lambda w: get_fes_data_input(w) if requires_fes_data_for_flexibility(w.scenario) else [],
+        # FES long-range components (plan Y6a; conditional, empty for every other scenario)
+        fes_demand_profiles=lambda w: fes_demand_path(w.scenario, "profiles.csv") if is_fes_demand_enabled(w.scenario) else [],
+        fes_demand_allocation=lambda w: fes_demand_path(w.scenario, "allocation.csv") if is_fes_demand_enabled(w.scenario) else [],
+        fes_demand_spec=lambda w: fes_demand_path(w.scenario, "spec.json") if is_fes_demand_enabled(w.scenario) else []
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand.pkl",
         summary=f"{resources_path}/demand/{{scenario}}_demand_integration_summary.csv"
@@ -473,6 +682,49 @@ rule finalize_demand:
         "../scripts/demand/finalize_demand_integration.py"
 
 
+rule build_fes_demand_components:
+    """
+    FES long-range demand components and consumer flexibility (plan Y6a), any pathway and year.
+
+    Only for scenarios with demand.disaggregation.fes.enabled: true (HT50_* today). Builds,
+    from the base network (ESPENI base scaled to ED1), the weather-year cutout and FES 2025
+    (the figures below are HT 2050's):
+      - heat pumps (Dem_BB004+005) on 2013 temperatures with hot water, a daily heating
+        shape and temperature COPs; district heat (ED1) on daily HDH; data centres flat;
+      - EVs (Dem_BB006+007) on a plug-in charging profile, with the flexible share solved
+        so EV load at the ED1 peak hours is ED1's (1.4 + 7.6 GW);
+      - consumer flexibility at FES scale (FLX1): EV smart charging, V2G (81.2 GW max,
+        40.6 GW at peak), heat-pump and district-heat pre-heating, I&C DSR; DACCS (ES1);
+      - bus allocation shares from the FES building blocks through the base GSP mapping.
+    finalize_demand then carves them out of the base loads (scripts/demand/fes_demand.py).
+    """
+    input:
+        base_network=f"{resources_path}/network/{{scenario}}_network_demand_base.pkl",
+        fes_data=get_fes_data_input,
+        cutout=lambda w: f"{resources_path}/atlite/cutouts/uk-{scenarios[w.scenario].get('renewables_year', 2020)}.nc",
+        targets=lambda w: fes_demand_targets_file(w.scenario),
+        workbook=lambda w: fes_demand_workbook(w.scenario),
+        logic=["scripts/demand/fes_demand.py", "scripts/demand/demand_carriers.py"],
+    output:
+        profiles=f"{resources_path}/demand/fes2050/{{scenario}}_profiles.csv",
+        allocation=f"{resources_path}/demand/fes2050/{{scenario}}_allocation.csv",
+        spec=f"{resources_path}/demand/fes2050/{{scenario}}_spec.json",
+    params:
+        fes_demand=lambda w: get_fes_demand_config(w.scenario),
+        fes_scenario=lambda w: get_demand_fes_scenario(w.scenario),
+        fes_year=lambda w: get_demand_fes_year(w.scenario),
+        modelled_year=lambda w: scenarios[w.scenario]["modelled_year"],
+        network_model=lambda w: scenarios[w.scenario]["network_model"],
+    wildcard_constraints:
+        scenario=FES_DEMAND_SCENARIO_REGEX
+    log:
+        "logs/demand/build_fes_demand_components_{scenario}.log"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/demand/fes_demand.py"
+
+
 # STAGE 3: DEMAND-SIDE FLEXIBILITY
 # ══════════════════════════════════════════════════════════════════════════════
 #
@@ -483,8 +735,8 @@ rule finalize_demand:
 #   - EV Flexibility: GO (night window), INT (smart charging), V2G (bidirectional)
 #   - Event Response: Saving Sessions style demand reduction
 #
-# Configuration (in scenarios_master.yaml or defaults.yaml):
-#   demand_flexibility:
+# Configuration (in the scenario files or config/defaults/base/demand.yaml):
+#   demand.flexibility:
 #     enabled: true/false  # Master switch
 #     heat_pumps:
 #       enabled: true/false
@@ -615,468 +867,6 @@ rule build_ev_availability:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 3a: Electric Vehicle Flexibility
-# ──────────────────────────────────────────────────────────────────────────────
-
-# ──────────────────────────────────────────────────────────────────────────────
-# DEPRECATED RULES (Legacy - kept for reference)
-# ──────────────────────────────────────────────────────────────────────────────
-# The following rules are DEPRECATED placeholders that were never implemented.
-# They are superseded by the new configuration-driven approach:
-#   - build_heat_profiles_atlite: Generates heat demand and COPs from Atlite
-#   - build_ev_availability: Generates EV availability from GB traffic patterns
-#   - integrate_demand_flexibility_into_network: Integrates all flexibility
-#
-# EV/HP projections now come from existing FES.smk building blocks.
-# ──────────────────────────────────────────────────────────────────────────────
-
-rule calculate_ev_fleet_projections:
-    """
-    DEPRECATED: EV fleet projections now come from FES.smk building blocks.
-
-    This rule was a placeholder that was never implemented. Use the FES data
-    pipeline instead: resources/FES/FES_{year}_data.csv contains EV projections.
-    """
-    input:
-        fes_data=f"{resources_path}/FES/FES_{{fes_year}}_processed.csv"
-    output:
-        ev_projections=f"{resources_path}/flexibility/ev/fleet_projections_{{fes_year}}.csv",
-        regional_distribution=f"{resources_path}/flexibility/ev/regional_distribution_{{fes_year}}.csv"
-    params:
-        base_year=2020,
-        projection_years=[2025, 2030, 2035, 2040, 2045, 2050],
-        vehicle_types=["BEV", "PHEV"]
-    log:
-        "logs/flexibility/ev_fleet_projections_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/ev_fleet_projections_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/ev_fleet_projections.py"
-
-
-rule model_ev_charging_patterns:
-    """
-    Model EV charging availability and demand patterns.
-    
-    Creates time-series profiles for:
-    - Charging availability (when vehicles are plugged in)
-    - Charging demand (uncontrolled baseline)
-    - Smart charging potential (shiftable load)
-    - V2G availability (when discharge is possible)
-    
-    Charging Locations:
-    - Home (overnight, typically 18:00-08:00)
-    - Work (daytime, typically 08:00-17:00)
-    - Public/rapid (opportunistic)
-    
-    Charging Behavior Assumptions:
-    - Home charging: 60-70% of total energy
-    - Work charging: 20-30% of total energy
-    - Public charging: 5-15% of total energy
-    
-    Smart Charging Constraints:
-    - Must meet daily travel energy needs
-    - Respect user preferences (minimum SOC requirements)
-    - Consider grid constraints (local transformer capacity)
-    
-    Outputs:
-    - Hourly charging availability profiles (0-1 for each location type)
-    - Baseline demand profiles (uncontrolled charging)
-    - Maximum shift potential (MW by time of day)
-    
-    Performance: ~10-15 seconds
-    """
-    input:
-        ev_projections=f"{resources_path}/flexibility/ev/fleet_projections_{{fes_year}}.csv"
-    output:
-        charging_availability=f"{resources_path}/flexibility/ev/charging_availability_{{fes_year}}.csv",
-        baseline_demand=f"{resources_path}/flexibility/ev/baseline_demand_{{fes_year}}.csv",
-        smart_charging_potential=f"{resources_path}/flexibility/ev/smart_charging_potential_{{fes_year}}.csv"
-    params:
-        home_charging_share=0.65,
-        work_charging_share=0.25,
-        public_charging_share=0.10,
-        home_plug_in_time="18:00",
-        home_plug_out_time="08:00",
-        work_plug_in_time="09:00",
-        work_plug_out_time="17:00",
-        home_charger_power=7.0,
-        work_charger_power=11.0,
-        rapid_charger_power=50.0,
-        average_battery_capacity_kwh=60.0,
-        average_daily_travel_kwh=10.0
-    log:
-        "logs/flexibility/ev_charging_patterns_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/ev_charging_patterns_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/ev_charging_patterns.py"
-
-
-rule configure_ev_flexibility_parameters:
-    """
-    Configure EV flexibility parameters for PyPSA integration.
-    
-    Determines:
-    - V1G (smart charging) capacity and constraints
-    - V2G (vehicle-to-grid) capacity and constraints
-    - Battery degradation considerations
-    - User participation rates
-    
-    V1G Capabilities:
-    - Delayed/shifted charging (within availability window)
-    - Reduced peak demand through smart scheduling
-    - Grid service provision (frequency response)
-    
-    V2G Capabilities:
-    - Bidirectional power flow
-    - Peak shaving and arbitrage
-    - Grid services (frequency, voltage support)
-    - Backup power for critical loads
-    
-    Constraints:
-    - Minimum SOC requirements (user comfort, range anxiety)
-    - Maximum cycles per day (battery degradation)
-    - Round-trip efficiency losses
-    - V2G participation rates (likely lower than V1G)
-    
-    Economic Parameters:
-    - V1G compensation (reduced tariff, time-of-use)
-    - V2G compensation (£/kWh for discharge)
-    - Battery degradation costs
-    - Infrastructure costs (smart chargers, V2G-capable EVSEs)
-    
-    Outputs:
-    - EV flexibility parameters by scenario
-    - V1G and V2G capacity estimates
-    - Cost-benefit analysis inputs
-    
-    Performance: ~5-8 seconds
-    """
-    input:
-        fleet_projections=f"{resources_path}/flexibility/ev/fleet_projections_{{fes_year}}.csv",
-        charging_availability=f"{resources_path}/flexibility/ev/charging_availability_{{fes_year}}.csv",
-        smart_charging_potential=f"{resources_path}/flexibility/ev/smart_charging_potential_{{fes_year}}.csv"
-    output:
-        ev_flexibility_params=f"{resources_path}/flexibility/ev/flexibility_parameters_{{fes_year}}.csv",
-        v1g_capacity=f"{resources_path}/flexibility/ev/v1g_capacity_{{fes_year}}.csv",
-        v2g_capacity=f"{resources_path}/flexibility/ev/v2g_capacity_{{fes_year}}.csv"
-    params:
-        v1g_participation_rate=0.80,
-        v2g_participation_rate=0.30,
-        v2g_efficiency=0.90,
-        max_cycles_per_day=1.5,
-        min_soc=0.20,
-        target_soc=0.80,
-        cycle_degradation_cost_per_kwh=0.05,
-        v1g_tariff_discount=0.10,
-        v2g_discharge_payment=0.20
-    log:
-        "logs/flexibility/ev_flexibility_params_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/ev_flexibility_params_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/ev_flexibility_params.py"
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Stage 3b: Thermal Energy Storage Flexibility
-# ──────────────────────────────────────────────────────────────────────────────
-
-rule assess_thermal_storage_potential:
-    """
-    Assess thermal energy storage potential in buildings.
-    
-    Thermal storage types:
-    1. Hot Water Tanks: Domestic hot water cylinders, commercial systems
-    2. Building Thermal Mass: Space heating inertia, pre-heating
-    3. Phase Change Materials: High energy density (future)
-    
-    Assessment Method:
-    - Building stock characterization (residential, commercial, industrial)
-    - Heating system prevalence (heat pumps, direct electric, gas boiler)
-    - Storage capacity estimation (tank volume, thermal mass)
-    - Operational constraints (comfort temperatures, legionella risk)
-    
-    Data Sources:
-    - Energy Performance Certificate (EPC) database
-    - Building Research Establishment models
-    - Heating system surveys
-    - Heat pump deployment projections (from FES)
-    
-    Outputs:
-    - Thermal storage capacity by region (MWh_thermal)
-    - Charging/discharging characteristics
-    - Temperature constraints and comfort bounds
-    
-    Performance: ~10-15 seconds
-    """
-    input:
-        fes_data=f"{resources_path}/FES/FES_{{fes_year}}_processed.csv",
-        heat_pump_projections=f"{resources_path}/demand/components/heat_pump_projections_{{fes_year}}.csv"
-    output:
-        thermal_storage_potential=f"{resources_path}/flexibility/thermal/storage_potential_{{fes_year}}.csv",
-        building_characteristics=f"{resources_path}/flexibility/thermal/building_characteristics_{{fes_year}}.csv"
-    params:
-        average_hw_tank_volume_liters=200,
-        hw_tank_temp_range_celsius=[50, 65],
-        hw_useful_energy_per_liter_kwh=0.058,
-        average_building_thermal_mass_kwh_per_m2=0.5,
-        temperature_relaxation_celsius=2.0,
-        hp_cop_average=3.0,
-        heat_pump_deployment_rate=0.05
-    log:
-        "logs/flexibility/thermal_storage_potential_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/thermal_storage_potential_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/thermal_storage_potential.py"
-
-
-rule configure_thermal_flexibility_parameters:
-    """
-    Configure thermal flexibility parameters for PyPSA integration.
-    
-    Thermal flexibility operates by:
-    - Pre-heating during low-price periods (store energy as heat)
-    - Reduced heating during high-price periods (release stored heat)
-    - Maintaining comfort constraints throughout
-    
-    Key Parameters:
-    - Storage capacity (MWh_thermal)
-    - Charge/discharge rates (MW_thermal)
-    - Conversion efficiency (electric → thermal)
-    - Standing losses (heat dissipation)
-    - Temperature constraints
-    
-    PyPSA Representation:
-    - Link component: electric load → thermal storage
-    - Store component: thermal energy reservoir
-    - Load component: thermal demand (space + water heating)
-    
-    Economic Parameters:
-    - No direct compensation (benefits from ToU tariffs)
-    - Capital cost: smart controls, improved insulation
-    - Value: reduced electricity costs, grid benefits
-    
-    Outputs:
-    - Thermal flexibility parameters
-    - Operational constraints
-    - Integration specification for PyPSA
-    
-    Performance: ~5-8 seconds
-    """
-    input:
-        storage_potential=f"{resources_path}/flexibility/thermal/storage_potential_{{fes_year}}.csv",
-        building_characteristics=f"{resources_path}/flexibility/thermal/building_characteristics_{{fes_year}}.csv"
-    output:
-        thermal_flexibility_params=f"{resources_path}/flexibility/thermal/flexibility_parameters_{{fes_year}}.csv",
-        pypsa_spec=f"{resources_path}/flexibility/thermal/pypsa_integration_spec_{{fes_year}}.json"
-    params:
-        electric_to_thermal_efficiency=0.95,
-        standing_loss_per_hour=0.01,
-        participation_rate=0.50,
-        max_temperature_deviation_celsius=2.0,
-        max_cycles_per_day=3
-    log:
-        "logs/flexibility/thermal_flexibility_params_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/thermal_flexibility_params_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/thermal_flexibility_params.py"
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Stage 3c: Demand Response Flexibility
-# ──────────────────────────────────────────────────────────────────────────────
-
-rule assess_demand_response_potential:
-    """
-    Assess demand response potential across sectors.
-    
-    Demand Response Types:
-    1. Industrial Processes: Aluminum smelting, cement, steel, chemicals, data centers
-    2. Commercial Buildings: HVAC, refrigeration, lighting, office equipment
-    3. Residential: Wet appliances, pool pumps, smart home devices
-    
-    Assessment Method:
-    - Sector-by-sector load analysis
-    - Process flexibility characterization
-    - Historical DR program performance
-    - Economic viability assessment
-    
-    Data Sources:
-    - BEIS industrial energy consumption
-    - Commercial building surveys
-    - Smart meter data (aggregated)
-    - DR program reports (National Grid ESO)
-    
-    Outputs:
-    - DR potential by sector and type (MW)
-    - Response characteristics (speed, duration, frequency)
-    - Participation likelihood and costs
-    
-    Performance: ~8-12 seconds
-    """
-    input:
-        fes_data=f"{resources_path}/FES/FES_{{fes_year}}_processed.csv",
-        industrial_load_profiles=f"{data_path}/demand/industrial_profiles.csv"
-    output:
-        dr_potential=f"{resources_path}/flexibility/dr/potential_{{fes_year}}.csv",
-        sector_breakdown=f"{resources_path}/flexibility/dr/sector_breakdown_{{fes_year}}.csv"
-    params:
-        industrial_flexibility_share=0.15,
-        industrial_response_time_minutes=30,
-        commercial_flexibility_share=0.10,
-        commercial_response_time_minutes=15,
-        residential_flexibility_share=0.05,
-        residential_response_time_minutes=60,
-        participation_rates={
-            "industrial": 0.40,
-            "commercial": 0.25,
-            "residential": 0.10
-        }
-    log:
-        "logs/flexibility/dr_potential_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/dr_potential_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/dr_potential.py"
-
-
-rule configure_demand_response_parameters:
-    """
-    Configure demand response parameters for PyPSA integration.
-    
-    DR Representation in PyPSA:
-    - Link component with time-varying efficiency
-    - Load reduction = load shift to later time
-    - Rebound effect (must pay back shifted load)
-    
-    Key Parameters:
-    - Maximum shift capacity (MW)
-    - Maximum shift duration (hours)
-    - Rebound ratio (shifted MWh must be paid back)
-    - Response time (minutes to activate)
-    - Recovery time (time between activations)
-    
-    Economic Parameters:
-    - Availability payment (£/MW/year for being enrolled)
-    - Utilization payment (£/MWh when activated)
-    - Opportunity cost (lost productivity, inconvenience)
-    
-    Constraints:
-    - Maximum activations per day/week/month
-    - Minimum notice period
-    - Seasonal availability (e.g., heating season only)
-    
-    Outputs:
-    - DR flexibility parameters
-    - Activation cost curves
-    - PyPSA integration specification
-    
-    Performance: ~5-7 seconds
-    """
-    input:
-        dr_potential=f"{resources_path}/flexibility/dr/potential_{{fes_year}}.csv",
-        sector_breakdown=f"{resources_path}/flexibility/dr/sector_breakdown_{{fes_year}}.csv"
-    output:
-        dr_flexibility_params=f"{resources_path}/flexibility/dr/flexibility_parameters_{{fes_year}}.csv",
-        activation_cost_curve=f"{resources_path}/flexibility/dr/activation_costs_{{fes_year}}.csv",
-        pypsa_spec=f"{resources_path}/flexibility/dr/pypsa_integration_spec_{{fes_year}}.json"
-    params:
-        max_shift_duration_hours=4.0,
-        rebound_ratio=1.1,
-        availability_payment_per_mw_year=10000,
-        utilization_payment_per_mwh=50,
-        max_activations_per_week=3,
-        min_notice_hours=4
-    log:
-        "logs/flexibility/dr_flexibility_params_{fes_year}.log"
-    benchmark:
-        "benchmarks/flexibility/dr_flexibility_params_{fes_year}.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    script:
-        "../scripts/demand/flex/dr_flexibility_params.py"
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Stage 3d: Flexibility Network Integration
-# ──────────────────────────────────────────────────────────────────────────────
-
-# AGGREGATE RULES
-# ══════════════════════════════════════════════════════════════════════════════
-
-rule build_ev_flexibility_database:
-    """Complete EV flexibility data processing (Stage 3a)."""
-    input:
-        ev_params=f"{resources_path}/flexibility/ev/flexibility_parameters_{{fes_year}}.csv",
-        v1g_capacity=f"{resources_path}/flexibility/ev/v1g_capacity_{{fes_year}}.csv",
-        v2g_capacity=f"{resources_path}/flexibility/ev/v2g_capacity_{{fes_year}}.csv"
-    output:
-        marker=f"{resources_path}/flexibility/ev/database_complete_{{fes_year}}.txt"
-    shell:
-        "echo 'EV flexibility database complete!' > {output.marker}"
-
-
-rule build_thermal_flexibility_database:
-    """Complete thermal flexibility data processing (Stage 3b)."""
-    input:
-        thermal_params=f"{resources_path}/flexibility/thermal/flexibility_parameters_{{fes_year}}.csv",
-        pypsa_spec=f"{resources_path}/flexibility/thermal/pypsa_integration_spec_{{fes_year}}.json"
-    output:
-        marker=f"{resources_path}/flexibility/thermal/database_complete_{{fes_year}}.txt"
-    shell:
-        "echo 'Thermal flexibility database complete!' > {output.marker}"
-
-
-rule build_demand_response_database:
-    """Complete demand response data processing (Stage 3c)."""
-    input:
-        dr_params=f"{resources_path}/flexibility/dr/flexibility_parameters_{{fes_year}}.csv",
-        activation_costs=f"{resources_path}/flexibility/dr/activation_costs_{{fes_year}}.csv",
-        pypsa_spec=f"{resources_path}/flexibility/dr/pypsa_integration_spec_{{fes_year}}.json"
-    output:
-        marker=f"{resources_path}/flexibility/dr/database_complete_{{fes_year}}.txt"
-    shell:
-        "echo 'Demand response database complete!' > {output.marker}"
-
-
-rule build_demand_flexibility_database:
-    """
-    Complete demand-side flexibility data processing (all stages).
-    
-    Combines EV, thermal, and DR databases for comprehensive flexibility modeling.
-    
-    Usage:
-        snakemake build_demand_flexibility_database_{fes_year} --cores 1
-        
-    Example:
-        snakemake build_demand_flexibility_database_2024 --cores 1
-    """
-    input:
-        ev_marker=f"{resources_path}/flexibility/ev/database_complete_{{fes_year}}.txt",
-        thermal_marker=f"{resources_path}/flexibility/thermal/database_complete_{{fes_year}}.txt",
-        dr_marker=f"{resources_path}/flexibility/dr/database_complete_{{fes_year}}.txt"
-    output:
-        marker=f"{resources_path}/flexibility/database_complete_{{fes_year}}.txt"
-    shell:
-        "echo 'Demand-side flexibility database complete!' > {output.marker}"
-
-
 # New Flexibility Workflow Helper Rules
 # ──────────────────────────────────────────────────────────────────────────────
 

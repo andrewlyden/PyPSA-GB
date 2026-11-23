@@ -828,7 +828,7 @@ def _get_ev_params(config: Dict[str, Any]) -> Dict[str, float]:
     """
     Extract EV parameters from config with sensible defaults.
 
-    All defaults match config/defaults.yaml values.
+    All defaults match config/defaults/base/demand.yaml values.
 
     Args:
         config: EV flexibility configuration dictionary
@@ -1393,7 +1393,7 @@ def add_ev_flexibility(n: pypsa.Network,
         ev_demand_mw: EV charging demand time series
         availability_profile: When EVs are plugged in
         dsm_profile: Minimum SOC requirements
-        flex_config: Flexibility configuration from defaults.yaml
+        flex_config: Flexibility configuration (demand.flexibility, config/defaults/base/demand.yaml)
         logger: Logger instance
         fes_v2g_capacity: Optional FES V2G capacity per bus (from Srg_BB005)
 
@@ -1531,6 +1531,15 @@ if __name__ == "__main__":
                 raise ValueError("EV profile length does not match base profile")
 
             profile_shape = profile_series
+        elif config.get("profile_method") == "plugin":
+            # Plug-in charging (plan Y6a, decision 20) instead of the driving shape: home,
+            # public and depot charging from scripts/demand/fes_demand.py, mixed by the
+            # configured shares (default: ED1 2050 HT residential 46%, depot 31%, public 23%).
+            from scripts.demand.fes_demand import ev_profiles, fes_demand_config, resolve_config
+            plugin = ev_profiles(pd.DatetimeIndex(base_profile.index), resolve_config(fes_demand_config(config)))
+            mix = config.get("plugin_mix", {"residential": 0.46, "public": 0.23, "depot": 0.31})
+            profile_shape = sum(float(w) * plugin[k] for k, w in mix.items())
+            logger.info(f"Using plug-in charging profile (mix {mix})")
         else:
             logger.warning(f"EV data file not found: {ev_source_path}")
             logger.info("Generating synthetic EV profile based on typical charging patterns")

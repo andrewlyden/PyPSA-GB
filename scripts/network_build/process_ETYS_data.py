@@ -5,6 +5,8 @@ This script separates the slow Excel I/O and data parsing from the network
 model construction step. It reads the ETYS Appendix B Excel file, GB_network.xlsx,
 and FES regional data, then outputs:
   - components CSV: all lines, transformers, and links with standardized columns
+    (r, x, b in PER UNIT ON 100 MVA, i.e. the ETYS "% on 100 MVA" / 100; this is
+    not PyPSA's unit, see scripts/network_build/branch_units.py)
   - buses CSV: unique buses with voltage levels, carriers, GSP coordinates,
     and offshore classification
 
@@ -37,7 +39,10 @@ from scripts.utilities.logging_config import setup_logging, log_dataframe_info
 from scripts.network_build.etys_file_registry import (
     VOLTAGE_LEVELS, ELECTRICAL_DEFAULTS, ETYS_BASE_SHEETS,
     EXTRA_WF_EDGE_RATINGS, DEFAULT_WF_RATING,
+    GB_NETWORK_REPAIR_IMPEDANCE_OVERRIDES,
 )
+from scripts.network_build.branch_units import resolve_source_impedance_pu100
+from scripts.network_build.branch_attributes import seasonal_ratings_from_record
 
 
 def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
@@ -66,9 +71,10 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
     circuit_sheet_names = ETYS_BASE_SHEETS['circuits']
     logger.info(f"Processing line data sheets ({circuit_sheet_names[0]} to {circuit_sheet_names[-1]})")
     dfa, dfb, dfc, dfd = [sheets[s] for s in circuit_sheet_names]
-    for df in [dfa, dfb, dfc, dfd]:
+    for df, licensee in zip([dfa, dfb, dfc, dfd], ['SHE', 'SPT', 'NGET', 'OFTO']):
         df.loc[:, 'component'] = 'line'
         df.loc[:, 'carrier'] = 'AC'
+        df.loc[:, 'etys_licensee'] = licensee   # ETYS licensee of the source sheet
     # Normalize OFTO column names to match main ETYS format
     # OFTO sheets use slightly different naming: no space before (km), no space before MVA
     dfd.rename(columns={
@@ -92,9 +98,10 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
             'Node1': 'Node 1', 'Node2': 'Node 2',
             'Rating (MVA)': 'Winter Rating (MVA)'
         }, inplace=True)
-    for df in [dfe, dff, dfg, dfh]:
+    for df, licensee in zip([dfe, dff, dfg, dfh], ['SHE', 'SPT', 'NGET', 'OFTO']):
         df.loc[:, 'component'] = 'transformer'
         df.loc[:, 'carrier'] = 'AC'
+        df.loc[:, 'etys_licensee'] = licensee
 
     hvdc_sheet = ETYS_BASE_SHEETS['hvdc']
     logger.info(f"Processing internal HVDC link data ({hvdc_sheet})")
@@ -171,8 +178,17 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
         'R (% on 100 MVA)': 'r',
         'X (% on 100 MVA)': 'x',
         'B (% on 100 MVA)': 'b',
-        'Winter Rating (MVA)': 's_nom'
+        'Winter Rating (MVA)': 's_nom',
+        # Seasonal circuit ratings (B-2-1a/b/c only; OFTO and transformer
+        # sheets publish one rating). Completed at the end of the build
+        # (branch_attributes.finalize_branch_attributes).
+        'Spring Rating (MVA)': 's_nom_spring',
+        'Summer Rating (MVA)': 's_nom_summer',
+        'Autumn Rating (MVA)': 's_nom_autumn',
     }, inplace=True)
+    for col in ('s_nom_spring', 's_nom_summer', 's_nom_autumn', 'etys_licensee'):
+        if col not in df.columns:
+            df[col] = np.nan
 
     # Calculate total length for distance-based coordinate estimation
     if 'OHL Length (km)' in df.columns and 'Cable Length (km)' in df.columns:
@@ -182,7 +198,12 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
     else:
         df['length_km'] = 0
 
-    df = df[['component', 'carrier', 'bus0', 'bus1', 'r', 'x', 'b', 's_nom', 'length_km']]
+    circuit_type = (df['Circuit Type'] if 'Circuit Type' in df.columns
+                    else pd.Series('', index=df.index)).fillna('').astype(str)
+    df = df[['component', 'carrier', 'bus0', 'bus1', 'r', 'x', 'b', 's_nom', 'length_km',
+             's_nom_spring', 's_nom_summer', 's_nom_autumn', 'etys_licensee']]
+    for col in ('s_nom_spring', 's_nom_summer', 's_nom_autumn'):
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Convert electrical parameters
     logger.info("Processing electrical parameters")
@@ -190,19 +211,35 @@ def sort_raw_ETYS_data(etys_file: str, gb_network_file: str,
     df['x'] = df['x'].astype('float64')
     df['b'] = df['b'].astype('float64')
 
-    # Convert from "% on 100 MVA" to per-unit
-    logger.info("Converting electrical parameters from % on 100 MVA base to per-unit")
+    # "% on 100 MVA" -> per unit on 100 MVA ("pu100"). pu100 is the unit every
+    # branch carries through the build; it is NOT PyPSA's unit. ETYS_network
+    # converts all branches to PyPSA units once, after upgrades and layers
+    # (scripts/network_build/branch_units.py).
+    logger.info("Converting electrical parameters from % on 100 MVA to pu on 100 MVA")
     df['r'] = df['r'] / 100.0
     df['x'] = df['x'] / 100.0
     df['b'] = df['b'] / 100.0
 
-    # Apply component-type-aware defaults (lines vs transformers vs links)
-    for comp_type in ['line', 'transformer']:
-        defaults = ELECTRICAL_DEFAULTS[comp_type]
-        mask = df['component'] == comp_type
-        for col in ['r', 'x', 'b']:
-            zero_or_nan = mask & ((df[col] == 0) | df[col].isna())
-            df.loc[zero_or_nan, col] = defaults[col]
+    # Zero/missing impedances: one policy, shared with ETYS_upgrades.
+    # R = 0 and B = 0 are valid published values; a published X = 0 on a
+    # zero-length/<=1 km circuit is a bus section (coupler X); other missing
+    # values take the component-type default.
+    assumed = {}
+    for idx in df.index[df['component'].isin(['line', 'transformer'])]:
+        component = df.at[idx, 'component']
+        ctype = circuit_type.at[idx]
+        kind = 'transformer' if component == 'transformer' else (
+            'cable' if 'cable' in ctype.lower() else 'line')
+        values, assumptions, _ = resolve_source_impedance_pu100(
+            df.at[idx, 'r'], df.at[idx, 'x'], df.at[idx, 'b'], kind,
+            circuit_type=ctype, length_km=df.at[idx, 'length_km'],
+        )
+        for key in ('r', 'x', 'b'):
+            df.at[idx, key] = values[key]
+        for assumption in assumptions:
+            assumed[assumption] = assumed.get(assumption, 0) + 1
+    if assumed:
+        logger.info(f"Impedance assumptions applied (pu on 100 MVA): {assumed}")
 
     # Links use p_nom not impedance — zero out R/X/B
     df.loc[df['component'] == 'link', ['r', 'x', 'b']] = 0
@@ -263,7 +300,8 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
         return df_components
 
     main_component = max(components, key=len)
-    islands = [c for c in components if c != main_component]
+    # Sorted so repair IDs (…_repair_N) do not depend on set/hash order.
+    islands = sorted((c for c in components if c != main_component), key=lambda c: min(c))
     logger.warning(f"Connectivity check: found {len(islands)} disconnected islands — attempting repair")
 
     # Load GB_network.xlsx AC sheet as authoritative reference
@@ -306,30 +344,38 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
             # Determine component type from 'Circuit Type' column
             circuit_type = str(row.get('Circuit Type', '')).lower()
             if 'transformer' in circuit_type:
-                comp_type = 'transformer'
-                defaults = ELECTRICAL_DEFAULTS['transformer']
+                comp_type, kind = 'transformer', 'transformer'
             elif 'cable' in circuit_type:
-                comp_type = 'line'
-                defaults = ELECTRICAL_DEFAULTS['cable']
+                comp_type, kind = 'line', 'cable'
             else:
-                comp_type = 'line'
-                defaults = ELECTRICAL_DEFAULTS['line']
-
-            # Extract electrical parameters (% on 100 MVA → per-unit)
-            r = row.get('R (% on 100 MVA)', 0)
-            x = row.get('X (% on 100 MVA)', 0)
-            b = row.get('B (% on 100 MVA)', 0)
-            s_nom = row.get('Winter Rating (MVA)', 500)
-
-            r = (r / 100.0) if pd.notna(r) and r != 0 else defaults['r']
-            x = (x / 100.0) if pd.notna(x) and x != 0 else defaults['x']
-            b = (b / 100.0) if pd.notna(b) else defaults['b']
-            s_nom = s_nom if pd.notna(s_nom) and s_nom > 0 else 500
+                comp_type, kind = 'line', 'line'
 
             length_km = 0
             for col in ['OHL Length (km)', 'Cable Length (km)']:
                 if col in row.index and pd.notna(row[col]):
                     length_km += row[col]
+
+            # Electrical parameters: % on 100 MVA -> pu on 100 MVA, with the
+            # same zero/missing policy as the base sheets (branch_units).
+            # Documented rows whose AC-sheet values are on the transformer's
+            # own rating take their Appendix B twin (etys_file_registry).
+            override = GB_NETWORK_REPAIR_IMPEDANCE_OVERRIDES.get(
+                (n1, n2), GB_NETWORK_REPAIR_IMPEDANCE_OVERRIDES.get((n2, n1)))
+            if override:
+                logger.info(f"  Repair impedance override {n1}-{n2}: {override['source']}")
+
+            def _pu100(field):
+                source = override if override and field in override else row
+                value = pd.to_numeric(source.get(field, np.nan), errors='coerce')
+                return value / 100.0 if pd.notna(value) else np.nan
+            values, _, _ = resolve_source_impedance_pu100(
+                _pu100('R (% on 100 MVA)'), _pu100('X (% on 100 MVA)'),
+                _pu100('B (% on 100 MVA)'), kind,
+                circuit_type=circuit_type, length_km=length_km,
+            )
+            r, x, b = values['r'], values['x'], values['b']
+            s_nom = row.get('Winter Rating (MVA)', 500)
+            s_nom = s_nom if pd.notna(s_nom) and s_nom > 0 else 500
 
             # Generate unique component ID
             comp_id = f"{n1}_{n2}_repair_{len(added)}"
@@ -345,6 +391,8 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
                 's_nom': s_nom,
                 'length_km': length_km,
             }
+            if comp_type == 'line':
+                new_comp.update(seasonal_ratings_from_record(row))
             added.append((comp_id, new_comp))
 
             # Update main_component so subsequent bridges can find extended reach
@@ -390,7 +438,7 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
 
     if len(components2) > 1:
         main2 = max(components2, key=len)
-        islands2 = [c for c in components2 if c != main2]
+        islands2 = sorted((c for c in components2 if c != main2), key=lambda c: min(c))
 
         # Build voltage lookup for all buses
         bus_voltages = {}
@@ -403,7 +451,9 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
 
         # Main network buses grouped by (prefix[:4], voltage)
         main_by_prefix = {}
-        for bus in main2:
+        # Sorted: set order varies with PYTHONHASHSEED, which made the coupler
+        # target (e.g. NECU1C -> NECU1R or NECU1-) differ between builds.
+        for bus in sorted(main2):
             prefix = bus[:4] if len(bus) >= 4 else bus
             v = bus_voltages.get(bus, 0)
             key = (prefix, v)
@@ -421,14 +471,16 @@ def repair_disconnected_components(df_components: pd.DataFrame, gb_network_file:
                     # Found a same-prefix, same-voltage bus in the main network
                     target = main_by_prefix[key][0]
                     comp_id = f"{ibus}_{target}_coupler_{len(added2)}"
+                    # A same-substation, same-voltage bus section: coupler
+                    # impedance (pu on 100 MVA), not a 100 km line default.
                     new_comp = {
                         'component': 'line',
                         'carrier': 'AC',
                         'bus0': ibus,
                         'bus1': target,
-                        'r': ELECTRICAL_DEFAULTS['line']['r'],
-                        'x': ELECTRICAL_DEFAULTS['line']['x'],
-                        'b': ELECTRICAL_DEFAULTS['line']['b'],
+                        'r': ELECTRICAL_DEFAULTS['coupler']['r'],
+                        'x': ELECTRICAL_DEFAULTS['coupler']['x'],
+                        'b': ELECTRICAL_DEFAULTS['coupler']['b'],
                         's_nom': 500,  # Conservative bus section coupler rating
                         'length_km': 0.1,
                     }

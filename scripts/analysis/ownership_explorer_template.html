@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Public Ownership Bill Explorer</title>
+<meta name="description" content="Explore the 2030 GB household electricity bill under private ownership, public control and public ownership, with every sensitivity and the bill lines that move.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f5f4; --panel:#ffffff; --panel-2:#eaeeec; --ink:#151a1e; --ink-2:#545e67; --ink-3:#86909a; --line:#dde3e0; --line-2:#c9d1cd;
+  --accent:#0f6f66; --accent-ink:#ffffff;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --saving:#2a78d6; --cost:#e34948; --mid:#e6e9e7;
+  --good:#1d7f3a; --bad:#b83232;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 8px 24px -12px rgba(20,30,40,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891; --line:#2b3136; --line-2:#3a4147;
+    --accent:#3fb3a6; --accent-ink:#0e1517;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --saving:#3987e5; --cost:#e66767; --mid:#383835;
+    --good:#4cc26b; --bad:#ef7b7b;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#15181b; --panel:#1d2125; --panel-2:#252a2f; --ink:#f1f3f4; --ink-2:#b3bbc3; --ink-3:#7f8891; --line:#2b3136; --line-2:#3a4147;
+  --accent:#3fb3a6; --accent-ink:#0e1517;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --saving:#3987e5; --cost:#e66767; --mid:#383835;
+  --good:#4cc26b; --bad:#ef7b7b;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;padding-inline:16px}
+h1,h2,h3{font-family:"Archivo","Source Sans 3",system-ui,sans-serif;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,4vw,38px);font-weight:700;letter-spacing:-.01em;line-height:1.1}
+h2{font-size:18px;font-weight:600;letter-spacing:-.005em}
+h3{font-size:14px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.num{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+header.top{display:grid;gap:10px;margin-bottom:22px;max-width:760px}
+header.top p.lede{font-size:16px;color:var(--ink-2)}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:1fr}}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:grid;gap:14px}
+@media (max-width:860px){.rail{position:static}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.panel.flat{box-shadow:none}
+.seg{display:grid;gap:8px}
+.seg button{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.seg button:hover{border-color:var(--line-2);background:var(--panel-2)}
+.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--panel-2)}
+.seg button:focus-visible,.list button:focus-visible,.toggle button:focus-visible,.bars rect:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.seg .name{font-weight:600}
+.seg .sub{font-size:12px;color:var(--ink-2)}
+.pill{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.pill.good{color:var(--good);border-color:transparent;background:color-mix(in srgb,var(--good) 12%,transparent)}
+.pill.bad{color:var(--bad);border-color:transparent;background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.list{display:grid;gap:12px;max-height:60vh;overflow:auto;padding-right:2px}
+@media (max-width:860px){.list{max-height:none}}
+.list .group-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:6px 0 0}
+.list button{all:unset;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:7px;color:var(--ink);font-size:14px;line-height:1.3}
+.list button:hover{background:var(--panel-2)}
+.list button[aria-pressed="true"]{background:var(--panel-2);box-shadow:inset 3px 0 0 var(--accent)}
+.list button .num{font-size:13px;color:var(--ink-2)}
+.main{display:grid;gap:18px;min-width:0}
+.case-head{display:grid;gap:6px}
+.case-head .kind{display:inline-flex;gap:8px;align-items:center}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 14px 12px;display:grid;gap:4px;align-content:start}
+.tile .label{font-size:12px;color:var(--ink-2);font-weight:600}
+.tile .value{font-size:26px;font-weight:500;letter-spacing:-.01em;line-height:1.1}
+.tile .value.good{color:var(--good)} .tile .value.bad{color:var(--bad)}
+.tile .note{font-size:12px;color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);background:var(--panel)}
+.chip.moved{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:600}
+.chip b{font-weight:600;color:var(--ink)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:980px){.two{grid-template-columns:1fr}}
+.chart-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);margin:6px 0 2px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+svg text{font-family:"Source Sans 3",system-ui,sans-serif;font-size:12px;fill:var(--ink-2)}
+svg text.num{font-family:"IBM Plex Mono",monospace}
+svg text.ink{fill:var(--ink)}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .axis{stroke:var(--line-2);stroke-width:1}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.toggle button{all:unset;cursor:pointer;padding:5px 10px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+table.lines{width:100%;border-collapse:collapse;font-size:13px}
+table.lines th,table.lines td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.lines th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+table.lines td.num,table.lines th.num{text-align:right}
+.scroll{overflow-x:auto}
+.tooltip{position:fixed;pointer-events:none;z-index:10;background:var(--ink);color:var(--panel);padding:8px 10px;border-radius:6px;font-size:12px;line-height:1.35;max-width:300px;box-shadow:var(--shadow);opacity:0;transition:opacity .08s}
+.tooltip.show{opacity:1}
+.tooltip .t{font-weight:600}
+.callout{border-left:3px solid var(--accent);padding:2px 0 2px 12px;font-size:14px;color:var(--ink-2)}
+.notes{font-size:13px;color:var(--ink-2);display:grid;gap:8px}
+details summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px 18px;margin-top:10px;font-size:13px}
+.glossary div b{display:block;color:var(--ink)}
+.stage{font-size:12px;color:var(--ink-3)}
+.overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.overview-card{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+.overview-card:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.overview-card[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 3px 0 var(--scenario-colour),var(--shadow)}
+.overview-card:focus-visible,.case-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.overview-card .topline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.overview-card .bill{font-size:28px;line-height:1;font-weight:500}
+.overview-card .desc{font-size:13px;color:var(--ink-2);min-height:56px}
+.guide-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+.guide-item{border-top:3px solid var(--line-2);padding:9px 4px 0;font-size:13px;color:var(--ink-2)}
+.guide-item b{display:block;color:var(--ink);margin-bottom:4px}
+.scope-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px}
+.scope-item{display:flex;gap:8px;align-items:flex-start;padding:9px 10px;border-radius:8px;background:var(--panel-2);font-size:13px;color:var(--ink-2)}
+.scope-item::before{content:"✓";color:var(--accent);font-weight:700;flex:none}
+.explain-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.explain-cell{padding:13px 14px;border-radius:8px;background:var(--panel-2);border-left:3px solid var(--line-2)}
+.explain-cell.change{border-left-color:var(--accent)}
+.explain-cell.caution{border-left-color:var(--s4)}
+.explain-cell .kicker{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.explain-cell p{font-size:14px;color:var(--ink-2)}
+.change-strip{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.change-step{font-size:12px;padding:5px 9px;border-radius:7px;background:var(--panel);border:1px solid var(--line)}
+.change-step b{color:var(--ink)}
+.handbook{display:grid;gap:18px;margin-top:12px}
+.handbook-group{display:grid;gap:8px}
+.handbook-group-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:7px}
+.handbook-group-head p{font-size:13px;color:var(--ink-2)}
+.lever-guide{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+.lever-guide[open]{border-color:var(--line-2);box-shadow:var(--shadow)}
+.lever-guide summary{list-style:none;display:grid;grid-template-columns:minmax(180px,.7fr) minmax(260px,1.3fr) auto;gap:12px;align-items:center;padding:11px 13px}
+.lever-guide summary::-webkit-details-marker{display:none}
+.lever-guide summary::after{content:"+";font-size:20px;color:var(--ink-3)}
+.lever-guide[open] summary::after{content:"−"}
+.lever-guide summary .q{font-weight:400;color:var(--ink-2);font-size:13px}
+.lever-guide-body{border-top:1px solid var(--line);padding:13px;display:grid;gap:12px}
+.central-values{display:flex;flex-wrap:wrap;gap:6px}
+.central-values span{font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:999px}
+.value-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.value-item{padding:9px 10px;border-radius:7px;background:var(--panel-2);font-size:13px;color:var(--ink-2)}
+.value-item b{display:block;color:var(--ink);margin-bottom:3px}
+.explain-three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:13px}
+.explain-three div{padding-top:8px;border-top:2px solid var(--line)}
+.explain-three b{display:block;margin-bottom:4px}
+.handbook-controls{display:flex;gap:7px}
+.handbook-controls button{cursor:pointer;background:var(--panel);font-family:inherit}
+.catalogue-table{width:100%;border-collapse:collapse;font-size:13px}
+.catalogue-table th,.catalogue-table td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.catalogue-table th{position:sticky;top:0;background:var(--panel);z-index:1;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.catalogue-table td.num,.catalogue-table th.num{text-align:right;white-space:nowrap}
+.catalogue-table tr.selected{background:var(--panel-2)}
+.catalogue-table .scenario-cell{font-weight:600;white-space:nowrap}
+.case-link{all:unset;cursor:pointer;color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:2px}
+.case-link:hover{text-decoration-color:var(--accent)}
+.catalogue-wrap{max-height:680px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+@media (max-width:860px){.overview{grid-template-columns:1fr}.overview-card .desc{min-height:0}.guide-grid,.scope-grid{grid-template-columns:1fr 1fr}.explain-grid{grid-template-columns:1fr}.catalogue-wrap{max-height:none}.lever-guide summary{grid-template-columns:1fr auto}.lever-guide summary .q{grid-column:1 / -1}.explain-three{grid-template-columns:1fr}}
+@media (max-width:520px){.guide-grid,.scope-grid{grid-template-columns:1fr}}
+@media print{
+  body{background:#fff}.wrap{max-width:none;padding:10mm}.rail,.toggle,.tooltip{display:none!important}.layout{grid-template-columns:1fr}.panel,.tile,.overview-card{break-inside:avoid;box-shadow:none}.catalogue-wrap{max-height:none;overflow:visible}.catalogue-table th{position:static}
+}
+@media (prefers-reduced-motion: reduce){.tooltip{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">PyPSA-GB &middot; Clean Power 2030 &middot; 3,100 kWh household &middot; GBP, 2025 prices</p>
+    <h1>Public Ownership Bill Explorer</h1>
+    <p class="lede">Three ownership scenarios on one physical 2030 run. The two public scenarios <b>are</b> the policy propositions P1 and P2; every other case moves one lever off them, or is a declared package. Pick a scenario and a case to see the household bill, the lines that move against the comparator, and what the annual saving is worth.</p>
+  </header>
+
+  <section class="overview" id="scenario-overview" aria-label="Central scenario comparison"></section>
+
+  <section class="panel" style="margin-bottom:22px" aria-labelledby="guide-h">
+    <div class="chart-head"><div><h2 id="guide-h">How the cases are organised</h2><p class="stage">Start with the scenario, which is its proposition, then its propositions family. Everything below them changes one assumption at a time, unless it is explicitly described as a named package or a bound.</p></div></div>
+    <div class="guide-grid">
+      <div class="guide-item"><b>Policy propositions</b>Coherent packages a government could legislate, where the levers are set as consequences of one another rather than independently. Each public scenario <i>is</i> its headline proposition (P1, P2); the cases listed here are the rest of the family &mdash; the fiscal alternative, the wires, full nationalisation and the declared financing stresses.</div>
+      <div class="guide-item"><b>Structural levers</b>Contract scope and design: existing CfDs, strike setting, amortisation, route booking, merchant contracting and the LDES floor.</div>
+      <div class="guide-item"><b>Workbook alternatives</b>Financing assumptions taken from the supporting workbook: private WACC, public borrowing basis, construction premium and sovereign yields.</div>
+      <div class="guide-item"><b>Ownership options</b>Changes to the asset boundary or market institution, including legacy assets, networks, CfD vintage and wholesale pricing.</div>
+      <div class="guide-item"><b>Named positions</b>Other multi-lever positions taken from the workplan or the supporting workbook, such as a publicly owned company, rather than isolated one-variable tests. They also hold the conservative readings each public scenario had before the propositions were promoted into it.</div>
+      <div class="guide-item"><b>Bounds</b>Deliberately combined alternatives. These show an outer comparison and should not be read as a central forecast.</div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-bottom:22px" aria-labelledby="scope-h">
+    <div class="chart-head"><div><h2 id="scope-h">What is—and is not—being tested</h2><p class="stage">The common scope matters as much as the ownership labels.</p></div></div>
+    <div class="scope-grid" id="scope-grid"></div>
+  </section>
+
+  <div class="layout">
+    <aside class="rail">
+      <section class="panel" aria-labelledby="scen-h">
+        <h2 id="scen-h" style="margin-bottom:10px">Scenario</h2>
+        <div class="seg" id="scenario-seg" role="group" aria-label="Scenario"></div>
+      </section>
+      <section class="panel" aria-labelledby="sens-h">
+        <div class="chart-head"><h2 id="sens-h">Sensitivity</h2><span class="faint" id="sens-count"></span></div>
+        <div class="list" id="case-list" role="listbox" aria-label="Sensitivities"></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="case-head" id="case-head"></section>
+      <section class="tiles" id="tiles" aria-label="Headline figures"></section>
+      <section class="panel" aria-labelledby="assumption-h">
+        <div class="chart-head"><div><h2 id="assumption-h">What this case actually assumes</h2><p class="stage" id="assumption-question"></p></div></div>
+        <div class="explain-grid" id="assumption-explainer"></div>
+        <div class="change-strip" id="assumption-changes"></div>
+      </section>
+      <section class="panel" aria-labelledby="levers-h">
+        <div class="chart-head"><h3 id="levers-h">Lever settings</h3><span class="faint">highlighted = moved off the scenario</span></div>
+        <div class="chips" id="lever-chips"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="bill-h">
+        <div class="chart-head">
+          <div><h2 id="bill-h">The bill, comparator against case</h2><p class="stage" id="bill-sub"></p></div>
+        </div>
+        <div class="legend" id="stack-legend"></div>
+        <div id="stack-chart"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="delta-h">
+        <div class="chart-head">
+          <div><h2 id="delta-h">Which lines move</h2><p class="stage" id="delta-sub"></p></div>
+          <div class="toggle" role="group" aria-label="View"><button id="view-chart" aria-pressed="true">Chart</button><button id="view-table" aria-pressed="false">Table</button></div>
+        </div>
+        <div id="delta-chart"></div>
+        <div id="delta-table" class="scroll" hidden></div>
+      </section>
+
+      <section class="two">
+        <section class="panel" aria-labelledby="saving-h">
+          <div class="chart-head"><div><h2 id="saving-h">The annual saving, and how much reaches the bill</h2><p class="stage">GBP billion a year, 2024 prices, system-wide</p></div></div>
+          <div id="saving-chart"></div>
+          <p class="callout" id="saving-note" style="margin-top:10px"></p>
+        </section>
+        <section class="panel" aria-labelledby="years-h">
+          <div class="chart-head"><div><h2 id="years-h">Year by year</h2><p class="stage" id="years-sub"></p></div></div>
+          <div id="years-chart"></div>
+          <p class="callout" id="years-note" style="margin-top:10px"></p>
+        </section>
+      </section>
+
+      <section class="panel" aria-labelledby="all-h">
+        <div class="chart-head"><div><h2 id="all-h">All <span id="all-count">55</span> cases</h2><p class="stage">Change in the household bill against each case's comparator, GBP a year inc VAT. Click a bar to select it.</p></div></div>
+        <div class="legend" id="all-legend"></div>
+        <div id="all-chart"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="catalogue-h">
+        <div class="chart-head"><div><h2 id="catalogue-h">Complete scenario and sensitivity comparison</h2><p class="stage">All <span id="catalogue-count">55</span> cases. Bills and changes are GBP per 3,100 kWh household per year, including VAT. Select a case name to inspect its bill lines above.</p></div></div>
+        <div class="catalogue-wrap" id="case-catalogue"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="handbook-h">
+        <div class="chart-head">
+          <div><h2 id="handbook-h">Sensitivity handbook</h2><p class="stage">Every enforced lever, its alternative values, the bill mechanism and the main interpretation warning.</p></div>
+          <div class="handbook-controls"><button type="button" class="pill" id="expand-handbook">Expand all</button><button type="button" class="pill" id="collapse-handbook">Collapse all</button></div>
+        </div>
+        <div class="handbook" id="sensitivity-handbook"></div>
+      </section>
+
+      <section class="panel flat notes" aria-labelledby="notes-h">
+        <h3 id="notes-h">Reading these numbers</h3>
+        <p><b>One physical run, several bills.</b> Dispatch is the same in every case; ownership changes who is paid what, at which cost of capital. The private scenario reproduces the CP30 2030 forecast bill on every shared line.</p>
+        <p><b>Comparators.</b> A sensitivity that also moves the private baseline (the WACC basis, merchant new build at cost, the storage floor, the pay-as-bid bound) is measured against the private case at the same point, named on the page. Everything else is measured against the central private bill.</p>
+        <p><b>Two bills for the state-owned cases.</b> Cases that keep the market are projected through the live bill projector with re-priced CfD strikes and the public-account lines. Cases that buy the legacy fleet replace the market lines with the cost of the owned plant (the acquisition tariff); their purchase price is always shown beside the saving.</p>
+        <p><b>Bounds, not cases.</b> The pay-as-bid ceiling is the most a pay-as-bid settlement could remove and rests on assumptions the model does not make; the "all six levers" bound is every structural lever at once.</p>
+        <p><b>Vintage.</b> The twelve solved months carry the contract-value balancing bid stack, so each CfD unit bids what its contract is actually worth. What is still held fixed is the constraint line <i>across ownership cases</i>: a public owner would bid at cost where a CfD unit bids strike less reference, and that is not yet solved. The omission runs one way only, so every saving here is a lower bound on that count, by up to about GBP 16 a household.</p>
+        <p class="faint" id="source-line"></p>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+<script id="explorer-data" type="application/json">/*__DATA__*/</script>
+<script>
+(function(){
+  const DATA = JSON.parse(document.getElementById('explorer-data').textContent);
+  const CASES = DATA.cases; const BY_ID = Object.fromEntries(CASES.map(c => [c.id, c]));
+  const SCEN_COLOR = {private:'var(--s1)', public_control:'var(--s2)', public_ownership:'var(--s3)'};
+  const STACK_COLOR = Object.fromEntries(DATA.stack_groups.map((g, i) => [g.id, `var(--s${i + 1})`]));
+  const STACK_LABEL = Object.fromEntries(DATA.stack_groups.map(g => [g.id, g.label]));
+  for (const id of ['all-count','catalogue-count']){ const el = document.getElementById(id); if (el) el.textContent = String(DATA.cases.length); }
+  const KIND_ORDER = [['scenario','The scenario itself'],['proposition','Policy propositions'],['structural','Structural levers'],['workbook','Workbook alternatives'],['ownership','Ownership options'],['named','Named positions'],['bound','Bound']];
+  const gbp = (v, d=0) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
+  const signed = (v, d=0) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
+  const bn = v => (v / 1e9);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const tooltip = document.getElementById('tooltip');
+  function showTip(evt, html){ tooltip.innerHTML = html; tooltip.classList.add('show'); moveTip(evt); }
+  function moveTip(evt){ const x = Math.min(evt.clientX + 14, window.innerWidth - 320); tooltip.style.left = x + 'px'; tooltip.style.top = (evt.clientY + 14) + 'px'; }
+  function hideTip(){ tooltip.classList.remove('show'); }
+
+  let selected = 'public_ownership';
+  try { const s = localStorage.getItem('po-explorer-case'); if (s && BY_ID[s]) selected = s; } catch (e) {}
+  let scenario = BY_ID[selected].scenario;
+  let view = 'chart';
+
+  function select(id){ selected = id; scenario = BY_ID[id].scenario; try { localStorage.setItem('po-explorer-case', id); } catch (e) {} render(); }
+
+  function renderOverview(){
+    const el = document.getElementById('scenario-overview');
+    el.innerHTML = DATA.scenarios.map(s => {
+      const c = BY_ID[s.id]; const d = c.delta_vs_central_private_inc_vat;
+      const badge = s.id === 'private' ? 'baseline' : `${signed(d, 2)} GBP`;
+      return `<button type="button" class="overview-card" style="--scenario-colour:${SCEN_COLOR[s.id]}" data-id="${esc(s.id)}" aria-pressed="${s.id === scenario}"><span class="topline"><span class="eyebrow"><span class="dot" style="display:inline-block;margin-right:7px;background:${SCEN_COLOR[s.id]}"></span>${esc(s.short)} &middot; ${esc(s.label)}</span><span class="pill ${d < 0 ? 'good' : d > 0 ? 'bad' : ''}">${badge}</span></span><span class="bill num">£${gbp(c.bill.gross_inc_vat, 2)}</span><span class="stage">a year inc VAT &middot; ${s.id === 'private' ? 'central comparator' : 'change against central private'}</span><span class="desc">${esc(s.description)}</span></button>`;
+    }).join('');
+    el.querySelectorAll('[data-id]').forEach(b => b.addEventListener('click', () => select(b.dataset.id)));
+  }
+
+  function renderScope(){
+    document.getElementById('scope-grid').innerHTML = DATA.meta.scope_notes.map(note => `<div class="scope-item">${esc(note)}</div>`).join('');
+  }
+
+  function renderAssumption(c){
+    const e = c.assumption_explanation || {};
+    const comparator = BY_ID[c.comparator];
+    const comparatorName = comparator.kind === 'scenario' ? DATA.scenarios.find(s => s.id === comparator.scenario).label : comparator.label;
+    const result = `${e.caution || ''} The reported bill change is ${signed(c.delta_gross_inc_vat, 2)} GBP a year including VAT against ${comparatorName}.`;
+    document.getElementById('assumption-question').textContent = e.question || (c.kind === 'scenario' ? 'The scenario bundle, which since the promotion is the policy proposition itself, before moving any sensitivity lever.' : 'A declared multi-lever package; read every changed assumption together.');
+    const cells = [
+      ['What changes', e.change || c.description, 'change'],
+      ['Why the bill can move', e.mechanism || 'The changed assumption is carried through the financing and bill-accounting layers.', ''],
+      ['What remains fixed', e.held_fixed || 'The common CP30 2030 physical background and all unlisted levers remain fixed.', ''],
+      ['How to interpret it', result, 'caution'],
+    ];
+    document.getElementById('assumption-explainer').innerHTML = cells.map(([k, v, cls]) => `<div class="explain-cell ${cls}"><span class="kicker">${esc(k)}</span><p>${esc(v)}</p></div>`).join('');
+    const central = BY_ID[c.scenario];
+    const changes = c.levers_moved.map(n => {
+      const L = DATA.levers[n], from = central.levers[n], to = c.levers[n];
+      return `<span class="change-step"><b>${esc(L.label)}</b>: ${esc(L.value_labels[from] || from)} → ${esc(L.value_labels[to] || to)}</span>`;
+    });
+    document.getElementById('assumption-changes').innerHTML = changes.length ? changes.join('') : '<span class="faint">The scenario bundle itself: no sensitivity lever is moved away from it.</span>';
+  }
+
+  function renderScenarioSeg(){
+    const el = document.getElementById('scenario-seg'); el.innerHTML = '';
+    for (const s of DATA.scenarios){
+      const c = BY_ID[s.id]; const b = document.createElement('button'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(s.id === scenario));
+      const delta = c.delta_gross_inc_vat;
+      b.innerHTML = `<span class="dot" style="background:${SCEN_COLOR[s.id]}"></span><span><span class="name">${esc(s.label)}</span><br><span class="sub">${esc(s.short)} &middot; <span class="num">${gbp(c.bill.gross_inc_vat, 0)}</span> a year</span></span>` +
+        (s.id === 'private' ? `<span class="pill">baseline</span>` : `<span class="pill ${delta < 0 ? 'good' : 'bad'} num">${signed(delta, 0)}</span>`);
+      b.addEventListener('click', () => { scenario = s.id; select(s.id); });
+      el.appendChild(b);
+    }
+  }
+
+  function renderCaseList(){
+    const el = document.getElementById('case-list'); el.innerHTML = '';
+    const cases = CASES.filter(c => c.scenario === scenario);
+    document.getElementById('sens-count').textContent = `${cases.length - 1} under ${DATA.scenarios.find(s => s.id === scenario).label}`;
+    for (const [kind, label] of KIND_ORDER){
+      const items = cases.filter(c => c.kind === kind); if (!items.length) continue;
+      const g = document.createElement('div'); g.className = 'group-label'; g.textContent = label; el.appendChild(g);
+      for (const c of items){
+        const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role','option'); b.setAttribute('aria-pressed', String(c.id === selected)); b.setAttribute('aria-selected', String(c.id === selected));
+        const d = c.delta_gross_inc_vat;
+        b.innerHTML = `<span>${esc(c.kind === 'scenario' ? 'The scenario itself' : c.label)}</span><span class="num">${c.kind === 'scenario' && scenario === 'private' ? '' : signed(d, 0)}</span>`;
+        b.addEventListener('click', () => select(c.id));
+        el.appendChild(b);
+      }
+    }
+  }
+
+  function renderHead(c){
+    const s = DATA.scenarios.find(x => x.id === c.scenario);
+    const stage = {market_bill:'Market bill: the live projector with re-priced strikes and public-account lines', acquisition_tariff:'Acquisition tariff: the market lines replaced by the cost of the owned plant', institution_comparison:'Institution comparison: the acquisition tariff with four lines measured on the central-dispatch year and FTI’s forecast-error cost borrowed', balancing_bids:'Balancing-bid run: the market bill on months re-solved with the state share bidding at cost; the change shown is against its own scenario (the P2 increment)'}[c.stage];
+    document.getElementById('case-head').innerHTML = `<p class="eyebrow kind"><span class="dot" style="background:${SCEN_COLOR[c.scenario]}"></span>${esc(s.short)} ${esc(s.label)}${c.proposition ? ' &middot; ' + esc(c.proposition) : (c.kind !== 'scenario' ? ' &middot; sensitivity' : '')}</p><h2 style="font-size:24px">${esc(c.kind === 'scenario' ? s.label : c.label)}</h2><p class="muted">${esc(c.description)}</p><p class="stage">${esc(stage)}. Comparator: <b>${esc(BY_ID[c.comparator].kind === 'scenario' ? 'private ownership' : 'private at the same point (' + BY_ID[c.comparator].label + ')')}</b>.</p>`;
+  }
+
+  function renderTiles(c){
+    const el = document.getElementById('tiles'); const d = c.delta_gross_inc_vat; const net = c.delta_net_inc_vat;
+    const share = c.financing_saving_gbp ? c.on_bill_saving_gbp / c.financing_saving_gbp : null;
+    const tiles = [
+      {label:'Household bill, inc VAT', value:`£${gbp(c.bill.gross_inc_vat, 0)}`, note:`comparator £${gbp(c.comparator_bill.gross_inc_vat, 0)} a year`},
+      {label:'Change against the comparator', value:`${signed(d, 2)}`, cls: d < 0 ? 'good' : d > 0 ? 'bad' : '', note: Math.abs(net - d) > 0.005 ? `£ a year inc VAT; ${signed(net, 2)} after recycling and shortfall rows` : '£ a year inc VAT'},
+      {label:'Annual financing saving', value:`£${gbp(bn(c.financing_saving_gbp), 2)} bn`, note:'required revenue, comparator less case'},
+      {label:'Of which on the bill', value:`£${gbp(bn(c.on_bill_saving_gbp), 2)} bn`, note: share === null ? 'no financing saving to route' : `${(share * 100).toFixed(0)}% of the saving reaches households`},
+    ];
+    if (c.purchase_price_gbp) tiles.push({label:'Purchase price', value:`£${gbp(bn(c.purchase_price_gbp), 1)} bn`, note:'legacy fleet bought; never quote the saving without it'});
+    if (c.exchequer) tiles.push({label:'Net of the Exchequer, inc VAT', value:`£${gbp(c.exchequer.net_of_exchequer_inc_vat, 0)}`, note:`bill plus what the case costs the Exchequer (${signed(-c.exchequer.net_vs_private_per_household, 2)} a household against private: tax forgone, VAT, carbon, state deficits); the bill above is unchanged`});
+    el.innerHTML = tiles.map(t => `<div class="tile"><span class="label">${esc(t.label)}</span><span class="value num ${t.cls || ''}">${t.value}</span><span class="note">${esc(t.note)}</span></div>`).join('');
+  }
+
+  function renderChips(c){
+    const el = document.getElementById('lever-chips'); const scen = DATA.scenarios.find(s => s.id === c.scenario);
+    const order = Object.keys(DATA.levers);
+    const show = order.filter(n => c.levers_moved.includes(n) || (scen.bundle[n] !== undefined) || DATA.levers[n].structural);
+    el.innerHTML = show.map(n => { const L = DATA.levers[n]; const v = c.levers[n]; const moved = c.levers_moved.includes(n);
+      return `<span class="chip ${moved ? 'moved' : ''}" title="${esc(L.description)}">${esc(L.label)}: <b>${esc(L.value_labels[v] || v)}</b></span>`; }).join('');
+  }
+
+  function stackTotals(c){ const t = {}; for (const [id, v] of Object.entries(c.components)){ const g = (DATA.components[id] || {}).group || 'other'; t[g] = (t[g] || 0) + v; } return t; }
+
+  function renderStack(c){
+    const comp = BY_ID[c.comparator]; const groups = DATA.stack_groups.map(g => g.id);
+    const rows = [{name: comp.kind === 'scenario' ? 'Private ownership' : comp.label, tot: stackTotals(comp), c: comp}, {name: c.kind === 'scenario' ? c.label : c.label, tot: stackTotals(c), c}];
+    const present = groups.filter(g => rows.some(r => Math.abs(r.tot[g] || 0) > 0.005));
+    document.getElementById('stack-legend').innerHTML = present.map(g => `<span><i style="background:${STACK_COLOR[g]}"></i>${esc(STACK_LABEL[g])}</span>`).join('');
+    document.getElementById('bill-sub').textContent = `GBP a year ex VAT, by bill group; totals inc VAT in the tiles. VAT ${(DATA.meta.vat_rate * 100).toFixed(0)}% applied once.`;
+    const W = 900, labelW = 210, H = 150, barH = 22, gap = 2, top = 22;
+    const max = Math.max(...rows.map(r => Object.values(r.tot).filter(v => v > 0).reduce((a, b) => a + b, 0))) * 1.06;
+    const x = v => labelW + v / max * (W - labelW - 70);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bill by group, comparator and case">`;
+    const ticks = niceTicks(0, max, 5);
+    for (const t of ticks){ svg += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top - 6}" y2="${top + 2 * (barH + 26)}"/><text class="num" x="${x(t)}" y="${top + 2 * (barH + 26) + 14}" text-anchor="middle">${gbp(t)}</text>`; }
+    rows.forEach((r, i) => {
+      const y = top + i * (barH + 26) + 8; let cx = 0; let total = 0;
+      svg += `<text class="ink" x="${labelW - 12}" y="${y + barH / 2 + 4}" text-anchor="end" font-weight="600">${esc(truncate(r.name, 28))}</text>`;
+      for (const g of present){ const v = r.tot[g] || 0; if (v <= 0) continue; total += v; const w = Math.max(0, x(cx + v) - x(cx) - gap);
+        svg += `<rect x="${x(cx) + gap / 2}" y="${y}" width="${w}" height="${barH}" fill="${STACK_COLOR[g]}" data-tip="${esc(STACK_LABEL[g])}|${esc(r.name)}|${gbp(v, 2)}"/>`; cx += v; }
+      svg += `<text class="num ink" x="${x(cx) + 8}" y="${y + barH / 2 + 4}">£${gbp(total, 0)}</text>`;
+    });
+    svg += '</svg>';
+    const host = document.getElementById('stack-chart'); host.innerHTML = svg; bindTips(host, (d) => { const [g, name, v] = d.split('|'); return `<div class="t">${g}</div>${name}: £${v} a year`; });
+  }
+
+  function componentDeltas(c){
+    const comp = BY_ID[c.comparator]; const ids = new Set([...Object.keys(c.components), ...Object.keys(comp.components)]);
+    const out = [];
+    for (const id of ids){ const a = comp.components[id] || 0, b = c.components[id] || 0; const d = b - a; if (Math.abs(d) < 0.005) continue;
+      const meta = DATA.components[id] || {label: id, group: 'other'};
+      out.push({id, label: meta.label, group: meta.group, before: a, after: b, delta: d, status: !(id in comp.components) ? 'new line' : !(id in c.components) ? 'removed' : 'moved'}); }
+    out.sort((p, q) => Math.abs(q.delta) - Math.abs(p.delta));
+    return out;
+  }
+
+  function renderDelta(c){
+    const rows = componentDeltas(c); const total = rows.reduce((a, r) => a + r.delta, 0);
+    document.getElementById('delta-sub').textContent = rows.length ? `${rows.length} of ${Object.keys(DATA.components).length} lines differ from the comparator; they sum to ${signed(total, 2)} GBP ex VAT (${signed(total * (1 + DATA.meta.vat_rate), 2)} inc VAT).` : 'No line differs from the comparator.';
+    const host = document.getElementById('delta-chart'); const tbl = document.getElementById('delta-table');
+    if (!rows.length){ host.innerHTML = '<p class="muted">Nothing moves: this case is its own comparator.</p>'; tbl.innerHTML = ''; return; }
+    const W = 900, labelW = 330, rowH = 26, top = 24, H = top + rows.length * rowH + 30;
+    const maxAbs = Math.max(...rows.map(r => Math.abs(r.delta))) * 1.15; const mid = labelW + (W - labelW - 60) / 2; const scale = (W - labelW - 60) / 2 / maxAbs;
+    const x = v => mid + v * scale;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Change in each bill line against the comparator">`;
+    const ticks = niceTicks(-maxAbs, maxAbs, 6);
+    for (const t of ticks){ svg += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top - 8}" y2="${top + rows.length * rowH}"/><text class="num" x="${x(t)}" y="${top + rows.length * rowH + 16}" text-anchor="middle">${signed(t, 0)}</text>`; }
+    svg += `<line class="axis" x1="${mid}" x2="${mid}" y1="${top - 8}" y2="${top + rows.length * rowH}"/>`;
+    svg += `<text x="${x(-maxAbs) }" y="${top - 12}" font-size="11">saving</text><text x="${x(maxAbs)}" y="${top - 12}" text-anchor="end" font-size="11">cost</text>`;
+    rows.forEach((r, i) => { const y = top + i * rowH + 4; const h = 18; const w = Math.abs(r.delta) * scale; const x0 = r.delta < 0 ? mid - w : mid;
+      svg += `<text class="ink" x="${labelW - 10}" y="${y + 13}" text-anchor="end">${esc(truncate(r.label, 44))}</text>`;
+      svg += `<rect x="${x0}" y="${y}" width="${Math.max(w, 1)}" height="${h}" fill="${r.delta < 0 ? 'var(--saving)' : 'var(--cost)'}" data-tip="${esc(r.label)}|${gbp(r.before, 2)}|${gbp(r.after, 2)}|${signed(r.delta, 2)}|${r.status}"/>`;
+      svg += `<text class="num" x="${r.delta < 0 ? x0 - 6 : x0 + w + 6}" y="${y + 13}" text-anchor="${r.delta < 0 ? 'end' : 'start'}">${signed(r.delta, 1)}</text>`;
+      if (r.status !== 'moved') svg += `<text x="${labelW - 10}" y="${y + 13}" text-anchor="end" dx="0" dy="0" font-size="0"></text>`;
+    });
+    svg += '</svg>';
+    host.innerHTML = svg; bindTips(host, d => { const [l, b, a, dl, st] = d.split('|'); return `<div class="t">${l}</div>comparator £${b} → case £${a}<br>change ${dl} GBP a year ex VAT (${st})`; });
+    tbl.innerHTML = `<table class="lines"><thead><tr><th>Line</th><th>Group</th><th class="num">Comparator</th><th class="num">Case</th><th class="num">Change</th><th>Status</th></tr></thead><tbody>` +
+      rows.map(r => `<tr><td>${esc(r.label)}</td><td class="muted">${esc(STACK_LABEL[r.group] || r.group)}</td><td class="num">${gbp(r.before, 2)}</td><td class="num">${gbp(r.after, 2)}</td><td class="num">${signed(r.delta, 2)}</td><td class="muted">${r.status}</td></tr>`).join('') +
+      `<tr><td><b>Total, ex VAT</b></td><td></td><td class="num">${gbp(BY_ID[c.comparator].bill.ex_vat, 2)}</td><td class="num">${gbp(c.bill.ex_vat, 2)}</td><td class="num"><b>${signed(total, 2)}</b></td><td></td></tr></tbody></table>`;
+  }
+
+  function renderSaving(c){
+    const fin = bn(c.financing_saving_gbp), onbill = bn(c.on_bill_saving_gbp); const rest = fin - onbill;
+    const r = c.routes || {};
+    const rows = [{label:'Financing saving (required revenue, comparator less case)', v: fin, col:'var(--s7)'}, {label:'Reaches the household bill', v: onbill, col:'var(--saving)'}];
+    if (Math.abs(rest) > 0.0005) rows.push({label: rest > 0 ? 'Stays with owners, co-investors or the public account, or lands after the contract term' : 'More reaches the bill than the financing saving (rent returned or lines removed)', v: rest, col:'var(--s4)'});
+    if (r.retained_public_account && Math.abs(r.retained_public_account) > 5e6) rows.push({label:'Retained in the public account', v: bn(r.retained_public_account), col:'var(--s5)'});
+    if (r.exchequer_shortfall && Math.abs(r.exchequer_shortfall) > 5e6) rows.push({label:'Shortfall carried by the Exchequer', v: bn(r.exchequer_shortfall), col:'var(--s8)'});
+    if (r.pay_as_bid_ceiling && Math.abs(r.pay_as_bid_ceiling) > 5e6) rows.push({label:'Pay-as-bid ceiling removed from the wholesale line (a bound)', v: bn(r.pay_as_bid_ceiling), col:'var(--s2)'});
+    const W = 560, labelW = 300, rowH = 30, top = 10, H = top + rows.length * rowH + 28;
+    const maxAbs = Math.max(0.1, ...rows.map(x => Math.abs(x.v))) * 1.12; const zero = labelW + (Math.min(...rows.map(x => x.v), 0) < 0 ? (W - labelW - 60) / 2 : 0);
+    const scale = (W - labelW - 60) / (Math.min(...rows.map(x => x.v), 0) < 0 ? 2 * maxAbs : maxAbs);
+    const x = v => zero + v * scale;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Annual saving and its destinations">`;
+    svg += `<line class="axis" x1="${zero}" x2="${zero}" y1="${top}" y2="${top + rows.length * rowH}"/>`;
+    rows.forEach((row, i) => { const y = top + i * rowH + 5; const w = Math.abs(row.v) * scale; const x0 = row.v < 0 ? zero - w : zero;
+      svg += `<text class="ink" x="${labelW - 10}" y="${y + 14}" text-anchor="end">${esc(truncate(row.label, 46))}</text><rect x="${x0}" y="${y}" width="${Math.max(w, 1)}" height="20" fill="${row.col}" data-tip="${esc(row.label)}|${gbp(row.v, 3)}"/><text class="num" x="${row.v < 0 ? x0 - 6 : x0 + w + 6}" y="${y + 14}" text-anchor="${row.v < 0 ? 'end' : 'start'}">£${gbp(row.v, 2)} bn</text>`; });
+    svg += '</svg>';
+    const host = document.getElementById('saving-chart'); host.innerHTML = svg; bindTips(host, d => { const [l, v] = d.split('|'); return `<div class="t">${l}</div>£${v} bn a year`; });
+    const perHH = c.delta_gross_inc_vat;
+    let note = c.stage === 'market_bill'
+      ? `Per household that is ${signed(perHH, 2)} GBP a year inc VAT. Re-priced CfDs carry their saving for the CfD contract term; the rest of the financing saving sits with private co-owners, in the public account, or arrives after the term.`
+      : `Per household that is ${signed(perHH, 2)} GBP a year inc VAT, after paying £${gbp(bn(c.purchase_price_gbp || 0), 1)} bn for the legacy fleet annuitised at the public rate.`;
+    if (c.realised_pass_through !== null && c.realised_pass_through !== undefined && c.stage === 'market_bill') note += ` Realised pass-through ${(c.realised_pass_through * 100).toFixed(0)}%.`;
+    document.getElementById('saving-note').textContent = note;
+  }
+
+  function renderYears(c){
+    const host = document.getElementById('years-chart'); const sub = document.getElementById('years-sub'); const note = document.getElementById('years-note');
+    const my = (c.multi_year || []).filter(r => /^\d{4}$/.test(r.year));
+    if (my.length){
+      sub.textContent = 'Change in the household bill, GBP a year inc VAT, as legacy contracts expire and plant retires while the purchase annuity runs';
+      const W = 560, H = 230, left = 60, right = 20, top = 16, bottom = 34;
+      const ys = my.map(r => r.bill_delta_inc_vat); const yMin = Math.min(0, ...ys) * 1.1, yMax = Math.max(0, ...ys) * 1.1 || 10;
+      const years = my.map(r => +r.year); const xMin = Math.min(...years), xMax = Math.max(...years);
+      const x = v => left + (v - xMin) / (xMax - xMin) * (W - left - right); const y = v => top + (yMax - v) / (yMax - yMin) * (H - top - bottom);
+      let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bill change by year">`;
+      for (const t of niceTicks(yMin, yMax, 5)){ svg += `<line class="grid" x1="${left}" x2="${W - right}" y1="${y(t)}" y2="${y(t)}"/><text class="num" x="${left - 8}" y="${y(t) + 4}" text-anchor="end">${signed(t, 0)}</text>`; }
+      svg += `<line class="axis" x1="${left}" x2="${W - right}" y1="${y(0)}" y2="${y(0)}"/>`;
+      for (const yr of years){ svg += `<text class="num" x="${x(yr)}" y="${H - 12}" text-anchor="middle">${yr}</text>`; }
+      const path = my.map((r, i) => `${i ? 'L' : 'M'}${x(+r.year)},${y(r.bill_delta_inc_vat)}`).join(' ');
+      svg += `<path d="${path}" fill="none" stroke="${SCEN_COLOR[c.scenario]}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      my.forEach(r => { svg += `<circle cx="${x(+r.year)}" cy="${y(r.bill_delta_inc_vat)}" r="4.5" fill="${SCEN_COLOR[c.scenario]}" stroke="var(--panel)" stroke-width="2" data-tip="${r.year}|${signed(r.bill_delta_inc_vat, 2)}|${signed(r.legacy_component_hh, 2)}"/>`; });
+      const last = my[my.length - 1]; svg += `<text class="num ink" x="${x(+last.year) - 8}" y="${y(last.bill_delta_inc_vat) - 10}" text-anchor="end">${signed(last.bill_delta_inc_vat, 0)}</text>`;
+      svg += '</svg>'; host.innerHTML = svg; bindTips(host, d => { const [yr, dl, comp] = d.split('|'); return `<div class="t">${yr}</div>bill change ${dl} GBP a year inc VAT<br>legacy component ${comp} GBP ex VAT`; });
+      const avg15 = (c.multi_year || []).find(r => String(r.year).startsWith('15')); const avg30 = (c.multi_year || []).find(r => String(r.year).startsWith('30'));
+      note.textContent = `Everything but legacy contract expiry and retirement is held at 2030 levels, so this is a declared limitation, not a forecast. ${avg15 ? `15-year average ${signed(avg15.bill_delta_inc_vat, 0)}` : ''}${avg30 ? `, 30-year average ${signed(avg30.bill_delta_inc_vat, 0)} GBP a year.` : ''}`;
+    } else {
+      sub.textContent = 'One modelled year';
+      const d = c.delta_gross_inc_vat; const bars = [{label:'2030, this year', v: d}, {label:'Later years, contracts running', v: d}, {label:'After the contract term, re-priced CfDs expire', v: d - (c.routes.cfd_repricing ? -c.routes.cfd_repricing / DATA.meta.system_gbp_per_household_gbp * (1 + DATA.meta.vat_rate) : 0) * 0}];
+      const W = 560, labelW = 250, rowH = 30, top = 10, H = top + 2 * rowH + 20;
+      const maxAbs = Math.max(1, Math.abs(d)) * 1.15; const scale = (W - labelW - 70) / maxAbs;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bill change this year and while contracts run">`;
+      bars.slice(0, 2).forEach((b, i) => { const y = top + i * rowH + 5; const w = Math.abs(b.v) * scale;
+        svg += `<text class="ink" x="${labelW - 10}" y="${y + 14}" text-anchor="end">${esc(b.label)}</text><rect x="${labelW}" y="${y}" width="${Math.max(w, 1)}" height="20" fill="${b.v <= 0 ? 'var(--saving)' : 'var(--cost)'}" data-tip="${esc(b.label)}|${signed(b.v, 2)}"/><text class="num" x="${labelW + w + 6}" y="${y + 14}">${signed(b.v, 2)}</text>`; });
+      svg += '</svg>'; host.innerHTML = svg; bindTips(host, dd => { const [l, v] = dd.split('|'); return `<div class="t">${l}</div>${v} GBP a year inc VAT`; });
+      note.textContent = c.scenario === 'private' ? 'The model settles one year, 2030. A comparator change shifts the private baseline itself rather than tracing an ownership effect.' :
+        `The model settles one year, 2030. The CfD re-pricing line carries £${gbp(bn(c.routes.cfd_repricing || 0), 2)} bn a year for the CfD contract term; after that the saving on those contracts leaves the bill unless the strike is re-set. Recurring annual figure shown for the years of the term.`;
+    }
+  }
+
+  function renderAll(){
+    const host = document.getElementById('all-chart');
+    document.getElementById('all-legend').innerHTML = DATA.scenarios.map(s => `<span><i style="background:${SCEN_COLOR[s.id]}"></i>${esc(s.label)}</span>`).join('') + `<span><i style="background:var(--ink-3)"></i>acquisition tariff (hatched)</span>`;
+    const rows = [...CASES].sort((a, b) => a.scenario === b.scenario ? a.delta_gross_inc_vat - b.delta_gross_inc_vat : DATA.scenarios.findIndex(s => s.id === a.scenario) - DATA.scenarios.findIndex(s => s.id === b.scenario));
+    const W = 900, labelW = 360, rowH = 17, top = 20, H = top + rows.length * rowH + 30;
+    const vals = rows.map(r => r.delta_gross_inc_vat); const minV = Math.min(0, ...vals) * 1.08, maxV = Math.max(0, ...vals) * 1.08 + 5;
+    const x = v => labelW + (v - minV) / (maxV - minV) * (W - labelW - 60);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Change in the bill for every case"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--panel)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-3)" stroke-width="3"/></pattern></defs>`;
+    for (const t of niceTicks(minV, maxV, 8)){ svg += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top - 6}" y2="${top + rows.length * rowH}"/><text class="num" x="${x(t)}" y="${top + rows.length * rowH + 16}" text-anchor="middle">${signed(t, 0)}</text>`; }
+    svg += `<line class="axis" x1="${x(0)}" x2="${x(0)}" y1="${top - 6}" y2="${top + rows.length * rowH}"/>`;
+    rows.forEach((r, i) => { const y = top + i * rowH + 2; const v = r.delta_gross_inc_vat; const x0 = Math.min(x(0), x(v)); const w = Math.abs(x(v) - x(0));
+      const sel = r.id === selected; const name = (r.kind === 'scenario' ? DATA.scenarios.find(s => s.id === r.scenario).label + ' (central)' : r.label);
+      svg += `<text class="${sel ? 'ink' : ''}" x="${labelW - 10}" y="${y + 11}" text-anchor="end" font-weight="${sel ? 600 : 400}" font-size="11">${esc(truncate(name, 56))}</text>`;
+      svg += `<rect tabindex="0" role="button" aria-label="${esc(name)} ${signed(v, 0)}" x="${x0}" y="${y}" width="${Math.max(w, 1.5)}" height="13" fill="${r.stage === 'market_bill' ? SCEN_COLOR[r.scenario] : 'url(#hatch)'}" stroke="${sel ? 'var(--ink)' : (r.stage === 'market_bill' ? 'none' : SCEN_COLOR[r.scenario])}" stroke-width="${sel ? 2 : 1}" data-id="${esc(r.id)}" data-tip="${esc(name)}|${signed(v, 2)}|${esc(BY_ID[r.comparator].kind === 'scenario' ? 'private' : BY_ID[r.comparator].label)}" style="cursor:pointer"/>`;
+      svg += `<text class="num" x="${v < 0 ? x0 - 5 : x0 + w + 5}" y="${y + 11}" text-anchor="${v < 0 ? 'end' : 'start'}" font-size="11">${signed(v, 0)}</text>`; });
+    svg += '</svg>'; host.innerHTML = svg;
+    bindTips(host, d => { const [n, v, comp] = d.split('|'); return `<div class="t">${n}</div>${v} GBP a year inc VAT against ${comp}<br><span style="opacity:.8">click to select</span>`; });
+    host.querySelectorAll('rect[data-id]').forEach(r => { r.addEventListener('click', () => select(r.dataset.id)); r.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(r.dataset.id); } }); });
+  }
+
+  function renderCatalogue(){
+    const kindLabel = Object.fromEntries(KIND_ORDER);
+    const scenarioIndex = Object.fromEntries(DATA.scenarios.map((s, i) => [s.id, i]));
+    const kindIndex = Object.fromEntries(KIND_ORDER.map((x, i) => [x[0], i]));
+    const rows = [...CASES].sort((a, b) => scenarioIndex[a.scenario] - scenarioIndex[b.scenario] || kindIndex[a.kind] - kindIndex[b.kind] || a.delta_vs_central_private_inc_vat - b.delta_vs_central_private_inc_vat);
+    const moved = c => c.levers_moved.length ? c.levers_moved.map(n => `${DATA.levers[n].label}: ${DATA.levers[n].value_labels[c.levers[n]] || c.levers[n]}`).join('; ') : 'Central assumptions';
+    const stage = {market_bill:'Market bill', acquisition_tariff:'Acquisition tariff', institution_comparison:'Institution comparison'};
+    document.getElementById('case-catalogue').innerHTML = `<table class="catalogue-table"><thead><tr><th>Scenario</th><th>Type</th><th>Case</th><th>Assumption changed</th><th>Bill</th><th class="num">vs private</th><th class="num">vs comparator</th><th class="num">Purchase price</th></tr></thead><tbody>` + rows.map(c => {
+      const s = DATA.scenarios.find(x => x.id === c.scenario); const selectedClass = c.id === selected ? ' class="selected"' : '';
+      return `<tr${selectedClass}><td class="scenario-cell"><span class="dot" style="display:inline-block;margin-right:6px;background:${SCEN_COLOR[c.scenario]}"></span>${esc(s.short)} ${esc(s.label)}</td><td>${esc(kindLabel[c.kind] || c.kind)}<br><span class="faint">${esc(stage[c.stage])}</span></td><td><button type="button" class="case-link" data-id="${esc(c.id)}">${esc(c.kind === 'scenario' ? 'The scenario itself' : c.label)}</button>${c.proposition ? `<br><span class="faint">${esc(c.proposition)}</span>` : ''}<br><span class="faint">${esc(c.description)}</span></td><td>${esc(moved(c))}</td><td class="num">£${gbp(c.bill.gross_inc_vat, 2)}</td><td class="num">${signed(c.delta_vs_central_private_inc_vat, 2)}</td><td class="num">${signed(c.delta_gross_inc_vat, 2)}</td><td class="num">${c.purchase_price_gbp ? `£${gbp(bn(c.purchase_price_gbp), 1)}bn` : '—'}</td></tr>`;
+    }).join('') + '</tbody></table>';
+    document.querySelectorAll('#case-catalogue .case-link').forEach(b => b.addEventListener('click', () => { select(b.dataset.id); document.getElementById('case-head').scrollIntoView({behavior:'smooth', block:'start'}); }));
+  }
+
+  function renderHandbook(){
+    const host = document.getElementById('sensitivity-handbook');
+    host.innerHTML = DATA.lever_groups.map(group => {
+      const levers = Object.entries(DATA.levers).filter(([, L]) => L.group === group.id);
+      const cards = levers.map(([n, L]) => {
+        const central = DATA.scenarios.map(s => {
+          const v = BY_ID[s.id].levers[n];
+          return `<span><b>${esc(s.short)}</b> ${esc(L.value_labels[v] || v)}</span>`;
+        }).join('');
+        const values = L.values.map(v => `<div class="value-item"><b>${esc(L.value_labels[v] || v)}</b>${esc(L.value_explanations[v] || '')}</div>`).join('');
+        const used = CASES.filter(c => c.levers_moved.includes(n));
+        const usedScenarios = [...new Set(used.map(c => DATA.scenarios.find(s => s.id === c.scenario).short))];
+        const usage = used.length ? `${used.length} published case${used.length === 1 ? '' : 's'} · ${usedScenarios.join(', ')}` : 'Set inside scenario bundles or named packages';
+        return `<details class="lever-guide"><summary><span>${esc(L.label)}</span><span class="q">${esc(L.question)}</span><span class="pill">${esc(usage)}</span></summary><div class="lever-guide-body"><div><span class="eyebrow">Central scenario values</span><div class="central-values">${central}</div></div><div><span class="eyebrow">Meaning of each value</span><div class="value-list">${values}</div></div><div class="explain-three"><div><b>Bill mechanism</b><span class="muted">${esc(L.mechanism)}</span></div><div><b>Held fixed</b><span class="muted">${esc(L.held_fixed)}</span></div><div><b>Interpretation warning</b><span class="muted">${esc(L.caution)}</span></div></div></div></details>`;
+      }).join('');
+      return `<section class="handbook-group"><div class="handbook-group-head"><h3>${esc(group.label)}</h3><p>${esc(group.description)}</p></div>${cards}</section>`;
+    }).join('');
+  }
+
+  function renderReference(){
+    document.getElementById('source-line').textContent = `Source: ${DATA.meta.source}. Data generated ${DATA.meta.generated}. Household basis ${DATA.meta.benchmark_kwh.toLocaleString()} kWh; ${DATA.meta.price_basis}. Network account: RAV acquired ${DATA.meta.network_saving_per_household.acquired.toFixed(2)} GBP, debt guarantee ${DATA.meta.network_saving_per_household.debt_guarantee.toFixed(2)} GBP a household ex VAT.`;
+  }
+
+  function bindTips(host, fmt){
+    host.querySelectorAll('[data-tip]').forEach(el => {
+      el.addEventListener('mouseenter', e => showTip(e, fmt(el.dataset.tip)));
+      el.addEventListener('mousemove', moveTip);
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('focus', e => { const r = el.getBoundingClientRect(); showTip({clientX: r.left, clientY: r.bottom}, fmt(el.dataset.tip)); });
+      el.addEventListener('blur', hideTip);
+    });
+  }
+  function niceTicks(min, max, n){ const span = max - min; if (span <= 0) return [0]; const raw = span / n; const mag = Math.pow(10, Math.floor(Math.log10(raw))); const norm = raw / mag; const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag; const out = []; for (let t = Math.ceil(min / step) * step; t <= max + 1e-9; t += step) out.push(Math.round(t * 1e6) / 1e6); return out; }
+  function truncate(s, n){ return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+  document.getElementById('view-chart').addEventListener('click', () => { view = 'chart'; applyView(); });
+  document.getElementById('view-table').addEventListener('click', () => { view = 'table'; applyView(); });
+  document.getElementById('expand-handbook').addEventListener('click', () => document.querySelectorAll('.lever-guide').forEach(d => d.open = true));
+  document.getElementById('collapse-handbook').addEventListener('click', () => document.querySelectorAll('.lever-guide').forEach(d => d.open = false));
+  function applyView(){ document.getElementById('view-chart').setAttribute('aria-pressed', String(view === 'chart')); document.getElementById('view-table').setAttribute('aria-pressed', String(view === 'table')); document.getElementById('delta-chart').hidden = view !== 'chart'; document.getElementById('delta-table').hidden = view !== 'table'; }
+
+  function render(){
+    const c = BY_ID[selected];
+    renderOverview(); renderScenarioSeg(); renderCaseList(); renderHead(c); renderTiles(c); renderAssumption(c); renderChips(c); renderStack(c); renderDelta(c); renderSaving(c); renderYears(c); renderAll(); renderCatalogue(); applyView();
+  }
+  renderScope(); renderHandbook(); renderReference(); render();
+})();
+</script>
+</body>
+</html>

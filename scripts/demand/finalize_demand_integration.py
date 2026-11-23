@@ -29,6 +29,7 @@ from scripts.demand.add_demand_flexibility import (
     _load_cop_profile
 )
 from scripts.demand.electric_vehicles import load_fes_v2g_capacity
+from scripts.demand import fes_demand
 
 
 def _extract_component_names(disaggregation_config: Dict) -> list:
@@ -108,7 +109,8 @@ def finalize_demand_integration(
     ev_availability: Optional[pd.DataFrame],
     ev_dsm: Optional[pd.DataFrame],
     logger: logging.Logger,
-    fes_v2g_capacity: Optional[pd.Series] = None
+    fes_v2g_capacity: Optional[pd.Series] = None,
+    fes_components: Optional[Dict] = None
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     logger.info("=" * 80)
     logger.info("FINALIZING DEMAND INTEGRATION")
@@ -116,6 +118,25 @@ def finalize_demand_integration(
 
     disagg_summary = pd.DataFrame()
     stats: Dict[str, float] = {}
+
+    # FES long-range components (plan Y6a): only when demand_disaggregation.fes.enabled is true.
+    # It replaces the disaggregation and flexibility stages, so neither may also be on.
+    if fes_components is not None and fes_demand.is_enabled(fes_components.get("config")):
+        if disaggregation_config.get("enabled", False) or flexibility_config.get("enabled", False):
+            raise ValueError("fes_demand replaces demand_disaggregation and demand_flexibility; "
+                             "disable both in the scenario (they would count the components twice)")
+        cfg = fes_demand.resolve_config(fes_components["config"])
+        components = fes_components["components"]
+        fes_stats = fes_demand.integrate_fes_demand(n, components, fes_components["allocation"], cfg, logger)
+        check = fes_demand.demand_check(n, components["energies"], components["peaks"],
+                                        components.get("calibration"))
+        logger.info("FES demand check:\n%s", check.to_string(index=False))
+        summary = _build_summary(n, disagg_summary, pd.DataFrame(), {k: v for k, v in fes_stats.items()
+                                                                     if isinstance(v, (int, float))})
+        # The section label is kept from the 2050-only code, so existing summaries do not change.
+        check_rows = pd.DataFrame({"section": "fes2050_demand_check", "metric": check["item"],
+                                   "value": check["model"]})
+        return n, disagg_summary, pd.concat([summary, check_rows], ignore_index=True), fes_stats
 
     if disaggregation_config.get("enabled", False):
         logger.info("Integrating disaggregated demand components")
@@ -231,6 +252,15 @@ if __name__ == "__main__":
         else:
             logger.warning("V2G FES capacity requested but FES data file not available")
 
+    # FES long-range settings sit under demand_disaggregation.fes, so this rule's params are
+    # unchanged for every scenario without them (a new param would re-run the 2030 year).
+    fes_components = None
+    fes_config = fes_demand.fes_demand_config(snakemake.params.disaggregation_config)
+    if fes_demand.is_enabled(fes_config):
+        components, allocation = fes_demand.load_components(
+            snakemake.input.fes_demand_profiles, snakemake.input.fes_demand_allocation, snakemake.input.fes_demand_spec)
+        fes_components = {"config": fes_config, "components": components, "allocation": allocation}
+
     n, disagg_summary, summary, _ = finalize_demand_integration(
         n=base_network,
         base_profile=base_profile,
@@ -241,7 +271,8 @@ if __name__ == "__main__":
         ev_availability=ev_availability,
         ev_dsm=ev_dsm,
         logger=logger,
-        fes_v2g_capacity=fes_v2g_capacity
+        fes_v2g_capacity=fes_v2g_capacity,
+        fes_components=fes_components
     )
 
     save_network(n, snakemake.output.network, custom_logger=logger)

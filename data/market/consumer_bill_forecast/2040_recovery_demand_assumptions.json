@@ -1,0 +1,145 @@
+{
+  "purpose": "Recovery denominators for the FES25_HT_2040 consumer-bill case (task Y13). The method is the 2030 file's (item D1): metered supply = (GB electrical load + electrolyser draw) / GSP-to-meter loss factor; the hydrogen offtake pays nothing. PRE-RUN: the volumes are FES 2025 HT calendar-2040 figures, declared so the file is complete before the solve; scripts/consumer_bill/refresh_recovery_demand.py replaces them with the solved months' own volumes, which the projector requires.",
+  "forecast_year": 2040,
+  "case_id": "FES25_HT_2040",
+  "system_demand_mwh": {
+    "value": 576046398.2662847,
+    "source": "PyPSA annual total of the 12 monthly Stage 1 runs the bill reads (FES25_HT_2040_Jan_market .. FES25_HT_2040_Dec_market: resources/market/<month>_wholesale.nc, every Load's p_set summed over the hours, as read_hourly_inputs measures it)",
+    "price_year": null,
+    "note": "As in 2030: every modelled Load's p_set (GB electrical load plus any hydrogen-bus Load). Kept only so the file can be checked against the run.",
+    "refreshed": "refreshed 2026-11-21 by scripts/consumer_bill/refresh_recovery_demand.py from 12 months: FES25_HT_2040_Jan_market .. FES25_HT_2040_Dec_market"
+  },
+  "metered_supply_basis": {
+    "method": "Item D1. Metered supply = (GB electrical load + electrolyser electricity draw) / GSP-to-meter loss factor. The model's loads sit at transmission nodes, so their volume is the GSP-level (loss-inclusive) volume the per-MWh GSP-rate charges are levied on; a household's metered 3.1 MWh draws 3.1 x loss factor at the GSP. Dividing a cost by metered supply is therefore the same as charging the GSP rate on the household's loss-uplifted volume (CfD, allocated CCS, remaining CCS, BSUoS, voltage and stability constraints, AAHEDC, LCCC/ESC, LDES), and is exactly how the RO and FiT, levied on metered supply, recover. The Capacity Market divides by the GSP volume because its household factor already carries losses.",
+    "gb_electrical_load_mwh": {
+      "value": 525251648.2662847,
+      "source": "PRE-RUN: FES 2025 HT calendar 2040, ED1 system demand excluding electrolysis (518,957.8 GWh: consumer demand 477,755.5 + losses 41,202.1; ED1 rows 9 less 74, 0.75 FY2040 + 0.25 FY2039) plus DACCS electrical demand (5,949.61 GWh, ES1, not in ED1; decision 25)",
+      "mapping_note": "The 2030 identity treats the model's nodal loads as GSP-level (loss-inclusive) volumes, so the pre-run load is the loss-inclusive ED1 system figure. FINDING (Y13): plan Y6 scales the 2040 base to the ED1 consumer total (excluding losses); if the solved loads exclude losses, dividing by the loss factor understates metered supply by about 8% and overstates every per-MWh levy. Decision needed before the refresh (Y6 or coordinator)."
+    },
+    "electrolyser_electricity_draw_mwh": {
+      "value": 43640792.47755513,
+      "source": "PRE-RUN: FES 2025 HT ED1 row 74 (networked electrolysis), calendar 2040 = 0.75 FY2040 + 0.25 FY2039 (38,080 GWh)",
+      "note": "Refreshed from the Stage 1 link schedules of the electrolysis links, as in 2030."
+    },
+    "h2_offtake_mwh": {
+      "value": 50794750.000000015,
+      "source": "PRE-RUN: FES 2025 HT WS1 non-power hydrogen demand, calendar 2040 (road 1.06, residential 0.45, commercial 2.22, industrial 29.27, rail 0.78, shipping 8.02, aviation 8.98, transmission losses 0.03 TWh H2; scripts/FES/fes2025_targets.py hydrogen_quantities)",
+      "note": "Excluded from every electricity denominator. Decision 15 makes non-power hydrogen an annual volume, which may not be a Load; the refresh then reads 0 here and the identity still holds."
+    },
+    "gsp_chargeable_volume_mwh": {
+      "value": 568892440.7438399,
+      "derivation": "gb_electrical_load_mwh + electrolyser_electricity_draw_mwh",
+      "used_by": [
+        "capacity_market"
+      ],
+      "note": "The paying volume at the GSP, before the loss factor."
+    },
+    "gsp_to_meter_loss_factor": {
+      "value": 1.0919186262300622,
+      "source": "Ofgem default tariff cap, Annex 2 (wholesale) tab '3c Electricity losses', GB-average transmission-to-meter loss multiplier, delivery-day weighted over the three 2020 cap periods (data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv, column loss_multiplier_gb_average); the multiplier the bill's procurement losses line applies, so the bill carries one loss basis (the projector checks they are equal)",
+      "price_year": null,
+      "cross_check": {
+        "neso_bsuos_chargeable_volume_mwh_2024_25": 275151189.05,
+        "ofgem_total_supply_mwh_sy16_2025_26": 253970000.0,
+        "ratio": 1.0834003585069103,
+        "lccc_gross_supplier_sales_mwh_2024_25": 276966110.479,
+        "neso_source": "https://api.neso.energy/dataset/d6a4bf54-c63f-4014-a716-49fd3878ca52/resource/320cdc0d-457f-4849-a0fc-bf6bdd4e21e5/download/2024-2025-sf.csv",
+        "ofgem_source": "Ofgem default tariff cap Annex 4 v1.25 tab 3i (FiT levelisation): total supply 253.97 TWh, SY16 2025/26",
+        "espeni_gb_total_demand_mwh_2024_25": 272430244.0,
+        "espeni_source": "data/demand/espeni.csv, ELEC_POWER_TOTAL_ESPENI, 1 April 2024 to 31 March 2025",
+        "note": "GSP-level chargeable volume (NESO BSUoS, LCCC) over metered supply (Ofgem FiT levelisation) is 1.08-1.09 on recent outturn, consistent with the 1.092 multiplier; the years differ by one, so this is indicative. NESO chargeable volume and ESPENI GB demand agree to 1.0% (the earlier basis for identifying modelled load with the GSP-level volume)."
+      },
+      "limitation": "A 2020 GB-average multiplier held for 2040 (it must equal the procurement losses multiplier). FES HT 2040 losses are 41.20 TWh on 477.76 TWh of consumer demand, a ratio of 1.0862, close to it."
+    }
+  },
+  "final_demand_mwh": {
+    "value": 521002597.7008811,
+    "derivation": "metered_supply_basis.gsp_chargeable_volume_mwh / metered_supply_basis.gsp_to_meter_loss_factor",
+    "used_by": [
+      "bsuos_constraints",
+      "bsuos_other_services",
+      "bsuos_voltage_and_stability_constraints",
+      "ldes_cap_and_floor",
+      "sizewell_c_rab",
+      "bics_levy",
+      "aahedc"
+    ],
+    "note": "Metered supply (item D1)."
+  },
+  "cfd_eligible_supply": {
+    "eligible_share_of_supplier_sales": {
+      "value": 0.956538406402206,
+      "source": "https://dp.lowcarboncontracts.uk/dataset/a5b1bb56-8efb-4f13-98fe-e378e5bfb93e/resource/5f001c0d-8841-4525-bf7c-2fd5d248da09/download/reconciled_daily_levy_rates.csv",
+      "source_period": "Regulatory year 2024-25, Latest Settlement Run",
+      "derivation": "Reconciled_Eligible_Demand_MWh / (Reconciled_Eligible_Demand_MWh + Reconciled_Energy_Intensive_Industries_Demand_MWh + Reconciled_Green_Excluded_Electricity_MWh)",
+      "components_mwh": {
+        "reconciled_eligible_demand": 264928721.945,
+        "energy_intensive_industries_exempt_demand": 12037388.534,
+        "green_excluded_electricity": 0.0,
+        "gross_supplier_sales": 276966110.479
+      },
+      "note": "The 2024-25 LCCC outturn share (EII exemption 4.35% of gross sales) held for 2040, declared. FES HT 2040 industrial demand excluding electrolysis is 104.4 TWh (ED1 row 79); the exempt share of it is not forecast."
+    },
+    "eligible_supplier_sales_mwh": {
+      "value": 498358994.5362105,
+      "derivation": "final_demand_mwh (metered supply) * eligible_share_of_supplier_sales",
+      "used_by": [
+        "cfd",
+        "allocated_ccs",
+        "remaining_ccs",
+        "feed_in_tariffs"
+      ]
+    }
+  },
+  "ro_obligation_eligible_supply_mwh": {
+    "value": 498358994.5362105,
+    "source": "Identified with the CfD eligible-supply volume, as in 2030; the RO is closed in 2040 so no line divides by it",
+    "used_by": [
+      "renewables_obligation"
+    ]
+  },
+  "domestic_customer_accounts": {
+    "value": 32862872.821,
+    "source": "FES 2025 HT Dem_BB001a, 2040 (resources/FES/FES_2025_data.csv)",
+    "note": "Cross-check and standing-charge context only; never a recovery denominator."
+  },
+  "representative_customer_consumption_kwh": {
+    "value": 3100,
+    "source": "Scenario selection, matching the external allowance benchmark",
+    "note": "Used only to express the final representative bill. It is never a recovery denominator."
+  },
+  "fes2025_mapping": {
+    "note": "How FES 2025 ED1/ES1/WS1 map onto the bill's denominators (task Y13). Calendar 2040 = 0.75 FY2040 + 0.25 FY2039 (Y1's rule).",
+    "gb_electrical_load_mwh": "ED1 row 9 (system total) - row 74 (networked electrolysis) + ES1 DACCS: consumer demand + losses + DACCS",
+    "electrolyser_electricity_draw_mwh": "ED1 row 74",
+    "h2_offtake_mwh": "WS1 hydrogen demand less Power Generation (non-power demand)",
+    "final_demand_mwh": "(load + draw) / 1.0919: about consumer demand + DACCS + electrolysis at the meter",
+    "cfd_eligible_supplier_sales_mwh": "final demand x the 2024-25 EII share",
+    "fy2040_values_gwh": {
+      "system_total": 563928.0,
+      "networked_electrolysis": 40340.0,
+      "consumer_excluding_electrolysis": 482011.568,
+      "losses": 41576.108
+    }
+  },
+  "limitations": [
+    "Every share is a recent-outturn share applied to a 2030 modelled volume. It is a stated assumption about scheme scope, not a forecast of eligible supply.",
+    "Supplier sales are identified with modelled GB electrical load plus electrolyser draw, net of losses. Behind-the-meter self-consumption that never reaches a supplier meter is inside the model's demand and would, if material, raise the per-MWh levy rates above those reported here.",
+    "Electrolysers are treated as ordinary levy payers on their full draw (user decision D1); no exemption for hydrogen production is assumed.",
+    "PRE-RUN: FES volumes stand in until the refresh; the projector refuses the file until its volumes match the run."
+  ],
+  "refresh": {
+    "stamp": "refreshed 2026-11-21 by scripts/consumer_bill/refresh_recovery_demand.py from 12 months: FES25_HT_2040_Jan_market .. FES25_HT_2040_Dec_market",
+    "volumes_mwh": {
+      "system_demand_mwh": 576046398.2662847,
+      "gb_electrical_load_mwh": 525251648.2662847,
+      "electrolyser_draw_mwh": 43640792.47755513,
+      "h2_offtake_mwh": 50794750.000000015
+    },
+    "derived_mwh": {
+      "gsp_chargeable_volume": 568892440.7438399,
+      "final_demand": 521002597.7008811,
+      "eligible_supplier_sales": 498358994.5362105
+    }
+  }
+}

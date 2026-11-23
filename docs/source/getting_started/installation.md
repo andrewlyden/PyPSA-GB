@@ -1,223 +1,139 @@
 # Installation
 
-This guide covers the complete installation of PyPSA-GB.
+This page takes you from nothing to a working environment. Run every command from the repository root.
 
-## Step 1: Install Conda
-
-If you don't have Conda installed, download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/download).
-
-Verify your installation:
+## 1. Clone the repository
 
 ```bash
-conda --version
-```
-
-## Step 2: Clone the Repository
-
-Clone PyPSA-GB from GitHub:
-
-```bash
-git clone https://github.com/andrewlyden/PyPSA-GB.git
+git clone --filter=blob:none https://github.com/andrewlyden/PyPSA-GB.git
 cd PyPSA-GB
 ```
 
-```{note}
-The repository is approximately 2GB due to included data files. This may take some time depending on your internet connection.
-```
+`--filter=blob:none` makes a "blobless" clone: you get every file of the current version, but the contents of
+old versions are fetched only if you ask for them (for example with `git log -p`). The repository's history is
+large, so this saves a long download and several GB of disk. Everything else in Git works as usual.
 
-## Step 3: Create the Conda Environment
+## 2. Create the conda environment
 
-Create the `pypsa-gb-stable` environment using the provided stable environment file:
+Two environment files are provided:
+
+| File | Environment name | Use |
+|---|---|---|
+| `envs/pypsa-gb.yaml` | `pypsa-gb` | **Recommended.** Version ranges that hold the model's key packages (pypsa, linopy) where the model is tested. The automated tests install it on Linux, and it is also the environment the rules name if you run Snakemake with `--use-conda`. |
+| `envs/pypsa-gb-stable.yaml` | `pypsa-gb-stable` | Every package pinned to an exact version. The pins were taken on Windows, and the file does not currently install on Linux or macOS. |
 
 ```bash
-conda env create -f envs/pypsa-gb-stable.yaml
+mamba env create -f envs/pypsa-gb.yaml     # or: conda env create -f envs/pypsa-gb.yaml
+conda activate pypsa-gb
 ```
 
-Activate the environment:
+Solving the environment can take ten minutes or more; mamba is faster than conda.
+
+Check the installation:
 
 ```bash
-conda activate pypsa-gb-stable
+python -c "import pypsa, linopy; print(pypsa.__version__, linopy.__version__)"
+snakemake --version
 ```
 
-```{tip}
-Add `conda activate pypsa-gb-stable` to your shell profile to automatically activate it in new terminals.
-```
+## 3. Set up a solver
 
-## Step 4: Install a Solver
+The model's problems are linear programmes. The solver is set by `solve.solver.name` in
+`config/defaults/base/solve.yaml`, which is `gurobi`.
 
-PyPSA-GB requires an optimization solver. You have two options:
+### Gurobi (default)
 
-### Option A: Gurobi (Recommended)
+The environment installs the `gurobipy` package, but its built-in licence is limited to small models and will not
+solve a PyPSA-GB network. You need a full licence; academic licences are free.
 
-Gurobi offers free academic licenses and provides excellent performance.
+1. Register at [gurobi.com](https://www.gurobi.com/academia/academic-program-and-licenses/) and request a named
+   academic licence.
+2. Run the `grbgetkey` command Gurobi gives you; it writes `gurobi.lic` to your home folder.
+3. Check: `python -c "import gurobipy; gurobipy.Model()"` prints the licence it found and no error.
 
-1. Register for an [academic license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/)
-2. Download and install Gurobi
-3. Activate your license:
-   ```bash
-   grbgetkey YOUR-LICENSE-KEY
-   ```
+The default options in `solve.yaml` (barrier method without crossover, relaxed tolerances, two threads) are
+tuned for these models. The market stages retry a failed window on more conservative Gurobi settings, then on
+dual simplex, before they give up; this fallback exists only for Gurobi.
 
-### Option B: HiGHS (Open Source)
+### HiGHS (open source)
 
-HiGHS is included in the conda environment. No additional setup required.
-
-To use HiGHS, set in your scenario configuration:
+HiGHS is installed with the environment (`highspy`) and needs no licence. Select it for one scenario:
 
 ```yaml
-solver:
-  name: "highs"
+My_Scenario:
+  # ...
+  solve:
+    solver:
+      name: highs
 ```
 
-## Step 5: Verify Installation
+or for every scenario, by adding the same `solve:` block to `config/config.yaml` (any key there other than
+`studies` and `run_scenarios` overrides the defaults for all scenarios). HiGHS receives only the thread count;
+the Gurobi-specific options are not passed to it. It is slower than Gurobi on the larger networks, so start with
+the Reduced or Zonal network or a clustered ETYS network. Every setting, and what to choose for runs of different
+sizes, is in {doc}`/model/dispatch/solvers`.
 
-Test that everything is working:
+## 4. Weather cutouts
 
-```bash
-# Check Python and key packages
-python -c "import pypsa; print(f'PyPSA version: {pypsa.__version__}')"
-python -c "import snakemake; print('Snakemake OK')"
+Renewable output is computed from ERA5 weather data with [atlite](https://github.com/PyPSA/atlite). The data for
+one weather year is a "cutout", `resources/atlite/cutouts/uk-<year>.nc`.
 
-# Dry run to check workflow
-snakemake --cores 4 -n -p
-```
+You do not need to fetch cutouts by hand. When a scenario needs the cutout of its `renewables_year`, rule
+`retrieve_cutout` gets it, trying in order:
 
-## Optional: Configure an ENTSO-E API Key
+1. a copy you have placed in `data/atlite/cutouts/`;
+2. the published PyPSA-GB cutouts on Zenodo ([10.5281/zenodo.18325225](https://doi.org/10.5281/zenodo.18325225)):
+   years 2010 to 2024, about 700 to 765 MB each, a few minutes per year, no account needed;
+3. a fresh ERA5 download through atlite: two to four hours per year, and it needs a
+   [Copernicus CDS](https://cds.climate.copernicus.eu/how-to-api) API key in `~/.cdsapirc`.
 
-PyPSA-GB can use hourly day-ahead electricity prices from the
-[ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) for
-interconnector pricing when `interconnectors.pricing.source` is set to
-`"entsoe"`.
-
-This is optional. If no ENTSO-E token is configured, PyPSA-GB falls back to the
-derived interconnector pricing method.
-
-1. Register for a free ENTSO-E Transparency Platform account and request API
-   access.
-2. Add your token to a `.env` file in the project root:
-
-   ```bash
-   ENTSOE_API_TOKEN=your-token-here
-   ```
-
-   Alternatively, set it as an environment variable:
-
-   ```bash
-   # Linux/macOS
-   export ENTSOE_API_TOKEN=your-token-here
-
-   # Windows PowerShell
-   $env:ENTSOE_API_TOKEN = "your-token-here"
-   ```
-
-3. To use ENTSO-E prices, set the interconnector pricing source in your
-   scenario or defaults configuration:
-
-   ```yaml
-   interconnectors:
-     pricing:
-       source: "entsoe"
-   ```
-
-## Step 6: Download Weather Data
-
-For renewable generation profiles, you need ERA5 weather data "cutouts". PyPSA-GB uses a **tiered acquisition strategy** to minimize download times:
-
-1. **Data directory** - Check `data/atlite/cutouts/` for cached copy (instant)
-2. **Zenodo** - Download pre-built cutouts from [Zenodo repository](https://zenodo.org/records/18325225) (~5-10 minutes per year, years 2010-2024)
-3. **ERA5 API** - Full download via atlite as fallback (~2-4 hours per year)
-
-### Quick Start (Recommended)
-
-For years 2010-2024, cutouts are automatically downloaded from Zenodo:
+To fetch several years ahead of time, list them under `years_config.years_to_generate` in
+`config/cutouts_config.yaml` and run the separate cutout workflow:
 
 ```bash
-# Edit the configuration to specify which years you need
-nano config/cutouts_config.yaml
-
-# Set years_to_generate, for example:
-# years_to_generate:
-#   - 2020
-#   - 2021
-
-# Generate cutouts (will download from Zenodo for 2010-2024)
 snakemake -s Snakefile_cutouts --cores 1
 ```
 
-**No CDS API credentials required** for years 2010-2024 when using Zenodo!
+## 5. Data the workflow downloads
 
-### Manual ERA5 Download (Advanced)
+Most input data is in `data/`. A few sources are fetched when a scenario first needs them, so the first run of a
+scenario needs an internet connection:
 
-For years outside 2010-2024 or if you prefer direct ERA5 download:
+- **NESO Future Energy Scenarios** tables, from the NESO data portal (`data/FES/FES_api_urls.yaml`). The raw
+  tables are cached under `resources/sources/raw/`.
+- **NESO website documents** that the repository may not redistribute. They are listed, with their download URL,
+  landing page and SHA-256 checksum, in `data/neso_documents.yaml`; today these are the Clean Power 2030 data
+  workbook, the FES data workbooks 2020 to 2024, the FES 2024 regional breakdown and the ETYS Appendix B
+  workbooks 2022 to 2024. Rule `retrieve_neso_document` downloads each one to its listed path
+  when it is missing and refuses a file whose checksum differs. If NESO moves a document, download it by hand
+  from its landing page and save it at the listed path.
 
-1. **Configure CDS API** (one-time setup):
-   ```bash
-   # Register at: [https://cds.climate.copernicus.eu/](https://cds.climate.copernicus.eu/)
-   # Get your API key from: [https://cds.climate.copernicus.eu/how-to-api](https://cds.climate.copernicus.eu/how-to-api)
-   # Create ~/.cdsapirc with your credentials
-   ```
+## 6. Optional API tokens
 
-2. **Disable Zenodo** (optional) in `config/cutouts_config.yaml`:
-   ```yaml
-   zenodo:
-     enabled: false  # Force ERA5 download
-   ```
+Nothing here is needed for the quickstart. Copy `.env.example` to `.env` (which Git ignores) and fill in what you
+need:
 
-3. **Generate cutouts**:
-   ```bash
-   snakemake -s Snakefile_cutouts --cores 1
-   ```
+| Variable | Used by |
+|---|---|
+| `ENTSOE_API_TOKEN` | `scripts/interconnectors/fetch_entsoe_prices.py`, for hourly day-ahead prices from the [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/). The repository ships the prices for 2015 to 2024 (`data/interconnectors/entsoe_day_ahead/`), so a token is needed only for another year; without one, that year stops with a message saying how to add it. |
+| `ZENODO_TOKEN` | Maintainers only: uploading the input data bundle. |
+
+## 7. Check the workflow
+
+A dry run lists the jobs Snakemake would run, without running them:
+
+```bash
+snakemake -n
+```
+
+It should end with a job count and "This was a dry-run". If it fails while parsing, the error names the
+configuration problem (an unknown scenario id, a renamed key, a missing file).
 
 ```{tip}
-Zenodo downloads are much faster (~minutes vs hours) and don't require API credentials. Use this method unless you need years outside 2010-2024.
+On Windows consoles that use the cp1252 code page, `python config/config_loader.py --validate` can fail while
+printing its tick mark. Set `PYTHONIOENCODING=utf-8` first (`$env:PYTHONIOENCODING = "utf-8"` in PowerShell).
 ```
 
-## Directory Structure
+## Next
 
-After installation, your directory should look like:
-
-```
-PyPSA-GB/
-├── config/              # Configuration files
-│   ├── config.yaml      # Active scenarios
-│   ├── scenarios.yaml   # Scenario definitions
-│   └── defaults.yaml    # Default values
-├── data/                # Input data (versioned)
-├── resources/           # Generated outputs
-├── scripts/             # Python modules
-├── rules/               # Snakemake rules
-├── envs/                # Conda environment
-├── Snakefile            # Main workflow
-└── Snakefile_cutouts    # Weather data workflow
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Conda environment creation fails**
-
-Try updating conda first:
-```bash
-conda update -n base conda
-conda env create -f envs/pypsa-gb-stable.yaml
-```
-
-**Gurobi license not found**
-
-Ensure your license file is in the correct location:
-- Linux/macOS: `~/gurobi.lic`
-- Windows: `C:\Users\<username>\gurobi.lic`
-
-**Snakemake not found**
-
-Ensure the environment is activated:
-```bash
-conda activate pypsa-gb-stable
-which snakemake  # Should show path in conda env
-```
-
-## Next Steps
-
-- {doc}`quickstart` - Run your first model
-- {doc}`first_scenario` - Create a custom scenario
+{doc}`quickstart`: run your first scenario.

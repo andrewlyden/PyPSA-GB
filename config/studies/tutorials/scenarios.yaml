@@ -1,0 +1,54 @@
+# Tutorial scenarios (docs/source/tutorials). The same week throughout, 10-16 February: in 2020 a stormy week (storm
+# Dennis on 15-16 February); in 2040 on the 2013 weather that the CP30 and FES long-range studies use.
+
+# ── Tutorials 1 to 3: 2020 on four network models ───────────────────────────────────────────────────────────
+
+Tutorial_2020_reduced:
+  description: 'Tutorials: 10-16 February 2020 on the Reduced network (32 buses)'
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+  solve_period:
+    enabled: true
+    start: 2020-02-10 00:00
+    end: 2020-02-16 23:00
+
+Tutorial_2020_zonal:
+  description: 'Tutorials: 10-16 February 2020 on the Zonal network (17 zones)'
+  inherits: Tutorial_2020_reduced
+  network_model: Zonal
+
+Tutorial_2020_clustered:
+  description: 'Tutorials: 10-16 February 2020 on the ETYS network clustered to GSP regions'
+  inherits: Tutorial_2020_reduced
+  network_model: ETYS
+  network:
+    clustering: gsp_spatial
+
+Tutorial_2020_etys:
+  description: 'Tutorials: 10-16 February 2020 on the full ETYS network (about 2,000 buses)'
+  inherits: Tutorial_2020_reduced
+  network_model: ETYS
+
+# ── Tutorial 4: a future system ─────────────────────────────────────────────────────────────────────────────
+
+Tutorial_2040_HT_clustered:
+  description: 'Tutorials: FES 2025 Holistic Transition 2040, 10-16 February on 2013 weather, ETYS clustered to GSP regions'
+  targets: {source: FES, edition: 2025, pathway: HT}
+  method: gsp_block
+  modelled_year: 2040
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  network:
+    clustering: gsp_spatial
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2019   # ENTSO-E prices start in 2015, so 2013 weather borrows the hourly shape of 2019
+  solve_period:
+    enabled: true
+    start: 2040-02-10 00:00
+    end: 2040-02-16 23:00

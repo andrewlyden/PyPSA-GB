@@ -398,5 +398,53 @@ class TestIntegrationScenarios:
         assert folk_reduced.iloc[0]['bus'] == 'FOLK-R'
 
 
+class TestExplicitEtysMapping:
+    """A curated bus_mapping.csv row beats the nearest-bus coordinate match."""
+
+    @staticmethod
+    def _manual(bus='BICF41'):
+        return pd.DataFrame({
+            'landing_point': ['Bicker Fen', 'Sellindge'],
+            'country': ['GB', 'GB'],
+            'network_model': ['ETYS', 'ETYS'],
+            'bus': [bus, 'SELL4A'],
+            'interconnector_name': ['Viking Link Denmark Interconnector', 'IFA Interconnector'],
+        })
+
+    @staticmethod
+    def _mapped():
+        return pd.DataFrame({
+            'name': ['Viking', 'IFA', 'Greenlink'],
+            'landing_point_gb': ['Bicker Fen', 'Sellindge', 'Pembroke'],
+            'from_bus': ['TKNO22', 'SELL4A', 'PEMB41'],
+            'to_bus': ['HVDC_External_Denmark', 'HVDC_External_France', 'HVDC_External_Ireland'],
+            'match_method': ['coordinate'] * 3,
+        })
+
+    def test_viking_lands_at_bicker_fen_not_triton_knoll(self):
+        from map_to_buses import apply_explicit_etys_bus_mapping
+        out = apply_explicit_etys_bus_mapping(
+            self._mapped(), self._manual(), ['BICF41', 'TKNO22', 'SELL4A', 'PEMB41'])
+        assert out['from_bus'].tolist() == ['BICF41', 'SELL4A', 'PEMB41']
+        assert out['match_method'].tolist() == ['explicit', 'explicit', 'coordinate']
+
+    def test_row_naming_a_missing_bus_is_an_error(self):
+        from map_to_buses import apply_explicit_etys_bus_mapping
+        with pytest.raises(ValueError, match='BICK_400'):
+            apply_explicit_etys_bus_mapping(
+                self._mapped(), self._manual('BICK_400'), ['TKNO22', 'SELL4A', 'PEMB41'])
+
+    def test_every_etys_row_in_the_shipped_file_is_a_real_etys_bus_name(self):
+        """No placeholder labels like BICK_400: ETYS node IDs are 6 characters."""
+        path = Path(__file__).parents[2] / 'data' / 'interconnectors' / 'bus_mapping.csv'
+        rows = pd.read_csv(path)
+        etys = rows[(rows['network_model'] == 'ETYS') & (rows['country'] == 'GB')]
+        assert not etys.empty
+        bad = etys[~etys['bus'].astype(str).str.fullmatch(r'[A-Z]{4}[0-9][0-9A-Z-]')]
+        assert bad.empty, bad[['landing_point', 'bus']].to_dict('records')
+        viking = etys[etys['landing_point'] == 'Bicker Fen']['bus'].unique().tolist()
+        assert viking == ['BICF41']
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

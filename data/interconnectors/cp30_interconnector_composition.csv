@@ -1,0 +1,27 @@
+# CP30 interconnector composition (15 Oct 2026), read when interconnectors.cp30_composition is on (CP30 future scenarios).
+# Replaces the pro-rata uplift of every mapped cable to the ES1 total (x1.0559 in 2030). Every mapped cable must be listed.
+#   keep    = the mapped register cable at CP30's nominal rating (cp30_mw); the register figure is kept as capacity_mw_original.
+#   add     = a cable CP30's ES1 step implies that the operational register feed (Built / Under Construction) lacks.
+#   exclude = outside CP30's count and system boundary; not built.
+# first_year: first modelled year the cable counts (blank = always). The nominal ratings reproduce every CP30 ES1 step:
+#   2024-2027 10,300 MW (IFA 2,000 + IFA2 1,000 + ElecLink 1,000 + BritNed 1,000 + Nemo 1,000 + NSL 1,400 + Viking 1,400
+#   + Moyle 500 + EWIC 500 + Greenlink 500); 2028-2029 11,700 (+ NeuConnect 1,400); 2030 12,450 (+ 750).
+# The 2030 +750 MW is MaresConnect (judgement: CP30 does not name it; it is the only register cable of 750 MW due by 2030 -
+#   NESO interconnector register PRO-000978, Bodelwyddan 400 kV, 750/750 MW from 30 Nov 2028, Awaiting Consents; LionLink
+#   1,600, Tarchon 1,400, Nautilus 1,500 and Cronos 1,400 would each overshoot the step). Irish end: converter in the
+#   Greater Dublin Area near Maynooth (MaresConnect; coordinates approximate). Priced on the SEM as Ireland, like EWIC and Greenlink.
+# The Isle of Man cable (74 MW) is outside CP30's count (ES1 2024 10,300 MW excludes it), so CP30 builds leave it out.
+name,action,cp30_mw,first_year,landing_point_gb,gb_bus,to_bus,counterparty_country,international_location,international_latitude,international_longitude,gb_latitude,gb_longitude,losses_percent,transmission_owner,status,commissioning_date,gb_connection_site_full,register_project,evidence
+Britned,keep,1000,,,,,,,,,,,,,,,,,BritNed 1000 MW nominal (NESO register 1200 export)
+IFA,keep,2000,,,,,,,,,,,,,,,,,IFA 2000 MW nominal (register 1988)
+IFA2,keep,1000,,,,,,,,,,,,,,,,,IFA2 1000 MW
+Nemo Link,keep,1000,,,,,,,,,,,,,,,,,Nemo Link 1000 MW nominal (register 1020)
+NS Link,keep,1400,,,,,,,,,,,,,,,,,North Sea Link 1400 MW
+Moyle,keep,500,,,,,,,,,,,,,,,,,Moyle 500 MW
+ElecLink,keep,1000,,,,,,,,,,,,,,,,,ElecLink 1000 MW
+Viking,keep,1400,,,,,,,,,,,,,,,,,Viking Link 1400 MW
+East West Interconnector,keep,500,,,,,,,,,,,,,,,,,EWIC 500 MW nominal (register 505 import)
+Greenlink,keep,500,,,,,,,,,,,,,,,,,Greenlink 500 MW nominal (register 504 import)
+NeuConnect Interconnector,keep,1400,2028,,,,,,,,,,,,,,,,NeuConnect 1400 MW; CP30 ES1 step 2027 10300 -> 2028 11700
+Isle of Man Interconnector,exclude,0,,,,,,,,,,,,,,,,,Outside CP30's count: ES1 2024 10300 MW = the ten cables above without it
+MaresConnect,add,750,2030,Bodelwyddan,BODE41,HVDC_External_Ireland_Maynooth,Ireland,Maynooth,53.37,-6.61,53.270553,-3.512966,2.5,NGET,Awaiting Consents,30/11/2028,Bodelwyddan 400kV Substation,PRO-000978,NESO interconnector register (MARES): 750/750 MW from 30/11/2028; CP30 ES1 step 2029 11700 -> 2030 12450 (judgement: CP30 does not name the cable)

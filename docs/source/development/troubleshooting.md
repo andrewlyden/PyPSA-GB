@@ -1,423 +1,188 @@
 # Troubleshooting
 
-Common issues and their solutions.
+Common problems and what to do about them. When a rule fails, Snakemake prints the path of its log file under
+`logs/`; read that first.
 
-## Installation Issues
+## Installation
 
-### Conda Environment Creation Fails
+### The conda environment does not resolve
 
-**Symptom**: Error during `conda env create`
+1. Update conda, or use mamba, which resolves faster:
 
-**Solutions**:
-
-1. Update conda first:
-   ```bash
-   conda update -n base conda
-   ```
-
-2. Try mamba (faster resolver):
    ```bash
    conda install -n base mamba
-   mamba env create -f envs/pypsa-gb-stable.yaml
+   mamba env create -f envs/pypsa-gb.yaml
    ```
 
-3. Clear package cache:
-   ```bash
-   conda clean --all
-   ```
+2. Clear the package cache and retry: `conda clean --all`.
 
-### Gurobi License Not Found
+`envs/pypsa-gb-stable.yaml` pins every package to an exact version. The pins were taken on Windows, and the file does
+not currently install on Linux or macOS; use `envs/pypsa-gb.yaml` there.
 
-**Symptom**: `GurobiError: No Gurobi license found`
+### Gurobi licence not found
 
-**Solutions**:
+`GurobiError: No Gurobi license found` means Gurobi cannot see a licence file (`gurobi.lic` in your home folder by
+default). Academic licences are free from Gurobi. Without one, use HiGHS, the open-source solver, in the scenario:
 
-1. Check license file location:
-   - Windows: `C:\Users\<username>\gurobi.lic`
-   - Linux/Mac: `~/gurobi.lic`
-
-2. Regenerate license (if academic):
-   ```bash
-   grbgetkey YOUR-LICENSE-KEY
-   ```
-
-3. Use HiGHS instead:
-   ```yaml
-   solver:
-     name: "highs"
-   ```
-
-### Snakemake Not Found
-
-**Symptom**: `snakemake: command not found`
-
-**Solutions**:
-
-1. Ensure environment is activated:
-   ```bash
-   conda activate pypsa-gb-stable
-   which snakemake
-   ```
-
-2. Reinstall snakemake:
-   ```bash
-   conda install -n pypsa-gb-stable snakemake
-   ```
-
----
-
-## Workflow Issues
-
-### "Missing Input Files"
-
-**Symptom**: Snakemake reports missing input files
-
-**Solutions**:
-
-1. Check the file exists:
-   ```bash
-   ls path/to/expected/file
-   ```
-
-2. Generate the missing file:
-   ```bash
-   snakemake path/to/missing/file --cores 1
-   ```
-
-3. Check for typos in scenario name
-
-### Rule Fails with Exit Code 1
-
-**Symptom**: Rule fails, exit code 1
-
-**Solutions**:
-
-1. Check the log file:
-   ```bash
-   cat logs/<rule_name>/<scenario>.log
-   ```
-
-2. Re-run with verbose output:
-   ```bash
-   snakemake target.nc --cores 1 --verbose
-   ```
-
-3. Check Python errors in log
-
-### "No Rule to Produce Target"
-
-**Symptom**: `No rule to produce <target>`
-
-**Solutions**:
-
-1. Check target filename matches pattern
-2. Verify scenario is defined in `scenarios.yaml`
-3. Check for wildcards mismatch
-
----
-
-## Network Issues
-
-### All Generators at Same Bus
-
-**Symptom**: All generators mapped to one bus (e.g., `INDQ41`)
-
-**Cause**: Coordinate system mismatch (WGS84 vs OSGB36)
-
-**Solution**: The issue is in spatial mapping. Check:
-```python
-from scripts.spatial_utils import detect_coordinate_system
-
-# Check bus coordinates
-print(detect_coordinate_system(network.buses[['x', 'y']]))
-# Should output: 'OSGB36'
+```yaml
+solve:
+  solver:
+    name: highs
 ```
 
-### Network Not Connected
+HiGHS is slower on the large ETYS networks; see {doc}`/model/dispatch/solvers`.
 
-**Symptom**: Isolated buses, disconnected regions
+### `snakemake: command not found`
 
-**Solution**:
+Activate the environment (`conda activate pypsa-gb`) and check with `snakemake --version`.
+
+## Configuration
+
+### A key is refused with "renamed" in the message
+
+Settings were nested by domain in v2.3.0 (for example `solver` is now `solve.solver`, `etys` is `network.etys`,
+`transmission` is `network.transmission`). The loader refuses the old path and names the new one: move the setting.
+See {doc}`release_notes` and {doc}`/reference/configuration_keys`.
+
+### A new scenario fails for missing `targets` or `method`
+
+A new future scenario must declare both, for example:
+
+```yaml
+targets: {source: FES, edition: 2024, pathway: HT}
+method: gsp_block
+```
+
+Only the ids in `data/scenario_sources/legacy_scenario_ids.txt` may still derive them from the older keys. See
+{doc}`/model/scenarios_configuration`.
+
+### Where does this value come from?
+
+```bash
+python config/config_loader.py --explain <scenario_id> --path market.balancing
+```
+
+shows which layer (base, overlay, template or scenario) sets each value.
+
+## Workflow
+
+### Missing input files
+
+1. Check the scenario id is spelled as in `config/scenarios.yaml` or the study, and that the study is listed under
+   `studies` in `config/config.yaml`.
+2. Ask Snakemake to build the file: `snakemake <path> --cores 1`. If no rule makes it, the file is a raw input that
+   must be under `data/`.
+3. A NESO website document (for example the CP30 data workbook) is downloaded by rule `retrieve_neso_document`. If
+   the download fails, fetch it by hand from the landing page in `data/neso_documents.yaml` and save it at the listed
+   path.
+
+### "No rule to produce" a target
+
+The file name does not match any rule's output pattern. Compare it with {doc}`/reference/outputs`, and check that the
+scenario is in `run_scenarios` or named with `--config scenario=<id>`.
+
+### A rule re-runs when nothing seems to have changed
+
+Snakemake re-runs a rule when its inputs, code or parameters change. Run `snakemake -n` to see the reason for each
+job. Build and solve rules ignore changes to reporting-only blocks of the configuration.
+
+## Network
+
+### All generators land on one bus
+
+Usually WGS84 coordinates (degrees) compared with OSGB36 bus coordinates (metres). Map sites through
+`scripts/utilities/spatial_utils.py` (`map_sites_to_buses`), which converts between the two;
+`detect_coordinate_system(x_values, y_values)` tells you which system an array is in.
+
+### Isolated buses
+
 ```python
 import pypsa
 
-n = pypsa.Network("resources/network/my_network.nc")
-
-# Check connectivity
-from pypsa.topology import find_disconnected_buses
-disconnected = find_disconnected_buses(n)
-print(f"Disconnected buses: {disconnected}")
+n = pypsa.Network("resources/network/<scenario>.nc")
+n.determine_network_topology()
+print(n.buses.sub_network.value_counts())   # more than one sub-network: parts are not connected
 ```
 
-### Negative Line Impedance
+## Solving
 
-**Symptom**: Warnings about negative impedance
+### Infeasible solve
 
-**Solution**: Usually data issue. Check raw network files for data entry errors.
+1. **Demand above supply.** Compare capacity with peak demand:
 
----
-
-## Solver Issues
-
-### Infeasible Optimization
-
-**Symptom**: Solver returns "infeasible" or "unbounded"
-
-**Causes & Solutions**:
-
-1. **Demand exceeds supply**:
    ```python
-   n = pypsa.Network("resources/network/pre_solve.nc")
-   print(f"Generation: {n.generators.p_nom.sum()/1000:.1f} GW")
-   print(f"Peak demand: {n.loads_t.p_set.sum(axis=1).max()/1000:.1f} GW")
+   print(f"Generation: {n.generators.p_nom.sum() / 1e3:.1f} GW")
+   print(f"Peak demand: {n.loads_t.p_set.sum(axis=1).max() / 1e3:.1f} GW")
    ```
 
-2. **Network disconnected**: See above
+2. **A disconnected part of the network** (see above).
+3. **Lines with zero rating:** `n.lines[n.lines.s_nom == 0]`.
 
-3. **Zero capacity lines**:
-   ```python
-   print(n.lines[n.lines.s_nom == 0])
-   ```
+Load-shedding generators at the value of lost load (`solve.voll`) normally keep a solve feasible, so an infeasible
+solve usually points at the network or a hard constraint rather than at the generation mix.
 
-4. **Missing generators**: Check if integration ran correctly
+### The solve takes too long
 
-### Solver Runs Forever
+- Solve a shorter window with `solve_period` (`enabled: true`, `start`, `end`).
+- Use the Reduced network or clustering for tests.
+- Keep the barrier settings in `solve.solver` (`method: 2`, `crossover: 0`), the defaults.
 
-**Symptom**: Solver doesn't converge
+### Out of memory
 
-**Solutions**:
+Run fewer jobs at once (`snakemake --cores 1`), cluster the network, or shorten the solve period. Full ETYS networks
+need 8 GB of memory or more.
 
-1. Add time limit:
-   ```yaml
-   solver:
-     TimeLimit: 3600  # 1 hour
-   ```
+## Market
 
-2. Use barrier method:
-   ```yaml
-   solver:
-     method: 2
-     crossover: 0
-   ```
+### ELEXON prices requested for a future year
 
-3. Reduce problem size:
-   - Use reduced network
-   - Shorten solve period
-   - Cluster network
-
-### Out of Memory
-
-**Symptom**: Process killed, memory error
-
-**Solutions**:
-
-1. Reduce parallel jobs:
-   ```bash
-   snakemake --cores 1
-   ```
-
-2. Use network clustering
-
-3. Reduce timesteps:
-   ```yaml
-   solve_period:
-     start: "2035-01-01"
-     end: "2035-01-02"  # Shorter period
-   ```
-
----
-
-## Market Dispatch Issues
-
-### ELEXON Prices Requested For A Future Scenario
-
-**Symptom**: Market solve errors when `bid_offer_source: "elexon"` is used for
-a modelled year after 2024.
-
-**Solution**: ELEXON bid/offer data is historical. Use derived prices for future
-scenarios:
+ELEXON bid-offer data is historical. For a future year use derived bids and offers:
 
 ```yaml
 market:
   balancing:
-    bid_offer_source: "derived"
+    bid_offer_source: derived
 ```
 
-Or use `bid_offer_source: "auto"` to prefer ELEXON only when valid historical
-files are available.
+The default, `auto`, uses ELEXON only for historical years where the data is available.
 
-### Balancing Solve Is Infeasible
+### The balancing stage is infeasible
 
-**Symptom**: Wholesale solves, but `solve_balancing_mechanism` fails.
+The wholesale stage solves, but `solve_balancing_mechanism` fails. Common causes: participation settings that hold
+too many units fixed, or interconnector and outage settings that over-constrain the network. Start from the default
+participation settings (`market.balancing.participation`: every generator and storage unit in, non-participants
+priced out rather than fixed) and tighten from there. `market.balancing.diagnostics.compute_iis: true` logs a Gurobi
+irreducible infeasible set for a failed window.
 
-**Common causes**:
-- BM participation filters exclude assets needed for feasibility
-- non-participants are set to `behavior: "fixed"`
-- interconnector or outage settings over-constrain the physical network
+### The wholesale price spread looks too high
 
-Start from permissive participation settings, then tighten filters:
+Averaging `buses_t.marginal_price` over every bus includes hydrogen and internal DC-link buses, which keep directional
+shadow prices. Use `resources/market/{scenario}_wholesale_price.csv`, which reports the price over demand buses only.
 
-```yaml
-market:
-  balancing:
-    participation:
-      generators:
-        mode: "all"
-        behavior: "priced_out"
-      storage_units:
-        mode: "all"
-        behavior: "priced_out"
+## Data
+
+### Weather cutout missing
+
+Cutouts are built by a separate workflow:
+
+```bash
+snakemake -s Snakefile_cutouts --configfile config/cutouts_config.yaml --cores 4
 ```
 
-### Wholesale Price Spread Looks Too High
+For 2010-2024 it downloads pre-built cutouts from Zenodo (no credentials needed). Other years are built from ERA5 and
+need Copernicus Climate Data Store credentials (`~/.cdsapirc`). Cutouts go to `resources/atlite/cutouts/uk-<year>.nc`.
+Alternatively, point the scenario's `renewables_year` at a year you have.
 
-**Symptom**: Averaging `network.buses_t.marginal_price` directly gives an
-unrealistic price spread in the wholesale network.
+### FES data not found
 
-**Solution**: Use `resources/market/{scenario}_wholesale_price.csv`. The market
-reporting code filters to demand buses and avoids internal DC-link buses that can
-retain directional shadow prices.
+Check the edition is registered (see {doc}`/reference/data/maintenance`) and rebuild the processed table:
+`snakemake resources/FES/FES_<edition>_data.csv --cores 1`.
 
----
+## Getting help
 
-## Data Issues
+Search the [GitHub issues](https://github.com/andrewlyden/PyPSA-GB/issues) first. A new issue should include:
 
-### FES Data Not Found
-
-**Symptom**: Error loading FES data
-
-**Solutions**:
-
-1. Check FES year is available:
-   ```bash
-   ls resources/FES/
-   ```
-
-2. Regenerate FES data:
-   ```bash
-   snakemake resources/FES/FES_2024_data.csv --cores 1 -R
-   ```
-
-### DUKES Coordinates Missing
-
-**Symptom**: Generators without coordinates
-
-**Solutions**:
-
-1. Check for manual coordinate file:
-   ```bash
-   ls data/generators/manual_coordinates.csv
-   ```
-
-2. Run coordinate geocoding:
-   ```bash
-   python scripts/geocode_missing_coordinates.py
-   ```
-
-### Weather Cutout Missing
-
-**Symptom**: "Cutout not found" for renewables year
-
-**Solutions**:
-
-1. **For years 2010-2024** (automatic Zenodo download):
-   ```bash
-   # Configure year in config/cutouts_config.yaml
-   # Then run cutout workflow
-   snakemake -s Snakefile_cutouts --cores 1
-   ```
-   
-   Cutouts will be automatically downloaded from Zenodo (~5-10 minutes per year).
-   **No CDS API credentials required** for these years!
-
-2. **For other years** (requires CDS API credentials):
-   - Register at: https://cds.climate.copernicus.eu/user/register
-   - Set up `~/.cdsapirc` with your API key
-   - Run: `snakemake -s Snakefile_cutouts --cores 1`
-
-3. **Quick fix** - Use an available year:
-   ```yaml
-   renewables_year: 2019  # Year with available cutout
-   ```
-
-4. **Check what's available**:
-   ```bash
-   ls resources/atlite/cutouts/
-   # Should show: uk-2019.nc, uk-2020.nc, etc.
-   ```
-
-**Note**: Zenodo cutouts are automatically verified with MD5 checksums.
-
----
-
-## Logging Issues
-
-### Empty Log Files
-
-**Symptom**: Log files exist but are empty
-
-**Cause**: Scripts not using `snakemake.log[0]`
-
-**Solution**: This was fixed in v0.1. If still occurring:
-```python
-# In script's main block
-log_path = snakemake.log[0] if snakemake.log else "fallback"
-logger = setup_logging(log_path)
-```
-
-### "Logger Not Defined"
-
-**Symptom**: `NameError: name 'logger' is not defined`
-
-**Solution**:
-```python
-from scripts.logging_config import setup_logging
-logger = setup_logging("my_script")
-```
-
----
-
-## Getting Help
-
-### Before Asking
-
-1. Check this troubleshooting guide
-2. Search existing [GitHub Issues](https://github.com/andrewlyden/PyPSA-GB/issues)
-3. Check the relevant log file
-
-### Information to Include
-
-When reporting an issue:
-
-1. **Environment**:
-   ```bash
-   conda list | grep -E "pypsa|snakemake|pandas"
-   python --version
-   ```
-
-2. **Command run**:
-   ```bash
-   snakemake --cores 4
-   ```
-
-3. **Full error message** (copy from terminal)
-
-4. **Log file contents** (from `logs/`)
-
-5. **Configuration snippet** (relevant scenario)
-
-### Quick Diagnostic
-
-Run this to collect system info:
-
-```python
-import sys
-import pypsa
-import pandas
-import snakemake
-
-print(f"Python: {sys.version}")
-print(f"PyPSA: {pypsa.__version__}")
-print(f"Pandas: {pandas.__version__}")
-print(f"Snakemake: {snakemake.__version__}")
-```
+1. the environment (`python --version`, `conda list | grep -E "pypsa|snakemake|pandas|linopy"`);
+2. the command you ran;
+3. the full error and the rule's log file;
+4. the scenario entry (or the `--explain` output for the relevant keys).

@@ -1,0 +1,33 @@
+{
+  "purpose": "Relative hourly domestic electricity consumption for a single-rate customer, used to weight the hourly PyPSA clearing price into a household-shaped energy cost.",
+  "profile_year": 2020,
+  "hours": 8784,
+  "base_share": 0.7,
+  "peak_share": 0.3,
+  "peak_block_hours": 3048,
+  "peak_block_share_of_hours": 0.3469945355191257,
+  "peak_block_share_of_consumption": 0.542896174863388,
+  "peak_to_offpeak_rate_ratio": 2.235095613048369,
+  "method": "Ofgem base/peak demand allocation converted to an hourly shape: baseload product covers every hour at base_share/H, the peak product adds peak_share/P during the Elexon peak block. Normalised to sum to one.",
+  "limitations": [
+    "Two blocks only. It reproduces Ofgem's own shaping input, not an Elexon Profile Class 1 half-hourly regression, so within-block structure such as the domestic evening peak after 19:00 is absent.",
+    "No seasonal variation: the 2020 cap periods declare one base/peak allocation, so the shape is flat across months and only varies by day type and hour.",
+    "Applied to model snapshots by day-of-week and local hour, and by calendar date only for England and Wales bank holidays (off-peak), because the profile's only structure is the peak block."
+  ],
+  "source": {
+    "publisher": "Ofgem",
+    "dataset": "Default tariff cap model, Annex 2 wholesale, base and peak demand allocation",
+    "local_file": "data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv",
+    "columns": [
+      "base_share",
+      "peak_share"
+    ],
+    "cap_periods": [
+      "2020_Jan_Mar",
+      "2020_Apr_Sep",
+      "2020_Oct_Dec"
+    ],
+    "peak_block_definition": "Elexon/EFA peak block: 07:00-19:00 Monday to Friday, London local time, England and Wales bank holidays excluded",
+    "bank_holidays": "data/market/consumer_bill_sources/england_wales_bank_holidays.csv"
+  }
+}

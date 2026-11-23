@@ -16,9 +16,17 @@ Author: PyPSA-GB Team
 import pandas as pd
 import numpy as np
 import os
+import sys
 from pathlib import Path
 from pyproj import Transformer
 import time
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from scripts.renewables.repd_support_labels import (  # noqa: E402
+    apply_cfd_round_corrections, load_cfd_round_corrections, normalise_support_labels,
+)
 
 # Set up logging - compatible with both standalone and Snakemake execution
 try:
@@ -42,10 +50,18 @@ except ImportError:
 class RenewableSiteDataProcessor:
     """Process renewable site data for atlite profile generation."""
     
-    def __init__(self):
+    def __init__(self, round_corrections_path=None):
         """Initialize the processor with coordinate transformer."""
         # Set up coordinate transformation (OSGB36 -> WGS84)
         self.transformer = Transformer.from_crs('epsg:27700', 'epsg:4326', always_xy=True)
+
+        # Sourced corrections to REPD's CfD allocation-round field, applied to
+        # every technology's site file so the strike lookup sees the contract
+        # the project actually holds.
+        self.round_corrections = (
+            load_cfd_round_corrections(round_corrections_path)
+            if round_corrections_path else None
+        )
         
         # Technology mapping - used only as an allowlist reference historically.
         # We now process all unique Technology Type values present in REPD, but keep
@@ -95,6 +111,7 @@ class RenewableSiteDataProcessor:
         
         # Define required columns
         required_columns = [
+            'Ref ID', 'Old Ref ID',
             'Site Name', 'Technology Type', 'Installed Capacity (MWelec)',
             'CHP Enabled', 'Country', 'Turbine Capacity', 
             'No. of Turbines', 'Height of Turbines (m)',
@@ -126,6 +143,52 @@ class RenewableSiteDataProcessor:
         except Exception as e:
             logger.error(f"Error loading REPD data: {e}")
             raise
+
+    def load_historical_site_overrides(self, overrides_file):
+        """Load audited historic sites absent or stale in the REPD snapshot."""
+        overrides = pd.read_csv(overrides_file)
+        required = {
+            'technology', 'repd_ref_id', 'site_name', 'source_site_name',
+            'capacity_mw', 'x_coord', 'y_coord', 'operational_date',
+        }
+        missing = required.difference(overrides.columns)
+        if missing:
+            raise ValueError(
+                f"Historical renewable override file is missing columns: {sorted(missing)}"
+            )
+        if overrides['repd_ref_id'].duplicated().any():
+            raise ValueError("Historical renewable override IDs must be unique")
+        overrides['capacity_mw'] = pd.to_numeric(overrides['capacity_mw'], errors='raise')
+        if (overrides['capacity_mw'] <= 0).any():
+            raise ValueError("Historical renewable overrides require positive capacity")
+        lat, lon = zip(*[
+            self.convert_coordinates(x, y)
+            for x, y in zip(overrides['x_coord'], overrides['y_coord'])
+        ])
+        result = pd.DataFrame({
+            'Ref ID': overrides['repd_ref_id'].astype(str),
+            'Old Ref ID': pd.NA,
+            'Site Name': overrides['site_name'],
+            'Technology Type': overrides['technology'],
+            'Installed Capacity (MWelec)': overrides['capacity_mw'],
+            'CHP Enabled': pd.NA,
+            'Country': 'Scotland',
+            'Turbine Capacity': pd.NA,
+            'No. of Turbines': pd.NA,
+            'Height of Turbines (m)': pd.NA,
+            'Mounting Type for Solar': pd.NA,
+            'Development Status': 'Operational',
+            'X-coordinate': overrides['x_coord'],
+            'Y-coordinate': overrides['y_coord'],
+            'Operational': overrides['operational_date'],
+            'CfD Allocation Round': overrides.get('cfd_round'),
+            'RO Banding (ROC/MWh)': pd.NA,
+            'CfD Capacity (MW)': overrides.get('cfd_capacity_mw'),
+            'lat': lat,
+            'lon': lon,
+        })
+        logger.info("Loaded %d historical renewable site override(s)", len(result))
+        return result
     
     def _filter_repd_data(self, df):
         """Filter REPD data to operational sites in GB with required technologies."""
@@ -267,12 +330,17 @@ class RenewableSiteDataProcessor:
         if len(tech_df) == 0:
             logger.warning(f"No {technology} sites found")
             # Create an empty CSV with expected headers to avoid read_csv errors downstream
-            empty_cols = ['site_name', 'capacity_mw', 'lat', 'lon']
+            empty_cols = [
+                'site_name', 'source_site_name', 'repd_ref_id',
+                'capacity_mw', 'lat', 'lon',
+            ]
             pd.DataFrame(columns=empty_cols).to_csv(output_file, index=False)
             return
 
         # Rename columns to match downstream expectations
         rename_map = {
+            'Ref ID': 'repd_ref_id',
+            'Old Ref ID': 'repd_old_ref_id',
             'Site Name': 'site_name',
             'Installed Capacity (MWelec)': 'capacity_mw',
             'CfD Allocation Round': 'cfd_round',
@@ -280,6 +348,15 @@ class RenewableSiteDataProcessor:
             'CfD Capacity (MW)': 'cfd_capacity_mw',
         }
         tech_df = tech_df.rename(columns={k: v for k, v in rename_map.items() if k in tech_df.columns})
+        tech_df['source_site_name'] = tech_df['site_name']
+
+        # REPD ships stray whitespace in the support-label fields ("AR1 " beside
+        # "AR1"), which splits every groupby on cfd_round, and records an
+        # allocation round for two projects that hold Investment Contracts.
+        tech_df = normalise_support_labels(tech_df, logger=logger)
+        tech_df = apply_cfd_round_corrections(
+            tech_df, self.round_corrections, logger=logger
+        )
 
         # Clean up columns for atlite
         # IMPORTANT: Keep 'Operational' column for year-based filtering in integrate_renewable_generators
@@ -531,10 +608,14 @@ def main():
         # Check if running under Snakemake or standalone
         try:
             # Snakemake mode - try to access snakemake object
-            renewables_years = snakemake.params.renewables_years
-            modelled_years = snakemake.params.modelled_years
+            # Workflow-wide horizon (latest modelled year of any defined
+            # scenario), so the processed pipeline never depends on the run
+            # selection; see pipeline_reference_year in rules/renewables.smk.
+            pipeline_reference_year = int(snakemake.params.pipeline_reference_year)
             repd_file = snakemake.input.repd
             pipeline_file = snakemake.input.offshore_pipeline
+            historical_site_overrides_file = snakemake.input.historical_site_overrides
+            round_corrections_file = snakemake.input.cfd_round_corrections
             wind_offshore_file = snakemake.output.wind_offshore_repd
             wind_onshore_file = snakemake.output.wind_onshore_repd
             solar_pv_file = snakemake.output.solar_pv_repd
@@ -548,10 +629,10 @@ def main():
         except NameError:
             # Standalone mode - use default parameters and paths
             base_path = Path(__file__).parent.parent
-            renewables_years = [2020, 2025, 2030]
-            modelled_years = [2020, 2025, 2030]
+            pipeline_reference_year = 2030
             repd_file = base_path / "data" / "renewables" / "repd-q2-july-2024.csv"
             pipeline_file = base_path / "data" / "renewables" / "offshore_wind_pipeline.csv"
+            round_corrections_file = base_path / "data" / "market" / "lccc" / "cfd_round_corrections.csv"
             output_dir = base_path / "resources" / "renewable"
             output_dir.mkdir(parents=True, exist_ok=True)
             wind_offshore_file = output_dir / "wind_offshore_repd.csv"
@@ -563,13 +644,26 @@ def main():
             shoreline_wave_file = output_dir / "shoreline_wave.csv"
             tidal_lagoon_file = output_dir / "tidal_lagoon.csv"
             pipeline_output_file = output_dir / "offshore_pipeline_processed.csv"
+            historical_site_overrides_file = None
             logger.info("Running in standalone mode")
-        
-        logger.info(f"Configured renewables years: {renewables_years}")
-        logger.info(f"Configured modelled years: {modelled_years}")
+
+        # Sourced CfD allocation-round corrections, loaded once the input paths
+        # are resolved and applied to every technology's site file.
+        if round_corrections_file:
+            processor.round_corrections = load_cfd_round_corrections(round_corrections_file)
+            logger.info("Loaded %d CfD round correction(s) from %s",
+                        len(processor.round_corrections), round_corrections_file)
+
+        logger.info(f"Offshore pipeline reference year: {pipeline_reference_year}")
 
         # Load and preprocess REPD data (operational sites only)
         repd_data = processor.load_repd_data(repd_file)
+        if historical_site_overrides_file:
+            repd_data = pd.concat(
+                [repd_data, processor.load_historical_site_overrides(historical_site_overrides_file)],
+                ignore_index=True,
+                sort=False,
+            )
 
         # NOTE: We no longer filter by year here. Instead, we output the FULL dataset
         # with operational_date column preserved, and let integrate_renewable_generators.py
@@ -599,11 +693,7 @@ def main():
         # Offshore wind pipeline: write a single file filtered to the latest modelled year
         logger.info("Processing offshore wind pipeline data")
         pipeline_data = processor.load_offshore_pipeline_data(pipeline_file)
-        if isinstance(modelled_years, (list, tuple, set)) and len(modelled_years) > 0:
-            ref_year = max(modelled_years)
-        else:
-            # Fall back to a sensible default if not provided
-            ref_year = pd.Timestamp.today().year
+        ref_year = pipeline_reference_year
         logger.info(f"Filtering pipeline to projects operational by {ref_year}")
         year_pipeline = processor.filter_pipeline_by_year(pipeline_data, ref_year)
         year_pipeline = processor.process_pipeline_coordinates(year_pipeline)
@@ -617,8 +707,7 @@ def main():
         summary_stats = {
             'repd_sites_processed': total_sites,
             'pipeline_sites_processed': pipeline_sites,
-            'renewables_years': renewables_years,
-            'modelled_years': modelled_years,
+            'pipeline_reference_year': pipeline_reference_year,
             'output_files_created': 10  # Number of technology output files
         }
         

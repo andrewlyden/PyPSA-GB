@@ -1,0 +1,30 @@
+# Committed new-build long-duration storage inside CP30's LDES (model carrier LAES), per CP30 pathway (15 Oct 2026).
+# Read by scripts/CP30/storage_interconnectors.load_committed_storage_sites when spatial_proxy.storage_committed_sites is on.
+# Each project is a fixed row at its TEC substation (site_code); the rest of CP30's LDES new build stays on the FES proxy.
+# Identification (judgement, checked against CP30 ES5 "Storage" less "Batteries" by region and FES 2024 HT 2030):
+#   North Scotland FFR 2,046 MW = Foyers 300 (existing) + Coire Glas 1,296 + Loch na Cathrach (Red John) 450
+#     = FES 2024 HT Srg_BB003 Direct(SHETL) 2,046; ND 1,362 = Foyers 300 + Coire Glas stage 1 612 + Red John 450.
+#   South Scotland ND 749.8 MW = Cruachan 440 (existing) + Glenmuckloch 210 + Highview Hunterston 99.8 (FES 2024 HT
+#     Srg_BB004 Direct(SPTL) LAES 99.8); FFR 2,249.8 adds Cruachan II 600 and leaves 900 MW on the FES proxy.
+#     FES 2024 HT Srg_BB003 Direct(SPTL) 1,250 = Cruachan 440 + Cruachan II 600 + Glenmuckloch 210. Cruachan is SPT
+#     transmission (south of B4), so it and Cruachan II count in South Scotland (site_code_regions CRUA, DALL).
+#   South East FFR 500 MW = Medway 3 LAES 500 (TEC, Kingsnorth 400 kV); ND 0.
+# site_code: the TEC connection substation's four-character ETYS code. Red John 275 kV switching station and
+#   Glenmuckloch 132 kV are not ETYS nodes: Red John uses Knocknagael 275 kV (KNOC, nearest 275 kV node, same side of
+#   B0/B1a/B2/B4), Glenmuckloch uses Glenglass 132 kV (GLGL, nearest 132 kV node, same side of every boundary).
+#   Cruachan II uses Dalmally 275 kV (DALL, SPT, 9 km): Cruachan's two 275 kV busbars reach Dalmally over 2 x 283 MVA,
+#   which the existing 440 MW station already uses, and capacity-aware placement otherwise spilled 380 MW of the pair
+#   onto Taynuilt 132 kV, north of B4. Dalmally is on the same side of every boundary as Cruachan.
+# lat/lon: the ETYS node's coordinates (they set the GSP-polygon region; the bus comes from site_code).
+# energy_mwh blank = CP30's own LDES average duration (ES1 energy / power) for that pathway.
+name,unit_label,pathway,subtype,site_code,lat,lon,power_mw,energy_mwh,host_to,tec_project,tec_connection_site,tec_mw_effective_from,power_source,energy_source
+Coire Glas,CoireGlas,Further Flex and Renewables,LDES,COGL,57.076151,-4.810713,1296,30000,SHET,PRO-000073,Coire Glas GSP,2029/10/31,TEC register 2 Sep 2025: stages 1+2 612+684 MW; FES 2024 HT Direct(SHETL),SSE Renewables: up to 1300 MW and around 30 GWh (sserenewables.com/hydro/coire-glas)
+Loch na Cathrach (Red John),LochNaCathrach,Further Flex and Renewables,LDES,KNOC,57.447927,-4.215718,450,2800,SHET,PRO-000570-1,Red John 275kV Switching Station,2029/04/30,TEC register 2 Sep 2025 stage 1; Statkraft 450 MW,GlobalData via power-technology.com: 2.8 GWh (ILI earlier 2.4 GWh)
+Cruachan II,CRUA_expansion,Further Flex and Renewables,LDES,DALL,56.402,-4.972,600,,SPT,PRO-001889,Cruachan 275kV Substation,2030/10/31,TEC register 2 Sep 2025 (Cruachan Expansion); Drax 600 MW,no published energy (shares Cruachan's upper reservoir): CP30 LDES average duration
+Glenmuckloch,Glenmuckloch,Further Flex and Renewables,LDES,GLGL,55.397589,-3.79723,210,1600,SPT,PRO-000299,Glenmuckloch 132kV Substation,2029/05/18,TEC register 2 Sep 2025,Buccleuch / Foresight: 210 MW and 1600 MWh
+Highview Hunterston,HighviewHunterston,Further Flex and Renewables,LDES,HUNE,55.721884,-4.892002,99.8,1247.5,SPT,PRO-001348,Hunterston East 400kV,2027/10/31,FES 2024 HT Srg_BB004 Direct(SPTL) LAES 99.8 MW in 2030 (TEC 200 MW),Highview Power: 200 MW / 2.5 GWh = 12.5 h
+Medway 3 LAES,Medway3LAES,Further Flex and Renewables,LDES,KINO,51.420020,0.596217,500,,NGET,PRO-002578,Kingsnorth 400kV Substation,2030/12/31,TEC register 2 Sep 2025; CP30 ES5 South East non-battery storage 500 MW (FFR),no published energy: CP30 LDES average duration
+Coire Glas,CoireGlas,New Dispatch,LDES,COGL,57.076151,-4.810713,612,14166.7,SHET,PRO-000073-1,Coire Glas GSP,2029/10/31,TEC register stage 1 612 MW; CP30 ES5 ND North Scotland 1362 = Foyers 300 + 612 + Red John 450,30 GWh x 612/1296 (pro rata; CP30 ND's LDES energy cannot hold the full reservoir)
+Loch na Cathrach (Red John),LochNaCathrach,New Dispatch,LDES,KNOC,57.447927,-4.215718,450,2800,SHET,PRO-000570-1,Red John 275kV Switching Station,2029/04/30,TEC register 2 Sep 2025 stage 1; Statkraft 450 MW,GlobalData via power-technology.com: 2.8 GWh
+Glenmuckloch,Glenmuckloch,New Dispatch,LDES,GLGL,55.397589,-3.79723,210,1600,SPT,PRO-000299,Glenmuckloch 132kV Substation,2029/05/18,TEC register 2 Sep 2025,Buccleuch / Foresight: 210 MW and 1600 MWh
+Highview Hunterston,HighviewHunterston,New Dispatch,LDES,HUNE,55.721884,-4.892002,99.8,1247.5,SPT,PRO-001348,Hunterston East 400kV,2027/10/31,FES 2024 HT Srg_BB004 Direct(SPTL) LAES 99.8 MW in 2030 (TEC 200 MW),Highview Power: 200 MW / 2.5 GWh = 12.5 h

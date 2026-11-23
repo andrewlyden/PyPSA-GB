@@ -1,152 +1,64 @@
 # Tutorials
 
-Interactive Jupyter notebook tutorials demonstrating PyPSA-GB's network-constrained optimal power flow (LOPF) capabilities across historical and future scenarios.
+Five Jupyter notebooks that take you from a first run to the two-stage market. They follow one week, 10 to 16 February,
+through three years: 2020 as it happened, 2030 on NESO's Clean Power 2030 pathway, and 2040 on FES 2025's Holistic
+Transition. Each notebook says how to run its scenario, reads the result, explains what it shows, and ends with
+changes to try. The pages below keep the notebooks' outputs, so they can be read without running anything.
 
-```{toctree}
-:maxdepth: 1
-:caption: Scenario Tutorials
-
-1-historical-baseload-2015
-2-historical-renewables-2023
-3-future-holistic-transition-2035
-4-future-electric-engagement-2050
+```{nbgallery}
+1-first-run-2020
+2-network-models
+3-demand
+4-future-2040-holistic-transition
+5-two-stage-market-2030
 ```
 
-```{toctree}
-:maxdepth: 1
-:caption: Component Tutorials
+## Learning path
 
-5-networks
-6-demand
-7-generators
-8-marginal-costs
-9-renewables
-10-storage
-11-interconnectors
-12-hydrogen
-13-heat-flexibility
-14-ev-flexibility
-15-demand-side-response
-16-market-dispatch
-```
+| # | Notebook | What you learn | Scenario | Run time |
+|---|----------|----------------|----------|----------|
+| 1 | {doc}`1-first-run-2020` | Run a scenario; what a solved network holds; how demand was met; the model against the real week; prices and full lines | `Tutorial_2020_reduced` | about 5 minutes |
+| 2 | {doc}`2-network-models` | The four network models side by side; what detail changes; coordinates; clustering | `Tutorial_2020_zonal`, `_reduced`, `_clustered`, `_etys` | minutes; full ETYS 30 to 60 minutes |
+| 3 | {doc}`3-demand` | How demand is built in each year; flexible demand in 2030; where demand is | reads tutorials 1, 4 and 5 | none |
+| 4 | {doc}`4-future-2040-holistic-transition` | A FES scenario; the 2040 fleet and week against 2020; storage and hydrogen; curtailment and prices | `Tutorial_2040_HT_clustered` | 10 to 20 minutes |
+| 5 | {doc}`5-two-stage-market-2030` | The wholesale market and the balancing mechanism; constraint costs; where wind is turned down; interconnector re-trading | `CP30_FFR_2030_tutorial_week` | about 40 minutes the first time |
 
-## Tutorial Overview
+The scenarios are in `config/studies/tutorials/scenarios.yaml`, except tutorial 5's, which is part of the CP30 study
+(`config/studies/cp30_2030/scenarios.yaml`) because it is solved on that study's network and market settings.
 
-These tutorials demonstrate PyPSA-GB's core capability: **network-constrained optimal power flow (LOPF)** modeling across different time periods and network resolutions.
+## Before you start
 
-### Scenario Tutorials (1-4)
+1. Install the model and a solver ({doc}`../getting_started/installation`). The notebooks run in the `pypsa-gb`
+   environment, which includes Jupyter.
+2. Check that `config/config.yaml` loads the tutorial scenarios, and the CP30 study for tutorial 5:
 
-Complete scenario walkthroughs from network building to results analysis:
-
-| # | Notebook | Year | Network | Solve Time | Focus |
-|---|----------|------|---------|------------|-------|
-| **1** | Historical Baseload (2015) | 2015 | Reduced (32 buses) | 5-10 min | Traditional dispatch, coal/nuclear dominance |
-| **2** | Historical Renewables (2023) | 2023 | Full ETYS (~2000 buses) | 30-60 min | High renewable penetration, network detail |
-| **3** | Future Near-Term (2035) | 2035 | ETYS clustered (100 buses) | 10-15 min | Renewable dominance, storage, network upgrades |
-| **4** | Future Long-Term (2050) | 2050 | ETYS clustered (100 buses) | 10-15 min | Near-100% renewables, stress test, adequacy |
-
-### Component Tutorials (5-16)
-
-Deep dives into specific aspects of power system modeling:
-
-| # | Notebook | Topic | Description |
-|---|----------|-------|-------------|
-| **5** | Networks | Topology & Power Flow | Buses, lines, transformers, coordinate systems |
-| **6** | Demand | Load Modeling | ESPENI/eload profiles, temporal patterns, spatial distribution |
-| **7** | Generators | Dispatch Optimization | Thermal/renewable generators, merit order, capacity factors |
-| **8** | Marginal Prices | Price Formation | LMPs, congestion pricing, generator revenues |
-| **9** | Renewables | Variable Generation | Wind/solar profiles, curtailment, capacity factors |
-| **10** | Storage | Flexibility Resources | Batteries, pumped hydro, state of charge, arbitrage |
-| **11** | Interconnectors | Cross-border Trade | HVDC links, import/export flows, utilization |
-| **12** | Hydrogen | Sector Coupling | Electrolysis, H2 storage, hydrogen-to-power |
-| **13** | Heat Flexibility | Heat Pump Demand | TANK/COSY modes, COP, thermal storage, demand shifting |
-| **14** | EV Flexibility | EV Smart Charging | GO/INT/V2G tariffs, battery storage, Vehicle-to-Grid |
-| **15** | Demand-Side Response | Event Response | Saving Sessions, demand reduction events, DSR capacity |
-| **16** | Market Dispatch | Wholesale + BM | Copperplate wholesale dispatch, balancing redispatch, ELEXON/NESO validation |
-
-
-## Running Tutorials
-
-### Prerequisites
-
-1. Complete the {doc}`../getting_started/installation`
-2. Activate the environment:
-   ```bash
-   conda activate pypsa-gb-stable
+   ```yaml
+   studies:
+     - tutorials
+     - cp30_2030
    ```
-3. Generate the required scenario networks (see below)
 
-### Generate Scenario Networks
+3. Run a tutorial's scenario from the repository root before opening its notebook, as each notebook's "Run it"
+   section says, for example:
 
-Before running the tutorials, add the required scenarios to `config/config.yaml`
-and run the main workflow:
+   ```bash
+   snakemake -j 4 --config scenario=Tutorial_2020_reduced
+   ```
 
-```yaml
-# In config/config.yaml
-run_scenarios:
-  - Historical_2015_reduced
-  - Historical_2023_etys
-  - HT35_clustered
-  - EE50_clustered
-```
+   The first run of a weather year fetches its weather data (2020 for tutorials 1 and 2, 2013 for 4 and 5), which
+   adds time. Tutorial 5 and the full ETYS run in tutorial 2 need about 16 GB of memory and are slow without Gurobi;
+   the others run with HiGHS on a laptop.
+4. Start Jupyter and open the notebooks in `docs/source/tutorials/`:
 
-```bash
-snakemake --cores 4
-```
+   ```bash
+   conda activate pypsa-gb
+   jupyter lab
+   ```
 
-The market dispatch tutorial reads solved market and validation outputs rather
-than a single solved network. Build the relevant market validation targets first,
-for example:
+   Each notebook finds the repository root itself, so it runs from any folder.
 
-```bash
-snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_bm_validation.html --cores 4
-snakemake resources/analysis/Validation_Jan2020_UniformNetworkBaseline_neso_validation.html --cores 4
-```
+## Going further
 
-
-### Launch Jupyter
-
-```bash
-# Navigate to tutorials directory
-cd docs/source/tutorials
-
-# Start Jupyter
-jupyter notebook
-```
-
-### First-Time Setup
-
-Install the kernel if needed:
-```bash
-python -m ipykernel install --user --name=pypsa-gb-stable
-```
-
-Then select the `pypsa-gb-stable` kernel in Jupyter.
-
-## Tutorial Requirements
-
-### System Requirements
-
-| Notebook | RAM | Solve Time | Disk Space |
-|----------|-----|------------|------------|
-| 1 - Historical 2015 | 4 GB | 5-10 min | ~500 MB |
-| 2 - Historical 2023 | 16 GB | 30-60 min | ~2 GB |
-| 3 - Future 2035 | 8 GB | 10-15 min | ~1 GB |
-| 4 - Future 2050 | 8 GB | 10-15 min | ~1 GB |
-| 16 - Market Dispatch | 16 GB+ | Depends on market scenarios | Several GB for monthly validation outputs |
-
-### Solver Requirements
-
-Tutorials require **Gurobi** solver (free academic license available) or **HiGHS** (open-source).
-
-See {doc}`../getting_started/installation` for solver setup.
-
-## Contributing Tutorials
-
-We welcome new tutorial contributions:
-
-1. Create a notebook in `docs/source/tutorials/`
-2. Add to the toctree in this index (in appropriate section)
-3. Test that it builds correctly
-
-See {doc}`../development/contributing` for guidelines.
+The notebooks show how to run the model and read its results. For complete applications, with their setup, how to
+reproduce them and their results, see the {doc}`../studies/index` pages: the 2020 validation, Clean Power 2030 and the
+FES long-range years.

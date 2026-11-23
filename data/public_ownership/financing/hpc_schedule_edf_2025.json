@@ -1,0 +1,23 @@
+{
+  "description": "Bill-level sensitivity 'HPC on EDF's current schedule' (user decision, 29 Sep 2026). The model keeps CP30's physical assumption for Hinkley Point C: 2,317 MW all year (CP30 ES1 nuclear 3,515 MW less Sizewell B's 1,198 MW, i.e. unit 1 plus 5/12 of unit 2 at its TEC date), about 18.27 TWh settled in 2030 (data/market/CP30/nuclear_station_schedule_2030.csv). EDF's own schedule has less: this file declares it. Nothing here is re-solved: dispatch, emissions and constraint effects of the missing output are not modelled.",
+  "cp30_physical_assumption": {
+    "capacity_mw": 2317.0,
+    "basis": "CP30 ES1 Further Flex and Renewables 2030 nuclear 3,515 MW less Sizewell B 1,198 MW (TEC register: unit 1 1,630 MW effective 31 Mar 2029, unit 2 effective 31 Jul 2030, pro-rated 5/12)",
+    "gap_label": "CP30 assumes about 1.4 units of HPC running all of 2030; EDF's schedule has unit 1 starting mid-2030 and no unit 2 in 2030"
+  },
+  "edf_schedule": {
+    "unit_1_mw": 1630.0,
+    "unit_1_first_power": "2030-06-01",
+    "ramp_months": 6,
+    "availability_at_full_power": 0.9,
+    "unit_2_in_2030": false,
+    "basis": "EDF URD 2025 (2 Apr 2026) p.76-77: 'The project now plans to start production of Unit 1 in 2030'; note 9.7: 'The operational schedule has therefore been extended by one year from 120 to 132 months for commissioning of the first reactor. Commissioning of the second reactor is still scheduled 12 months after the first.' 132 months after J0 (June 2019: NAO, Sizewell C, 20 May 2026, p.28, figure note 5) is June 2030. The ramp is linear from zero at first power to full availability after six months (Taishan 1: grid June 2018, commercial operation December 2018; Flamanville 3 and Olkiluoto 3 took longer). Full availability 0.90, the modelled HPC load factor (18.27 TWh / 2,317 MW / 8,760 h).",
+    "source_url": "https://www.edf.fr/sites/groupe/files/2026-04/2026-04-02-urd-edf-2025-en.pdf"
+  },
+  "range": {
+    "low": {"unit_1_first_power": "2031-06-01", "note": "EDF's unfavourable scenario, 12 months later than the base case (URD 2025 p.76): no HPC output in 2030"},
+    "high": {"unit_1_first_power": "2030-01-01", "note": "unit 1 at first power on 1 January 2030 with the same six-month ramp (EDF's earlier 2029 target slipping by six months)"}
+  },
+  "replacement_energy_price": "time-weighted mean of the market-year Stage 1 wholesale price (the GB system price of the copperplate Stage 1, resources/market/*_wholesale_price.csv) in each month, weighted by the HPC output missing in that month",
+  "valuation": "a one-year shortfall at the 2030 level: the P3 purchase price (market or state present value) falls by the missing share of HPC's 2030 cash flow, discounted half a year at the basis rate; the HPC completion price (in_construction: public_completion) and apportioned bases (workbook placeholder, explicit) do not move"
+}

@@ -1,0 +1,74 @@
+metric,value,unit,sheet,cell,source_url,note
+cp18_offer_ic_twh,13.833432559999999,TWh,CP.18,E7,https://www.neso.energy/publications/clean-power-2030,"CP.18 'IC' offers, FFR, recommended network; GWh in the sheet"
+cp18_bid_ic_twh,1.525887244,TWh,CP.18,F7,https://www.neso.energy/publications/clean-power-2030,"CP.18 'IC' bids, FFR, recommended network; GWh in the sheet"
+cp18_offer_gas_twh,4.106008367,TWh,CP.18,E8,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Unabated Gas' offers, FFR, recommended network; GWh in the sheet; CHP inclusion not stated (the model counts CHP in this group)"
+cp18_bid_gas_twh,0.1150193232,TWh,CP.18,F8,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Unabated Gas' bids, FFR, recommended network; GWh in the sheet; CHP inclusion not stated (the model counts CHP in this group)"
+cp18_offer_wind_twh,1.180051563,TWh,CP.18,E9,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Wind' offers, FFR, recommended network; GWh in the sheet"
+cp18_bid_wind_twh,18.03106461,TWh,CP.18,F9,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Wind' bids, FFR, recommended network; GWh in the sheet"
+cp18_offer_other_twh,4.203496448,TWh,CP.18,E10,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Other' offers, FFR, recommended network; GWh in the sheet; 'Other' is undefined by NESO: everything not IC, unabated gas or wind (storage, solar, biomass, nuclear, hydro)"
+cp18_bid_other_twh,2.240265452,TWh,CP.18,F10,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Other' bids, FFR, recommended network; GWh in the sheet; 'Other' is undefined by NESO: everything not IC, unabated gas or wind (storage, solar, biomass, nuclear, hydro)"
+cp18_offer_total_twh,23.323,TWh,CP.18,E11,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Total' offers, FFR, recommended network; GWh in the sheet"
+cp18_bid_total_twh,21.912200000000002,TWh,CP.18,F11,https://www.neso.energy/publications/clean-power-2030,"CP.18 'Total' bids, FFR, recommended network; GWh in the sheet"
+n2_wind_twh,234.842,TWh,N2,I27+I28+I29+I30,https://www.neso.energy/publications/clean-power-2030,
+n2_unabated_gas_twh,18.539,TWh,N2,I18+I22+I23+I25,https://www.neso.energy/publications/clean-power-2030,
+n2_gas_incl_chp_twh,30.271,TWh,N2,I18+I22+I23+I25+I26+I40,https://www.neso.energy/publications/clean-power-2030,
+n2_generation_excl_storage_twh,373.988,TWh,N2,I7+I8+I9+I10+I11+I12+I13+I14+I15+I16+I17+I18+I19+I20+I21+I22+I23+I24+I25+I26+I27+I28+I29+I30+I35+I36+I37+I38+I39+I40+I41,https://www.neso.energy/publications/clean-power-2030,
+n2_ic_import_twh,24.038,TWh,N2,I53,https://www.neso.energy/publications/clean-power-2030,
+n2_ic_export_twh,53.005,TWh,N2,I54,https://www.neso.energy/publications/clean-power-2030,
+n2_net_export_twh,28.967,TWh,N2,I54-I53,https://www.neso.energy/publications/clean-power-2030,
+n2_unabated_gas_share,0.049571109233451344,share,N2,(I18+I22+I23+I25) / (I7+I8+I9+I10+I11+I12+I13+I14+I15+I16+I17+I18+I19+I20+I21+I22+I23+I24+I25+I26+I27+I28+I29+I30+I35+I36+I37+I38+I39+I40+I41),https://www.neso.energy/publications/clean-power-2030,
+es1_wind_twh,244.42389,TWh,ES1,P21+P57+P22+P58,https://www.neso.energy/publications/clean-power-2030,"ES1 (CP30's unconstrained market dispatch), FFR 2030"
+es1_gas_incl_chp_twh,26.840880000000006,TWh,ES1,P26+P27,https://www.neso.energy/publications/clean-power-2030,"ES1 (CP30's unconstrained market dispatch), FFR 2030"
+es1_ic_import_twh,21.59639,TWh,ES1,P78,https://www.neso.energy/publications/clean-power-2030,"ES1 (CP30's unconstrained market dispatch), FFR 2030"
+es1_ic_export_twh,57.606300000000005,TWh,ES1,P77,https://www.neso.energy/publications/clean-power-2030,"ES1 (CP30's unconstrained market dispatch), FFR 2030"
+es1_start_bid_wind_twh,10.761941563000029,TWh,derived,CP.18!F9 - (N2 wind - (CP.18!E9-F9) - ES1 wind),https://www.neso.energy/publications/clean-power-2030,CP.18 restated to an ES1 start; start - ES1 = +7.269 TWh of wind
+es1_start_offer_ic_twh,8.568797243999999,TWh,derived,CP.18!E7 + (N2 IC net import - (CP.18!E7-F7) - ES1),https://www.neso.energy/publications/clean-power-2030,CP.18 restated to an ES1 start; start - ES1 = -5.265 TWh of net import
+es1_start_bid_ic_twh,1.525887244,TWh,derived,CP.18!F7,https://www.neso.energy/publications/clean-power-2030,CP.18 restated to an ES1 start; the start-point gap is on the offer side
+es1_start_offer_gas_twh,3.5451393231999955,TWh,derived,CP.18!E8 + (N2 gas incl. CHP - (CP.18!E8-F8) - ES1 gas incl. CHP),https://www.neso.energy/publications/clean-power-2030,CP.18 restated to an ES1 start; start - ES1 = -0.561 TWh of gas
+cp08_today_ffr_z1_twh,8.93625837,TWh,CP.08,P11,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 1, FFR, network we have today"
+cp08_today_ffr_z2_twh,2.000491297,TWh,CP.08,P12,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 2, FFR, network we have today"
+cp08_today_ffr_z3_twh,2.281030481,TWh,CP.08,P13,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 3, FFR, network we have today"
+cp08_today_ffr_z4_twh,7.850621809,TWh,CP.08,P14,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 4, FFR, network we have today"
+cp08_today_ffr_z5_twh,0.77453229,TWh,CP.08,P15,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 5, FFR, network we have today"
+cp08_today_ffr_z6_twh,0.513438129,TWh,CP.08,P16,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 6, FFR, network we have today"
+cp08_today_ffr_z7_twh,2.796336986,TWh,CP.08,P17,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 7, FFR, network we have today"
+cp08_today_ffr_z8_twh,0.199934184,TWh,CP.08,P18,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 8, FFR, network we have today"
+cp08_today_ffr_z9_twh,0.027926652,TWh,CP.08,P19,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 9, FFR, network we have today"
+cp08_today_ffr_z10_twh,0.298687426,TWh,CP.08,P20,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 10, FFR, network we have today"
+cp08_today_ffr_z11_twh,0.094087624,TWh,CP.08,P21,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 11, FFR, network we have today"
+cp08_today_ffr_z12_twh,34.48904645,TWh,CP.08,P22,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 12, FFR, network we have today"
+cp08_today_ffr_z13_twh,0.190201542,TWh,CP.08,P23,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 13, FFR, network we have today"
+cp08_today_ffr_z14_twh,0.197571969,TWh,CP.08,P24,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 14, FFR, network we have today"
+cp08_today_ffr_z15_twh,1.269762783,TWh,CP.08,P25,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 15, FFR, network we have today"
+cp08_today_ffr_z16_twh,0.112758645,TWh,CP.08,P26,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 16, FFR, network we have today"
+cp08_today_ffr_z17_twh,0.523380542,TWh,CP.08,P27,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 17, FFR, network we have today"
+cp08_recommended_ffr_z1_twh,4.270969039,TWh,CP.08,P45,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 1, FFR, network recommended for CP30"
+cp08_recommended_ffr_z2_twh,1.396634854,TWh,CP.08,P46,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 2, FFR, network recommended for CP30"
+cp08_recommended_ffr_z3_twh,1.49146432,TWh,CP.08,P47,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 3, FFR, network recommended for CP30"
+cp08_recommended_ffr_z4_twh,6.509293529,TWh,CP.08,P48,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 4, FFR, network recommended for CP30"
+cp08_recommended_ffr_z5_twh,1.328752241,TWh,CP.08,P49,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 5, FFR, network recommended for CP30"
+cp08_recommended_ffr_z6_twh,0.754483066,TWh,CP.08,P50,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 6, FFR, network recommended for CP30"
+cp08_recommended_ffr_z7_twh,2.267514278,TWh,CP.08,P51,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 7, FFR, network recommended for CP30"
+cp08_recommended_ffr_z8_twh,2.734709686,TWh,CP.08,P52,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 8, FFR, network recommended for CP30"
+cp08_recommended_ffr_z9_twh,0.061499901,TWh,CP.08,P53,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 9, FFR, network recommended for CP30"
+cp08_recommended_ffr_z10_twh,0.516854224,TWh,CP.08,P54,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 10, FFR, network recommended for CP30"
+cp08_recommended_ffr_z11_twh,0.168436722,TWh,CP.08,P55,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 11, FFR, network recommended for CP30"
+cp08_recommended_ffr_z12_twh,2.364115901,TWh,CP.08,P56,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 12, FFR, network recommended for CP30"
+cp08_recommended_ffr_z13_twh,0.164027164,TWh,CP.08,P57,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 13, FFR, network recommended for CP30"
+cp08_recommended_ffr_z14_twh,0.265503605,TWh,CP.08,P58,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 14, FFR, network recommended for CP30"
+cp08_recommended_ffr_z15_twh,0.439210088,TWh,CP.08,P59,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 15, FFR, network recommended for CP30"
+cp08_recommended_ffr_z16_twh,0.200141189,TWh,CP.08,P60,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 16, FFR, network recommended for CP30"
+cp08_recommended_ffr_z17_twh,0.74890682,TWh,CP.08,P61,https://www.neso.energy/publications/clean-power-2030,"CP.08 clean-power bid volume, zone 17, FFR, network recommended for CP30"
+cp08_today_ffr_total_twh,62.556067178999996,TWh,CP.08,P11:P27,https://www.neso.energy/publications/clean-power-2030,CP.08 summed over the 17 zones
+cp08_today_ffr_scotland_twh,21.068401957,TWh,CP.08,P11:P14,https://www.neso.energy/publications/clean-power-2030,CP.08 zones 1-4 (Scotland)
+cp08_recommended_ffr_total_twh,25.682516627,TWh,CP.08,P45:P61,https://www.neso.energy/publications/clean-power-2030,CP.08 summed over the 17 zones
+cp08_recommended_ffr_scotland_twh,13.668361742,TWh,CP.08,P45:P48,https://www.neso.energy/publications/clean-power-2030,CP.08 zones 1-4 (Scotland)
+cp28_net_export_twh,41.27,TWh,CP.28,H9,https://www.neso.energy/publications/clean-power-2030,net export of the 3-hour economic run (the start of NESO's redispatch)
+cp30_ic_import_twh,19.49,TWh,CP.30,L8,https://www.neso.energy/publications/clean-power-2030,imports of the economic run without network constraints (FOI/26/076)
+cp30_ic_export_twh,60.77,TWh,CP.30,-L9,https://www.neso.energy/publications/clean-power-2030,exports of the economic run
+cp31_constraint_cost_incl_voltage_gbpm,3681.81,GBP m,CP.31,G9,https://www.neso.energy/publications/clean-power-2030,"thermal plus voltage and stability (Annex 4 Fig 10; earlier model runs, so G9 - 3,570 is not the V&S cost); GBP bn in the sheet"
+neso_constraint_cost_gbpm,3570.0,GBP m,main report,"Table 1, p.36 ('network required for clean power, incl. 3 critical projects', FFR)",https://www.neso.energy/publications/clean-power-2030,"NESO, Clean Power 2030 (5 Nov 2024): thermal constraints only (Annex 4 fn 13); 2024 prices (Annex 4 s.2), as the model; 2013 weather; interconnector counter-trades inside by inference (CP.18's IC actions)"
+neso_cost_no_acceleration_gbpm,7790.0,GBP m,NAO report,Figure 4 and para 2.8,,"NAO, Upgrading the electricity transmission network (Sep 2026), quoting NESO CP30 (2024 prices, thermal): Norwich-Tilbury and Sea Link on their published 2031-33 dates, 6.58-7.79 bn; the upper end"
+neso_cost_seven_late_single_projects_gbpm,6670.0,GBP m,NAO report,Figure 4 and para 2.8,,"NAO (Sep 2026), quoting NESO CP30: sum of the single-project impacts of the seven critical projects being late (up to +6.7 bn over the central network)"
+neso_cost_no_upgrades_gbpm,12700.0,GBP m,NAO report,Figure 4 and para 2.8,,"NAO (Sep 2026), quoting NESO CP30: nothing after 2025, 10.9-12.7 bn; the upper end"
+neso_cost_seven_late_gbpm,10240.0,GBP m,derived,neso_constraint_cost_gbpm + neso_cost_seven_late_single_projects_gbpm,,"central 3,570 plus the sum of the single-project impacts (an upper bound: impacts overlap)"

@@ -1,0 +1,205 @@
+{
+  "purpose": "Recovery denominators for the CP30_2030_cp30_network consumer-bill case. Every levy or charge that the projector derives from a modelled cost must divide it by the volume the real scheme recovers over, not by whatever demand figure is nearest to hand. One file supplies all of them so no component invents its own. Since F18 (user decisions, 6 Oct 2026) there are two volumes: METERED supply (the RO, FiT, the battery top-up and the Exchequer's per-household key) and the GSP CHARGING volume (the CfD, CCS, the NZT DPA, LDES, the Capacity Market and the three BSUoS lines), each with its EII-eligible share, and a household loss factor on every line charged at a GSP rate. Electrolysers pay levies like any consumer on their draw; the hydrogen offtake pays nothing.",
+  "forecast_year": 2030,
+  "case_id": "CP30_2030_cp30_network",
+  "recovery_basis": "loss_inclusive_two_volume",
+  "system_demand_mwh": {
+    "value": 325011971.27342355,
+    "source": "PyPSA annual total of the 12 monthly Stage 1 runs the bill reads (CP30_FFR_2030_Jan_stage1 .. CP30_FFR_2030_Dec_stage1: resources/market/<month>_wholesale.nc, every Load's p_set summed over the hours, as read_hourly_inputs measures it)",
+    "price_year": null,
+    "note": "Every modelled Load's p_set, as the market summaries' accounting.demand_MWh counts it: GB electrical load (307.89 TWh, including the EV and heat-pump demand the load profiles carry) plus the 10.40 TWh hydrogen offtake on the hydrogen bus (GB_H2_exogenous_demand), which is MWh of hydrogen, not electricity. It does NOT include the electrolysers' electricity draw (a link, not a Load) or storage round-trip losses (storage charging is not a Load); an earlier version of this note said it did. Kept only so the file can be checked against the run; no line divides by it.",
+    "refreshed": "refreshed 2026-11-08 by scripts/consumer_bill/refresh_recovery_demand.py from 12 months: CP30_FFR_2030_Jan_stage1 .. CP30_FFR_2030_Dec_stage1"
+  },
+  "metered_supply_basis": {
+    "method": "F18 (user decisions, 6 Oct 2026). The model's GB electrical load already contains network losses, so it is divided by system_to_metered_factor to reach metered supply, and metered supply is scaled by metered_to_gsp_factor to reach the GSP charging volume (BM-unit metered volume after line loss factors, GSP Group Correction and the transmission loss multiplier). Electrolysers pay on their own draw in both: metered_supply = load / system_to_metered_factor + draw; gsp_charging_volume = load / system_to_metered_factor x metered_to_gsp_factor + draw. The RO, FiT, the battery top-up and the Exchequer's per-household key are spread over metered supply (the RO and FiT over its EII-eligible share); the CfD, allocated CCS, the NZT DPA, LDES and the three BSUoS lines over the GSP charging volume (the CfD family over its eligible share) and charged on the household's 3.1 MWh times household_loss_factor, as Ofgem charges GSP-rate lines; the Capacity Market over the GSP charging volume with its own household allocation factor, which already carries losses.",
+    "gb_electrical_load_mwh": {
+      "value": 315281271.8803235,
+      "source": "PyPSA CP30_2030_cp30_network Stage 1 wholesale networks (resources/market/*_wholesale.nc), Loads on GB electrical buses (bus carrier AC, country GB), summed over the twelve months",
+      "note": "A transmission-entry volume, not a GSP or metered one (F18, 6 Oct 2026): the model's GB load equals CP30 ED1 'GB Total System Demand - Minus electrolysis', which contains FES's distribution and transmission losses; ED1's total less its residential, I&C and road transport rows leaves 27.9 TWh of losses plus rail."
+    },
+    "electrolyser_electricity_draw_mwh": {
+      "value": 14282708.688643122,
+      "source": "Stage 1 link schedules (resources/market/*_wholesale_links.csv), p0 of the 204 electrolysis links (GB electrical bus to the hydrogen bus), summed over the twelve months",
+      "note": "Stage 1, the wholesale purchase, so a case that shares its parent's Stage 1 (the P2 months, wholesale_from) shares this volume. The balancing stage raises the draw by about 0.77 TWh; that change is not metered here."
+    },
+    "h2_offtake_mwh": {
+      "value": 9730699.393100005,
+      "source": "Load GB_H2_exogenous_demand on the hydrogen bus GB_H2 (static p_set), twelve months",
+      "note": "Excluded from every electricity denominator and from the demand-weighted system price: it is hydrogen delivered, met from the electrolysers' draw (counted above) and hydrogen storage."
+    },
+    "system_to_metered_factor": {
+      "value": 1.14,
+      "range": [
+        1.125,
+        1.165
+      ],
+      "source": "Outturn: FES 2025 FY2024 GB system demand (289.65 TWh, the same ED1 definition as the model's load) over Ofgem's Feed-in Tariff licensed electricity supply for scheme year 15, 2024/25 (252.93 TWh: 252,704,044 MWh plus 222,874 MWh of late-reported supply) = 1.145; declared 1.14 (user decision, 6 Oct 2026).",
+      "price_year": null,
+      "outturn_check": {
+        "fes_2025_fy2024_system_demand_mwh": 289650000.0,
+        "ofgem_fit_sy15_licensed_supply_mwh": 252926918.0,
+        "ratio": 1.1451924622748142
+      },
+      "note": "System demand over licensed supply: network losses (DUKES 2024: distribution 17.4 TWh, transmission 8.6 TWh, theft 2.1 TWh) plus demand no supplier meters. The range covers the scheme years and the loss rates of recent outturn."
+    },
+    "metered_to_gsp_factor": {
+      "value": 1.085,
+      "range": [
+        1.08,
+        1.1
+      ],
+      "source": "NESO BSUoS chargeable volume 2024/25 (275,151,189 MWh, the SF settlement file) over Ofgem's FiT licensed supply (252.93 TWh in scheme year 15, 2024/25: 1.088; 253.97 TWh in SY16, 2025/26: 1.083); declared 1.085 (user decision, 6 Oct 2026).",
+      "price_year": null,
+      "cross_check": {
+        "neso_bsuos_chargeable_volume_mwh_2024_25": 275151189.05,
+        "ofgem_fit_supply_mwh_sy15_2024_25": 252926918.0,
+        "ofgem_total_supply_mwh_sy16_2025_26": 253970000.0,
+        "lccc_gross_supplier_sales_mwh_2024_25": 276966110.479,
+        "neso_source": "https://api.neso.energy/dataset/d6a4bf54-c63f-4014-a716-49fd3878ca52/resource/320cdc0d-457f-4849-a0fc-bf6bdd4e21e5/download/2024-2025-sf.csv",
+        "ofgem_source": "Ofgem default tariff cap Annex 4 v1.25 tab 3i (FiT levelisation): total supply 253.97 TWh, SY16 2025/26"
+      },
+      "note": "The volume BSUoS, the CfD and Capacity Market supplier charges (EMRS G2) are levied on: BM-unit metered volume scaled by line loss factors, GSP Group Correction and the transmission loss multiplier, over metered supply."
+    },
+    "household_loss_factor": {
+      "value": 1.1313,
+      "source": "Ofgem default tariff cap, Annex 2 v1.30 (Oct-Dec 2026), tab '3c Electricity losses', row 'Single-Rate Metering Arrangement, Average' (GB average): the factor Ofgem applies to the wholesale allowance and to the GSP-rate policy and network lines of a single-rate household",
+      "price_year": null,
+      "note": "Domestic customers lose more than the average metered MWh because large users connect at higher voltage. It applies to procurement losses and to every line charged at a GSP rate (the CfD family, LDES, the three BSUoS lines, AAHEDC, the LCCC and ESC levies); the projector checks it equals the procurement losses multiplier."
+    },
+    "metered_supply_mwh": {
+      "value": 290845227.8819094,
+      "derivation": "gb_electrical_load_mwh / system_to_metered_factor + electrolyser_electricity_draw_mwh",
+      "used_by": [
+        "battery_revenue_top_up",
+        "exchequer_per_household_key",
+        "every per-household line (system equivalent)"
+      ],
+      "note": "Supplier-metered electricity: households, businesses and the electrolysers."
+    },
+    "gsp_charging_volume_mwh": {
+      "value": 314353042.013337,
+      "derivation": "gb_electrical_load_mwh / system_to_metered_factor x metered_to_gsp_factor + electrolyser_electricity_draw_mwh",
+      "used_by": [
+        "capacity_market",
+        "ldes_cap_and_floor",
+        "bsuos_constraints",
+        "bsuos_other_services",
+        "bsuos_voltage_and_stability_constraints",
+        "aahedc",
+        "nuclear_contract_counterparty"
+      ],
+      "note": "The chargeable volume at the grid supply point."
+    },
+    "gsp_chargeable_volume_mwh": {
+      "value": 314353042.013337,
+      "derivation": "alias of gsp_charging_volume_mwh",
+      "deprecated": true,
+      "used_by": [],
+      "note": "DEPRECATED (F18, 6 Oct 2026): kept under its old name for readers of the file until they read gsp_charging_volume_mwh. It is no longer GB load plus electrolyser draw."
+    }
+  },
+  "final_demand_mwh": {
+    "value": 290845227.8819094,
+    "derivation": "alias of metered_supply_basis.metered_supply_mwh",
+    "deprecated": true,
+    "used_by": [],
+    "note": "DEPRECATED (F18, 6 Oct 2026): kept under its old name for readers of the file until they read metered_supply_basis.metered_supply_mwh. Lines charged at a GSP rate are no longer recovered over it."
+  },
+  "cfd_eligible_supply": {
+    "eligible_share_of_supplier_sales": {
+      "value": 0.956538406402206,
+      "source": "https://dp.lowcarboncontracts.uk/dataset/a5b1bb56-8efb-4f13-98fe-e378e5bfb93e/resource/5f001c0d-8841-4525-bf7c-2fd5d248da09/download/reconciled_daily_levy_rates.csv",
+      "source_period": "Regulatory year 2024-25, Latest Settlement Run",
+      "derivation": "Reconciled_Eligible_Demand_MWh / (Reconciled_Eligible_Demand_MWh + Reconciled_Energy_Intensive_Industries_Demand_MWh + Reconciled_Green_Excluded_Electricity_MWh)",
+      "components_mwh": {
+        "reconciled_eligible_demand": 264928721.945,
+        "energy_intensive_industries_exempt_demand": 12037388.534,
+        "green_excluded_electricity": 0.0,
+        "gross_supplier_sales": 276966110.479
+      },
+      "note": "The CfD supplier obligation is levied on eligible supply: metered supplier sales less the EII exemption and green excluded electricity. On 2024-25 outturn the EII exemption removes 4.35% of gross sales. The 2030 exemption scope is held at the 2024-25 outturn share; the British Industry Supercharger raises EII network relief but the CfD exemption share itself is not forecast here."
+    },
+    "cfd_eligible_gsp_volume_mwh": {
+      "value": 300690757.8551231,
+      "derivation": "metered_supply_basis.gsp_charging_volume_mwh * eligible_share_of_supplier_sales",
+      "used_by": [
+        "cfd",
+        "allocated_ccs",
+        "remaining_ccs"
+      ],
+      "note": "The CfD supplier obligation (and the NZT DPA it funds) is levied on eligible supply at the GSP: the GSP charging volume less the EII exemption, charged on the household's loss-uplifted 3.1 MWh."
+    },
+    "eligible_supplier_sales_mwh": {
+      "value": 278204630.78784806,
+      "derivation": "metered_supply_basis.metered_supply_mwh * eligible_share_of_supplier_sales",
+      "deprecated": true,
+      "used_by": [],
+      "note": "DEPRECATED name (F18): metered supplier sales less the EII exemption, the RO and FiT base (ro_obligation_eligible_supply_mwh). The CfD itself is levied on cfd_eligible_gsp_volume_mwh."
+    }
+  },
+  "ro_obligation_eligible_supply_mwh": {
+    "value": 278204630.78784806,
+    "source": "Metered supply less the EII exemption share from LCCC settlement data (F18): the RO and FiT are levied per MWh supplied, with no loss uplift",
+    "derivation": "metered_supply_basis.metered_supply_mwh * cfd_eligible_supply.eligible_share_of_supplier_sales",
+    "used_by": [
+      "renewables_obligation",
+      "feed_in_tariffs"
+    ],
+    "note": "The RO and the FiT levelisation are charged on metered supplier sales less an energy-intensive-industry exemption, so the CfD's eligible share is applied to metered supply. This is an explicit identification, not a claim that the exemption scopes are identical: they are defined under separate instruments and the RO's own exempt volume is not published on the same basis as the LCCC series. If the two diverge materially the RO denominator must be sourced separately.",
+    "limitation": "Sharing a denominator means an error in the EII share moves the CfD and RO lines together rather than independently."
+  },
+  "domestic_customer_accounts": {
+    "value": null,
+    "source": null,
+    "note": "Required only for customer- or meter-recovered components and standing-charge allocation. No Phase 1 component uses it."
+  },
+  "representative_customer_consumption_kwh": {
+    "value": 3100,
+    "source": "Scenario selection, matching the external allowance benchmark",
+    "note": "Used only to express the final representative bill. It is never a recovery denominator."
+  },
+  "limitations": [
+    "Every share is a recent-outturn share applied to a 2030 modelled volume. It is a stated assumption about scheme scope, not a forecast of eligible supply.",
+    "Supplier sales are identified with modelled GB electrical load plus electrolyser draw, net of losses. Behind-the-meter self-consumption that never reaches a supplier meter is inside the model's demand and would, if material, raise the per-MWh levy rates above those reported here.",
+    "Electrolysers are treated as ordinary levy payers on their full draw (user decision D1); no exemption for hydrogen production is assumed."
+  ],
+  "superseded_d1_basis": {
+    "note": "Item D1 (26 Sep 2026), superseded for 2030 by F18 (6 Oct 2026): one GSP-to-meter loss factor turned (GB load + electrolyser draw), treated as a GSP volume, into metered supply. Kept for scripts/consumer_bill/build_2050_bill_inputs.py, whose 2050 recovery file stays on this basis (its loads exclude losses) until the 2050 session decides. No 2030 line reads it.",
+    "method": "Item D1. Metered supply = (GB electrical load + electrolyser electricity draw) / GSP-to-meter loss factor. The model's loads sit at transmission nodes, so their volume is the GSP-level (loss-inclusive) volume the per-MWh GSP-rate charges are levied on; a household's metered 3.1 MWh draws 3.1 x loss factor at the GSP. Dividing a cost by metered supply is therefore the same as charging the GSP rate on the household's loss-uplifted volume (CfD, allocated CCS, remaining CCS, BSUoS, voltage and stability constraints, AAHEDC, LCCC/ESC, LDES), and is exactly how the RO and FiT, levied on metered supply, recover. The Capacity Market divides by the GSP volume because its household factor already carries losses.",
+    "gsp_to_meter_loss_factor": {
+      "value": 1.0919186262300622,
+      "source": "Ofgem default tariff cap, Annex 2 (wholesale) tab '3c Electricity losses', GB-average transmission-to-meter loss multiplier, delivery-day weighted over the three 2020 cap periods (data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv, column loss_multiplier_gb_average); the multiplier the bill's procurement losses line applies, so the bill carries one loss basis (the projector checks they are equal)",
+      "price_year": null,
+      "cross_check": {
+        "neso_bsuos_chargeable_volume_mwh_2024_25": 275151189.05,
+        "ofgem_total_supply_mwh_sy16_2025_26": 253970000.0,
+        "ratio": 1.0834003585069103,
+        "lccc_gross_supplier_sales_mwh_2024_25": 276966110.479,
+        "neso_source": "https://api.neso.energy/dataset/d6a4bf54-c63f-4014-a716-49fd3878ca52/resource/320cdc0d-457f-4849-a0fc-bf6bdd4e21e5/download/2024-2025-sf.csv",
+        "ofgem_source": "Ofgem default tariff cap Annex 4 v1.25 tab 3i (FiT levelisation): total supply 253.97 TWh, SY16 2025/26",
+        "espeni_gb_total_demand_mwh_2024_25": 272430244.0,
+        "espeni_source": "data/demand/espeni.csv, ELEC_POWER_TOTAL_ESPENI, 1 April 2024 to 31 March 2025",
+        "note": "GSP-level chargeable volume (NESO BSUoS, LCCC) over metered supply (Ofgem FiT levelisation) is 1.08-1.09 on recent outturn, consistent with the 1.092 multiplier; the years differ by one, so this is indicative. NESO chargeable volume and ESPENI GB demand agree to 1.0% (the earlier basis for identifying modelled load with the GSP-level volume)."
+      },
+      "limitation": "A 2020 GB-average multiplier held for 2030; regional and seasonal loss factors are not applied."
+    }
+  },
+  "refresh": {
+    "stamp": "refreshed 2026-11-08 by scripts/consumer_bill/refresh_recovery_demand.py from 12 months: CP30_FFR_2030_Jan_stage1 .. CP30_FFR_2030_Dec_stage1",
+    "volumes_mwh": {
+      "system_demand_mwh": 325011971.27342355,
+      "gb_electrical_load_mwh": 315281271.8803235,
+      "electrolyser_draw_mwh": 14282708.688643122,
+      "h2_offtake_mwh": 9730699.393100005
+    },
+    "derived_mwh": {
+      "metered_supply": 290845227.8819094,
+      "gsp_charging_volume": 314353042.013337,
+      "cfd_eligible_gsp_volume": 300690757.8551231,
+      "ro_eligible_metered_supply": 278204630.78784806,
+      "gsp_chargeable_volume": 314353042.013337,
+      "final_demand": 290845227.8819094,
+      "eligible_supplier_sales": 278204630.78784806
+    }
+  }
+}

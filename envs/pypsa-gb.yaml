@@ -7,10 +7,14 @@ dependencies:
 - python>=3.11
 - pip
 
-# Core PyPSA ecosystem (updated to latest versions)
-- pypsa>=1.0.7
+# Core PyPSA ecosystem
+# pypsa is held below 1.1: 1.2.4 builds the market LPs 2-3x slower and moves the
+# BM objective, 1.3 requires pandas 3 (measured 19 Sep 2026). linopy >= 0.9.1
+# is deliberate: 0.8.0's CSR-based direct solver transfer halves the time of
+# every market window (io_api "direct" in defaults.yaml solver.io_api).
+- pypsa>=1.0.7,<1.1
 - atlite>=0.3
-- linopy>=0.5.5
+- linopy>=0.9.1
 - powerplantmatching>=0.5.15
 
 # Data processing & analysis
@@ -35,7 +39,9 @@ dependencies:
 - scikit-learn
 
 # Snakemake workflow
-- snakemake-minimal>=9
+# snakemake is held below 9.14: the rerun rule (config_loader.scenario_param) relies on how
+# snakemake.persistence serialises rule params, tested on 9.13; 9.27 restructured that module.
+- snakemake-minimal>=9,<9.14
 - snakemake-storage-plugin-http>=0.3
 - snakemake-executor-plugin-slurm=1.8.0
 - snakemake-executor-plugin-cluster-generic
@@ -59,6 +65,7 @@ dependencies:
 
 # Web & API interactions
 - requests
+- pypdf
 - country_converter
 - geopy
 
@@ -66,6 +73,7 @@ dependencies:
 - matplotlib
 - seaborn
 - plotly
+- folium                        # maps in the tutorials
 - pydeck
 - graphviz
 
@@ -81,7 +89,6 @@ dependencies:
 
 # Documentation generation (Sphinx)
 - sphinx>=7.0
-- sphinx_rtd_theme>=2.0
 - myst-parser>=2.0
 - sphinx-copybutton
 - sphinx-design
@@ -98,9 +105,12 @@ dependencies:
 - pre-commit
 - ruff
 - pylint
+- pytest>=8
+- pytest-xdist                  # parallel tests: python -m pytest -n auto
 
 - pip:
-  - gurobipy==12.0.3
+  - gurobipy==13.0.3
   - highspy
   - tsam>=2.3.1
   - entsoe-py
+  - shibuya>=2026.7  # documentation theme (docs/source/conf.py)

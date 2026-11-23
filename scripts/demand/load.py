@@ -1,3 +1,4 @@
+import calendar
 import pandas as pd
 import numpy as np
 import pypsa
@@ -14,6 +15,7 @@ from shapely.geometry import Point
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+from scripts.utilities.calendar_year import on_calendar
 from scripts.FES.gsp_metadata import ensure_gsp_metadata_file
 
 
@@ -128,6 +130,13 @@ def _year_columns(df: pd.DataFrame) -> Dict[int, object]:
             columns[year] = col
     return columns
 
+
+CP30_ELECTRICITY_DEMAND_ALIASES = [
+    "GB Total System Demand - Minus electrolysis",
+    "GB Total System Demand - Minus Electrolysis",
+]
+
+ES1_CP30_ELECTRICITY_DEMAND_VARIABLE = "Demand Total (GWh) - Excluding Electrolysis"
 
 ED1_CONSUMER_DEMAND_ALIASES = {
     "customer_total": [
@@ -285,6 +294,225 @@ def get_ed1_consumer_demand_gwh(
         )
         logger.info(f"ED1 consumer demand total: {total:.1f} GWh (component sum)")
     return total
+
+
+def _read_cp30_csv(path: str | Path) -> pd.DataFrame:
+    csv_path = Path(path)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CP30 demand resource not found: {csv_path}")
+    return pd.read_csv(csv_path)
+
+
+def _cp30_numeric_year_value(rows: pd.DataFrame, modelled_year: int) -> Optional[float]:
+    year_col = str(modelled_year)
+    if year_col not in rows.columns:
+        return None
+    values = pd.to_numeric(rows[year_col], errors="coerce").dropna()
+    if values.empty:
+        return None
+    return float(values.sum())
+
+
+def get_cp30_electricity_demand_gwh(
+    cp30_pathway: str,
+    modelled_year: int,
+    cp30_ed1_path: str | Path,
+    logger: Optional[logging.Logger] = None,
+    cp30_es1_path: Optional[str | Path] = None,
+) -> float:
+    """
+    Return CP30 electricity demand excluding electrolysis in GWh.
+
+    ED1 is authoritative for demand. CP30 New Dispatch V003 does not include a
+    separate ED1 annual demand row; in that case use the CP30 ES1 demand total
+    for the same pathway and year rather than falling back to FES.
+    """
+    ed1 = _read_cp30_csv(cp30_ed1_path)
+    pathway_col = _find_column(ed1, ["Pathway", "Scenario"])
+    data_col = _find_column(ed1, ["Data item", "Data Item"])
+    unit_col = _find_column(ed1, ["Unit"])
+    period_col = _find_column(ed1, ["Annual/ Peak/ Flex", "Annual Peak Flex"])
+
+    if pathway_col is None or data_col is None:
+        raise ValueError(f"CP30 ED1 file {cp30_ed1_path} is missing pathway or data item columns")
+
+    rows = ed1[
+        (ed1[pathway_col].map(_norm_label) == _norm_label(cp30_pathway))
+        & (ed1[data_col].map(_norm_label).isin({_norm_label(v) for v in CP30_ELECTRICITY_DEMAND_ALIASES}))
+    ].copy()
+    if unit_col is not None:
+        rows = rows[rows[unit_col].map(_norm_label) == "gwh"]
+    if period_col is not None:
+        rows = rows[rows[period_col].map(_norm_label) == "annual"]
+
+    ed1_value = _cp30_numeric_year_value(rows, modelled_year)
+    if ed1_value is not None and ed1_value > 0:
+        if logger:
+            logger.info(
+                f"CP30 ED1 electricity demand target for {cp30_pathway} {modelled_year}: "
+                f"{ed1_value:.1f} GWh"
+            )
+        return ed1_value
+
+    if cp30_es1_path is None:
+        raise ValueError(
+            f"CP30 ED1 does not contain annual electricity demand for "
+            f"{cp30_pathway} {modelled_year}, and no ES1 fallback path was provided"
+        )
+
+    es1 = _read_cp30_csv(cp30_es1_path)
+    es1_pathway_col = _find_column(es1, ["Pathway", "Scenario"])
+    variable_col = _find_column(es1, ["Variable"])
+    if es1_pathway_col is None or variable_col is None:
+        raise ValueError(f"CP30 ES1 file {cp30_es1_path} is missing pathway or variable columns")
+
+    es1_rows = es1[
+        (es1[es1_pathway_col].map(_norm_label) == _norm_label(cp30_pathway))
+        & (es1[variable_col].map(_norm_label) == _norm_label(ES1_CP30_ELECTRICITY_DEMAND_VARIABLE))
+    ].copy()
+    es1_value = _cp30_numeric_year_value(es1_rows, modelled_year)
+    if es1_value is None or es1_value <= 0:
+        raise ValueError(f"Could not find CP30 electricity demand for {cp30_pathway} {modelled_year}")
+
+    if logger:
+        logger.warning(
+            f"CP30 ED1 annual electricity demand is missing for {cp30_pathway} {modelled_year}; "
+            f"using CP30 ES1 '{ES1_CP30_ELECTRICITY_DEMAND_VARIABLE}' = {es1_value:.1f} GWh"
+        )
+    return es1_value
+
+
+def _get_fes_gsp_share_demand(
+    fes_data_path: str,
+    fes_scenario: str,
+    modelled_year: int,
+    logger,
+) -> tuple[pd.DataFrame, float, str]:
+    FES_data = pd.read_csv(fes_data_path, low_memory=False)
+    logger.info(f"Loaded FES spatial proxy data from: {fes_data_path}")
+    logger.info(f"Original FES data shape: {FES_data.shape}")
+
+    demand_blocks = FES_data[FES_data['Building Block ID Number'] == BUILDING_BLOCK_ID]
+    logger.info(f"Found {len(demand_blocks)} rows with building block {BUILDING_BLOCK_ID}")
+
+    scenario_column = None
+    potential_scenario_columns = ['FES Pathway', 'FES Scenario', '??????FES Scenario', '\ufeffFES Scenario']
+    for col in potential_scenario_columns:
+        if col in demand_blocks.columns:
+            scenario_column = col
+            break
+
+    if scenario_column is None:
+        logger.error(f"Could not find scenario column. Available columns: {list(demand_blocks.columns)}")
+        raise ValueError("Could not find FES Scenario/Pathway column in data")
+
+    logger.info(f"Using scenario column: '{scenario_column}'")
+    scenario_data = demand_blocks[demand_blocks[scenario_column].map(_norm_label) == _norm_label(fes_scenario)]
+    logger.info(f"Found {len(scenario_data)} rows matching scenario '{fes_scenario}'")
+
+    if len(scenario_data) == 0:
+        available_scenarios = sorted(str(value).strip() for value in demand_blocks[scenario_column].dropna().unique())
+        raise ValueError(f"No FES spatial proxy data found for scenario '{fes_scenario}'. Available scenarios: {available_scenarios}")
+
+    year_column = str(modelled_year)
+    if year_column not in scenario_data.columns:
+        available_years = [col for col in scenario_data.columns if str(col).isdigit()]
+        raise ValueError(f"Year {modelled_year} not found in FES spatial proxy data. Available years: {available_years}")
+
+    network_model = get_network_model()
+    index_column = 'GSP'
+    logger.info(f"Network model: {network_model}, using GSP column for demand extraction")
+
+    gsp_demand = scenario_data.groupby(index_column)[year_column].sum().to_frame()
+    gsp_demand = gsp_demand.dropna()
+    gsp_total_gwh = float(pd.to_numeric(gsp_demand[year_column], errors='coerce').sum())
+    if gsp_total_gwh <= 0:
+        raise ValueError(f"{BUILDING_BLOCK_ID} total is zero for {fes_scenario} {modelled_year}")
+
+    return gsp_demand, gsp_total_gwh, year_column
+
+
+def scale_gsp_shares_to_annual_total(
+    gsp_demand: pd.DataFrame,
+    gsp_total_gwh: float,
+    annual_total_gwh: float,
+    year_column: str,
+) -> tuple[pd.DataFrame, float]:
+    if gsp_total_gwh <= 0:
+        raise ValueError("GSP demand total must be positive")
+    scale_factor = annual_total_gwh / gsp_total_gwh
+    demand_data = gsp_demand.copy()
+    demand_data[year_column] = pd.to_numeric(demand_data[year_column], errors='coerce') * scale_factor
+    demand_data = demand_data.dropna()
+    return demand_data, scale_factor
+
+
+def get_cp30_demand_data(
+    cp30_pathway: str,
+    modelled_year: int,
+    logger,
+    cp30_ed1_path: str | Path,
+    cp30_es1_path: Optional[str | Path],
+    spatial_fes_scenario: str,
+    spatial_fes_year: Optional[int] = None,
+    fes_data_path: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Build CP30 annual demand by GSP.
+
+    CP30 supplies the annual demand total. FES Dem_BB003 is used only as the
+    declared spatial proxy for GSP shares, then scaled to the CP30 target.
+    """
+    try:
+        if fes_data_path is None:
+            fes_data_path = get_single_input_path(snakemake.input.fes_data)
+        if not spatial_fes_scenario:
+            raise ValueError("CP30 demand requires a FES spatial proxy scenario")
+        if spatial_fes_year is None:
+            spatial_fes_year = _infer_fes_year_from_path(fes_data_path)
+
+        gsp_demand, dem_bb003_total_gwh, year_column = _get_fes_gsp_share_demand(
+            fes_data_path,
+            spatial_fes_scenario,
+            modelled_year,
+            logger,
+        )
+        cp30_total_gwh = get_cp30_electricity_demand_gwh(
+            cp30_pathway,
+            modelled_year,
+            cp30_ed1_path,
+            logger,
+            cp30_es1_path=cp30_es1_path,
+        )
+        demand_data, scale_factor = scale_gsp_shares_to_annual_total(
+            gsp_demand,
+            dem_bb003_total_gwh,
+            cp30_total_gwh,
+            year_column,
+        )
+
+        logger.info("CP30 demand accounting:")
+        logger.info(f"  CP30 pathway: {cp30_pathway}")
+        logger.info(f"  CP30 electricity demand target excluding electrolysis: {cp30_total_gwh:.1f} GWh")
+        logger.info(
+            f"  FES spatial proxy: {spatial_fes_year if spatial_fes_year else 'unknown'} "
+            f"{spatial_fes_scenario} {BUILDING_BLOCK_ID} GSP shares"
+        )
+        logger.info(f"  FES proxy GSP-facing total before scaling: {dem_bb003_total_gwh:.1f} GWh")
+        logger.info(f"  Scaling FES spatial shares by factor: {scale_factor:.4f}")
+        logger.info(f"  Final allocated annual demand: {demand_data.sum().iloc[0]:.1f} GWh")
+        logger.info(f"Processed CP30 demand data shape: {demand_data.shape}")
+        log_dataframe_info(demand_data, logger, "CP30 demand data with FES spatial proxy")
+
+        return demand_data
+
+    except FileNotFoundError:
+        logger.error(f"Demand data file not found while building CP30 demand")
+        raise
+    except Exception as e:
+        logger.error(f"Error reading CP30 demand data: {e}")
+        raise
+
 
 def _osgb36_to_wgs84(easting, northing):
     """Convert British National Grid coordinates to WGS84 lon/lat without PROJ."""
@@ -1545,6 +1773,161 @@ def redistribute_demand_by_transformer_capacity(
     return adjusted_weights
 
 
+def _effective_capped_capacity(network: pypsa.Network, logger, safety_margin: float) -> Dict[str, float]:
+    """Usable capacity of each <=132 kV bus fed by a transformer: min(transformer, line) x margin.
+
+    The same definition as :func:`redistribute_demand_by_transformer_capacity`.
+    """
+    tf_cap = get_transformer_capacity_into_buses(network, logger)
+    line_cap = get_line_capacity_into_buses(network, logger)
+    out = {}
+    for bus, tf in tf_cap.items():
+        if bus not in network.buses.index or tf <= 0:
+            continue
+        if float(network.buses.at[bus, "v_nom"]) > 132:
+            continue
+        lc = line_cap.get(bus, float("inf"))
+        out[bus] = (min(tf, lc) if lc > 0 else tf) * safety_margin
+    return out
+
+
+def supergrid_targets(bus: str, network: pypsa.Network, min_kv: float = 275.0) -> list:
+    """Where demand above a capped bus's capacity goes: its own site's supergrid.
+
+    Walks the step-down transformers upward from ``bus`` (shares by transformer rating at
+    each step) until it reaches buses at ``min_kv`` or above. A bus with no transformer
+    path to the supergrid takes a supergrid bus of the same 4-character site code, else
+    the nearest supergrid bus. Returns [(bus, share)] summing to 1.
+    """
+    buses = network.buses
+    v = buses["v_nom"].astype(float)
+    tf = network.transformers
+    up: Dict[str, list] = {}
+    for b0, b1, s in zip(tf["bus0"], tf["bus1"], tf["s_nom"].astype(float)):
+        if b0 not in v.index or b1 not in v.index or s <= 0:
+            continue
+        if v[b0] > v[b1]:
+            up.setdefault(b1, []).append((b0, s))
+        elif v[b1] > v[b0]:
+            up.setdefault(b0, []).append((b1, s))
+    result: Dict[str, float] = {}
+    frontier = {bus: 1.0}
+    seen = {bus}
+    for _ in range(6):
+        nxt: Dict[str, float] = {}
+        for node, share in frontier.items():
+            parents = [(p, s) for p, s in up.get(node, []) if p not in seen]
+            if not parents:
+                if node != bus:
+                    # A dead end below the supergrid keeps its share (it is still upstream).
+                    result[node] = result.get(node, 0.0) + share
+                continue
+            total = sum(s for _, s in parents)
+            for p, s in parents:
+                w = share * s / total
+                if v[p] >= min_kv:
+                    result[p] = result.get(p, 0.0) + w
+                else:
+                    nxt[p] = nxt.get(p, 0.0) + w
+        seen.update(nxt)
+        frontier = nxt
+        if not frontier:
+            break
+    for node, share in frontier.items():
+        result[node] = result.get(node, 0.0) + share
+    if any(v[b] >= min_kv for b in result) and sum(result.values()) > 0:
+        # Shares that stopped below the supergrid (dead ends) move to the supergrid found.
+        sg = {b: s for b, s in result.items() if v[b] >= min_kv}
+        total = sum(sg.values())
+        return [(b, s / total) for b, s in sg.items()]
+    site = str(bus)[:4]
+    same_site = [b for b in buses.index if str(b)[:4] == site and v[b] >= min_kv]
+    if same_site:
+        return [(b, 1.0 / len(same_site)) for b in sorted(same_site)]
+    sg_buses = buses[(v >= min_kv) & ~buses.index.astype(str).str.contains("External", case=False)]
+    if sg_buses.empty:
+        return []
+    d = (sg_buses["x"] - buses.at[bus, "x"]) ** 2 + (sg_buses["y"] - buses.at[bus, "y"]) ** 2
+    return [(str(d.idxmin()), 1.0)]
+
+
+def redirect_capped_demand_to_supergrid(
+    node_demand: dict,
+    node_timeseries: dict,
+    network: pypsa.Network,
+    logger,
+    safety_margin: float = 0.90,
+    min_supergrid_kv: float = 275.0,
+):
+    """Fix 3 of the CP30 demand audit (15 Oct 2026): keep capped demand at its own site.
+
+    A <=132 kV bus whose own peak exceeds ``safety_margin`` x min(transformer, line)
+    capacity keeps its demand up to that capacity in every hour; only the part above it
+    moves, to the same site's supergrid bus (:func:`supergrid_targets`). The old step
+    (:func:`redistribute_demand_by_transformer_capacity`) moved the excess pro rata to
+    every demand bus in GB (11.8 TWh across boundaries on the CP30 build) and could stop
+    at its iteration cap. This one is a single pass in ascending voltage: a recipient below
+    the supergrid that is itself capped is processed after its sources, and the walk ends
+    at the supergrid, which has no cap.
+
+    Returns:
+        (node_demand, node_timeseries, moves) with ``moves`` a DataFrame (from, to, GWh,
+        peak MW above capacity).
+    """
+    caps = _effective_capped_capacity(network, logger, safety_margin)
+    v = network.buses["v_nom"].astype(float)
+    index = next(iter(node_timeseries.values())).index if node_timeseries else None
+    dt = ((index[1] - index[0]).total_seconds() / 3600.0
+          if index is not None and len(index) > 1 and isinstance(index, pd.DatetimeIndex) else TIMESTEP_HOURS)
+    moves = []
+    pending = sorted((b for b in node_timeseries if b in caps), key=lambda b: (v.get(b, 0.0), b))
+    processed = set()
+    while pending:
+        bus = pending.pop(0)
+        if bus in processed:
+            continue
+        processed.add(bus)
+        ts = node_timeseries[bus]
+        cap = caps[bus]
+        if ts.max() <= cap:
+            continue
+        excess = (ts - cap).clip(lower=0.0)
+        targets = supergrid_targets(bus, network, min_supergrid_kv)
+        if not targets:
+            logger.warning(f"{bus}: no supergrid bus to take {excess.max():.0f} MW above capacity; left in place")
+            continue
+        node_timeseries[bus] = ts - excess
+        gwh = float(excess.sum() * dt / 1e3)
+        for target, share in targets:
+            if target not in node_timeseries:
+                node_timeseries[target] = pd.Series(0.0, index=index)
+            node_timeseries[target] = node_timeseries[target] + excess * share
+            moves.append({"from_bus": bus, "to_bus": target, "gwh": gwh * share,
+                          "peak_excess_mw": float(excess.max()) * share, "capacity_mw": cap})
+            if target in caps and target not in processed:
+                pending.append(target)
+                pending.sort(key=lambda b: (v.get(b, 0.0), b))
+    moves = pd.DataFrame(moves, columns=["from_bus", "to_bus", "gwh", "peak_excess_mw", "capacity_mw"])
+    total_before = sum(node_demand.values())
+    node_demand = {b: float(ts.sum() * dt / 1e3) for b, ts in node_timeseries.items()}
+    scale = total_before / sum(node_demand.values()) if node_demand else 1.0
+    if moves.empty:
+        logger.info("Same-site capacity redirect: no <=132 kV bus above its capacity")
+    else:
+        logger.info(
+            f"Same-site capacity redirect: {moves['from_bus'].nunique()} capped buses, "
+            f"{moves['gwh'].sum():,.1f} GWh/yr ({moves.groupby('from_bus')['peak_excess_mw'].sum().sum():,.0f} MW "
+            f"at their own peaks) moved to {moves['to_bus'].nunique()} supergrid buses at the same site"
+        )
+        for row in moves.groupby("from_bus").agg(gwh=("gwh", "sum"), mw=("peak_excess_mw", "sum"),
+                                                 to=("to_bus", lambda s: ",".join(sorted(set(s))))
+                                                 ).sort_values("gwh", ascending=False).head(25).itertuples():
+            logger.info(f"  {row.Index} -> {row.to}: {row.gwh:,.1f} GWh, {row.mw:,.0f} MW")
+    if abs(scale - 1.0) > 1e-6:
+        logger.warning(f"Same-site redirect energy check: scale {scale:.8f}")
+    return node_demand, node_timeseries, moves
+
+
 def distribute_demand_to_etys_nodes(
     fes_demand: pd.DataFrame,
     fes_timeseries: pd.DataFrame,
@@ -1793,6 +2176,10 @@ def distribute_future_fes_demand_to_etys_nodes(
     network: pypsa.Network,
     logger,
     fes_year: int = 2024,
+    direct_node_shares: Optional[Dict[str, list]] = None,
+    capacity_redistribution: str = "pro_rata",
+    capacity_safety_margin: float = 0.90,
+    min_supergrid_kv: float = 275.0,
 ):
     """
     Distribute FES future demand projections across ETYS network nodes.
@@ -1808,11 +2195,21 @@ def distribute_future_fes_demand_to_etys_nodes(
         fes_timeseries: Time-varying demand profiles by GSP names
         network: PyPSA network with ETYS topology
         logger: Logger instance
+        direct_node_shares: Demand columns placed directly on declared nodes,
+            name -> {"nodes": [(node, share)], "lonlat": (lon, lat) or None} (CP30 named
+            large loads); a node missing from the network falls back like a Dem_per_node
+            node (same site, then the demand node nearest ``lonlat``).
+        capacity_redistribution: "pro_rata" (the original step: excess at capped
+            <=132 kV buses spread over every demand bus) or "same_site" (excess above
+            capacity to the same site's supergrid bus, :func:`redirect_capped_demand_to_supergrid`).
 
     Returns:
         Tuple of (demand_data, timeseries_data) indexed by ETYS Node IDs
     """
     logger.info("Distributing FES future demand to ETYS nodes")
+    if capacity_redistribution not in ("pro_rata", "same_site"):
+        raise ValueError(f"capacity_redistribution must be 'pro_rata' or 'same_site', not {capacity_redistribution!r}")
+    direct_node_shares = direct_node_shares or {}
 
     available_buses = set(network.buses.index)
     logger.info(f"ETYS network has {len(available_buses)} buses")
@@ -1857,12 +2254,37 @@ def distribute_future_fes_demand_to_etys_nodes(
 
     logger.info(f"Created mappings for {len(gsp_code_to_nodes)} GSP codes to ETYS nodes")
 
+    # Coordinates for GSPs whose listed nodes are all missing from the network
+    code_to_lonlat = {}
+    if gsp_metadata_path and gsp_metadata_path.exists():
+        for _, row in gsp_metadata.iterrows():
+            lat, lon = row.get('Latitude'), row.get('Longitude')
+            if pd.notna(lat) and pd.notna(lon):
+                code_to_lonlat[str(row.get('GSP ID', '')).strip()] = (float(lon), float(lat))
+    demand_node_buses = sorted(
+        {node for mappings in gsp_code_to_nodes.values() for node, _ in mappings} & available_buses
+    )
+    # Canonical metadata names -> codes, for FES labels that differ in form
+    # ("St Johns Wood" vs "St John's Wood", "New Cross 66kV 66kV" vs "New Cross")
+    canonical_codes = {}
+    if gsp_metadata_path and gsp_metadata_path.exists():
+        for _, row in gsp_metadata.iterrows():
+            code = str(row.get('GSP ID', '')).strip()
+            key = canonical_gsp_name(row.get('Name', ''))
+            if key and code and code not in canonical_codes.setdefault(key, []):
+                canonical_codes[key].append(code)
+    gsp_overrides = load_gsp_location_overrides()
+    logger.info(f"Loaded {len(gsp_overrides)} declared GSP locations from {GSP_LOCATION_OVERRIDES_FILE}")
+
     # Step 3: Map FES demand to ETYS nodes
     node_demand = {}
     node_timeseries_data = {}
     matched_gsps = 0
     unmatched_gsps = []
+    reassigned = []
+    located = []
 
+    placed_direct = []
     for gsp_name in fes_demand.index:
         gsp_name_lower = str(gsp_name).lower().strip()
         annual_demand_gwh = fes_demand.loc[gsp_name].iloc[0]
@@ -1871,45 +2293,100 @@ def distribute_future_fes_demand_to_etys_nodes(
         if annual_demand_gwh < 0.001:
             continue
 
+        if gsp_name in direct_node_shares:
+            spec = direct_node_shares[gsp_name]
+            node_shares, method = resolve_gsp_node_shares(
+                list(spec.get("nodes") or []), network, gsp_lonlat=spec.get("lonlat"),
+                candidate_buses=demand_node_buses,
+            )
+            if not node_shares:
+                unmatched_gsps.append((gsp_name, annual_demand_gwh))
+                continue
+            placed_direct.append((gsp_name, method, annual_demand_gwh, node_shares))
+            for node_id, weight_norm in node_shares:
+                node_demand[node_id] = node_demand.get(node_id, 0.0) + annual_demand_gwh * weight_norm
+                if gsp_name in fes_timeseries.columns:
+                    if node_id not in node_timeseries_data:
+                        node_timeseries_data[node_id] = pd.Series(0.0, index=fes_timeseries.index)
+                    node_timeseries_data[node_id] += fes_timeseries[gsp_name] * weight_norm
+            matched_gsps += 1
+            continue
+
         # Get GSP code from name
         gsp_code = name_to_code.get(gsp_name_lower)
 
         if gsp_code and gsp_code in gsp_code_to_nodes:
-            # Map to ETYS nodes using Dem_per_node weights
-            node_mappings = gsp_code_to_nodes[gsp_code]
+            node_shares, method = resolve_gsp_node_shares(
+                gsp_code_to_nodes[gsp_code],
+                network,
+                gsp_lonlat=code_to_lonlat.get(gsp_code),
+                candidate_buses=demand_node_buses,
+            )
+            if not node_shares:
+                unmatched_gsps.append((gsp_name, annual_demand_gwh))
+                continue
+            if method != 'dem_per_node':
+                reassigned.append((gsp_name, gsp_code, method, annual_demand_gwh, node_shares))
 
-            # Normalize weights for this GSP
-            total_weight = sum(w for _, w in node_mappings)
-
-            for node_id, weight_pct in node_mappings:
-                if node_id in available_buses:
-                    weight_norm = weight_pct / total_weight if total_weight > 0 else 1.0 / len(node_mappings)
-
-                    # Add to node demand
-                    if node_id not in node_demand:
-                        node_demand[node_id] = 0.0
-                    node_demand[node_id] += annual_demand_gwh * weight_norm
-
-                    # Handle timeseries
-                    if gsp_name in fes_timeseries.columns:
-                        if node_id not in node_timeseries_data:
-                            node_timeseries_data[node_id] = pd.Series(0.0, index=fes_timeseries.index)
-                        node_timeseries_data[node_id] += fes_timeseries[gsp_name] * weight_norm
+            for node_id, weight_norm in node_shares:
+                node_demand[node_id] = node_demand.get(node_id, 0.0) + annual_demand_gwh * weight_norm
+                if gsp_name in fes_timeseries.columns:
+                    if node_id not in node_timeseries_data:
+                        node_timeseries_data[node_id] = pd.Series(0.0, index=fes_timeseries.index)
+                    node_timeseries_data[node_id] += fes_timeseries[gsp_name] * weight_norm
 
             matched_gsps += 1
         else:
-            unmatched_gsps.append((gsp_name, annual_demand_gwh))
+            node_shares, method = resolve_unlisted_gsp(
+                gsp_name, gsp_code, canonical_codes, gsp_code_to_nodes, gsp_overrides,
+                network, code_to_lonlat, candidate_buses=demand_node_buses,
+            )
+            if not node_shares:
+                unmatched_gsps.append((gsp_name, annual_demand_gwh))
+                continue
+            located.append((gsp_name, method, annual_demand_gwh, node_shares))
+            for node_id, weight_norm in node_shares:
+                node_demand[node_id] = node_demand.get(node_id, 0.0) + annual_demand_gwh * weight_norm
+                if gsp_name in fes_timeseries.columns:
+                    if node_id not in node_timeseries_data:
+                        node_timeseries_data[node_id] = pd.Series(0.0, index=fes_timeseries.index)
+                    node_timeseries_data[node_id] += fes_timeseries[gsp_name] * weight_norm
+            matched_gsps += 1
 
     logger.info(f"Mapped {matched_gsps} GSPs to {len(node_demand)} ETYS nodes")
+    if placed_direct:
+        logger.info(f"{len(placed_direct)} named loads ({sum(r[2] for r in placed_direct):.1f} GWh) placed on declared nodes:")
+        for gsp_name, method, demand, shares in sorted(placed_direct, key=lambda r: -r[2]):
+            targets = ", ".join(f"{bus} {share:.2f}" for bus, share in shares)
+            logger.info(f"  - {gsp_name} ({demand:.1f} GWh) via {method}: {targets}")
+    if located:
+        total_located = sum(d for _, _, d, _ in located)
+        logger.info(
+            f"{len(located)} GSPs ({total_located:.1f} GWh) have no Dem_per_node row under their "
+            "FES name and were placed at their own location:"
+        )
+        for gsp_name, method, demand, shares in sorted(located, key=lambda r: -r[2]):
+            targets = ", ".join(f"{bus} {share:.2f}" for bus, share in shares)
+            logger.info(f"  - {gsp_name} ({demand:.1f} GWh) via {method}: {targets}")
+    if reassigned:
+        total_reassigned = sum(d for _, _, _, d, _ in reassigned)
+        logger.warning(
+            f"{len(reassigned)} GSPs ({total_reassigned:.1f} GWh) list Dem_per_node nodes "
+            "missing from this network; their demand was reassigned, not dropped:"
+        )
+        for gsp_name, gsp_code, method, demand, shares in sorted(reassigned, key=lambda r: -r[3]):
+            targets = ", ".join(f"{bus} {share:.2f}" for bus, share in shares)
+            logger.warning(f"  - {gsp_name} ({gsp_code}, {demand:.1f} GWh) via {method}: {targets}")
 
     # Handle unmatched GSPs by distributing their demand proportionally
     if unmatched_gsps:
         total_unmatched_gwh = sum(d for _, d in unmatched_gsps)
-        logger.warning(f"{len(unmatched_gsps)} GSPs ({total_unmatched_gwh:.1f} GWh) could not be mapped:")
-        for gsp_name, demand in unmatched_gsps[:10]:
+        logger.warning(
+            f"{len(unmatched_gsps)} GSPs ({total_unmatched_gwh:.1f} GWh) could not be located "
+            "and are spread pro rata across all demand nodes:"
+        )
+        for gsp_name, demand in unmatched_gsps:
             logger.warning(f"  - {gsp_name}: {demand:.2f} GWh")
-        if len(unmatched_gsps) > 10:
-            logger.warning(f"  ... and {len(unmatched_gsps) - 10} more")
 
         # Distribute unmatched demand proportionally to existing nodes
         if node_demand:
@@ -1947,6 +2424,13 @@ def distribute_future_fes_demand_to_etys_nodes(
 
     # Step 4: Redistribute demand to respect transformer capacity constraints
     # This prevents load shedding due to demand exceeding transformer capacity
+    if capacity_redistribution == "same_site" and node_timeseries_data:
+        node_demand, node_timeseries_data, _moves = redirect_capped_demand_to_supergrid(
+            node_demand, node_timeseries_data, network, logger,
+            safety_margin=capacity_safety_margin, min_supergrid_kv=min_supergrid_kv,
+        )
+        return _finish_etys_node_split(fes_demand, fes_timeseries, node_demand, node_timeseries_data, logger)
+
     total_demand_gwh = sum(node_demand.values())
 
     # Estimate peak demand from timeseries (MW) - use max of sum across all nodes
@@ -1984,7 +2468,11 @@ def distribute_future_fes_demand_to_etys_nodes(
                 scale_factor = new_weight / old_weight
                 node_timeseries_data[node_id] = node_timeseries_data[node_id] * scale_factor
 
-    # Create output DataFrames
+    return _finish_etys_node_split(fes_demand, fes_timeseries, node_demand, node_timeseries_data, logger)
+
+
+def _finish_etys_node_split(fes_demand, fes_timeseries, node_demand, node_timeseries_data, logger):
+    """Output frames of the GSP -> node split, with the conservation check."""
     demand_list = []
     for node_id, demand_gwh in node_demand.items():
         demand_list.append({'node': node_id, 'demand': demand_gwh})
@@ -2000,7 +2488,262 @@ def distribute_future_fes_demand_to_etys_nodes(
     logger.info(f"Total annual demand: {total_demand:.1f} GWh")
     logger.info(f"Timeseries shape: {timeseries_data.shape}")
 
+    input_columns = [gsp for gsp in fes_demand.index if gsp in fes_timeseries.columns]
+    assert_demand_conserved(
+        float(fes_timeseries[input_columns].to_numpy().sum()),
+        float(timeseries_data.to_numpy().sum()),
+        "GSP -> ETYS node split",
+        logger,
+    )
+
     return demand_data, timeseries_data
+
+
+# Relative tolerance for demand-energy conservation checks. The only legitimate
+# loss is the skipped sub-1 MWh GSPs, orders of magnitude below this.
+DEMAND_CONSERVATION_RTOL = 1e-6
+
+
+def assert_demand_conserved(expected_total: float, actual_total: float, stage: str, logger) -> None:
+    """Raise if a demand stage changed the energy it was given.
+
+    The CP30 ETYS build once carried 307.886 TWh against a 315.163 TWh input
+    because GSP shares of nodes absent from the network were silently dropped,
+    and every later log line ("Missing nodes: 0") looked clean. Checking the
+    total at each stage is what makes that kind of loss visible.
+    """
+    tolerance = DEMAND_CONSERVATION_RTOL * max(abs(expected_total), 1.0)
+    if abs(actual_total - expected_total) > tolerance:
+        raise ValueError(
+            f"Demand not conserved in {stage}: input {expected_total:,.1f}, "
+            f"output {actual_total:,.1f} (difference {actual_total - expected_total:+,.1f}, "
+            f"MW summed over snapshots)"
+        )
+    logger.info(f"Demand conserved in {stage}: {actual_total:,.1f} (MW summed over snapshots)")
+
+
+# Demand nodes that an ETYS upgrade retires in favour of a new board under a
+# different site code, which the same-site fallback below cannot find. Harker:
+# Appendix B 2027 removes every HARK21-HARK11/12/13 supergrid transformer, and
+# the new Harker 132 kV board is HARG11 (6 x 240 MVA from HARG41). Without this
+# the Harker GSP (2.4 TWh) fell to HARK13, left with 331 MVA of 132 kV lines
+# against a 416 MW peak (review 26 Sep 2026). Applied only when the old node is
+# absent and its successor present.
+# Wimbledon: Dem_per_node splits Wimbledon South (WIMBS1, 2.8 TWh) over WIMB12
+# and WIMB13; the build has no WIMB12, so renormalisation put it all on WIMB13
+# (496 MW peak on 500 MVA, 0.99 of its branch) while WIMB14, the other 132 kV
+# board fed by its own 500 MVA circuit from WIMB41, carried 98 MW (fix S4, 27
+# Sep 2026). WIMB12's share goes to WIMB14 instead.
+NODE_SUCCESSORS: Dict[str, str] = {
+    "HARK11": "HARG11",
+    "HARK12": "HARG11",
+    "HARK13": "HARG11",
+    "WIMB12": "WIMB14",
+}
+
+
+def resolve_gsp_node_shares(
+    node_mappings: list,
+    network: pypsa.Network,
+    gsp_lonlat: Optional[tuple] = None,
+    candidate_buses: Optional[Sequence] = None,
+) -> tuple:
+    """Return ([(bus, share)], method) for one GSP; shares sum to 1.
+
+    Dem_per_node lists the ETYS nodes each GSP feeds, but some of those nodes
+    are not in the built network (on the CP30 2030 build HARK11, ALVE11,
+    WIMB12, CANT11/12, KILT3-, SHRU3-, EKIL3-, 7.3 TWh in all). Dropping their
+    shares loses the demand, so, in order:
+
+    0. a node an upgrade retired in favour of a differently coded board takes
+       its ``NODE_SUCCESSORS`` entry (the method gains a ``+successor`` tag);
+    1. ``dem_per_node`` / ``renormalised``: split over the listed nodes that
+       are present, with weights renormalised over those nodes.
+    2. ``substation``: no listed node present, so each missing node's share
+       goes to buses of the same substation (same four-character site code,
+       e.g. HARK11 -> HARK13), preferring its voltage digit. This keeps the
+       demand where the GSP actually is.
+    3. ``nearest``: no bus at the substation either, so the GSP goes to the
+       demand node nearest its centroid.
+
+    An empty list means none of these applied; the caller spreads the GSP with
+    the other unmatched ones.
+    """
+    available = set(network.buses.index)
+    succeeded = False
+    remapped_nodes = []
+    for node, w in node_mappings:
+        successor = NODE_SUCCESSORS.get(str(node))
+        if node not in available and successor in available:
+            remapped_nodes.append((successor, w))
+            succeeded = True
+        else:
+            remapped_nodes.append((node, w))
+    node_mappings = remapped_nodes
+    tag = '+successor' if succeeded else ''
+    present = [(node, w) for node, w in node_mappings if node in available]
+    if present:
+        merged: dict = {}
+        for node, w in present:
+            merged[node] = merged.get(node, 0.0) + w
+        total = sum(merged.values())
+        shares = [(node, w / total) for node, w in merged.items()]
+        return shares, ('dem_per_node' if len(present) == len(node_mappings) else 'renormalised') + tag
+
+    by_site = {}
+    for bus in sorted(available):
+        by_site.setdefault(str(bus)[:4], []).append(bus)
+    remapped = {}
+    for node, w in node_mappings:
+        siblings = by_site.get(str(node)[:4], []) if len(str(node)) >= 5 else []
+        same_voltage = [bus for bus in siblings if len(bus) >= 5 and bus[4] == node[4]]
+        chosen = same_voltage or siblings
+        for bus in chosen:
+            remapped[bus] = remapped.get(bus, 0.0) + w / len(chosen)
+    if remapped:
+        total = sum(remapped.values())
+        return [(bus, w / total) for bus, w in remapped.items()], 'substation'
+
+    if gsp_lonlat is not None:
+        from scripts.utilities.spatial_utils import get_bus_coordinates_for_external
+        candidates = network.buses.loc[list(candidate_buses) if candidate_buses else network.buses.index]
+        candidates = candidates.dropna(subset=['x', 'y'])
+        if not candidates.empty:
+            x, y = get_bus_coordinates_for_external(gsp_lonlat[0], gsp_lonlat[1], network)
+            distance = np.hypot(candidates['x'] - x, candidates['y'] - y)
+            return [(distance.idxmin(), 1.0)], 'nearest'
+
+    return [], 'unresolved'
+
+
+# Declared locations for FES GSPs that neither the GSP metadata nor
+# Dem_per_node places (split-busbar G_EXTRA parts, island GSPs, SHEPD names
+# that differ from the ETYS substation name). Keyed by canonical GSP name.
+GSP_LOCATION_OVERRIDES_FILE = Path("data/demand/gsp_location_overrides.csv")
+
+
+def load_gsp_location_overrides(path=GSP_LOCATION_OVERRIDES_FILE) -> Dict[str, dict]:
+    """Return {canonical GSP name: {'locations': [...], 'lonlat': (lon, lat)|None, ...}}.
+
+    ``location`` holds ';'-separated alternatives tried in order; each is an
+    exact bus id (5+ characters) or a four-character ETYS site code.
+    """
+    path = Path(path)
+    if not path.exists():
+        return {}
+    table = pd.read_csv(path, dtype=str).fillna("")
+    required = {"gsp_name", "location", "latitude", "longitude", "evidence"}
+    if missing := required.difference(table.columns):
+        raise ValueError(f"{path} is missing columns: {sorted(missing)}")
+    overrides = {}
+    for _, row in table.iterrows():
+        key = canonical_gsp_name(row["gsp_name"])
+        if key in overrides:
+            raise ValueError(f"{path} lists GSP '{row['gsp_name']}' twice (canonical name '{key}')")
+        lonlat = None
+        if row["latitude"] and row["longitude"]:
+            lonlat = (float(row["longitude"]), float(row["latitude"]))
+        overrides[key] = {
+            "gsp_name": row["gsp_name"],
+            "locations": [part.strip() for part in row["location"].split(";") if part.strip()],
+            "lonlat": lonlat,
+            "evidence": row["evidence"],
+        }
+    return overrides
+
+
+def site_demand_buses(location: str, network: pypsa.Network, candidate_buses: Optional[Sequence] = None) -> list:
+    """Buses to carry a GSP placed at ``location`` (a bus id or a site code).
+
+    A site prefers its buses that are already Dem_per_node demand nodes, then
+    its lowest voltage level at or above 33 kV (11 kV buses at ETYS sites are
+    generator terminals), then any of its buses.
+    """
+    location = str(location).strip()
+    if len(location) >= 5:
+        return [location] if location in network.buses.index else []
+    site = network.buses[network.buses.index.str[:4] == location]
+    if site.empty:
+        return []
+    candidates = set(candidate_buses or [])
+    demand_nodes = sorted(bus for bus in site.index if bus in candidates)
+    if demand_nodes:
+        return demand_nodes
+    usable = site[site["v_nom"] >= 33.0]
+    if usable.empty:
+        return sorted(site.index)
+    lowest = usable["v_nom"].min()
+    return sorted(usable.index[usable["v_nom"] == lowest])
+
+
+def resolve_unlisted_gsp(
+    gsp_name: str,
+    metadata_code: Optional[str],
+    canonical_codes: Dict[str, list],
+    gsp_code_to_nodes: Dict[str, list],
+    overrides: Dict[str, dict],
+    network: pypsa.Network,
+    code_to_lonlat: Dict[str, tuple],
+    candidate_buses: Optional[Sequence] = None,
+) -> tuple:
+    """Place a FES GSP whose name has no metadata code with a Dem_per_node row.
+
+    Returns ([(bus, share)], method). Tried in order:
+
+    1. ``declared``: gsp_location_overrides.csv (first alternative present).
+    2. ``name_variant``: canonical name variants of the FES label matched to
+       metadata names ("St Johns Wood" -> "St John's Wood" SJOW_1; "Hams Hall
+       (Lea Marston 132kV)" -> HAMHC1), then Dem_per_node as usual.
+    3. ``code_site``: the metadata code's site (SAFO_1 -> SAFO11, AXMI_H ->
+       AXMI11) when that code has no Dem_per_node row.
+    4. ``nearest``: the metadata GSP centroid (or the declared coordinates) to
+       the nearest demand node.
+
+    An empty list means the GSP is unlocated; the caller spreads it pro rata.
+    """
+    key = canonical_gsp_name(gsp_name)
+    declared = overrides.get(key)
+    if declared:
+        for location in declared["locations"]:
+            buses = site_demand_buses(location, network, candidate_buses)
+            if buses:
+                return [(bus, 1.0 / len(buses)) for bus in buses], f"declared:{location}"
+
+    codes = [metadata_code] if metadata_code else []
+    for variant in gsp_name_variants(gsp_name):
+        for code in canonical_codes.get(variant, []):
+            if code not in codes:
+                codes.append(code)
+        if any(code in gsp_code_to_nodes for code in codes):
+            break
+    listed = [code for code in codes if code in gsp_code_to_nodes]
+    if listed:
+        mappings = {}
+        for code in listed:
+            for node, weight in gsp_code_to_nodes[code]:
+                mappings[node] = mappings.get(node, 0.0) + weight
+        lonlat = next((code_to_lonlat[c] for c in listed if c in code_to_lonlat), None)
+        shares, method = resolve_gsp_node_shares(
+            list(mappings.items()), network, gsp_lonlat=lonlat, candidate_buses=candidate_buses,
+        )
+        if shares:
+            return shares, f"name_variant:{'+'.join(listed)}/{method}"
+
+    for code in codes:
+        site = str(code)[:4]
+        if len(site) == 4 and site.isalpha():
+            buses = site_demand_buses(site.upper(), network, candidate_buses)
+            if buses:
+                return [(bus, 1.0 / len(buses)) for bus in buses], f"code_site:{code}"
+
+    lonlat = next((code_to_lonlat[c] for c in codes if c in code_to_lonlat), None)
+    if lonlat is None and declared:
+        lonlat = declared["lonlat"]
+    if lonlat is not None:
+        shares, method = resolve_gsp_node_shares([], network, gsp_lonlat=lonlat, candidate_buses=candidate_buses)
+        if shares:
+            return shares, method
+    return [], "unresolved"
 
 
 def aggregate_demand_to_network_topology(
@@ -2011,7 +2754,8 @@ def aggregate_demand_to_network_topology(
     spatial_mapping,
     logger,
     is_historical: bool = False,
-    fes_year: int = 2024
+    fes_year: int = 2024,
+    etys_options: Optional[dict] = None,
 ):
     """
     Aggregate FES demand data to match the network topology.
@@ -2037,7 +2781,7 @@ def aggregate_demand_to_network_topology(
             # Future ETYS: map GSP names to ETYS Node IDs
             logger.info("ETYS network - future scenario, mapping GSP names to node IDs")
             return distribute_future_fes_demand_to_etys_nodes(
-                fes_demand, fes_timeseries, network, logger, fes_year
+                fes_demand, fes_timeseries, network, logger, fes_year, **(etys_options or {})
             )
 
     elif network_model in ["Reduced", "Zonal"]:
@@ -2515,6 +3259,21 @@ def _load_egy_profile(sheet_name: str, model_name: str, logger, profile_year: in
         raise
 
 
+def _complete_other_leap_year(source_index, target_index, modelled_year: int) -> bool:
+    """True when a source series is one complete calendar year and exactly one of it and the
+    modelled year is a leap year: then it goes on the modelled year by month, day and time
+    (``calendar_year.on_calendar``), not by day of year, which is a day off from 1 March."""
+    source = pd.DatetimeIndex(source_index)
+    if len(source) == 0 or len(target_index) == 0:
+        return False
+    source_year = int(source[0].year)
+    if calendar.isleap(source_year) == calendar.isleap(int(modelled_year)):
+        return False
+    per_day = len(target_index) / (366 if calendar.isleap(int(modelled_year)) else 365)
+    return (source[-1].year == source_year
+            and len(source) == round(per_day * (366 if calendar.isleap(source_year) else 365)))
+
+
 def _scale_hourly_profile_to_fes_demand(
     hourly_profile: pd.Series,
     demand_data: pd.DataFrame,
@@ -2544,31 +3303,34 @@ def _scale_hourly_profile_to_fes_demand(
 
     logger.info(f"Target time index: {len(time_index)} hourly timesteps")
 
-    # Map source profile to target year by day-of-year and hour
-    # (handles leap years by mapping Dec 31 if needed)
-    source_doy = hourly_profile.index.dayofyear
-    source_hour = hourly_profile.index.hour
+    # Map source profile to target year by day-of-year and hour, or by calendar when exactly one
+    # of the two years is a leap year (day of year would be a day off from 1 March).
+    if _complete_other_leap_year(hourly_profile.index, time_index, modelled_year):
+        profile_mapped = on_calendar(hourly_profile, time_index)
+    else:
+        source_doy = hourly_profile.index.dayofyear
+        source_hour = hourly_profile.index.hour
 
-    target_doy = time_index.dayofyear
-    target_hour = time_index.hour
+        target_doy = time_index.dayofyear
+        target_hour = time_index.hour
 
-    profile_values = []
-    for doy, hour in zip(target_doy, target_hour):
-        # Find matching timestep in source
-        matching_mask = (source_doy == doy) & (source_hour == hour)
+        profile_values = []
+        for doy, hour in zip(target_doy, target_hour):
+            # Find matching timestep in source
+            matching_mask = (source_doy == doy) & (source_hour == hour)
 
-        if matching_mask.any():
-            profile_values.append(hourly_profile[matching_mask].iloc[0])
-        else:
-            # Leap year handling: use Dec 30 data for Dec 31 if missing
-            fallback_mask = (source_doy == min(doy, 365)) & (source_hour == hour)
-            if fallback_mask.any():
-                profile_values.append(hourly_profile[fallback_mask].iloc[0])
+            if matching_mask.any():
+                profile_values.append(hourly_profile[matching_mask].iloc[0])
             else:
-                # Ultimate fallback: use mean
-                profile_values.append(hourly_profile.mean())
+                # Leap year handling: use Dec 30 data for Dec 31 if missing
+                fallback_mask = (source_doy == min(doy, 365)) & (source_hour == hour)
+                if fallback_mask.any():
+                    profile_values.append(hourly_profile[fallback_mask].iloc[0])
+                else:
+                    # Ultimate fallback: use mean
+                    profile_values.append(hourly_profile.mean())
 
-    profile_mapped = pd.Series(profile_values, index=time_index)
+        profile_mapped = pd.Series(profile_values, index=time_index)
 
     # Normalize profile so it sums to 1.0 when multiplied by timestep hours
     # This allows scaling by annual energy (GWh -> MW time series)
@@ -2718,16 +3480,13 @@ def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logg
                 raise ValueError(f"Could not identify ESPENI date/demand columns. Available columns: {columns}")
 
     except Exception as e:
-        logger.error(f"Failed to load ESPENI data: {e}")
-        logger.warning("Falling back to eload profiles")
-        return generate_eload_future_profiles(demand_data, modelled_year, logger)
+        raise RuntimeError(f"Failed to load ESPENI data: {e}") from e
 
     # Extract demand column
     if demand_column not in espeni_data.columns:
         logger.error(f"{demand_column} column not found in ESPENI data")
         logger.error(f"Available columns: {list(espeni_data.columns)[:10]}...")  # Show first 10 columns
-        logger.warning("Falling back to eload profiles")
-        return generate_eload_future_profiles(demand_data, modelled_year, logger)
+        raise KeyError(f"{demand_column} column not found in ESPENI data")
 
     historical_demand = espeni_data[demand_column].dropna()
     logger.info(f"Historical ESPENI demand data: {len(historical_demand)} data points")
@@ -2779,6 +3538,15 @@ def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logg
     except Exception as e:
         logger.warning(f"Could not extract full year from ESPENI data: {e}")
         year_data = create_composite_espeni_profile(historical_demand, logger)
+
+    # A complete demand year and a modelled year of which exactly one is a leap year (2013 onto
+    # 2040, or 2020 onto 2030): put it on the calendar by month, day and time (29 February from
+    # 28 February, or a source 29 February dropped). The day-of-year mapping below would read
+    # every day from 1 March one day off.
+    if (isinstance(getattr(year_data, 'index', None), pd.DatetimeIndex) and len(year_data)
+            and _complete_other_leap_year(year_data.index, time_index, modelled_year)):
+        logger.info(f"Mapping {year_data.index[0].year} ESPENI onto {modelled_year} by calendar")
+        year_data = on_calendar(year_data, time_index)
 
     # Resample to match target year length if needed
     if len(year_data) != len(time_index):
@@ -2861,8 +3629,7 @@ def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logg
                 # Keep resampled MW series so historical path has correct length
                 year_data = profile_normalized.copy()
         else:
-            logger.error("No valid ESPENI data found, falling back to eload profiles")
-            return generate_eload_future_profiles(demand_data, modelled_year, logger)
+            raise ValueError("No valid ESPENI data found for the demand year")
     else:
         # Data length matches, just normalize
         profile_normalized = year_data / year_data.mean()
@@ -2944,24 +3711,28 @@ def generate_espeni_profiles(demand_data: pd.DataFrame, modelled_year: int, logg
                     logger.warning(f"No embedded {carrier} data for {use_year}")
                     continue
 
-                # Align to the target time_index (same resample as demand)
-                src_doy = emb_raw.index.dayofyear
-                src_hour = emb_raw.index.hour
-                src_minute = emb_raw.index.minute
+                # Align to the target time_index (same resample as demand): by calendar when
+                # exactly one of the two years is a leap year, as the demand itself.
+                if _complete_other_leap_year(emb_raw.index, time_index, modelled_year):
+                    emb_series = on_calendar(emb_raw, time_index).astype(float).clip(lower=0.0)
+                else:
+                    src_doy = emb_raw.index.dayofyear
+                    src_hour = emb_raw.index.hour
+                    src_minute = emb_raw.index.minute
 
-                vals = []
-                for doy, hour, minute in zip(time_index.dayofyear, time_index.hour, time_index.minute):
-                    mask = (src_doy == doy) & (src_hour == hour) & (src_minute == minute)
-                    if mask.any():
-                        vals.append(float(emb_raw[mask].iloc[0]))
-                    else:
-                        day_mask = src_doy == doy
-                        if day_mask.any():
-                            vals.append(float(emb_raw[day_mask].mean()))
+                    vals = []
+                    for doy, hour, minute in zip(time_index.dayofyear, time_index.hour, time_index.minute):
+                        mask = (src_doy == doy) & (src_hour == hour) & (src_minute == minute)
+                        if mask.any():
+                            vals.append(float(emb_raw[mask].iloc[0]))
                         else:
-                            vals.append(0.0)
+                            day_mask = src_doy == doy
+                            if day_mask.any():
+                                vals.append(float(emb_raw[day_mask].mean()))
+                            else:
+                                vals.append(0.0)
 
-                emb_series = pd.Series(vals, index=time_index).clip(lower=0.0)
+                    emb_series = pd.Series(vals, index=time_index).clip(lower=0.0)
 
                 peak_mw = emb_series.max()
                 annual_twh = emb_series.sum() * TIMESTEP_HOURS / 1e6
@@ -3379,10 +4150,15 @@ def validate_network_loads(network: pypsa.Network, logger):
 
     logger.info("Network load validation completed")
 
-def add_FES_demand_data_to_network(demand_data, p_set_data, logger, is_historical: bool = False):
+def add_FES_demand_data_to_network(demand_data, p_set_data, logger, is_historical: bool = False,
+                                   etys_options: Optional[dict] = None,
+                                   post_load_hook: Optional[Callable] = None):
     """
     Add FES demand data to the PyPSA network with optional disaggregation.
     Now supports multiple network models (ETYS, Reduced, Zonal).
+
+    ``post_load_hook(network, fes_year)`` runs after the loads are on the network and their
+    energy is checked, before the save (CP30 consumer flexibility, F5).
     """
     logger.info("Adding FES demand data to PyPSA network")
 
@@ -3417,7 +4193,7 @@ def add_FES_demand_data_to_network(demand_data, p_set_data, logger, is_historica
     # Aggregate demand to match network topology
     network_demand, network_timeseries = aggregate_demand_to_network_topology(
         demand_data, p_set_data, network_model, network, spatial_mapping, logger,
-        is_historical=is_historical, fes_year=fes_year
+        is_historical=is_historical, fes_year=fes_year, etys_options=etys_options
     )
 
     # Set snapshots (use the timeseries index from aggregated timeseries)
@@ -3471,6 +4247,14 @@ def add_FES_demand_data_to_network(demand_data, p_set_data, logger, is_historica
         logger.warning(f"Could not verify/reindex network.loads_t.p_set: {e}")
 
     validate_network_loads(network, logger)
+    assert_demand_conserved(
+        float(p_set_data.to_numpy().sum()),
+        float(network.loads_t.p_set.to_numpy().sum()),
+        "network load build",
+        logger,
+    )
+    if post_load_hook is not None:
+        post_load_hook(network, fes_year)
     save_network(network, snakemake.output.network_with_base_demand, custom_logger=logger)
     logger.info("Network export completed")
 
@@ -3508,26 +4292,66 @@ if __name__ == "__main__":
         # Fallback: historical if modelled_year <= 2024
         is_historical = modelled_year <= 2024
 
-    # Get FES params (may be None for historical scenarios)
+    # Get scenario source and FES params. For CP30, FES params refer only to the
+    # explicitly configured spatial proxy, not authoritative demand totals.
+    scenario_source = get_param_value(getattr(snakemake.params, 'scenario_source', None)) if hasattr(snakemake.params, 'scenario_source') else None
+    cp30_pathway = get_param_value(getattr(snakemake.params, 'cp30_pathway', None)) if hasattr(snakemake.params, 'cp30_pathway') else None
+    if not scenario_source:
+        scenario_source = "CP30" if cp30_pathway else ("historical" if is_historical else "FES")
+    scenario_source = str(scenario_source)
+
     fes_year = get_param_value(snakemake.params.fes_year) if hasattr(snakemake.params, 'fes_year') else None
     fes_scenario = get_param_value(snakemake.params.fes_scenario) if hasattr(snakemake.params, 'fes_scenario') else None
 
+    # CP30 2030 demand build (demand audit fixes, 15 Oct 2026): FES 2024 spatial basis,
+    # named large loads, same-site capacity redirect and a component-built shape.
+    from scripts.demand import cp30_demand as cp30_demand_build
+    cp30_demand_raw = getattr(snakemake.params, 'cp30_demand', None) if hasattr(snakemake.params, 'cp30_demand') else None
+    cp30_demand_cfg = (cp30_demand_build.resolve_config(cp30_demand_raw)
+                       if (not is_historical and str(scenario_source).upper() == "CP30"
+                           and cp30_demand_build.is_enabled(cp30_demand_raw)
+                           and get_network_model() == "ETYS") else None)
+    if cp30_demand_cfg is not None:
+        # Read the files the rule declares (rule extract_cp30_demand_inputs's outputs), so the
+        # build cannot read a different copy from the one Snakemake tracks.
+        named_loads_input = getattr(snakemake.input, "cp30_named_loads", None)
+        if named_loads_input:
+            cp30_demand_cfg["named_loads"]["file"] = get_single_input_path(named_loads_input)
+        national_lines_input = getattr(snakemake.input, "cp30_national_lines", None)
+        if national_lines_input:
+            cp30_demand_cfg["national_lines_file"] = get_single_input_path(national_lines_input)
+    cp30_prep = None
+    etys_options = None
+
     logger.info("="*50)
     logger.info("STARTING LOAD DATA PROCESSING")
-    logger.info(f"FES Year: {fes_year if fes_year else 'N/A (historical)'}")
-    logger.info(f"FES Scenario: {fes_scenario if fes_scenario else 'N/A (historical)'}")
+    logger.info(f"Scenario Source: {scenario_source}")
+    logger.info(f"FES Year: {fes_year if fes_year else 'N/A'}")
+    logger.info(f"FES Scenario: {fes_scenario if fes_scenario else 'N/A'}")
     logger.info(f"Modelled Year: {modelled_year}")
     logger.info(f"Demand Year: {get_param_value(snakemake.params.demand_year) if hasattr(snakemake.params, 'demand_year') else 'Not specified'}")
     logger.info(f"Demand Timeseries: {get_param_value(snakemake.params.demand_timeseries)}")
     logger.info(f"Scenario Type: {'HISTORICAL' if is_historical else 'FUTURE'}")
 
-    # Validate FES parameters for future scenarios
+    # Validate future scenario parameters. CP30 uses FES only as an explicit
+    # spatial proxy; FES remains authoritative only for FES scenarios.
     if not is_historical:
-        if not fes_year:
-            raise ValueError(f"Future scenario (modelled_year={modelled_year}) requires FES_year parameter")
-        if not fes_scenario:
-            raise ValueError(f"Future scenario (modelled_year={modelled_year}) requires FES_scenario parameter")
-        logger.info("  → FES parameters validated for future scenario")
+        if scenario_source.upper() == "CP30":
+            if not cp30_pathway:
+                raise ValueError(f"CP30 scenario (modelled_year={modelled_year}) requires CP30_pathway parameter")
+            if not getattr(snakemake.params, 'cp30_ed1', None):
+                raise ValueError(f"CP30 scenario (modelled_year={modelled_year}) requires CP30 ED1 resource parameter")
+            if not fes_year or not fes_scenario:
+                raise ValueError(
+                    f"CP30 scenario (modelled_year={modelled_year}) requires explicit FES spatial proxy year/scenario"
+                )
+            logger.info("  -> CP30 demand parameters validated; FES use is spatial proxy only")
+        else:
+            if not fes_year:
+                raise ValueError(f"Future FES scenario (modelled_year={modelled_year}) requires FES_year parameter")
+            if not fes_scenario:
+                raise ValueError(f"Future FES scenario (modelled_year={modelled_year}) requires FES_scenario parameter")
+            logger.info("  -> FES parameters validated for future scenario")
 
     # Apply timestep from scenario (default 30 minutes)
     timestep_minutes_param = get_param_value(getattr(snakemake.params, 'timestep_minutes', 30))
@@ -3555,14 +4379,57 @@ if __name__ == "__main__":
             logger.info("Created placeholder demand structure")
             logger.info("  → Actual demand will be loaded from historical timeseries in Step 2")
         else:
-            # Future scenarios: Use FES projected demand
-            logger.info("Step 1: Future scenario detected - loading FES demand projections")
-            original_fes_demand = get_fes_demand_data(
-                get_param_value(snakemake.params.fes_scenario),
-                modelled_year,
-                logger,
-                get_param_value(getattr(snakemake.params, 'fes_year', None))
-            )
+            if scenario_source.upper() == "CP30" and cp30_demand_cfg is not None:
+                logger.info("Step 1: CP30 future scenario - CP30 demand build (demand.build.enabled)")
+                cp30_total_gwh = get_cp30_electricity_demand_gwh(
+                    cp30_pathway, modelled_year,
+                    get_param_value(getattr(snakemake.params, 'cp30_ed1', None)), logger,
+                    cp30_es1_path=get_param_value(getattr(snakemake.params, 'cp30_es1', None)),
+                )
+                cp30_prep = cp30_demand_build.prepare(
+                    cp30_demand_cfg, cp30_pathway, modelled_year,
+                    get_single_input_path(snakemake.input.fes_data),
+                    get_param_value(getattr(snakemake.params, 'cp30_ed1', None)),
+                    get_param_value(getattr(snakemake.params, 'cp30_es1', None)),
+                    cp30_total_gwh, logger,
+                )
+                original_fes_demand = cp30_prep["demand_data"]
+                etys_options = {
+                    "direct_node_shares": cp30_prep["named_node_shares"],
+                    "capacity_redistribution": cp30_demand_cfg["capacity_redistribution"],
+                    "capacity_safety_margin": float(cp30_demand_cfg["capacity_safety_margin"]),
+                    "min_supergrid_kv": float(cp30_demand_cfg["min_supergrid_kv"]),
+                }
+            elif scenario_source.upper() == "CP30":
+                logger.info("Step 1: CP30 future scenario detected - loading CP30 demand target")
+                original_fes_demand = get_cp30_demand_data(
+                    cp30_pathway,
+                    modelled_year,
+                    logger,
+                    get_param_value(getattr(snakemake.params, 'cp30_ed1', None)),
+                    get_param_value(getattr(snakemake.params, 'cp30_es1', None)),
+                    fes_scenario,
+                    fes_year,
+                )
+            else:
+                # Future FES scenarios: Use FES projected demand
+                logger.info("Step 1: Future FES scenario detected - loading FES demand projections")
+                original_fes_demand = get_fes_demand_data(
+                    fes_scenario,
+                    modelled_year,
+                    logger,
+                    fes_year
+                )
+                # F25.8 (user, 27 Oct 2026): the FES long-range chain's capped-demand redirect
+                # (demand.disaggregation.fes.capacity_redistribution; absent = pro rata).
+                fes_redistribution = get_param_value(getattr(snakemake.params, 'fes_capacity_redistribution', None)) or {}
+                if fes_redistribution and get_network_model() == "ETYS":
+                    etys_options = {
+                        "capacity_redistribution": fes_redistribution.get("mode", "pro_rata"),
+                        "capacity_safety_margin": float(fes_redistribution.get("capacity_safety_margin", 0.90)),
+                        "min_supergrid_kv": float(fes_redistribution.get("min_supergrid_kv", 275.0)),
+                    }
+                    logger.info(f"  Capped-demand redistribution: {etys_options}")
 
         # Step 2: Generate load timeseries
         logger.info("Step 2: Generating load timeseries")
@@ -3599,6 +4466,36 @@ if __name__ == "__main__":
             get_param_value(getattr(snakemake.params, 'scenario', 'unknown'))
         )
 
+        # Step 2b: CP30 component shapes (EVs, heat pumps, district heat, data centres,
+        # named loads flat) and the peak calibration of the base.
+        if cp30_prep is not None and cp30_demand_cfg["shape"].get("enabled", True):
+            temp_c = None
+            cutout = getattr(snakemake.input, 'cutout', None) if hasattr(snakemake.input, 'cutout') else None
+            if cutout:
+                metadata_path = resolve_gsp_metadata_path(fes_year, logger)
+                temp_c = cp30_demand_build.weather_temperature(
+                    get_single_input_path(cutout), cp30_prep["gsp_gwh"], pd.read_csv(metadata_path),
+                    p_set_data.index)
+            shaped = cp30_demand_build.shape(cp30_prep, p_set_data, temp_c, cp30_demand_cfg, logger)
+            p_set_data = shaped["p_set"]
+
+        # Step 2c: CP30 consumer flexibility (F5; demand.build.flexibility, off by default). The
+        # flexible parts of the shape are carved from the loads once they are on the network.
+        flex_hook = None
+        if cp30_prep is not None:
+            from scripts.demand import cp30_flexibility
+            flex_raw = cp30_demand_cfg.get("flexibility")
+            if cp30_flexibility.is_enabled(flex_raw):
+                if not cp30_demand_cfg["shape"].get("enabled", True) or temp_c is None:
+                    raise ValueError("demand.build.flexibility needs the component shape and the weather-year cutout")
+                ed1_df = pd.read_csv(get_param_value(getattr(snakemake.params, 'cp30_ed1', None)))
+                fes_df = pd.read_csv(get_single_input_path(snakemake.input.fes_data), low_memory=False)
+
+                def flex_hook(network, hook_fes_year):
+                    allocate = cp30_flexibility.etys_bus_allocator(network, hook_fes_year, etys_options, logger)
+                    cp30_flexibility.build_and_integrate(network, cp30_prep, temp_c, cp30_demand_cfg, flex_raw, ed1_df,
+                                                         fes_df, cp30_pathway, modelled_year, allocate, logger)
+
         # Step 3: Write load profile CSV (if output is defined in rule)
         logger.info("Step 3: Writing load profile CSV output (if configured)")
         if hasattr(snakemake.output, 'base_demand_profile') and snakemake.output.base_demand_profile:
@@ -3612,13 +4509,16 @@ if __name__ == "__main__":
 
         # Step 4: Add to network (now network-aware)
         logger.info("Step 4: Adding demand to network")
-        add_FES_demand_data_to_network(original_fes_demand, p_set_data, logger, is_historical=is_historical)
+        add_FES_demand_data_to_network(original_fes_demand, p_set_data, logger, is_historical=is_historical,
+                                       etys_options=etys_options, post_load_hook=flex_hook)
 
         logger.info("LOAD PROCESSING COMPLETED SUCCESSFULLY")
         log_execution_summary(logger, "load", start_time, context={
             "modelled_year": modelled_year,
             "scenario_type": "HISTORICAL" if is_historical else "FUTURE",
-            "fes_scenario": get_param_value(snakemake.params.fes_scenario),
+            "scenario_source": scenario_source,
+            "fes_scenario": fes_scenario,
+            "cp30_pathway": cp30_pathway if scenario_source.upper() == "CP30" else None,
             "demand_timeseries": get_param_value(snakemake.params.demand_timeseries)
         })
 

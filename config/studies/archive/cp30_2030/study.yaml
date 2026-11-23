@@ -1,0 +1,213 @@
+# Retired families and scenarios of the CP30 FFR 2030 study, ids unchanged; loaded only with the archive
+# (config_loader.load_config(include_archive=True)). Layout: config/studies/README.md.
+label: CP30 FFR 2030
+year: 2030
+family_id: CP30_FFR_2030_ETYS_market_{Mon}{year}_{family}
+
+# Complete-year aggregates: each names twelve solved months that together cover one calendar year; rule aggregate_CP30_months sums them into
+# resources/analysis/{name}_annual_summary.json. Declaring one does not enable a solve.
+monthly_aggregates:
+  CP30_2030_reinforced:
+    scenario_family: CP30 FFR 2030 ES5 landing reassignment, reinforced
+    family: neso_es5_landing_reassignment_reinforced
+  CP30_2030_public_bids_p2:
+    scenario_family: CP30 FFR 2030 reinforced, P2 state bids at cost
+    family: public_bids_p2
+  CP30_2030_network_seven_late:
+    scenario_family: CP30 FFR 2030 reinforced, NESO's seven most critical projects late
+    family: network_seven_late
+  CP30_2030_network_no_upgrades:
+    scenario_family: CP30 FFR 2030 reinforced, no grid upgrades after 2025
+    family: network_no_upgrades
+  CP30_2030_public_bids_p3:
+    scenario_family: CP30 FFR 2030 reinforced, P3 every unit at cost, LIFO tie-break
+    family: public_bids_p3
+  CP30_2030_churn_neso:
+    scenario_family: CP30 FFR 2030, CP30-style market absorption, NESO-style outages and interconnectors
+    family: churn_neso
+  CP30_2030_churn_no_acceleration:
+    scenario_family: CP30 FFR 2030, churn_neso basis, no acceleration of Norwich-Tilbury and Sea Link
+    family: churn_no_acceleration
+  CP30_2030_churn_seven_late:
+    scenario_family: CP30 FFR 2030, churn_neso basis, NESO's seven most critical projects late
+    family: churn_seven_late
+  CP30_2030_churn_no_upgrades:
+    scenario_family: CP30 FFR 2030, churn_neso basis, no network upgrades after 2025
+    family: churn_no_upgrades
+  CP30_2030_churn_public_bids_p2:
+    scenario_family: CP30 FFR 2030, churn_neso basis, P2 public ownership bid stack
+    family: churn_public_bids_p2
+  CP30_2030_churn_public_bids_p3:
+    scenario_family: CP30 FFR 2030, churn_neso basis, P3 public power system bid stack
+    family: churn_public_bids_p3
+  CP30_2030_churnicp30_neso:
+    scenario_family: CP30 FFR 2030, churn_neso + interconnector premium 30
+    family: churnicp30_neso
+  CP30_2030_cal_3hnmb:
+    scenario_family: 'churn_neso basis, base, {"bid_premium": 0.0, "bid_rule": "additive", "bm_block_hours": 3, "bod2024":
+      true, "cfd_basis": "contract_value", "cfd_floor": "none", "cfd_rule_none": true, "gas_markup": 0.6, "ic_caps": "none",
+      "ic_foreign_multipliers": "gb_gas", "ic_foreign_uplift": 1.0, "legs": true, "merchant_bid": 0.0, "outages": "2022_25",
+      "phase_in": false, "premium": 0.0, "stage1": "s1_3h"}'
+    family: cal_3hnmb
+  CP30_2030_cal_3hdb:
+    scenario_family: 'churn_neso basis, base, {"bid_premium": 0.0, "bid_rule": "additive", "bm_block_hours": 3, "bod2024":
+      true, "cfd_basis": "contract_value", "cfd_floor": "none", "cfd_rule_none": true, "gas_markup": 0.6, "ic_caps": "continent_lcp",
+      "ic_foreign_multipliers": "gb_gas", "ic_foreign_uplift": 1.0, "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "legs":
+      true, "merchant_bid": 0.0, "outages": "2022_25", "phase_in": false, "premium": 0.0, "stage1": "s1_3h"}'
+    family: cal_3hdb
+  CP30_2030_cal_3hnm:
+    scenario_family: 'churn_neso basis, base, {"bid_premium": 0.0, "bid_rule": "additive", "bod2024": true, "cfd_basis": "contract_value",
+      "cfd_floor": "none", "cfd_rule_none": true, "gas_markup": 0.6, "ic_caps": "none", "ic_foreign_multipliers": "gb_gas",
+      "ic_foreign_uplift": 1.0, "legs": true, "merchant_bid": 0.0, "outages": "2022_25", "phase_in": false, "premium": 0.0,
+      "stage1": "s1_3h"}'
+    family: cal_3hnm
+  CP30_2030_cal_3hd:
+    scenario_family: 'churn_neso basis, base, {"bid_premium": 0.0, "bid_rule": "additive", "bod2024": true, "cfd_basis": "contract_value",
+      "cfd_floor": "none", "cfd_rule_none": true, "gas_markup": 0.6, "ic_caps": "continent_lcp", "ic_foreign_multipliers":
+      "gb_gas", "ic_foreign_uplift": 1.0, "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "legs": true, "merchant_bid":
+      0.0, "outages": "2022_25", "phase_in": false, "premium": 0.0, "stage1": "s1_3h"}'
+    family: cal_3hd
+  CP30_2030_cal_iccwod:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "continent_lcp",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "outage_derate_off": true, "stage1": "nc"}'
+    family: cal_iccwod
+  CP30_2030_cal_iccwb8:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "continent_lcp",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "capability_year_overrides": {"B8": 2031, "EC5": 2031,
+      "LE1": 2031}, "stage1": "nc"}'
+    family: cal_iccwb8
+  CP30_2030_cal_bo1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "cfd_basis":
+      "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers": "gb_gas",
+      "boundaries_only": true, "stage1": "nc"}'
+    family: cal_bo1
+  CP30_2030_cal_iccw1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "continent_lcp",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "stage1": "nc"}'
+    family: cal_iccw1
+  CP30_2030_cal_icw2:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "ic_no_wheeling": true, "ic_no_wheeling_gap": 0.001, "stage1": "nc"}'
+    family: cal_icw2
+  CP30_2030_cal_icw1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "ic_no_wheeling": true, "stage1": "nc"}'
+    family: cal_icw1
+  CP30_2030_cal_icn1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "north_lcp",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "stage1": "nc"}'
+    family: cal_icn1
+  CP30_2030_cal_wvpi1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "stage1": "nc"}'
+    family: cal_wvpi1
+  CP30_2030_cal_wvrb1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "stage1": "rb"}'
+    family: cal_wvrb1
+  CP30_2030_cal_wvlcp1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "cfd_basis":
+      "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers": "gb_gas",
+      "stage1": "nc"}'
+    family: cal_wvlcp1
+  CP30_2030_cal_nm1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 1.0, "ic_foreign_multipliers":
+      "gb_gas", "stage1": "nc"}'
+    family: cal_nm1
+  CP30_2030_cal_nc1:
+    scenario_family: 'churn_neso basis, base, {"premium": 0.0, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "additive", "bid_premium": 0.0, "outages": "2022_25", "bod2024": true, "ic_caps": "none",
+      "cfd_basis": "contract_value", "cfd_floor": "none", "merchant_bid": 0.0, "ic_foreign_uplift": 0.0, "stage1": "nc"}'
+    family: cal_nc1
+  CP30_2030_cal_np1:
+    scenario_family: 'churn_neso basis, base, {"premium": 8.6, "cfd_rule_none": true, "phase_in": false, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "rb"}'
+    family: cal_np1
+  CP30_2030_cal_rb2:
+    scenario_family: 'churn_neso basis, base, {"premium": 6.9, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "rb"}'
+    family: cal_rb2
+  CP30_2030_cal_rb1:
+    scenario_family: 'churn_neso basis, base, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "rb"}'
+    family: cal_rb1
+  CP30_2030_fin4_public_bids_p3:
+    scenario_family: 'churn_neso basis, public_bids_p3, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup":
+      0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp",
+      "stage1": "zf"}'
+    family: fin4_public_bids_p3
+  CP30_2030_fin4_public_bids_p2:
+    scenario_family: 'churn_neso basis, public_bids_p2, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup":
+      0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp",
+      "stage1": "zf"}'
+    family: fin4_public_bids_p2
+  CP30_2030_fin4_no_upgrades:
+    scenario_family: 'churn_neso basis, no_upgrades, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup":
+      0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp",
+      "stage1": "zf"}'
+    family: fin4_no_upgrades
+  CP30_2030_fin4_seven_late:
+    scenario_family: 'churn_neso basis, seven_late, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup":
+      0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp",
+      "stage1": "zf"}'
+    family: fin4_seven_late
+  CP30_2030_fin4_no_acceleration:
+    scenario_family: 'churn_neso basis, no_acceleration, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup":
+      0.6, "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp",
+      "stage1": "zf"}'
+    family: fin4_no_acceleration
+  CP30_2030_cal_zc3:
+    scenario_family: 'churn_neso basis, base, {"premium": 8.6, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "zf"}'
+    family: cal_zc3
+  CP30_2030_cal_zc2:
+    scenario_family: 'churn_neso basis, base, {"premium": 28.4, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "zf", "ic_gate": true}'
+    family: cal_zc2
+  CP30_2030_cal_zc1:
+    scenario_family: 'churn_neso basis, base, {"premium": 28.4, "cfd_rule_none": true, "phase_in": true, "gas_markup": 0.6,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25", "bod2024": true, "ic_caps": "lcp", "stage1":
+      "zf"}'
+    family: cal_zc1
+  CP30_2030_cal_l7:
+    scenario_family: 'churn_neso basis, base, {"premium": 28.4, "cfd_rule_none": true, "phase_in": true, "gas_markup": null,
+      "legs": true, "bid_rule": "all_in", "bid_premium": 100.0, "outages": "2022_25"}'
+    family: cal_l7
+  CP30_2030_network_no_acceleration:
+    scenario_family: CP30 FFR 2030 reinforced, no acceleration of Norwich-Tilbury and Sea Link
+    family: network_no_acceleration
+  CP30_2030_public_bids_p2_seven_late:
+    scenario_family: CP30 FFR 2030 reinforced, public ownership state bids at cost (P2, F8), seven critical projects late
+    family: public_bids_p2_seven_late
+  CP30_2030_public_bids_p3_seven_late:
+    scenario_family: CP30 FFR 2030 reinforced, public power system bids at cost (P3, F8, LIFO tie-break), seven critical projects
+      late
+    family: public_bids_p3_seven_late
+  CP30_ND_2030_reinforced:
+    scenario_family: CP30 New Dispatch 2030 ES5 landing reassignment, reinforced
+    family: cp30_nd_2030_etys_market_neso_es5_landing_reassignment_reinforced

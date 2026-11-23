@@ -177,7 +177,8 @@ def calculate_country_prices(
     logger.info("Calculating country-level electricity prices...")
     
     # Filter for countries connected to GB
-    connected_countries = ["France", "Belgium", "Netherlands", "SEM", "Norway", "Denmark"]
+    # Germany via NeuConnect (Fedderwarden), counted since 26 Sep 2026.
+    connected_countries = ["France", "Belgium", "Netherlands", "Germany", "SEM", "Norway", "Denmark"]
     country_data = parsed_mix[parsed_mix["Country"].isin(connected_countries)].copy()
     
     logger.info(f"Processing {len(country_data)} records for {country_data['Country'].nunique()} connected countries")
@@ -307,6 +308,30 @@ def calculate_price_differentials(
     return differentials
 
 
+def _expand_scenario_alignment(generation_mix: pd.DataFrame) -> pd.DataFrame:
+    """FES 2021-2023 format: one row per FES pathway, as the 2024+ ``FES Pathway Alignment`` column has.
+
+    Up to FES 2023 the column is ``FES Scenario Alignment`` and names several pathways by code
+    ("CT & LW", "ST, FS & CC"); 2024+ gives one full name per row. Codes are named from the pathway
+    registry (data/scenario_sources/pathways.csv); a code it does not know is dropped and logged.
+    """
+    import re
+
+    from scripts.sources import registry
+
+    names = {p.code: p.name for p in registry.pathways("FES")}
+    frame = generation_mix.copy()
+    frame["FES Pathway Alignment"] = frame.pop("FES Scenario Alignment").astype(str).map(
+        lambda text: [c for c in (t.strip() for t in re.split(r"[,&]", text)) if c])
+    frame = frame.explode("FES Pathway Alignment")
+    unknown = sorted(set(frame["FES Pathway Alignment"]) - set(names))
+    if unknown:
+        logger.warning(f"European mix: FES pathway codes not in the registry, rows dropped: {unknown}")
+    frame = frame[frame["FES Pathway Alignment"].isin(names)]
+    frame["FES Pathway Alignment"] = frame["FES Pathway Alignment"].map(names)
+    return frame
+
+
 def parse_generation_mix(generation_mix: pd.DataFrame) -> pd.DataFrame:
     """
     Parse European generation mix data into structured format.
@@ -324,6 +349,9 @@ def parse_generation_mix(generation_mix: pd.DataFrame) -> pd.DataFrame:
     """
     logger.info("Parsing generation mix data structure...")
     
+    if "FES Pathway Alignment" not in generation_mix.columns and "FES Scenario Alignment" in generation_mix.columns:
+        generation_mix = _expand_scenario_alignment(generation_mix)
+
     # Get year columns (they're numeric year values like 2023, 2024, etc.)
     year_cols = [col for col in generation_mix.columns if col.isdigit()]
     logger.info(f"Found {len(year_cols)} year columns: {year_cols[0]} to {year_cols[-1]}")

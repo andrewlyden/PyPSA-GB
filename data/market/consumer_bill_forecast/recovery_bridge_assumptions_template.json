@@ -1,0 +1,78 @@
+{
+  "purpose": "Versioned, non-PyPSA inputs required to turn system outputs into consumer-bill recovery components. Null means the bridge remains an evidence gap and cannot replace a historical allowance.",
+  "representative_customer_consumption_kwh": 3100,
+  "cfd": {
+    "modelled_recovery_cost_gbp": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "Sum LCCC-style CfD difference payments, including reconciliation and levy adjustments; do not use a nodal balancing price."
+  },
+  "ro": {
+    "modelled_recovery_cost_gbp": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "Eligible ROC generation x banding x certificate/buy-out cost, reconciled to supplier obligation recovery."
+  },
+  "bsuos": {
+    "use_current_run_as_calibration_baseline": false,
+    "calibration_redispatch_cost_gbp_per_mwh": null,
+    "calibration_bsuos_gbp_per_3100kwh_ex_vat": null,
+    "historical_settlement_cost_gbp": null,
+    "historical_settlement_volume_mwh": null,
+    "settlement_outturn_file": null,
+    "reference_modelled_redispatch_cost_gbp": null,
+    "reference_modelled_demand_mwh": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "Use gross upward plus downward redispatch MWh per MWh demand as a calibrated activity index. Projected allowance = calibration allowance times projected gross-volume intensity divided by calibration intensity. Bid/offer cost remains a separate diagnostic; this is not a direct BSUoS settlement-cost pass-through.",
+    "calibration_gross_redispatch_mwh_per_mwh": null
+  },
+  "losses": {
+    "use_current_run_as_calibration_baseline": false,
+    "calibration_transmission_loss_rate": null,
+    "assumed_multiplier": null,
+    "source": "Use represented AC transmission losses only as a calibrated index of the published supplier-loss allowance. Supplier regional and distribution loss factors remain external inputs."
+  },
+  "imbalance": {
+    "use_current_run_as_calibration_baseline": false,
+    "calibration_redispatch_cost_gbp_per_mwh": null,
+    "source": "Use a separately calibrated gross redispatch-volume intensity for the imbalance allowance, then validate against cash-out and balancing settlement. Do not combine this with BSUoS.",
+    "calibration_gross_redispatch_mwh_per_mwh": null
+  },
+  "capacity_market": {
+    "use_current_run_as_calibration_baseline": false,
+    "calibration_residual_peak_mw": null,
+    "auction_clearing_price_gbp_per_kw_year": null,
+    "contracted_derated_capacity_mw": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "Capacity Market auction/recovery forecast; peak demand alone is not a consumer levy."
+  },
+  "tnuos": {
+    "use_current_run_as_calibration_baseline": false,
+    "calibration_transmission_capacity_mw": null,
+    "allowed_revenue_recovered_from_suppliers_gbp": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "NESO allowed-revenue and TNUoS charging allocation, informed by network build but not derived from power flows."
+  },
+  "duos_fixed": {
+    "assumed_multiplier": null,
+    "allowed_revenue_recovered_from_domestic_customers_gbp": null,
+    "domestic_customer_accounts": null,
+    "source": "DNO allowed revenue and charging allocation for fixed recovery."
+  },
+  "duos_unit": {
+    "assumed_multiplier": null,
+    "allowed_revenue_recovered_from_suppliers_gbp": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "DNO allowed revenue and charging allocation for volumetric recovery."
+  },
+  "fit": {
+    "modelled_recovery_cost_gbp": null,
+    "billable_supplier_sales_mwh": null,
+    "domestic_recovery_share": 1.0,
+    "source": "Use FiT-labelled generation with published tariff and levelisation inputs. Do not infer FiT payments from merchant renewable generation."
+  }
+}

@@ -924,7 +924,20 @@ def _compare_congestion_hours(
 
     Returns a list of dicts, one per boundary.
     """
-    model_cong = pd.read_csv(model_congestion_csv)
+    # ``solve_balancing`` deliberately writes an empty file when no individual
+    # components exceed the congestion threshold.  This is a valid result, not
+    # a malformed market run, so retain an empty table for the static-summary
+    # fallback below.
+    try:
+        model_cong = pd.read_csv(model_congestion_csv)
+    except pd.errors.EmptyDataError:
+        logger.info(
+            "Model congestion summary is empty: no components reached the "
+            "congestion threshold."
+        )
+        model_cong = pd.DataFrame(
+            columns=["component", "hours_congested", "mean_loading_fraction"]
+        )
     records = []
     neso_cfg = neso_cfg or {}
 
@@ -1437,6 +1450,89 @@ def validate_neso_constraints(
         )
         return
 
+    # The published NESO boundary crosswalk is a list of named ETYS circuits
+    # and transformers.  It cannot be applied after a zonal aggregation has
+    # replaced those individual components.  Do not present a cost or flow
+    # comparison as validation in that case; write an explicit, successful
+    # not-applicable result instead.  This lets a clustered historical run
+    # complete while reserving NESO validation for a topology that retains the
+    # mapped circuits.
+    transmission = (scenario_config.get("network", {}) or {}).get("transmission", {}) or {}
+    outage_cfg = transmission.get("outage_schedule", {}) or {}
+    neso_cfg = outage_cfg.get("neso", {}) or {}
+    boundary_include = neso_cfg.get("boundary_include")
+    boundary_mapping = _load_boundary_mapping(
+        boundary_mapping_path,
+        logger,
+        boundary_include=boundary_include,
+    )
+
+    logger.info("Loading model balancing network for crosswalk check...")
+    network = pypsa.Network(balancing_network_path)
+    def mapped_component_count(boundary):
+        """Count named crosswalk components retained in this network."""
+        line_count = sum(
+            line_id in network.lines.index for line_id in _get_boundary_lines(boundary)
+        )
+        transformer_count = sum(
+            transformer_id in network.transformers.index
+            for transformer_id in _get_boundary_transformers(boundary)
+        )
+        if not isinstance(boundary, dict):
+            return line_count + transformer_count
+        link_count = sum(
+            link.get("name") in network.links.index
+            for link in boundary.get("links", [])
+            if isinstance(link, dict) and link.get("name")
+        )
+        return line_count + transformer_count + link_count
+
+    boundary_component_counts = {
+        name: mapped_component_count(boundary)
+        for name, boundary in boundary_mapping.items()
+    }
+    mapped_components = sum(boundary_component_counts.values())
+    mapped_boundaries = sum(count > 0 for count in boundary_component_counts.values())
+    boundary_coverage = mapped_boundaries / len(boundary_mapping) if boundary_mapping else 0.0
+    if boundary_mapping and boundary_coverage < 0.75:
+        reason = (
+            "not_applicable_clustered_network: the NESO boundary crosswalk "
+            "retains named components for only "
+            f"{mapped_boundaries}/{len(boundary_mapping)} boundaries after network aggregation"
+        )
+        logger.info("NESO validation skipped: %s.", reason)
+        Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(
+            [
+                {"category": "info", "metric": "status", "value": "not_applicable"},
+                {"category": "info", "metric": "reason", "value": reason},
+                {
+                    "category": "info",
+                    "metric": "mapped_named_components",
+                    "value": mapped_components,
+                },
+                {
+                    "category": "info",
+                    "metric": "mapped_boundaries",
+                    "value": mapped_boundaries,
+                },
+                {
+                    "category": "info",
+                    "metric": "boundary_coverage",
+                    "value": boundary_coverage,
+                },
+            ]
+        ).to_csv(output_csv, index=False)
+        Path(output_html).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_html).write_text(
+            "<html><body><h1>NESO constraint validation not applicable</h1>"
+            f"<p>{reason}.</p>"
+            "<p>Use the full, unclustered ETYS network for this validation.</p>"
+            "</body></html>",
+            encoding="utf-8",
+        )
+        return
+
     # ── Determine date range ────────────────────────────────────────────────
     solve_period = scenario_config.get("solve_period", {})
     if solve_period.get("enabled", False):
@@ -1459,21 +1555,6 @@ def validate_neso_constraints(
 
     logger.info("Loading NESO DA constraint flows...")
     neso_da_flows = _load_da_flows(start_date, end_date, cache_dir, logger)
-
-    logger.info("Loading boundary mapping...")
-    transmission = scenario_config.get("transmission", {}) or {}
-    outage_cfg = transmission.get("outage_schedule", {}) or {}
-    neso_cfg = outage_cfg.get("neso", {}) or {}
-    boundary_include = neso_cfg.get("boundary_include")
-
-    boundary_mapping = _load_boundary_mapping(
-        boundary_mapping_path,
-        logger,
-        boundary_include=boundary_include,
-    )
-
-    logger.info("Loading model balancing network...")
-    network = pypsa.Network(balancing_network_path)
 
     # ── Compute model boundary flows ────────────────────────────────────────
     logger.info("Computing model boundary flows...")

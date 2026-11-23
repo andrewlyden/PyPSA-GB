@@ -1,0 +1,38 @@
+# Node choices for the CP30 2030 named large loads that carry no BMU id (15 Oct 2026, CP30 demand audit fix 2).
+# Read by rule extract_cp30_demand_inputs (scripts/demand/extract_cp30_demand_inputs.py). Every transmission
+# direct connect (ETYS demand type T) in "Regional breakdown of FES24 data.xlsx" (sheet Active, HT, 2030/31) is
+# placed from GB_network.xlsx Dir_con_BMUs_to_node when its id is a BMU (T_/M_ ids); the B_EXTRA rows have no
+# BMU, so their node is a judgement from the substation in the row's name, recorded here with its evidence.
+# The extraction fails if a type-T row has neither a BMU mapping nor a row here.
+# nodes: ETYS node ids separated by ";" (the load is split equally); blank = no ETYS substation of that name,
+#   located at latitude/longitude, or at the row's FLOP-zone GSP centroid when those are blank.
+# node_evidence: the substation the row's name points to and, where it is not an ETYS node, the nearest
+#   supergrid/132 kV node with its distance in km from the named place (measured on the CP30 base network).
+# latitude/longitude (WGS84): the named place; blank = the FLOP-zone GSP centroid.
+etys_id,nodes,node_evidence,latitude,longitude
+B_EXTRA_201,SFEG1Q;SFEG1R,St Fergus 132 kV (INTOG landing; T2),57.57,-1.84
+B_EXTRA_202,MAGA21,"Margam 275 kV, the Port Talbot steelworks substation",51.56,-3.77
+B_EXTRA_63,ABTH11;ABTH12;ABTH13,"Cardiff Airport 132: Aberthaw 132 kV, 4.4 km",51.397,-3.343
+B_EXTRA_64,WALX22;WALX2A,Waltham Cross 275 kV (named),51.69,-0.03
+B_EXTRA_65,IVER11,Iver B 132 kV (named),51.52,-0.5
+B_EXTRA_66,BRIM11,Brimsdown 132 kV (named),51.65,-0.03
+B_EXTRA_67,NHYD61,North Hyde 66 kV (named),51.5,-0.38
+B_EXTRA_68,IVER11,Iver B 132 kV (named),51.52,-0.5
+B_EXTRA_69,DIDC41,Didcot (only Didcot bus in the build is 400 kV),51.62,-1.27
+B_EXTRA_70,ELST11;ELST12;ELST13,Elstree 132 kV (named),51.65,-0.3
+B_EXTRA_71,DIDC41,Didcot (only Didcot bus in the build is 400 kV),51.62,-1.27
+B_EXTRA_72,IVER11,Iver B 132 kV (named),51.52,-0.5
+B_EXTRA_73,IVER11,Iver B 132 kV (named),51.52,-0.5
+B_EXTRA_74,BESW21,"Berkswell (HS2 feeder): Berkswell substation, 2.3 km",52.397,-1.643
+B_EXTRA_75,IVER21;IVER22,"Ickenham (HS2 feeder): Iver 275 kV, 4.4 km",51.562,-0.443
+B_EXTRA_76,ECLA41,"Quainton (HS2 feeder): East Claydon 400 kV, 6.4 km",51.87,-0.92
+B_EXTRA_77,,"Parkgate (rail), FLOP L5: no ETYS substation of that name; FLOP centroid",,
+B_EXTRA_78,,"Parkgate (rail), FLOP L5: no ETYS substation of that name; FLOP centroid",,
+B_EXTRA_79,UPPB21;UPPB22,Upper Boat 275 kV (named),51.59,-3.29
+B_EXTRA_80,STAY41,Staythorpe (named; the build has Staythorpe 400 kV only),53.07,-0.86
+B_EXTRA_82,BRLE41,Bramley 400 kV (named),51.33,-1.07
+B_EXTRA_83,MARH41;MARH42,"Dingley Wood 400: Market Harborough 400 kV, 4.8 km",52.48,-0.85
+B_EXTRA_84,CHTE21,"Hasland (Chesterfield): Chesterfield 275 kV, 1.0 km",53.22,-1.4
+B_EXTRA_85,RATS41,"Kegworth: Ratcliffe-on-Soar 400 kV, 3.9 km",52.83,-1.27
+B_EXTRA_86,LALE21,Laleham 275 kV (named),51.41,-0.49
+B_EXTRA_9,,Hydrogen SMR (FLOP S5): FLOP centroid,,

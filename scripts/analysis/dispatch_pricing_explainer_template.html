@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dispatch, wholesale pricing and ownership | PyPSA-GB</title>
+  <style>
+    :root{--ink:#17252c;--muted:#607078;--paper:#f6f3ec;--card:#fff;--line:#d8ddd9;--navy:#173f4f;--teal:#0c8078;--mint:#d9eee7;--amber:#d58b28;--sand:#f0dfbd;--coral:#bd594d;--rose:#f3dcda;--blue:#316b8a;--bluep:#dceaf2;--max:1180px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--paper);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}a{color:#086b68;text-underline-offset:3px}button{font:inherit}.wrap{max-width:var(--max);margin:auto;padding:0 28px}.hero{color:white;background:linear-gradient(135deg,#102f3b 0%,#165563 58%,#147a70 100%);padding:72px 0 62px;overflow:hidden;position:relative}.hero:after{content:"";position:absolute;width:480px;height:480px;border:1px solid rgba(255,255,255,.16);border-radius:50%;right:-100px;top:-210px;box-shadow:0 0 0 52px rgba(255,255,255,.035),0 0 0 105px rgba(255,255,255,.025)}.eyebrow{font-size:.76rem;letter-spacing:.15em;text-transform:uppercase;font-weight:800;color:#aee8da}.hero h1{font-family:Georgia,serif;font-size:clamp(2.6rem,6vw,5.2rem);line-height:.98;letter-spacing:-.045em;margin:.2em 0;max-width:930px}.hero p{font-size:1.16rem;max-width:780px;color:#e0efec}.stamp{font-size:.82rem;color:#bcd7d3;margin-top:26px}.nav{position:sticky;top:0;z-index:20;background:rgba(246,243,236,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.nav .wrap{display:flex;gap:21px;overflow:auto;padding-top:13px;padding-bottom:13px}.nav a{white-space:nowrap;text-decoration:none;color:#42545b;font-size:.84rem;font-weight:750}.nav a:hover{color:var(--teal)}main{padding:50px 0 75px}section{scroll-margin-top:70px;margin-bottom:70px}h2{font-family:Georgia,serif;font-size:clamp(2rem,4vw,3rem);line-height:1.08;letter-spacing:-.025em;margin:0 0 13px}h3{font-size:1.1rem;line-height:1.25;margin:0 0 9px}p{margin:.5em 0 1em}.intro{font-size:1.08rem;color:#495d65;max-width:870px}.grid{display:grid;gap:18px}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:23px;box-shadow:0 3px 15px rgba(24,48,56,.04)}.card p:last-child{margin-bottom:0}.num{font-family:Georgia,serif;font-size:2.15rem;line-height:1;color:var(--navy);margin:8px 0}.small{font-size:.83rem;color:var(--muted)}.tag{display:inline-block;border-radius:100px;background:var(--mint);color:#096158;padding:4px 9px;font-size:.7rem;font-weight:850;text-transform:uppercase;letter-spacing:.06em}.tag.amber{background:var(--sand);color:#7e4b09}.tag.coral{background:var(--rose);color:#823e38}.callout{border-left:5px solid var(--teal);background:#e9f4f0;padding:18px 22px;border-radius:4px 14px 14px 4px;margin:22px 0}.callout.warn{border-color:var(--amber);background:#f8edda}.callout.red{border-color:var(--coral);background:#f6e6e3}.callout strong{display:block;margin-bottom:3px}.axes .card{position:relative;padding-top:49px}.axisno{position:absolute;top:17px;left:20px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:white;font-size:.76rem;font-weight:800}.flow{display:grid;grid-template-columns:1fr 35px 1fr 35px 1fr;align-items:stretch;margin:24px 0}.step{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}.arrow{display:grid;place-items:center;color:var(--teal);font-size:1.55rem}.formula{font-family:"SFMono-Regular",Consolas,monospace;font-size:.87rem;background:#152d36;color:#e8f5f2;border-radius:12px;padding:14px 16px;overflow:auto}.split-title{display:flex;justify-content:space-between;gap:20px;align-items:end}.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:.79rem;color:var(--muted)}.dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:5px}.barbox{padding:22px 0 2px}.barrow{display:grid;grid-template-columns:145px 1fr 86px;gap:12px;align-items:center;margin:10px 0}.barlabel{font-size:.84rem;font-weight:750}.track{height:28px;background:#eceeea;border-radius:6px;overflow:hidden;display:flex}.seg{height:100%;min-width:1px}.barval{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.note{font-size:.79rem;color:var(--muted);margin-top:13px}table{width:100%;border-collapse:separate;border-spacing:0;background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:.87rem}th,td{text-align:left;vertical-align:top;padding:14px 15px;border-bottom:1px solid #e3e6e3}th{background:#eaf0ed;color:#31464e;font-size:.76rem;text-transform:uppercase;letter-spacing:.045em}tr:last-child td{border-bottom:0}td:first-child{font-weight:760}.table-scroll{overflow:auto;border-radius:14px}.verdict{font-weight:800}.good{color:#08746b}.conditional{color:#a06212}.poor{color:#a0433a}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.tabs button{border:1px solid #bfc9c6;background:white;border-radius:100px;padding:8px 14px;cursor:pointer;color:#43565e;font-weight:750}.tabs button.active{background:var(--navy);color:white;border-color:var(--navy)}.panel{display:none}.panel.active{display:block}.kicker{font-size:.77rem;text-transform:uppercase;letter-spacing:.09em;font-weight:850;color:var(--teal)}.source-list li{margin-bottom:9px}.method{border-top:1px solid var(--line);padding-top:18px;margin-top:25px}.quotegrid .card{border-top:5px solid var(--navy)}footer{background:#122c35;color:#c9dcda;padding:35px 0;font-size:.83rem}footer a{color:#8bd7cc}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:900px){.g4,.g3{grid-template-columns:repeat(2,1fr)}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);height:30px}.barrow{grid-template-columns:110px 1fr 70px}.split-title{display:block}}
+    @media(max-width:600px){.wrap{padding:0 17px}.hero{padding:52px 0 45px}.g4,.g3,.g2{grid-template-columns:1fr}.card{padding:19px}.barrow{grid-template-columns:1fr 62px}.track{grid-column:1/-1;grid-row:2}.barval{grid-column:2;grid-row:1}.nav{position:relative}table{font-size:.81rem}th,td{padding:11px}}
+    @media print{.nav,.tabs{display:none}.panel{display:block!important}.hero{padding:30px 0;background:#173f4f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}section{break-inside:avoid}.card{box-shadow:none}body{background:white}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">PyPSA-GB · market design explainer</div>
+      <h1>Dispatch, wholesale pricing &amp; ownership</h1>
+      <p>What the model actually does, how its central-scheduling experiment relates to the FTI work for NESO, and why “pay as bid” is not another name for central dispatch.</p>
+      <div class="stamp" id="stamp"></div>
+    </div>
+  </header>
+  <nav class="nav" aria-label="Page sections"><div class="wrap">
+    <a href="#four-choices">Four choices</a><a href="#formulations">Formulations</a><a href="#fti">FTI comparison</a><a href="#results">Results</a><a href="#pab">Pay as bid</a><a href="#ownership">Ownership fit</a><a href="#interpret">How to quote</a><a href="#sources">Sources</a>
+  </div></nav>
+
+  <main class="wrap">
+    <section>
+      <div class="grid g3">
+        <article class="card"><span class="tag">Core distinction</span><h3 style="margin-top:12px">Central dispatch changes the schedule</h3><p>A system operator chooses plant output while respecting network limits. It does not, by itself, specify the price paid to generators.</p></article>
+        <article class="card"><span class="tag amber">Core distinction</span><h3 style="margin-top:12px">Pay as bid changes settlement</h3><p>Accepted units receive their own accepted offer. It does not, by itself, determine whether plant self-schedule or are centrally scheduled.</p></article>
+        <article class="card"><span class="tag coral">Core distinction</span><h3 style="margin-top:12px">Ownership changes who receives money</h3><p>Public ownership can internalise market rents and balancing transfers. It does not automatically create either central dispatch or cost-based pricing.</p></article>
+      </div>
+      <div class="callout"><strong>The clean way to read every result</strong>Ask four separate questions: Who owns the asset? Who determines its schedule? What is paid for accepted energy? How are capital and fixed costs recovered? Combining them too early causes double counting.</div>
+    </section>
+
+    <section id="four-choices">
+      <div class="kicker">Conceptual map</div><h2>Four independent design axes</h2>
+      <p class="intro">Real market designs choose one position on each axis. The model experiments discussed here are particular combinations—not a single line from “market” to “state”.</p>
+      <div class="grid g4 axes">
+        <article class="card"><span class="axisno">1</span><h3>Ownership</h3><p>Private, mixed public–private, public new build, or fully public.</p><p class="small">Determines who supplies capital and retains surplus.</p></article>
+        <article class="card"><span class="axisno">2</span><h3>Scheduling</h3><p>Self-dispatch or central dispatch; perfect foresight or forecast-based.</p><p class="small">Determines who commits and positions plant.</p></article>
+        <article class="card"><span class="axisno">3</span><h3>Energy settlement</h3><p>Pay as clear, pay as bid, administered cost, or bilateral contract.</p><p class="small">Determines the energy payment rule.</p></article>
+        <article class="card"><span class="axisno">4</span><h3>Revenue adequacy</h3><p>Merchant rents, CfDs, capacity payments, regulated return or public tariff.</p><p class="small">Determines how fixed and capital costs are recovered.</p></article>
+      </div>
+    </section>
+
+    <section id="formulations">
+      <div class="kicker">Inside this repository</div><h2>What each formulation actually solves</h2>
+      <div class="tabs" role="tablist">
+        <button class="active" data-panel="self" role="tab">Self-dispatch comparator</button>
+        <button data-panel="central" role="tab">FTI-style central dispatch</button>
+        <button data-panel="public" role="tab">Public central dispatch</button>
+        <button data-panel="bound" role="tab">Pay-as-bid ceiling</button>
+      </div>
+      <div class="panel active" id="panel-self">
+        <div class="flow"><div class="step"><span class="tag">Day ahead</span><h3>National copperplate market</h3><p>Plant is scheduled by marginal cost and bids without internal transmission constraints. Demand buses share one wholesale price.</p></div><div class="arrow">→</div><div class="step"><span class="tag amber">Gate closure</span><h3>Positions are anchored</h3><p>The wholesale position becomes the commercial baseline. Interconnectors can be fixed to that position.</p></div><div class="arrow">→</div><div class="step"><span class="tag coral">Balancing</span><h3>Network-constrained redispatch</h3><p>The model increases and decreases output to make the position physically feasible, paying bid/offer prices.</p></div></div>
+        <p class="formula">consumer cost = national-price energy + balancing / constraint cost</p>
+      </div>
+      <div class="panel" id="panel-central">
+        <div class="flow"><div class="step"><span class="tag">Forecast</span><h3>Day-ahead uncertainty</h3><p>Wind, solar and demand are perturbed with correlated errors calibrated to national forecast RMSE.</p></div><div class="arrow">→</div><div class="step"><span class="tag amber">Central schedule</span><h3>Real network in Stage 1</h3><p>A 24-hour LP chooses a least-cost network-feasible schedule. It has no unit commitment, reserve or ramping.</p></div><div class="arrow">→</div><div class="step"><span class="tag coral">Outturn</span><h3>Real-time correction</h3><p>The outturn network is reloaded and re-optimised. Zero mark-ups make this a resource-cost correction, not a strategic BM.</p></div></div>
+        <p class="formula">payment = national-price energy + cost recovery + firm access + real-time resource correction</p>
+        <div class="callout warn"><strong>Why make-whole payments exist</strong>A national energy price can be below the cost of a generator dispatched for a local network need. Cost recovery covers incremental scheduled output when marginal cost exceeds the national price. Firm access compensates profitable output in the self-dispatch counterfactual that the central schedule removes.</div>
+      </div>
+      <div class="panel" id="panel-public">
+        <div class="grid g2"><article class="card"><h3>Same physical central schedule</h3><p>The forecast-based, network-constrained two-stage dispatch is retained, including the real-time correction.</p></article><article class="card"><h3>Different merit-order basis</h3><p>The operator minimises resource cost. Subsidy and certificate transfers are stripped out, renewable cost is floored at £0.01/MWh, and fuel, carbon and variable O&amp;M drive the ranking.</p></article></div>
+        <p class="formula">public tariff requirement = physical resource cost + allowed fixed/capital recovery − public receipts</p>
+        <p class="small">This is coherent only because the relevant domestic transfers are inside one public account. It should not be presented as the settlement offered to private investors.</p>
+      </div>
+      <div class="panel" id="panel-bound">
+        <div class="grid g2"><article class="card"><h3>No new dispatch solve</h3><p>The accepted quantities, wholesale prices and all behaviour are frozen at the private pay-as-clear result.</p></article><article class="card"><h3>A revenue subtraction</h3><p>For private non-CfD generators only, positive wholesale margin above short-run cost is removed. CfD assets are excluded because their top-up would rise when wholesale revenue falls.</p></article></div>
+        <p class="formula">ceiling = Σ max(wholesale revenue − fuel &amp; carbon − variable O&amp;M, 0)</p>
+        <div class="callout red"><strong>This is not a forecast of a pay-as-bid market.</strong>It is the largest saving available under the deliberately unrealistic assumption that bids, dispatch, entry, exit and replacement support do not respond.</div>
+      </div>
+    </section>
+
+    <section id="fti">
+      <div class="kicker">External benchmark</div><h2>How the central case compares with FTI for NESO</h2>
+      <p class="intro">The local implementation reproduces FTI’s central idea—move transmission-constrained scheduling to day ahead and settle national-price deviations with make-whole payments—but it is a simplified dispatch experiment rather than a reproduction of FTI’s full power-market model.</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Feature</th><th>FTI / NESO assessment</th><th>PyPSA-GB implementation</th><th>Interpretive consequence</th></tr></thead>
+        <tbody>
+          <tr><td>Core choice</td><td>Self-scheduling versus central scheduling.</td><td>Paired self-dispatch and central-dispatch runs.</td><td class="good">Conceptually aligned.</td></tr>
+          <tr><td>Network timing</td><td>Central scheduling resolves transmission constraints day ahead; self-scheduling resolves them after gate closure.</td><td>Copperplate Stage 1 for market; full ETYS network in central Stage 1.</td><td class="good">Captures the main mechanism.</td></tr>
+          <tr><td>Forecast errors</td><td>Historically calibrated wind, solar and demand errors; central case corrects errors in real time.</td><td>Correlated AR(1) errors; about 5.5% national wind RMSE, 5% solar and 1.5% demand.</td><td class="good">Directionally aligned, locally calibrated.</td></tr>
+          <tr><td>Plant physics</td><td>Security-constrained unit commitment / economic dispatch, with richer operating detail.</td><td>Linear economic dispatch in rolling 24-hour windows; no start-up, minimum-load, reserve or ramp constraints.</td><td class="poor">The local result understates commitment and flexibility costs.</td></tr>
+          <tr><td>Intraday response</td><td>FTI’s central formulation assumes no intraday trading; errors reach real time. Self-dispatch can adjust intraday.</td><td>Central outturn is re-optimised over each 24-hour window with hindsight and no explicit reserve procurement.</td><td class="poor">Real-time correction is too frictionless.</td></tr>
+          <tr><td>Settlement</td><td>National energy price plus cost recovery and firm-access make-whole payments.</td><td>Paired copperplate national price, cost recovery, firm access and outturn resource-cost correction.</td><td class="good">The main payment architecture is matched.</td></tr>
+          <tr><td>Interconnectors</td><td>Modelled within a broader market framework.</td><td>Foreign supply curves on three coupled markets (item IC1); the market side pays to re-trade its day-ahead interconnector positions in the balancing stage.</td><td class="conditional">Re-trading is a large part of the self-dispatch cost; the trade term is a change in trade position, not domestic efficiency.</td></tr>
+          <tr><td>Study horizon</td><td>Multi-year consumer benefit, principally 2030–2040 NPV, with network and scenario variants.</td><td>One fixed 2030 CP30 fleet, reinforced network and weather year.</td><td class="conditional">Do not compare the £bn figures as like-for-like.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="grid g3" style="margin-top:18px">
+        <article class="card"><div class="small">FTI central scheduling · core case</div><div class="num">£8.2bn</div><p>2030–2040 NPV in 2022 prices; NESO also reports £8.8bn in 2024 prices.</p></article>
+        <article class="card"><div class="small">FTI · updated assumptions</div><div class="num">£1.9bn</div><p>Lower when the updated system and network assumptions reduce the avoidable constraint opportunity.</p></article>
+        <article class="card"><div class="small">This model · fixed 2030 · FTI-comparable net</div><div class="num" id="local-saving"></div><p id="local-saving-note">One-year settlement saving, net of FTI’s forecast-error cost borrowed and scaled. It is neither an NPV nor directly comparable with either FTI headline.</p></article>
+      </div>
+      <div class="callout warn"><strong>FTI’s central insight is a trade-off, not a universal ranking.</strong>More day-ahead congestion strengthens the case for central scheduling; more forecast error and more valuable intraday adjustment strengthen the case for self-scheduling. NESO’s summary also flags implementation complexity and investor-confidence risks.</div>
+    </section>
+
+    <section id="results">
+      <div class="kicker">Local CP30 results</div><h2>Where the apparent central-dispatch saving comes from</h2>
+      <div class="split-title"><p class="intro">Both sides use exactly the same national-price energy line. The difference is between a balancing/constraint bill and central make-whole plus real-time corrections.</p><div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Energy</span><span><i class="dot" style="background:var(--coral)"></i>Constraints</span><span><i class="dot" style="background:var(--amber)"></i>Make-whole</span><span><i class="dot" style="background:var(--teal)"></i>Real time</span></div></div>
+      <div class="card barbox" id="cost-bars"></div>
+      <div class="grid g4" style="margin-top:18px">
+        <article class="card"><div class="small">Self-dispatch redispatch</div><div class="num" id="redispatch"></div><p>Absolute increase plus decrease volume.</p></article>
+        <article class="card"><div class="small">Central real-time correction</div><div class="num" id="realtime-volume"></div><p>Correction after forecast turns into outturn.</p></article>
+        <article class="card"><div class="small">Consumer-cost difference, gross</div><div class="num" id="consumer-diff"></div><p id="consumer-diff-note">Before the borrowed forecast-error charge. A settlement transfer result, not automatically an efficiency gain.</p></article>
+        <article class="card"><div class="small">Domestic generator resource saving</div><div class="num" id="gen-saving"></div><p id="gen-saving-pct"></p></article>
+      </div>
+      <div class="callout red" id="resource-callout"></div>
+
+      <h3 style="margin-top:35px">Under full public ownership, the accounting changes</h3>
+      <p class="intro">The nationalised market case already removes domestic market rent and balancing transfers from the tariff. Central dispatch can therefore add only the change in real resource use; adding the private-market central-dispatch saving again would double count.</p>
+      <div class="grid g3">
+        <article class="card"><div class="small">I1 · public ownership, market dispatch</div><div class="num" id="i1-bill"></div><p>Annual household bill, including VAT.</p></article>
+        <article class="card"><div class="small">I3 · public ownership, central dispatch</div><div class="num" id="i3-bill"></div><p>Same ownership; dispatch institution changes.</p></article>
+        <article class="card"><div class="small">Modelled institution change</div><div class="num" id="i3-change"></div><p id="i3-split"></p></article>
+      </div>
+    </section>
+
+    <section id="pab">
+      <div class="kicker">Settlement design</div><h2>Pay as clear, true pay as bid, and the modelled ceiling</h2>
+      <div class="table-scroll"><table>
+        <thead><tr><th></th><th>Pay as clear</th><th>True pay as bid</th><th>Current model ceiling</th></tr></thead>
+        <tbody>
+          <tr><td>Payment</td><td>Every accepted unit receives the clearing price.</td><td>Each accepted unit receives its own accepted bid.</td><td>Non-CfD accepted GB generation is mechanically paid short-run cost.</td></tr>
+          <tr><td>Bidding response</td><td>Competitive bid tends toward short-run opportunity cost.</td><td>Bid reflects expected clearing price, acceptance risk and market power—not simply cost.</td><td>None: bids and prices are frozen.</td></tr>
+          <tr><td>Dispatch response</td><td>Merit order follows offers.</td><td>Merit order can change as participants shade bids.</td><td>None: accepted quantities are frozen.</td></tr>
+          <tr><td>Fixed-cost recovery</td><td>Inframarginal rent, contracts and capacity mechanisms.</td><td>Bid margin, contracts and/or replacement support.</td><td>Not replaced; the removed margin is treated as if dispensable.</td></tr>
+          <tr><td>CfD treatment</td><td>Reference price affects top-up.</td><td>A lower wholesale receipt can increase the CfD top-up.</td><td>CfD plant excluded, correctly avoiding a false saving.</td></tr>
+          <tr><td>What result means</td><td>Modelled market settlement.</td><td>Requires a behavioural bidding and investment model.</td><td class="poor">An upper bound only.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="grid g3" style="margin-top:18px">
+        <article class="card"><div class="small">Frozen-behaviour revenue removed</div><div class="num" id="pab-system"></div><p>Positive non-CfD wholesale margin above modelled short-run cost.</p></article>
+        <article class="card"><div class="small">Private benchmark bill</div><div class="num" id="pab-private"></div><p>Pay-as-clear private-finance case.</p></article>
+        <article class="card"><div class="small">Ceiling case bill</div><div class="num" id="pab-bill"></div><p><strong id="pab-change"></strong> change including VAT; not a policy forecast.</p></article>
+      </div>
+      <div class="callout warn"><strong>Why “everyone bids cost” is not a stable private-market result</strong>A generator paid only its own short-run cost cannot recover capital or fixed operating cost from the energy market. Rational bidders therefore shade toward the price they expect to clear, or policymakers must supply revenue through CfDs, capacity payments, regulated returns or audited cost recovery. The 2022 REMA consultation consequently linked pay as bid to much deeper changes such as central dispatch and a mandatory pool; the government later declined to take it forward.</div>
+    </section>
+
+    <section id="ownership">
+      <div class="kicker">Institutional fit</div><h2>Which formulation fits which ownership structure?</h2>
+      <p class="intro">“Best suited” here means internally coherent with the ownership and revenue model—not necessarily politically preferred. Any column can be designed differently if the missing incentives and transfers are explicitly replaced.</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Ownership structure</th><th>Most coherent formulation</th><th>Why it fits</th><th>Main caveat</th></tr></thead>
+        <tbody>
+          <tr><td>Predominantly private</td><td><span class="verdict good">Self-dispatch + pay as clear</span></td><td>Preserves transparent opportunity-cost price discovery, investment signals and decentralised intraday response.</td><td>Network constraints are corrected late and may create a large balancing bill. Market-power controls still matter.</td></tr>
+          <tr><td>Private with central scheduler</td><td><span class="verdict conditional">Central dispatch + national price + make-whole</span></td><td>Can reduce avoidable redispatch while private assets retain explicit cost recovery and firm-access compensation.</td><td>Complex counterfactual payments, information burden, incentives and investor confidence. FTI models this combination.</td></tr>
+          <tr><td>Mixed ownership / public minority stake</td><td><span class="verdict good">Pay as clear + portfolio contracts</span></td><td>Private participants retain market signals; the public portfolio can use cost-based CfDs or recycle its own surplus.</td><td>Applying administered cost payment to the whole market would blur public and private obligations.</td></tr>
+          <tr><td>Public new build, private legacy</td><td><span class="verdict good">Market dispatch + cost-based public contracts</span></td><td>Separates the public investment proposition from settlement for legacy private assets. Central dispatch is optional, not implied.</td><td>Contract interactions and reference prices must prevent apparent wholesale savings reappearing as support costs.</td></tr>
+          <tr><td>Fully public system</td><td><span class="verdict good">Central resource-cost dispatch + revenue-requirement tariff</span></td><td>One owner can optimise physical resource cost and recover capital through an explicit tariff; domestic market transfers are internal.</td><td>Requires strong governance, transparent cost auditing and a credible operating objective. Border trades remain external.</td></tr>
+          <tr><td>Any private or mixed system</td><td><span class="verdict poor">Frozen cost-paid “pay-as-bid” ceiling</span></td><td>Useful as a diagnostic upper bound on current inframarginal receipts.</td><td>Not an implementable equilibrium: it omits strategic bids, fixed-cost recovery and investment response.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout"><strong>The key ownership insight</strong>Central dispatch has a smaller incremental financial effect after full nationalisation because the public account already internalises domestic constraint payments and inframarginal rent. Its remaining case is operational efficiency and system security—not capturing the same transfers twice.</div>
+    </section>
+
+    <section id="interpret">
+      <div class="kicker">Reporting discipline</div><h2>What is safe to quote</h2>
+      <div class="grid g3 quotegrid">
+        <article class="card"><h3>Central dispatch</h3><p>“On the fixed CP30 2030 case, FTI-style settlement is £1.448bn below the paired self-dispatch settlement. This is mainly avoided constraint payments, not measured domestic resource efficiency.”</p></article>
+        <article class="card"><h3>Public central dispatch</h3><p>“Within the fully nationalised tariff, switching dispatch institution lowers the modelled bill by £16.21, but roughly £14.86 is an interconnector-price artefact; the domestic component is around £1.35.”</p></article>
+        <article class="card"><h3>Pay-as-bid ceiling</h3><p>“The £3.642bn system / £38.67 household result is a frozen-behaviour upper bound on removable non-CfD margin, not an estimate of pay-as-bid reform.”</p></article>
+      </div>
+      <div class="callout red"><strong>Never add all three numbers.</strong>The central-settlement saving, nationalised-dispatch change and pay-as-bid ceiling answer different counterfactual questions and overlap in the transfers they remove.</div>
+    </section>
+
+    <section id="sources">
+      <div class="kicker">Evidence and reproducibility</div><h2>Sources</h2>
+      <div class="grid g2">
+        <article class="card"><h3>External evidence</h3><ul class="source-list">
+          <li><a href="https://www.neso.energy/document/377331/download">NESO, Quantitative assessment of self- and central scheduling</a> — comparative results and trade-offs.</li>
+          <li><a href="https://www.neso.energy/document/380686/download">FTI Consulting, Executive summary (March 2025)</a> — modelling conclusions.</li>
+          <li><a href="https://www.neso.energy/document/347601/download">FTI Consulting, modelling methodology</a> — scheduling, forecasting and make-whole design.</li>
+          <li><a href="https://www.neso.energy/what-we-do/rema-archive">NESO REMA archive</a> — report set and updates.</li>
+          <li><a href="https://assets.publishing.service.gov.uk/media/62fa281ee90e076cfe3649ed/review-electricity-market-arrangements.pdf">DESNZ, 2022 REMA consultation</a> — pay-as-bid options and design requirements.</li>
+          <li><a href="https://assets.publishing.service.gov.uk/media/640226048fa8f527fe30dbba/review_of_electricity_market_arrangements_summary_of_responses.pdf">DESNZ, REMA summary of responses</a> — decision not to progress pay as bid.</li>
+          <li><a href="https://www.gov.uk/government/publications/review-of-electricity-market-arrangements-rema-summer-update-2025/review-of-electricity-market-arrangements-rema-summer-update-2025-accessible-webpage">DESNZ, REMA summer update 2025</a> — retained national market context.</li>
+        </ul></article>
+        <article class="card"><h3>Local model evidence</h3><ul class="source-list">
+          <li><code>scripts/market/fti_settlement.py</code> — cost recovery, firm access and real-time correction.</li>
+          <li><code>scripts/market/solve_wholesale.py</code> and <code>solve_balancing.py</code> — two-stage scheduling.</li>
+          <li><code>scripts/public_ownership/nationalised_institutions.py</code> — I1/I3 institution comparison.</li>
+          <li><code>scripts/public_ownership/public_account.py</code> — pay-as-bid ceiling.</li>
+          <li><code>resources/market/CP30_FFR_2030_year_central_dispatch_fe_fti_settlement_copperplate.csv</code> — settlement exhibit.</li>
+          <li><code>resources/public_ownership/cp30_2030_cp30_network_nationalised_bill_by_institution.json</code> — ownership/dispatch exhibit.</li>
+        </ul></article>
+      </div>
+      <div class="method"><p class="small">All local values are read into this page by <code>scripts/analysis/build_dispatch_pricing_explainer.py</code>. Currency basis: <span id="price-basis"></span>. Values may not sum exactly because of rounding. External report values retain their stated price bases.</p></div>
+    </section>
+  </main>
+  <footer><div class="wrap">PyPSA-GB dispatch and wholesale-pricing explainer · Generated from model outputs, with external comparisons linked to their primary sources.</div></footer>
+
+  <script>
+    const D=/*__DISPATCH_DATA__*/;
+    const money=(x,d=2)=>`${x<0?'−':''}£${Math.abs(x).toFixed(d)}`;
+    const bn=(x,d=3)=>`${money(x,d)}bn`;
+    const hh=(x)=>`${money(x,2)}`;
+    document.getElementById('stamp').textContent=`${D.meta.scope} · generated ${D.meta.generated}`;
+    document.getElementById('price-basis').textContent=D.meta.price_basis;
+    document.getElementById('local-saving').textContent=bn(D.fti_style.consumer_saving_bn);
+    document.getElementById('local-saving-note').textContent=`One-year settlement saving, net of FTI’s forecast-error cost borrowed and scaled (${bn(D.fti_style.forecast_error_charge_bn)}), which replaces the model’s own real-time correction (${bn(D.fti_style.central_realtime_replaced_bn)}):${money(D.fti_style.consumer_saving_gbp_per_household_ex_vat)} per 3,100 kWh household ex VAT. Settlement money is ${D.meta.settlement_price_basis}. It is neither an NPV nor directly comparable with either FTI headline.`;
+    document.getElementById('redispatch').textContent=`${D.fti_style.market_redispatch_twh.toFixed(1)} TWh`;
+    document.getElementById('realtime-volume').textContent=`${D.fti_style.central_realtime_twh.toFixed(1)} TWh`;
+    document.getElementById('consumer-diff').textContent=bn(D.fti_style.consumer_saving_gross_bn);
+    document.getElementById('consumer-diff-note').textContent=`Before the borrowed forecast-error charge (${money(D.fti_style.consumer_saving_gross_gbp_per_household_ex_vat)} per household ex VAT). The self-dispatch side includes ${bn(D.fti_style.market_retrading_bn)} of interconnector re-trading. Each side is credited its own cap-and-floor pass-through (self-dispatch ${bn(D.fti_style.market_ic_pass_through_bn)}, central ${bn(D.fti_style.central_ic_pass_through_bn)}); the cables’ congestion rent falls by ${bn(D.fti_style.ic_rent_transfer_bn)} under central dispatch (GB halves ${bn(D.fti_style.ic_rent_transfer_gb_half_bn)}, foreign halves ${bn(D.fti_style.ic_rent_transfer_foreign_half_bn)}), a transfer from cable owners that is in neither total. A settlement transfer result, not automatically an efficiency gain.`;
+    document.getElementById('resource-callout').innerHTML=`<strong>Do not label the reported ${bn(D.fti_style.reported_resource_saving_bn)} “resource saving” as domestic efficiency.</strong>It includes the change in the value of cross-border trade as the two institutions trade differently. Generator resource cost changes by ${bn(D.fti_style.generator_resource_saving_bn)} (${D.fti_style.generator_resource_saving_pct.toFixed(2)}%).`;
+    document.getElementById('gen-saving').textContent=bn(D.fti_style.generator_resource_saving_bn);
+    document.getElementById('gen-saving-pct').textContent=`${D.fti_style.generator_resource_saving_pct.toFixed(2)}% of the market generator-resource total.`;
+    document.getElementById('i1-bill').textContent=hh(D.nationalised.market_bill);
+    document.getElementById('i3-bill').textContent=hh(D.nationalised.central_bill);
+    document.getElementById('i3-change').textContent=hh(D.nationalised.headline_change);
+    document.getElementById('i3-split').textContent=`About ${hh(D.nationalised.interconnector_household_change)} is the border-trade term; the rest, ${hh(D.nationalised.domestic_household_change)}, includes FTI’s borrowed forecast-error cost (${hh(D.nationalised.forecast_error_household_inc_vat)}).`;
+    document.getElementById('pab-system').textContent=bn(D.pay_as_bid.ceiling_system_bn);
+    document.getElementById('pab-private').textContent=hh(D.pay_as_bid.private_bill);
+    document.getElementById('pab-bill').textContent=hh(D.pay_as_bid.ceiling_bill);
+    document.getElementById('pab-change').textContent=`${hh(D.pay_as_bid.ceiling_change)}`;
+
+    const max=D.fti_style.market_consumer_bn;
+    const rows=[
+      {name:'Self-dispatch',total:D.fti_style.market_consumer_bn,segs:[['#316b8a',D.fti_style.market_energy_bn,'National-price energy'],['#bd594d',D.fti_style.market_constraint_bn,'Constraint / BM'],['#8f3f36',D.fti_style.market_retrading_bn,'Interconnector re-trading']]},
+      {name:'Central dispatch',total:D.fti_style.central_consumer_bn,segs:[['#316b8a',D.fti_style.central_energy_bn,'National-price energy'],['#d58b28',D.fti_style.central_cost_recovery_bn,'Cost recovery'],['#e1af55',D.fti_style.central_firm_access_bn,'Firm access'],['#0c8078',Math.max(0,D.fti_style.central_realtime_bn),'Real time']]}
+    ];
+    const bars=document.getElementById('cost-bars');
+    rows.forEach(r=>{const line=document.createElement('div');line.className='barrow';const label=document.createElement('div');label.className='barlabel';label.textContent=r.name;const track=document.createElement('div');track.className='track';r.segs.forEach(([colour,val,title])=>{if(val<=0)return;const s=document.createElement('span');s.className='seg';s.style.width=`${val/max*100}%`;s.style.background=colour;s.title=`${title}: ${bn(val)}`;track.appendChild(s)});const val=document.createElement('div');val.className='barval';val.textContent=bn(r.total,2);line.append(label,track,val);bars.appendChild(line)});
+    const rt=document.createElement('p');rt.className='note';rt.textContent=`The central real-time correction is ${bn(D.fti_style.central_realtime_bn)} (negative), so it slightly reduces the central total and is not visible as a positive bar segment.`;bars.appendChild(rt);
+
+    document.querySelectorAll('.tabs button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));button.classList.add('active');document.getElementById(`panel-${button.dataset.panel}`).classList.add('active')}));
+  </script>
+</body>
+</html>

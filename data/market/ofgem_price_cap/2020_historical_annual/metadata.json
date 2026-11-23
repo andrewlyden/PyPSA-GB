@@ -1,0 +1,21 @@
+{
+  "snapshot_id": "2020_annual_ofgem_auto",
+  "effective_from": "2020-01-01",
+  "effective_to": "2020-12-31",
+  "fuel": "electricity",
+  "meter_type": "single_rate",
+  "currency": "GBP nominal",
+  "vat_rate": 0.05,
+  "reference_wholesale_price_gbp_per_mwh": 58.31609074159352,
+  "reference_wholesale_price_description": "Calendar-day weighted published direct-fuel allowance divided by 3.1 MWh. It includes Ofgem's hedging/loss treatment and is not a raw spot price.",
+  "source": {
+    "publisher": "Ofgem",
+    "manifest": "source_provenance.json"
+  },
+  "annualisation": "Calendar-day weighted over 366 days.",
+  "limitations": [
+    "Other Payment Method in Ofgem's electricity model is normalised as direct_debit for this existing consumer-bill interface.",
+    "The annual compatibility table is calendar-day weighted; use period_tariffs.csv for an actual dated household replay.",
+    "The component ledger preserves the pre-levelised stack and records electricity base levelisation as an explicit adjustment."
+  ]
+}

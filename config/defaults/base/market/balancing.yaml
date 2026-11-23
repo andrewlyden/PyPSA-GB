@@ -1,0 +1,538 @@
+#  Stage 2: Balancing Mechanism
+# network_delivery: a delayed-network case applied to the built network in the balancing stage only
+# (remove_components, revert_appendix_b, ...; scripts/market/network_delivery.py). The CP30 2030 study
+# defines no_acceleration, seven_late and no_upgrades. null = as built.
+# A case may set rehome_stranded_max_mw (MW; code default DEFAULT_REHOME_STRANDED_MAX_MW, 50; 0 turns
+# it off): when a revert strands a pocket of new Appendix B buses with no load, store or live link and
+# at most this much generation plus storage, the pocket is re-homed to the nearest surviving bus
+# instead of keeping its circuit.
+network_delivery: null
+# temporal_resolution_hours: the BM's time-varying inputs (wind and solar availability, demand,
+# ratings, costs) held at their block means over blocks of this many hours, ramp limits x hours
+# (capped at 1), snapshots unchanged, so the BM's held positions meet block-mean wind and demand
+# when Stage 1 runs in blocks (market.wholesale.temporal_resolution_hours). 1 = hourly inputs.
+# scripts/market/temporal_resolution.py.
+temporal_resolution_hours: 1
+# Turn-down allocation (scripts/market/turn_down_allocation.py, rules/turn_down_allocation.smk).
+# Read by the re-pricing and bill rules only, never by a solve. Every BM month is reported on both
+# bases: cheapest_first (as solved: the LP turns down the cheapest bids first) and pro_rata_zonal
+# (each NESO CP.08 zone's hourly wind turn-down re-shared pro rata to Stage 1 output, each unit at its
+# own bid, as NESO's CP.08 shares it). mode (cheapest_first | pro_rata_zonal | closest_to_neso) picks
+# the headline basis of a family and, through its network's market family, of that network's bill
+# and ownership groups; closest_to_neso takes the basis whose NESO-comparable cost is nearer NESO's
+# published cost for the network (GBP m: 3,570 CP30 network, 7,790 no_acceleration, 10,240
+# seven_late, 12,700 no_upgrades; data/CP30/validation_references/neso_balancing_benchmarks.csv).
+turn_down_allocation:
+  mode: closest_to_neso
+  technologies: [wind_onshore, wind_offshore]
+  zone_basis: neso_cp08
+  check_tolerance_rel: 0.001          # rebuilt bids must reproduce the solve's wind bid cost (share of gross)
+  check_tolerance_abs_gbp: 1000.0
+# Derived bids for thermal plant (net_saving | legacy_cost). net_saving: NESO receives the fuel a
+# unit saves when it turns down (bid = -(mc - discount x |mc|), ESO-cost convention). legacy_cost
+# charges it as a cost (+mc x (1 - discount)), so gas is never turned down.
+derived_bid_convention: net_saving
+# Electrolysers and hydrogen turbines are anchored to their Stage 1 position and priced at the
+# hydrogen value Stage 1 implies (the GB_H2 bus price) instead of moving for free.
+# offer_markup / bid_discount: null = default_offer_markup / default_bid_discount below.
+hydrogen_links:
+  enabled: true
+  carriers: [electrolysis, H2_turbine]
+  bus_carriers: [H2_gas, H2, hydrogen]
+  offer_markup: null
+  bid_discount: null
+  # hold_carriers are held at their Stage 1 position (not priced), so the carried hydrogen store
+  # moves only with the electrolysers. The electrolysers may run harder to absorb constrained wind,
+  # but the month's hydrogen matches Stage 1: each window must end with the store between its
+  # Stage 1 level and Stage 1 plus what the rest of the month can still take back by turning
+  # electrolysers down, and the solve period ends at Stage 1's month-end level
+  # +/- store_month_end_tolerance_pu x e_nom (share of e_nom). Soft, priced like storage_end_soc
+  # (objective only, stripped from the BM cost). Must match
+  # solve_balancing.DEFAULT_HELD_HYDROGEN_CARRIERS and DEFAULT_STORE_MONTH_END_TOLERANCE_PU;
+  # hold_carriers [] prices turbines.
+  hold_carriers: [H2_turbine]
+  store_month_end_tolerance_pu: 0.001
+# Dispatch mode:
+#   "full_period"   - Solve entire period in one LP (code default)
+#   "rolling"       - Solve in rolling windows, each anchored to wholesale
+#     window_hours=1 gives per-timestep BM.
+#     window_hours=24 gives per-day BM (better for storage SoC tracking).
+#     Storage SoC carries between windows automatically.
+mode: "rolling"
+window_hours: 24
+# min_output_energy_budget (not set here; drop | hold): "drop" (code default) zeroes the hourly
+# floor of the thermal_availability_factors.min_output_energy_window_hours carriers in the BM,
+# leaving their energy to the Stage 1 anchor; "hold" keeps each unit's Stage 1 energy budget per
+# block in the BM, timing free (scripts/market/market_utils.py prepare_bm_min_output_energy_budget).
+# The CP30 2030 study's central-dispatch families set hold.
+# Minimum storage dispatch cost (GBP/MWh discharged) priced into the BM objective on gross
+# p_dispatch. The BM replaces PyPSA's objective with the redispatch cost, which on its own leaves
+# the charge/discharge split behind an anchored net position free; a barrier solve without
+# crossover then charges and discharges the same unit at once. Twin of
+# market.wholesale.storage_marginal_cost_floor; 0 disables.
+storage_marginal_cost_floor: 1.0
+# Least cost (GBP per MWh destroyed) of a storage unit charging and discharging at once. With a
+# negative storage bid (the unit pays to charge) a simultaneous pair costs only
+# (premium + floor) x eta_rt per MWh charged while destroying (1 - eta_rt), so round_trip offers
+# are raised where needed to keep that above this guard. 250 = the largest turn-down bid churn
+# could displace (Investment Contract offshore CfD, strike 200.84 at a zero reference) plus 25%.
+# Must match market_utils.DEFAULT_STORAGE_CHURN_GUARD.
+storage_churn_guard_gbp_per_mwh: 250.0
+# Reference for round_trip storage bids (stage1_price | stage1_daily_mean | fixed). stage1_price:
+# paid bid = Stage 1 price - carrier bid_margin, as GB storage bids track the market; fixed: the
+# carrier's bid_price. See the storage carrier_overrides.
+storage_bid_reference: stage1_price
+# Objective-only price (GBP/MWh) per MWh burnt when the BM moves a storage unit on the leg opposing
+# its Stage 1 direction (discharge in a Stage 1 charging hour, or charge in a discharging hour):
+# guard x (1/eta_dispatch - eta_store) per MWh on that leg, stripped from the reported BM cost.
+# Without it "discharge more" and "charge less" tie at the same offer and the barrier solve splits
+# them, burning energy. 250 matches storage_churn_guard_gbp_per_mwh, so churning is always dearer
+# than any wind bid it would displace; it also suppresses some genuine same-hour reversals.
+# Must match solve_balancing.DEFAULT_STORAGE_REVERSE_LEG_GUARD; 0 disables.
+storage_reverse_leg_guard_gbp_per_mwh: 250.0
+# End-of-window state of charge (rolling BM, and the end of a full-period solve): each
+# participating storage unit should end the window with at least the state of charge Stage 1
+# scheduled at that snapshot (rebuilt from the Stage 1 net storage schedule). Soft: a shortfall
+# is allowed at penalty_gbp_per_mwh (GBP per MWh of stored energy), objective-only and stripped
+# from the reported BM cost. Without it a window is free to empty storage at its end, because the
+# next window's anchors never ask for the energy back. At 200 the BM draws storage below the
+# Stage 1 path only when the displaced action is exceptionally dear (the penalty / eta_dispatch
+# exceeds the margin between storage offers and the thermal offers they could displace); the
+# slack stays for feasibility. In the solve period's last window the target is the Stage 1
+# month-end state of charge, which market.storage_soc holds at or above the starting level.
+storage_end_soc:
+  enabled: true
+  penalty_gbp_per_mwh: 200.0
+# How bid/offer prices are determined:
+#   "auto"    - Prefer ELEXON for historical scenarios when files exist, else derived
+#   "derived" - Calculated from generator marginal_cost with markup/discount
+#   "elexon"  - Actual ELEXON BMRS bid/offer data (historical scenarios only)
+#   "csv"     - Load from external CSV files (custom/research use)
+bid_offer_source: "auto"
+
+# Pricing basis (bid_offer | at_cost). bid_offer: units are priced as below (markups, discounts,
+# carrier_overrides). at_cost: every unit offers and bids at its marginal cost; the markups and
+# discounts are read as zero and every carrier_overrides entry as markup mode at zero (offer_price
+# and bid_price ignored), here and in the counter-trade's foreign_plant_multipliers. Set by the
+# central-dispatch overlay (config/defaults/dispatch/central.yaml). scripts/market/pricing_basis.py.
+pricing_basis: "bid_offer"
+
+# Default fractional markup/discount applied to marginal_cost
+# offer_price = marginal_cost * (1 + default_offer_markup)
+# bid_price   = marginal_cost * (1 - default_bid_discount)
+# No floors or ceilings are applied to BM bid/offer prices.
+default_offer_markup: 0.10            # 10% above marginal_cost for offers (increase output)
+default_bid_discount: 0.10            # 10% below marginal_cost for bids (decrease output)
+
+#  Carrier-specific bid/offer pricing models
+# Pricing modes per carrier:
+#   "markup"   (default): offer = mc x (1 + offer_markup), bid = mc x (1 - bid_discount)
+#   "absolute": offer = offer_price, bid = bid_price (fixed GBP/MWh values)
+#   "round_trip": storage only (see the storage carriers below)
+#
+# Absolute prices capture strategic BM bidding that markup models miss:
+#   - Nuclear bids very high to avoid being turned down (restart cost)
+#   - Wind/solar bids reflect lost subsidy value (ROC/CfD)
+#   - CCGTs in constrained zones bid well above MC
+#
+# Bid prices are in "ESO cost" convention: positive = costs ESO to decrease.
+carrier_overrides:
+  nuclear:
+    mode: "absolute"
+    offer_price: 999.0                # Nuclear almost never offers up in BM
+    bid_price: 150.0                  # Very expensive to turn down (restart cost)
+  CCGT:
+    mode: "markup"
+    offer_markup: 0.85                # ELEXON median offer/MC ratio about 1.86
+    bid_discount: 0.10                # Moderate cost to turn down
+  OCGT:
+    mode: "markup"
+    offer_markup: 1.30                # ELEXON median offer/MC ratio about 2.30
+    bid_discount: 0.10
+  gas_engine:                         # peaking plant, priced as OCGT
+    mode: "markup"
+    offer_markup: 1.30
+    bid_discount: 0.10
+  coal:
+    mode: "absolute"
+    offer_price: 200.0                # ELEXON coal offers highly strategic (median 1136)
+    bid_price: 150.0                  # Coal slow to restart: high bid to reduce
+  oil:
+    mode: "markup"
+    offer_markup: 0.20
+    bid_discount: 0.10
+  biomass:
+    mode: "absolute"
+    offer_price: 120.0                # Biomass CHP offer price
+    bid_price: 80.0                   # CHP must-run: expensive to turn down
+  # The renewable bid prices below are a blended subsidy averaged over supported and unsupported
+  # plant. A generator that holds a CfD or a ROC is priced on its own contract instead when
+  # support pricing is on (CfD by support.bm_bids.contract_value_bids, ROC by banding x buyout),
+  # and contract_value_bids.merchant.bid_price overrides them for merchant plant when enabled.
+  # They apply in full to any scenario with support pricing switched off.
+  wind_onshore:
+    mode: "absolute"
+    offer_price: 0.0                  # Cannot offer more than available
+    bid_price: 25.0                   # ELEXON median about 25
+  wind_offshore:
+    mode: "absolute"
+    offer_price: 0.0
+    # Weighted average: ~40% ROC (2.0 x 50 = 100) + ~60% CfD (avg ~80)
+    # For historical scenarios with legacy high-strike projects
+    bid_price: 90.0                   # Higher than onshore due to CfD strikes + higher ROC
+  solar_pv:
+    mode: "absolute"
+    offer_price: 0.0
+    bid_price: 55.0                   # Lost ROC subsidy (1.2 x 50 buyout ~ 60)
+  embedded_solar:
+    mode: "absolute"
+    offer_price: 0.0
+    bid_price: 30.0                   # Embedded solar: lower subsidy exposure
+  embedded_wind:
+    mode: "absolute"
+    offer_price: 0.0
+    bid_price: 40.0
+  large_hydro:
+    mode: "absolute"
+    offer_price: 50.0                 # ELEXON median about 51
+    bid_price: 5.0                    # Water is free: low cost to curtail
+  small_hydro:
+    mode: "absolute"
+    offer_price: 0.0
+    bid_price: 30.0                   # Small hydro may have FiT/ROC
+  waste_to_energy:
+    mode: "absolute"
+    offer_price: 120.0
+    bid_price: 80.0                   # Must-run due to waste contracts
+  landfill_gas:
+    mode: "absolute"
+    offer_price: 100.0
+    bid_price: 60.0                   # Must-run (gas flaring alternative)
+  sewage_gas:
+    mode: "absolute"
+    offer_price: 100.0
+    bid_price: 60.0
+  biogas:
+    mode: "absolute"
+    offer_price: 110.0
+    bid_price: 70.0
+  advanced_biofuel:
+    mode: "absolute"
+    offer_price: 130.0
+    bid_price: 80.0
+  #  Storage carriers
+  # Storage units in BM: positive net dispatch = discharging (offers up), negative net dispatch =
+  # charging (bids down from wholesale position).
+  # Storage BM prices are round-trip consistent. For mode "round_trip" the configured prices are
+  # what the unit PAYS NESO per MWh it charges more or discharges less (the raw ELEXON sign; Elexon:
+  # "Bid prices represent the amount paid to the ESO from Participants"). The code negates that into
+  # the ESO-cost convention used everywhere else here. Per snapshot, with
+  # market.balancing.storage_bid_reference: stage1_price and lambda the Stage 1 clearing price:
+  #   paid  = lambda - bid_margin              (bid = -paid, ESO-cost)
+  #   offer = paid / (efficiency_store * efficiency_dispatch) + offer_premium
+  # so a round trip costs NESO its losses plus the premium (all GBP/MWh). bid_price is the fixed
+  # paid bid used when storage_bid_reference is fixed or no Stage 1 price exists
+  # (offer = bid_price / eta_rt + offer_premium).
+  # Levels from 2024 ELEXON BOD (82 battery BMUs, 16 pumped storage BMUs, |price| < 2000) against
+  # the hourly MID price: battery bids below MID in 98.6% of periods, median MID - 44, offers median
+  # MID + 28; pumped storage bids median MID - 79, offers MID + 50. offer_premium is set so the offer
+  # lands there at the 2024 mean MID (71): battery (71 - 44) / 0.846 + 67 = 99, pumped storage
+  # (71 - 79) / 0.757 + 131 = 120. The premium also keeps churn uneconomic (storage_churn_guard
+  # above): premium x eta_rt / (1 - eta_rt) = 369 GBP per MWh destroyed for a battery, 408 for
+  # pumped storage, 308 for LDES at 0.70; and the cheapest storage offer stays above the most any
+  # storage unit pays to charge, which the code checks per snapshot.
+  Pumped Storage Hydroelectricity:
+    mode: "round_trip"
+    bid_margin: 79.0                  # 2024 PSH bid median MID - 79
+    bid_price: 10.0                   # fixed fallback (2024 PSH bids ~0)
+    offer_premium: 131.0
+  pumped_hydro:
+    mode: "round_trip"
+    bid_margin: 79.0
+    bid_price: 10.0
+    offer_premium: 131.0
+  battery:
+    mode: "round_trip"
+    bid_margin: 44.0                  # 2024 battery bid median MID - 44
+    bid_price: 40.0                   # fixed fallback (2024 non-zero bid median)
+    offer_premium: 67.0
+  Battery:
+    mode: "round_trip"
+    bid_margin: 44.0
+    bid_price: 40.0
+    offer_premium: 67.0
+  Domestic Battery:
+    mode: "round_trip"                # aggregated domestic battery, priced as grid batteries
+    bid_margin: 44.0
+    bid_price: 40.0
+    offer_premium: 67.0
+  LAES:
+    # CP30 long-duration storage (mostly existing pumped hydro, round trip 0.70 in
+    # storage_round_trip_efficiencies.LDES): priced like pumped storage with its own round trip.
+    # Offer (71 - 79) / 0.70 + 132 = 121.
+    mode: "round_trip"
+    bid_margin: 79.0
+    bid_price: 10.0
+    offer_premium: 132.0
+  CAES:
+    mode: "round_trip"
+    bid_margin: 79.0
+    bid_price: 10.0
+    offer_premium: 132.0
+
+#  Marginal cost floors (GBP/MWh)
+# Safety net for generators that end up with zero MC after the cost application pipeline.
+# Applied in BM pre-solve only. Zero-cost dispatchable generators create unrealistic dispatch
+# (dispatched first, never curtailed). These floors do NOT override positive MCs.
+mc_floors:
+  biogas: 55.0                          # Biogas CHP fuel + O&M
+  landfill_gas: 40.0                    # Landfill gas O&M
+  sewage_gas: 45.0                      # Sewage gas O&M
+  waste_to_energy: 30.0                 # Gate fee offsets some cost
+  advanced_biofuel: 60.0                # Advanced biofuel fuel cost
+  oil: 90.0                             # Oil-fired plant fuel cost
+  OCGT: 80.0                            # Gas turbine fuel cost
+  CCGT: 50.0                            # Combined cycle fuel cost
+  coal: 40.0                            # Coal fuel cost
+
+# Linear proxy for unit commitment in the real-time stage (off by default;
+# scripts/market/commitment_proxy.py). Keyed on the Stage 1 schedule: a thermal unit the schedule
+# left off can be started in real time only with start_premium_gbp_mwh (GBP/MWh) added to its
+# offer, and one it ran at or above min_stable_fraction (share of p_nom) cannot be taken below it,
+# so renewables are spilled instead. committed_threshold_mw: Stage 1 output (MW) at or above which
+# a unit counts as committed.
+# This gives forecast error the cost a real operator faces without a mixed-integer commitment.
+# Applies to whichever institution enables it.
+commitment_proxy:
+  enabled: false
+  carriers: [CCGT, OCGT, gas_engine, coal, oil, biomass, CHP, waste_to_energy, CCS Biomass, biogas, landfill_gas, sewage_gas, advanced_biofuel]
+  min_stable_fraction: 0.4
+  start_premium_gbp_mwh: 50.0
+  committed_threshold_mw: 1.0
+# Fix interconnectors at their wholesale position in the BM solve
+# true  = ICs cannot be redispatched
+# false = ICs participate in BM (legacy spelling of interconnector_retrading: true)
+fix_interconnectors: true
+# Explicit BM re-trading switch. null defers to fix_interconnectors;
+# true allows cross-border Links to depart from day-ahead positions.
+interconnector_retrading: null
+# Price and limit of re-trading a cross-border link in the BM (applies only when re-trading is on;
+# scripts/market/interconnector_counter_trade.py, whose DEFAULT_COUNTER_TRADE must match).
+#   premium_gbp_per_mwh: paid per MWh of |BM flow - Stage 1 flow| on top of the IC1 trade-value
+#     difference; FTI for Ofgem 2023 App. A1 (pp.276-279): 130 in 2025, 100 from 2030 (~foreign
+#     CCGT SRMC). A real payment: in the BM objective and in interconnector_retrading_cost_GBP (NESO
+#     counter-trades are BSAD trades recovered through BSUoS), never in constraint_costs.csv (GB
+#     units' bids and offers only).
+#   max_deviation_share[_by_country]: most a link may move from Stage 1, as a share of p_nom, each
+#     direction (2.0 = full export to full import); LCP Delta Mar 2026 pp.47-48 counterfactual flow
+#     limits. Countries not listed take max_deviation_share (null = unlimited).
+#   min_spread_gbp_per_mwh / min_spread_rule (stage1_gate | premium_floor | none): LCP's minimum
+#     trader spread. stage1_gate = in an hour whose Stage 1 |GB price - foreign price| (ask if
+#     importing, bid if exporting) is below it, no move that INCREASES the cable's |flow|; moves back
+#     towards zero (network-forced reductions) stay allowed inside the flow limit, up to the Stage 1
+#     flow; premium_floor = premium is at least the spread; none = ignore.
+#   The band always admits the movement the BM's own availability forces (links_t.p_min_pu /
+#   p_max_pu outages). It is SOFT: movement beyond it is allowed at
+#   beyond_limit_penalty_gbp_per_mwh (objective-only, stripped from the BM cost, logged as a
+#   warning; the premium is still paid), because a hard band is infeasible whenever the network
+#   cannot carry a cable's Stage 1 flow. 300 (plus the premium the move also pays) sits above every
+#   real bid and offer in the CP30 BM and far below VoLL (6000); only oil peakers and the nuclear
+#   override (999) offer above it. null = hard band.
+#   Further keys, not set here (absent = the DEFAULT_COUNTER_TRADE values):
+#   offer_pricing / bid_pricing (additive | all_in; default additive): how the premium prices a move
+#     that raises GB's import position (offer: less export or more import) and one that lowers it
+#     (bid). additive = trade-value change + premium. all_in = the premium is the whole price of
+#     the move: a move costs max(premium, its marginal trade value at Stage 1) per MWh. FTI prices
+#     the interconnector BM offer and bid as "Cost of reversing flow EUR 130 / EUR 100" with no
+#     foreign marginal value beside it (FTI 2023 Table 5-5, p.118; Fig. A1-1, p.277); NESO's CP30
+#     redispatch replaces constrained wind "most frequently" by reducing exports, and runs gas only
+#     "when prices are higher in the connected markets" (CP30 Annex 2, p.5).
+#   bid_premium_gbp_per_mwh: the premium on bids (down moves) when it differs from the offer
+#     premium; null = premium_gbp_per_mwh.
+interconnector_counter_trade:
+  enabled: true
+  premium_gbp_per_mwh: 100.0
+  max_deviation_share: 0.45
+  max_deviation_share_by_country:
+    Belgium: 0.33
+    Denmark: 0.22
+    France: 0.45
+    Germany: 0.22
+    Netherlands: 0.30
+    Ireland: 0.0
+    Northern Ireland: 0.0              # SEM, as LCP's Ireland
+    Norway: 0.0
+  min_spread_gbp_per_mwh: 21.0
+  min_spread_rule: stage1_gate
+  beyond_limit_penalty_gbp_per_mwh: 300.0
+  # Foreign-plant uplift (LTMNC 2017 section 12, eqs 6 and 1: the spread plus the foreign marginal
+  # plant's offer or bid, with GB plant's multipliers). ESO-cost convention, both raise NESO's cost:
+  #   offer move (import up / export down): + offer_share x its foreign value,
+  #     i.e. (1 + s_o) x m_up, as gas offers at (1 + offer_markup) x SRMC;
+  #   bid move (import down / export up): + bid_share x its foreign value, i.e.
+  #     NESO receives (1 - s_b) x |m_down|, as a gas bid hands back
+  #     (1 - bid_discount) x SRMC.
+  # foreign_plant_multipliers: null (use the two shares) | gb_gas (the scenario's CCGT
+  #   carrier_overrides offer_markup and bid_discount; not with the shares).
+  # foreign_uplift_scale multiplies both (the calibration lever; 1 = as set).
+  # Each effective share lies in [0, 1]. The retired foreign_uplift_share (one share on both
+  # sides) is still read as an alias, alone.
+  foreign_plant_multipliers: null
+  foreign_offer_uplift_share: 0.0
+  foreign_bid_uplift_share: 0.0
+  foreign_uplift_scale: 1.0
+  # No wheeling: in each hour the counter-trades move GB's supply one way only, never up on one
+  # cable and down on another (a path round a GB boundary through Europe). Formulation: binary =
+  # exact, one direction binary per hour (a MILP); hull = its LP relaxation (removes little).
+  no_wheeling: false
+  no_wheeling_formulation: binary
+  # The binary form's relative MIP gap (null = the solver's default, Gurobi 1e-4). The objective
+  # carries the Stage 1 IC valuation (~ -4 m GBP a day), so 1e-3 is ~GBP 4,000 a day.
+  no_wheeling_mip_gap: null
+
+# Optional BM participation filter.
+# Use this when you do NOT want the whole PyPSA fleet to behave like BM units.
+# Modes:
+#   generators.mode / storage_units.mode:
+#     "all"           - every asset can redispatch (code default)
+#     "none"          - no assets in that class participate
+#     "elexon_mapped" - only directly BMU-mapped generators participate
+# Filters are then applied on top:
+#   min_p_nom_mw, include_carriers, exclude_carriers, include_names, exclude_names
+# Behaviours for non-participants:
+#   "priced_out"       - keep feasible emergency redispatch, but at penalty prices (GBP/MWh)
+#   "fallback_priced"  - keep feasible redispatch at the normal derived/ELEXON fallback prices
+#   "fixed"            - lock at wholesale position (more realistic, but can be infeasible)
+participation:
+  generators:
+    mode: "all"
+    behavior: "priced_out"
+    min_p_nom_mw: 1.0
+    include_carriers: []
+    # CHP, EfW and biogas are out of the BM: with their floors as daily energy budgets the BM
+    # would use their fuel pay-back as cheap turn-down instead of paid wind curtailment. Most GB
+    # CHP and EfW is embedded, not BM-registered, and NESO's CP30 'other' bids total 2.2 TWh.
+    # Priced out, not fixed, so the BM stays feasible. Biomass stays in.
+    exclude_carriers: ["load_shedding", "embedded_solar", "embedded_wind", "EU_import",
+                       "CHP", "waste_to_energy", "biogas"]
+    # Carriers held at their Stage 1 position in the BM whatever the behaviour (not BM units).
+    hold_carriers: []
+    include_names: []
+    exclude_names: []
+    penalty_offer_price: 6000.0
+    penalty_bid_price: 6000.0
+  storage_units:
+    mode: "all"
+    behavior: "priced_out"
+    min_p_nom_mw: 1.0
+    include_carriers: []
+    exclude_carriers: []
+    include_names: []
+    exclude_names: []
+    penalty_offer_price: 5000.0
+    penalty_bid_price: 5000.0
+    # Consumer flexibility (EV smart charging, V2G, heat, DSR: demand_carriers.CONSUMER_FLEX_CARRIERS)
+    # is held at its Stage 1 schedule in the BM whatever the lists above say; false lets it bid.
+    hold_consumer_flexibility: true
+
+#  ELEXON source config (only used when bid_offer_source: "elexon")
+# Empirical historical-to-future source. Historic ELEXON prices are reduced
+# to residuals against historic marginal cost, then re-anchored to the
+# target CP30/FES network's marginal costs and subsidy treatment.
+future_bid_stack:
+  calibration_scenarios: []          # Historical ELEXON scenarios to reuse
+  parameters_file: null               # Supplied automatically by the workflow
+  case: "central"                     # "low", "central", or "high" residual quantile
+  residual_quantiles: [0.25, 0.50, 0.75]
+  max_abs_historic_price: 2000.0      # Exclude defensive/sentinel BOD prices
+  min_samples: 3
+  offer_floor: -1000.0
+  bid_floor: -1000.0
+  preserve_absolute_overrides: true   # Nuclear etc. retain explicit future treatment
+
+elexon:
+  # {scenario} is expanded at runtime: BOD data stored per-scenario, separate
+  # from shared calibration caches in resources/market/elexon/
+  data_dir: "resources/market/{scenario}/elexon"  # Where ELEXON BOD CSVs are stored
+  raw_bod_cache_dir: "data/market/elexon_bod" # Persistent raw daily BOD cache, shared across scenarios
+  processed_bod_cache_dir: "data/market/elexon_processed" # Reusable processed range cache shared across scenarios
+  raw_bod_cache_format: "parquet" # Prefer compact, faster daily BOD cache files; legacy CSV is still read
+  convert_legacy_csv: true        # Write Parquet beside existing CSV daily caches after reading them
+  parallel_days: 4                # Parallel daily aggregation when all raw BOD days are already cached
+  bmu_mapping: "resources/generators/{scenario}_bmu_mapping.csv" # BMU ID to generator name mapping
+  # Optional local Power Station Dictionary crosswalk used when building
+  # the BMU mapping. If the file exists, explicit BMU rows and station
+  # aliases are used ahead of prefix heuristics.
+  power_station_dictionary: "data/generators/power_station_dictionary_bmu_crosswalk.csv"
+  fallback: "carrier_average"        # For unmatched generators: "carrier_average", "derived", or "zero"
+  storage_price_aggregation: "median"  # Robust cross-BMU aggregation for storage traces
+  price_ladders:
+    enabled: false                   # Opt-in: use BOD price/volume blocks in BM solve
+    offer_file: "elexon_offer_ladders.csv"
+    bid_file: "elexon_bid_ladders.csv"
+    max_blocks_per_side: 10          # Keep cheapest N-1 blocks, aggregate the tail into block N
+    missing_hour_fallback: true      # Use the averaged ELEXON price if a mapped BMU has no ladder row in an hour
+    fallback_volume_mw: 1000000.0    # Non-binding fallback block volume; inc/dec variables remain physically bounded
+  storage_bmu_prefixes:
+    Pumped Storage Hydroelectricity:
+      - "T_CRUA"
+      - "T_CRUAD"
+      - "T_FOYE"
+      - "T_FOYED"
+      - "T_DINO"
+      - "T_FFES"
+      - "T_FFESST"
+    pumped_hydro:
+      - "T_CRUA"
+      - "T_CRUAD"
+      - "T_FOYE"
+      - "T_FOYED"
+      - "T_DINO"
+      - "T_FFES"
+      - "T_FFESST"
+
+#  CSV source config (only used when bid_offer_source: "csv")
+csv:
+  offer_file: null                   # Path to offer prices CSV (generator x snapshot)
+  bid_file: null                     # Path to bid prices CSV (generator x snapshot)
+
+#  Calibration scorecard (historical ELEXON scenarios only)
+# validate_bm_calibration rule compares per-carrier model effective
+# bid/offer prices against ELEXON BOD medians, and model redispatch
+# volumes against BOALF unflagged (constraint-only) volumes. Carriers
+# with non-trivial volume that drift beyond `tolerance` are flagged.
+calibration:
+  tolerance: 0.20                    # |ratio - 1| that flags a carrier (0.20 = 20%)
+  min_volume_mwh: 1000.0             # Carriers below this on either side are skipped
+  fail_on_regression: false          # When true, the rule errors out on any flagged carrier
+
+# Audit BMU coverage and configured eligibility separately from prices and
+# accepted volumes. These broad latitude bands are reporting groups, not
+# ESO constraint boundaries.
+participation_audit:
+  enabled: true
+  latitude_bands:
+    - {name: "Scotland", min_lat: 55.5}
+    - {name: "North_England_Wales", min_lat: 53.5}
+    - {name: "Midlands", min_lat: 51.5}
+    - {name: "South_England_Wales", min_lat: -90.0}
+
+#  Fitted fallback from ELEXON (historical scenarios)
+# When enabled, fallback pricing for generators without a direct BMU
+# match is derived from a per-carrier linear fit against ELEXON-matched
+# BMUs (offer = a x MC + b, bid = c x MC + d; scripts/market/bm_elexon_fit.py).
+# This preserves intra-carrier MC dispersion that the carrier-median fallback collapses.
+#
+# Falls back to the configured `elexon.fallback` (carrier_average/
+# derived/zero) when a carrier has fewer than `min_matched_gens`
+# ELEXON matches or the fit R^2 is below `min_r2`.
+#
+# `time_varying_shape` overlays the carrier-mean-normalised ELEXON
+# hourly profile on unmatched generators, so a generator gets the same
+# peak-vs-offpeak shape as the matched fleet in its carrier.
+fitted_fallback:
+  enabled: false                     # Opt-in; leave off until validated per-scenario
+  min_matched_gens: 3                # Minimum ELEXON-matched gens for a carrier fit
+  min_r2: 0.1                        # R^2 threshold below which the fit is discarded
+  max_price: 500.0                   # Same sanity cap as carrier_average (GBP/MWh)
+  time_varying_shape: true           # Apply carrier-mean-normalised hourly ELEXON shape

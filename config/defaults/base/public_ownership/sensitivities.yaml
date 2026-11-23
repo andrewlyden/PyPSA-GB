@@ -1,0 +1,482 @@
+# Public-ownership sensitivities: reported as a range around each scenario, the scenario being the headline.
+# Snakemake runs every one through the post-solve rules from one case list, reference_runs.expanded_cases().
+#
+# Structural axes: each expands one at a time from every scenario where the lever bites (bounding_pair below is
+# false, so there is no all-alternatives bounding case; `bounds` gives the best and worst cases).
+structural:
+  - pre_2025_cfd_capacity      # the state also owns and re-prices pre-2025-award CfD capacity
+  # auction_clearing is the treasury_first preset's; at_cost on P1 is the named strike_at_cost_over_life.
+  - cfd_strike_basis: [financing_saving_only]
+  - cfd_amortisation           # spread over economic life, not the contract term (20 years for AR7+)
+  - route_booking              # Capacity Market and CCS savings booked on the bill
+  - new_build_contracts        # merchant new build contracted at cost in every case (comparator change)
+  - ldes_floor_basis           # the LDES floor at technology WACC (comparator change)
+# One lever at a time, no bounding pair. A bare name takes every other value of the lever; {name: [values]} takes
+# those values only. Retired levers and values fail with a pointer (levers.RETIRED_LEVERS / RETIRED_VALUES).
+one_at_a_time:
+  - private_wacc_basis         # Fixed TMR (CEPA / UKRN), the financing workbook's co-equal ERP convention
+  - public_rate_basis          # the cash rate at the PWLB HRA, certainty and standard margins, and the gilt flat
+  # Meeting notes: the public-risk (gilts, gilts + systemic risk premium) and gilt-response
+  # (A no change, B rises with debt to GDP, C follows CPI) sensitivities run on Scenario 3 only: named cases
+  # fully_nationalised_market_value_systematic_premium and _yield_b below. C is pending the workbook's
+  # input-output model (v6.2 Gilt-Adjusted WACCs section 5).
+  - legacy_fleet               # acquire renewables and nuclear; or plus thermal and storage
+  - networks                   # the wires (RAV) acquired, against each base's private wires
+  - state_overhead             # the state's holding-company cost at 1 and 8 GBP/kW/yr
+  - wholesale_pricing          # the pay-as-bid ceiling as a bounding line
+  - balancing_bids             # P2's state-owned share bids at cost in the BM, on its own run group
+  - legacy_levy_funding        # background: domestic RO, FiT and WHD to general taxation, every case alike
+  - beccs_removal_funding      # background: BECCS's carbon-removal leg levied on bills, every case alike
+  - auction_margin             # the calibrated CfD cohorts' margin at none (0) and high (10%), every case
+  - self_insurance             # state-owned plant's insurance saving at none (0) and high (50%)
+  - capacity_procurement       # existing capacity on cost-based contracts, not the Capacity Market (P2; P3 named below)
+# Named multi-lever positions. "extends" inherits another named sensitivity's settings.
+named:
+  # Conservative readings of P1 and P2: the institution alone, nothing else changed.
+  conservative_stake:
+    scenario: public_control
+    networks: private
+    route_booking: sensitivity_only
+    surplus_recycling: public_cfd_at_cost
+    shortfall_funding: levy_on_eligible_supply
+  conservative_developer:
+    scenario: public_ownership
+    cfd_strike_basis: financing_saving_only
+    cfd_amortisation: contract_term
+    route_booking: sensitivity_only
+    # The surplus recycled through the at-cost CfD and a shortfall levied on eligible supply (P2's base rebates gross).
+    surplus_recycling: public_cfd_at_cost
+    shortfall_funding: levy_on_eligible_supply
+  # The acquired plant's CfD top-up and ROC income cancelled rather than honoured: the purchase price excludes those
+  # streams and the former owners are paid their value at their own WACC, on the bill or by the Exchequer. Tariff
+  # cases, like the legacy_acquired cases they vary. Full nationalisation is exempt (parse_sensitivities refuses it).
+  legacy_acquired_contracts_cancelled_on_bills:
+    scenario: public_ownership
+    legacy_fleet: acquire_valued_group
+    legacy_contracts_under_acquisition: cancelled_residual_on_bills
+  legacy_acquired_contracts_cancelled_on_exchequer:
+    scenario: public_ownership
+    legacy_fleet: acquire_valued_group
+    legacy_contracts_under_acquisition: cancelled_residual_on_exchequer
+  legacy_and_thermal_acquired_contracts_cancelled_on_bills:
+    scenario: public_ownership
+    legacy_fleet: acquire_all
+    legacy_contracts_under_acquisition: cancelled_residual_on_bills
+  legacy_and_thermal_acquired_contracts_cancelled_on_exchequer:
+    scenario: public_ownership
+    legacy_fleet: acquire_all
+    legacy_contracts_under_acquisition: cancelled_residual_on_exchequer
+  # P3, financing workbook Sc3: the state buys the existing fleet, legacy plant at its acquisition price, and
+  # the acquisition tariff replaces the market bill. The wires stay private (buying them is the networks axis of
+  # P3's toggle grid). Hinkley Point C is bought as an operating plant at its CfD value; completing it at the public
+  # rate is the _hpc_completion case below.
+  # legal and stamp costs; lever_parameters transaction_cost_share two_pct), on every case of the family.
+  fully_nationalised:
+    scenario: public_ownership
+    pre_2025_cfd_capacity: public_repriced
+    legacy_fleet: acquire_all
+    acquisition_transaction_costs: two_pct
+  # Purchase-price and term variants.
+  fully_nationalised_market_value:
+    extends: fully_nationalised
+    purchase_price_basis: market_value
+  # The financing workbook's other acquisition bases, on every acquired row: A1 net book value, A2 without CfD and
+  # RO support (the Northern Rock principle, a legal lower bound) and A3, RO plant at its no-support value (a policy
+  # case embedding a transfer from RO shareholders).
+  fully_nationalised_book_value:
+    extends: fully_nationalised
+    purchase_price_basis: book_value
+  fully_nationalised_no_support_value:
+    extends: fully_nationalised
+    purchase_price_basis: no_support
+  fully_nationalised_ro_pass_through:
+    extends: fully_nationalised
+    purchase_price_basis: ro_pass_through
+  fully_nationalised_thermal_at_zero:
+    extends: fully_nationalised
+    thermal_basis: zero
+  # The legacy valuation on CP30's CP.32 price level, against the model's own 2030 price (the central).
+  fully_nationalised_market_value_price_path_cp30:
+    extends: fully_nationalised_market_value
+    legacy_price_path: cp30_level
+  # The fleet valued as if today's forward prices lasted its whole life: each technology at its
+  # anchor for today (Ofgem's 2026 direct-fuel index on the 2030 capture ratios), flat. A higher purchase price.
+  fully_nationalised_market_value_price_path_today:
+    extends: fully_nationalised_market_value
+    legacy_price_path: today_level
+  # Capacity without an auction under P3. The tariff pays no Capacity Market agreement to plant the state owns, so
+  # the bill line does not move; the existing units are valued on cost-based contracts (going-forward fixed cost less
+  # their own margin, floored at zero) instead of their Capacity Market income, a lower purchase price, and only if
+  # the regime is announced before the purchase.
+  fully_nationalised_market_value_capacity_cost_based:
+    extends: fully_nationalised_market_value
+    capacity_procurement: cost_based_existing
+  # Legacy offshore wind priced at observed UK operating offshore wind stake sales per MW
+  # (lever_parameters.legacy_offshore_transaction_multiple) instead of the model's cash-flow (owners') value of
+  # about 2.31 GBP m/MW; everything else still at owners' value. A higher price.
+  fully_nationalised_market_value_offshore_deal_multiples:
+    extends: fully_nationalised_market_value
+    legacy_offshore_price: transaction_multiple
+  fully_nationalised_term_15y:
+    extends: fully_nationalised
+    acquisition_term_years: "15"
+  # Coherence rules for every proposition bundle, scenario or sensitivity:
+  #   (i)   ownership implies contract form: 100% state ownership takes strike_at_cost amortised over the asset's
+  #         economic life (the state holds the asset for its life); a minority stake keeps the auction-cleared
+  #         strike over the contract term (there is a commercial counterparty);
+  #   (ii)  whoever takes the surplus carries the shortfall: retained_by_treasury pairs with shortfall_exchequer,
+  #         public_cfd_at_cost with levy_on_eligible_supply;
+  #   (iii) everything the proposition owns is booked the same way: if the state owns the new-build gas and BECCS,
+  #         the Capacity Market and CCS-levy savings are bill lines (routes_booked);
+  #   (iv)  nothing retrospective in a headline: pre_2025_cfd_capacity stays private except under full
+  #         nationalisation, where the state has bought the counterparty and re-pricing re-opens no contract.
+  #
+  # P1 is the public_control scenario. This twin sends the state's position to bills through the at-cost CfD
+  # instead of to the Exchequer; at a 30% stake that position can be a deficit, so it can raise the net bill. It
+  # prices the recycling decision; rule (ii) ties the shortfall to the surplus, so two levers move together.
+  gbe_value_to_bills:
+    scenario: public_control
+    surplus_recycling: public_cfd_at_cost
+    shortfall_funding: levy_on_eligible_supply
+  # P2 is the public_ownership scenario; its twins are one-lever sensitivities generated by the expansion, e.g.
+  #   wires acquired                    -> public_ownership@networks_acquired
+  #   PWLB margins, gilt flat           -> public_ownership@public_rate_pwlb_* / _gilt_flat
+  #   sovereign yield B                 -> public_ownership@yield_b
+  #   socialised risk at other premia   -> public_ownership@systematic_premium_*
+  # P3 ("the public power system") is the market-value family above; its central case is
+  # fully_nationalised_market_value_central_dispatch below, and fully_nationalised_market_value is P3 with the
+  # market machinery kept. The CfD strike, amortisation and route levers have no effect once legacy_fleet is
+  # acquire_all: the state has bought the counterparty and the acquisition tariff replaces the recovery they
+  # describe, so P3's design choices are the purchase price and the term.
+  #
+  # market_value (what an owner would sell for) is P3's central price. It is cheaper than state_present_value
+  # because it discounts at the owner's higher WACC. A control premium over it is the lever
+  # generation_control_premium (a P3 toggle-grid axis).
+  fully_nationalised_market_value_term_15y:
+    extends: fully_nationalised_market_value
+    acquisition_term_years: "15"
+  # The central repays the purchase asset by asset over each asset's remaining life (acquisition_term_years:
+  # remaining_life); this toggle uses one 30-year annuity for the whole purchase. The lifetime present value at the
+  # public rate is the same; the 2030s carry more of it centrally.
+  fully_nationalised_market_value_term_30y:
+    extends: fully_nationalised_market_value
+    acquisition_term_years: "30"
+  # P3's central case: the public power system run by a nationalised operator dispatching centrally at resource
+  # cost (institution I3) on its own solved year. It differs from fully_nationalised_market_value (I1, market
+  # machinery kept) in the dispatch institution alone; the institution comparison takes that twin as its I1 and
+  # moves four measured lines. Joins `all` only when institution_comparison's scenarios are in run_scenarios.
+  fully_nationalised_market_value_central_dispatch:
+    extends: fully_nationalised_market_value
+    dispatch_institution: nationalised_dispatch
+  # Hinkley Point C completed by the state (sunk cost to the vendors, remaining capex at the public cash rate, no
+  # construction premium) in place of its purchase as an operating plant at its CfD value.
+  fully_nationalised_market_value_hpc_completion:
+    extends: fully_nationalised_market_value
+    in_construction: public_completion
+  # Scenario 3's public-risk and gilt-response sensitivities: gilts plus the
+  # workbook's systemic risk premium (v6.2: a flat 1.9%, off the bill), and gilts rising with debt to GDP (B).
+  fully_nationalised_market_value_systematic_premium:
+    extends: fully_nationalised_market_value
+    systematic_premium: social_flat_19
+  # Book discount rate review, 2026 response; the review's own estimate is the 1.9% above), on Scenario 3 and on
+  # Scenario 2's state-financed new build (off the bill: an Exchequer cost, out of the resource saving). Scenario 1
+  # carries none by design, so it has no such case.
+  fully_nationalised_market_value_systematic_premium_1pc:
+    extends: fully_nationalised_market_value
+    systematic_premium: social_flat_10
+  systematic_premium_1pc:
+    scenario: public_ownership
+    systematic_premium: social_flat_10
+  systematic_premium_1pc9:
+    scenario: public_ownership
+    systematic_premium: social_flat_19
+  fully_nationalised_market_value_yield_b:
+    extends: fully_nationalised_market_value
+    sovereign_yield: B
+  # The purchase's scope: energy-from-waste is left with its owners centrally (waste
+  # infrastructure paid mostly by councils' gate fees); this buys it with the rest. And Hinkley Point C left out
+  # of the purchase, private on its own CfD (the central buys it operating; _hpc_completion has the state finish it).
+  fully_nationalised_market_value_efw_acquired:
+    extends: fully_nationalised_market_value
+    efw_acquisition: included
+  fully_nationalised_market_value_hpc_left_private:
+    extends: fully_nationalised_market_value
+    in_construction: left_private
+  # The existing fleet valued on the model's 2030 prices held flat, beside the
+  # anchored path through today and every solved year.
+  fully_nationalised_market_value_prices_held_at_2030:
+    extends: fully_nationalised_market_value
+    legacy_price_path: model_2030
+  # The two background levers on P3 (they expand one at a time for private, P1 and P2): domestic legacy levies to
+  # taxation, and BECCS's carbon-removal leg levied on bills. Each is compared with private at the same point.
+  fully_nationalised_market_value_legacy_levies_to_taxation:
+    extends: fully_nationalised_market_value
+    legacy_levy_funding: domestic_to_taxation
+  fully_nationalised_market_value_beccs_removal_on_bills:
+    extends: fully_nationalised_market_value
+    beccs_removal_funding: bill_levy
+  # Network compensation at RAV set by statute (premium 0), beside the evidence-based central premium of 0.50, on
+  # P2 with the wires and on P3. Both report the break-even premium beside the premium paid.
+  networks_acquired_rav_at_statute:
+    scenario: public_ownership
+    networks: acquired
+    network_acquisition_premium: statutory_at_rav
+  fully_nationalised_market_value_rav_at_statute:
+    extends: fully_nationalised_market_value
+    networks: acquired                 # P3's base keeps the wires private
+    network_acquisition_premium: statutory_at_rav
+  # P1's "cut to cost": the state's share costed over the plant's life (the auction's basis), not the 20-year
+  # contract term.
+  strike_at_cost_over_life:
+    scenario: public_control
+    cfd_strike_basis: at_cost
+    cfd_amortisation: economic_life
+  # The wires bought at a 25% premium over RAV, on each scenario that can buy them (P1, P2, P3), beside the central
+  # 50% and the statutory 0%.
+  stake_networks_acquired_rav_premium_25pct:
+    scenario: public_control
+    networks: acquired
+    network_acquisition_premium: quarter
+  networks_acquired_rav_premium_25pct:
+    scenario: public_ownership
+    networks: acquired
+    network_acquisition_premium: quarter
+  fully_nationalised_market_value_rav_premium_25pct:
+    extends: fully_nationalised_market_value
+    networks: acquired
+    network_acquisition_premium: quarter
+  # Every lever value no other case uses gets one named case, on the parent where it bites, moving that one lever
+  # (plus the networks treatment it needs) off its parent's base.
+  #
+  # GB Energy as announced, a realism check on P2: P2's financing and contract levers, but the state holds only a
+  # 30% stake in the post-2025 offshore wind cohort (P1's stake mechanics and contract form) and 8 GW of local solar
+  # and onshore wind (P2's, at cost over life); everything else private (lever_parameters.gbe_announced). The
+  # partnership twin holds the 8 GW at 50% public.
+  gbe_announced:
+    scenario: public_ownership
+    new_build_generation: gbe_announced
+  gbe_announced_partnership_half:
+    scenario: public_ownership
+    new_build_generation: gbe_announced_partnership_half
+  # P2 with its new-build storage left private.
+  developer_storage_private:
+    scenario: public_ownership
+    new_build_storage: private
+  # P2's surplus under the four recycling rules no base or preset takes. The shortfall stays with the Exchequer
+  # (the base's), so each moves one lever.
+  recycling_cost_recovery_contracting_on_developer:
+    scenario: public_ownership
+    surplus_recycling: cost_recovery_contracting
+  recycling_rebate_per_mwh_on_developer:
+    scenario: public_ownership
+    surplus_recycling: rebate_per_mwh_eligible_supply
+  recycling_offset_policy_levies_on_developer:
+    scenario: public_ownership
+    surplus_recycling: offset_policy_levies
+  recycling_no_assumption_on_developer:
+    scenario: public_ownership
+    surplus_recycling: no_assumption
+  # P2 with the wires acquired: the low premium over RAV (20%, listed market-to-RAV), and the wires' return retained
+  # by the Treasury instead of reaching TNUoS and DUoS.
+  networks_acquired_rav_premium_low:
+    scenario: public_ownership
+    networks: acquired
+    network_acquisition_premium: low
+  networks_acquired_return_retained:
+    scenario: public_ownership
+    networks: acquired
+    network_incidence: return_retained
+# Presets: "who pays". A preset moves only the incidence levers (levers.INCIDENCE_LEVERS), so it leaves its parent's
+# resource saving unchanged to GBP 1, which the three-party ledger enforces. A lever with no meaning for a case (the
+# acquisition in P1, the contract form under an acquisition, the network incidence while the wires are private)
+# stays at the parent's value; a preset that then moves nothing makes no case. Every base is bill-payers first, so:
+#   as_designed            the base itself: no new case
+#   todays_rules           today's incidence, per case (levers_by_case): P1 retains the state's surplus at the
+#                          Treasury; P2 recycles through the at-cost CfD and levies a shortfall on eligible supply.
+#                          P3's is its base (the purchase on the tariff), so it makes no P3 case
+#   competitive_neutrality the state behaves like a private owner, a company paying dividends to its shareholder:
+#                          surplus kept at the Treasury, tax equivalents, its own deficits levied on bills (the
+#                          shortfall rule is inert under retention: nothing is routed)
+#   treasury_first         the state charges market prices (the auction strike) and keeps its financing margin and
+#                          surpluses; on P3 it charges the private comparator's market bill and the Treasury keeps
+#                          the whole margin over the tariff's cost (tariff_pricing: market_bill)
+#   purchase_on_taxation   P3 only: the acquisition annuity funded from general taxation
+presets:
+  as_designed:
+    description: "The base of each scenario: bill-payers first."
+    applies_to: [public_control, public_ownership, public_ownership@state_bids_at_cost,
+                 public_ownership@fully_nationalised_market_value]
+    levers: {}
+  todays_rules:
+    description: "Each scenario's earlier incidence (its old central case, with the wires as in the base): the state's return kept by the Exchequer."
+    applies_to: [public_control, public_ownership, public_ownership@state_bids_at_cost,
+                 public_ownership@fully_nationalised_market_value]
+    levers: {}
+    # A target without an entry takes its scenario's (state bids at cost: P2's).
+    levers_by_case:
+      public_control:
+        surplus_recycling: retained_by_treasury
+        shortfall_funding: exchequer
+      public_ownership:
+        surplus_recycling: public_cfd_at_cost
+        shortfall_funding: levy_on_eligible_supply
+      public_ownership@fully_nationalised_market_value:
+        acquisition_financing: tariff
+  competitive_neutrality:
+    description: "The state behaves like a private owner: dividends to the Treasury, tax equivalents, its own deficits on bills."
+    applies_to: [public_control, public_ownership, public_ownership@state_bids_at_cost,
+                 public_ownership@fully_nationalised_market_value]
+    levers:
+      surplus_recycling: retained_by_treasury
+      shortfall_funding: exchequer
+      tax_equivalent: "on"
+      state_deficit_funding: bill_levy
+  treasury_first:
+    description: "The state charges market prices and the Treasury keeps the margin."
+    applies_to: [public_control, public_ownership, public_ownership@state_bids_at_cost,
+                 public_ownership@fully_nationalised_market_value]
+    levers:
+      cfd_strike_basis: auction_clearing
+      surplus_recycling: retained_by_treasury
+      shortfall_funding: exchequer
+      route_booking: sensitivity_only
+      network_incidence: return_retained
+      tariff_pricing: market_bill
+  purchase_on_taxation:
+    description: "P3's acquisition annuity funded from general taxation instead of the tariff."
+    applies_to: [public_ownership@fully_nationalised_market_value]
+    levers:
+      acquisition_financing: exchequer
+# Best and worst cases, from assumption ranges only, under each base's own incidence. Each assumption lever takes
+# its most (best) or least (worst) favourable value for the scenario's household total, where it bites; one value
+# per lever, so no mutually exclusive settings (the lending margins are values of one lever: the worst case takes
+# the dearest, PWLB standard, +100 bp on the cash rate). The social premium per unit of beta is none (Green Book) at
+# best and the market ERP at worst; the ERP convention's worst is Fixed TMR (lower private rates, a smaller saving);
+# the purchase's worst is the state's own value, the dearest basis. Yield B is in the worst case for P1 and P2, not
+# P3, whose lending-margin stress already covers the rate. Hinkley Point C bought as an operating plant is the
+# favourable option, so the best case keeps the central. A bound that moves a comparator (all_cases) lever gets a
+# private comparator case at the same point (the best case moves the LDES floor basis, the worst the private WACC
+# basis), which the ledger measures against. The contested gilt-stock externality and the marginal cost of public
+# funds enter the worst cases' household totals only (the Exchequer ledger). Ranges: financing workbook v2.0.
+bounds:
+  applies_to: [public_control, public_ownership, public_ownership@fully_nationalised_market_value]
+  rule: "most and least favourable coherent assumption values, one per lever, under the base incidence"
+  best:
+    state_overhead: low
+    systematic_premium: none
+    interconnector_price: low
+    ldes_floor_basis: technology_wacc
+    acquisition_transaction_costs: none
+  worst:
+    state_overhead: high
+    systematic_premium: market_erp
+    sovereign_yield: B
+    public_rate_basis: pwlb_standard
+    private_wacc_basis: fixed_tmr_shielded
+    purchase_price_basis: state_present_value
+    in_construction: public_completion
+    interconnector_price: high
+    acquisition_transaction_costs: two_pct
+    # Longer lives raise the purchase
+    # price (+2.9 bn in 2030) but lengthen the repayments (-6 a household in 2030) and raise the purchase's
+    # lifetime break-even by more than the price (+5.7 bn), so it is not a downside for S3; it stays a bound-grid
+    # toggle (lives-extended).
+    # S3; S1 holds a stake and builds nothing). Each was only a toggle before, so the worst case left them out.
+    state_capex_overrun: plus_15pct
+    state_om_premium: plus_10pct
+  exclude:
+    public_ownership@fully_nationalised_market_value: [sovereign_yield]
+    # Scenarios 1 and 2: no gilt-response bound.
+    # review) Scenario 2's worst case carries the systematic risk premium; Scenario 1 carries none by design.
+    public_control: [systematic_premium, sovereign_yield]
+    public_ownership: [sovereign_yield]
+# Toggle grids for the explorer: every combination of every axis on each scenario, under the base incidence.
+# Axis kinds (levers.parse_grid_axes):
+#   {token, lever, value}            a switch, off (0) or on (1);
+#   {selector, lever, options}       one lever over several values, option token -> value; the parent's own value
+#                                    is the base option;
+#   {token, lever, value, when}      a switch that exists only under the named selector option(s), null in the
+#                                    position vector elsewhere, so it never repeats a case.
+# A case id joins the switches that are on and <selector>-<option> for each selector off its base, in declared order
+# (public_control@grid_stake-15_networks-acquired_strike-auction). Each case carries its position vector in the case
+# catalogue ({axis: 0 | 1 | null | option}); a position another case already accounts for (a one-at-a-time, named or
+# preset case at the same settings) is carried by that case as a grid membership, and each parent carries its own
+# all-base position, so every position maps to one case.
+#   P1   2 switches x networks {private, acquired} x pre-2025 x strike 3 = 4 x 2 x 2 x 3 = 48 (no rate switch: the
+#        workbook's Sc2 rate does not use the lending margin)
+#   P2   5 switches x networks 2 x pre-2025 = 32 x 2 x 2 = 128
+#   P3   5 switches x networks {private, acquired (x premium high)} = 32 x 3 = 96
+# 272 positions, less the three parents. P2 with state bids at cost has no grid (it keeps its presets). P3 has no CfD
+# axes: its tariff costs every owned asset at cost. max_cases is the warning threshold, not a cap.
+toggle_grids:
+  enabled: true
+  max_cases: 6000
+  grids:
+    public_control:
+      - {token: stake-15, lever: state_stake_scale, value: funded_scale}
+      - {token: overhead-high, lever: state_overhead, value: high}
+      - {selector: networks, lever: networks, options: {private: private, acquired: acquired}}
+      - {token: pre-2025-repriced, lever: pre_2025_cfd_capacity, value: public_repriced}
+      # "cost" costs the state's share over the plant's life, the auction's own basis.
+      - {selector: strike, lever: cfd_strike_basis,
+         options: {saving: financing_saving_only,
+                   cost: {cfd_strike_basis: at_cost, cfd_amortisation: economic_life},
+                   auction: auction_clearing}}
+    public_ownership:
+      - {token: delivered-half, lever: new_build_delivered_share, value: half}
+      - {token: rate-pwlb-standard, lever: public_rate_basis, value: pwlb_standard}
+      - {token: overrun-15, lever: state_capex_overrun, value: plus_15pct}
+      - {token: om-plus-10, lever: state_om_premium, value: plus_10pct}
+      - {token: overhead-high, lever: state_overhead, value: high}
+      - {selector: networks, lever: networks, options: {private: private, acquired: acquired}}
+      - {token: pre-2025-repriced, lever: pre_2025_cfd_capacity, value: public_repriced}
+      # No strike axis: the state owns 100%, so there is no co-owner, and under bill-payers first every strike rule
+      # gives the same bill (whatever the strike leaves with the state is rebated gross).
+    # The P3 group tariffs the P3 grid (reference_runs.same_fleet_tariff_cases): no P3 axis changes which plant the
+    # state owns.
+    public_ownership@fully_nationalised_market_value:
+      - {token: rate-pwlb-standard, lever: public_rate_basis, value: pwlb_standard}
+      - {token: control-premium-20, lever: generation_control_premium, value: twenty_pct}
+      - {token: hpc-completion, lever: in_construction, value: public_completion}
+      - {token: om-plus-10, lever: state_om_premium, value: plus_10pct}
+      - {token: overhead-high, lever: state_overhead, value: high}
+      - {selector: networks, lever: networks, options: {private: private, acquired: acquired}}
+      - {token: rav-premium-high, lever: network_acquisition_premium, value: high, when: {networks: acquired}}
+  # Bound grids: every assumption the best and worst bounds move (sensitivities.bounds), as an exact grid on each
+  # scenario, so the explorer can switch them one by one between the two bounds. A lever both bounds move (the
+  # overhead, the interconnector price) is a selector with three options. The private WACC basis and the LDES floor
+  # move private too, so each position is measured against private at the same point on them. A bound grid is named
+  # <parent>#bounds and its case ids are <parent>_bgrid_...; it is a separate exact space from the toggle grid above.
+  #   P1  2 x 2 x 3 x 2               =    24 (no premium or margin axis: the Sc2 rate uses neither)
+  # P2  2 x 2 x 3 x 2 x 2 x 2 x 2   =   192
+  #   P3  2 x 2 x 3 x 3 x 3 x 2 x 2 x 2 x 2 x 2 = 3,456 (no yield path: the lending-margin stress covers its rate,
+  #       sensitivities.bounds.exclude)
+  bound_grids:
+    public_control:
+      - {selector: wacc, lever: private_wacc_basis, options: {notional: notional_gearing_shielded, tmr: fixed_tmr_shielded}}
+      - {token: ldes-wacc, lever: ldes_floor_basis, value: technology_wacc}
+      - {selector: overhead, lever: state_overhead, options: {central: central, low: low, high: high}}
+    # results review) Scenario 2 carries the systematic risk premium at its worst-bound value.
+    public_ownership:
+      - {selector: wacc, lever: private_wacc_basis, options: {notional: notional_gearing_shielded, tmr: fixed_tmr_shielded}}
+      - {token: ldes-wacc, lever: ldes_floor_basis, value: technology_wacc}
+      - {selector: overhead, lever: state_overhead, options: {central: central, low: low, high: high}}
+      - {token: rate-pwlb-standard, lever: public_rate_basis, value: pwlb_standard}
+      - {token: premium-erp, lever: systematic_premium, value: market_erp}
+      - {token: overrun-15, lever: state_capex_overrun, value: plus_15pct}
+      - {token: om-plus-10, lever: state_om_premium, value: plus_10pct}
+    # Scenario 3's bound grid keeps its ten axes (3,456 positions; the two delivery switches would make it 13,824),
+    # so its all-worst corner is not its worst case: the worst case carries the delivery risks as well (finding 7).
+    public_ownership@fully_nationalised_market_value:
+      - {selector: wacc, lever: private_wacc_basis, options: {notional: notional_gearing_shielded, tmr: fixed_tmr_shielded}}
+      - {token: ldes-wacc, lever: ldes_floor_basis, value: technology_wacc}
+      - {selector: overhead, lever: state_overhead, options: {central: central, low: low, high: high}}
+      - {selector: premium, lever: systematic_premium, options: {social: social_flat_19, none: none, erp: market_erp}}
+      - {selector: ic, lever: interconnector_price, options: {central: central, low: low, high: high}}
+      - {token: rate-pwlb-standard, lever: public_rate_basis, value: pwlb_standard}
+      - {token: price-state-value, lever: purchase_price_basis, value: state_present_value}
+      - {token: hpc-completion, lever: in_construction, value: public_completion}
+      - {token: txn-none, lever: acquisition_transaction_costs, value: none}
+      - {token: lives-extended, lever: legacy_asset_lives, value: extended}
+# false: structural levers expand one at a time only, with no all-alternatives bounding case.
+bounding_pair: false

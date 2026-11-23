@@ -253,6 +253,8 @@ def calibrate_daily(
     if net_path.endswith('.pkl'):
         import tempfile, os
         network_obj = _load_net(net_path)
+        from scripts.utilities.network_io import make_text_columns_netcdf_safe
+        make_text_columns_netcdf_safe(network_obj)  # only this temporary copy is written
         tmp_nc = tempfile.NamedTemporaryFile(suffix='.nc', delete=False)
         tmp_nc.close()
         network_obj.export_to_netcdf(tmp_nc.name)

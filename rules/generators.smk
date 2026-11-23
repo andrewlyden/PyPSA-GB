@@ -8,12 +8,12 @@ Pipeline Map (concise):
 - Export: Write generator CSVs and full network CSV tables
 
 Authoritative outputs:
-- resources/network/{network_model}_base_demand_generators.nc
-- resources/generators/{network_model}_generators_full.csv (+ summaries)
-- resources/network/csv/{network_model}_base_demand_generators/ (exported tables)
+- resources/network/{scenario}_network_demand_renewables_thermal_generators.pkl
+- resources/generators/{scenario}_generators_full.csv (+ summaries)
+- resources/network/csv/{scenario}_base_demand_generators/ (exported tables)
 
 Notes:
-- Time series can be any timestep; scripts/add_generators.py aligns to network.snapshots.
+- Time series can be any timestep; the integration scripts in scripts/generators/ align to network.snapshots.
 - Rules tagged LEGACY are supported but not part of the canonical path.
 - TEC processing rules are preserved as LEGACY for reference but not used in main workflow.
 
@@ -23,27 +23,111 @@ Data update points:
 3) data/generators/generator_data_by_fuel.csv
 """
 
-# Import scenario detection utility
-from scripts.utilities.scenario_detection import is_historical_scenario
+# Import scenario detection utility. Gates on where the targets come from use target_source();
+# gates on how the fleet is built (and the brownfield method's fleet.spatial_proxy blocks) use uses_brownfield().
+from scripts.utilities.scenario_detection import is_historical_scenario, target_source, uses_brownfield
 
 # === Extract lists of key inputs ===
 def _extract_from_scenarios(key, default=None):
     """Extract values from active scenarios, skipping those without the key."""
     values = set()
-    for rid in run_ids:
+    for rid in build_ids:
         if rid in scenarios and key in scenarios[rid]:
             values.add(scenarios[rid][key])
     return sorted(values) if values else ([default] if default is not None else [])
 
 # Define variables for repeated paths (only extract keys that exist in all scenarios)
 fes_years = _extract_from_scenarios("FES_year")  # Empty for historical-only runs
+for _rid in build_ids:
+    _scenario = scenarios.get(_rid, {})
+    _proxy_year = _scenario.get("fleet", {}).get("spatial_proxy", {}).get("FES_year") if target_source(_scenario) == "CP30" else None
+    if _proxy_year is not None:
+        fes_years = sorted(set(fes_years + [_proxy_year]))
 renewables_years = _extract_from_scenarios("renewables_year", 2020)
 resources_path = "resources"
 data_path = "data"
 
+
+def get_spatial_proxy_config(scenario_config):
+    return scenario_config.get("fleet", {}).get("spatial_proxy", {}) if target_source(scenario_config) == "CP30" else {}
+
+
+def get_generation_fes_year(scenario_config):
+    if target_source(scenario_config) == "CP30":
+        return get_spatial_proxy_config(scenario_config).get("FES_year", 2025)
+    return scenario_config.get("FES_year", 2025)
+
+
+def get_generator_cp30_resource(scenario_config, resource_name):
+    return scenario_config.get("source_data", {}).get("files", {}).get(resource_name, []) if target_source(scenario_config) == "CP30" else []
+
 # ══════════════════════════════════════════════════════════════════════════════
 # RULE ORDER: Prefer new REPD-only rule over legacy TEC-based rule
 # ══════════════════════════════════════════════════════════════════════════════
+
+
+def get_cost_fes_year(scenario_config):
+    if scenario_config.get("modelled_year", 2020) <= 2024:
+        return None
+    if target_source(scenario_config) == "CP30":
+        return get_spatial_proxy_config(scenario_config).get("FES_year")
+    return scenario_config.get("FES_year")
+
+
+def get_cost_price_file(scenario_id, price_type):
+    fes_year = get_cost_fes_year(scenarios[scenario_id])
+    if not fes_year:
+        return []
+    return f"{resources_path}/marginal_costs/{price_type}_{fes_year}.csv"
+
+
+def get_cost_price_param(scenario_id, price_type):
+    value = get_cost_price_file(scenario_id, price_type)
+    return value or None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FES LONG-RANGE SUPPLY (any FES year)
+# ══════════════════════════════════════════════════════════════════════════════
+# Only the FES long-range scenarios (HT50_* today) set ``fleet.fes_supply.enabled``. For
+# every other scenario these helpers return [] so their DAG and inputs are exactly as
+# before. The storage, hydrogen and interconnector rules (included later) use them too.
+
+def fes_supply_block(scenario_id, part=None):
+    """The scenario's enabled ``fleet.fes_supply`` block (or one sub-block), else {}."""
+    from scripts.generators.fes_supply import fes_supply_config, fes_supply_part
+    scenario_config = scenarios.get(scenario_id, {})
+    return fes_supply_part(scenario_config, part) if part else fes_supply_config(scenario_config)
+
+
+def fes_supply_input(scenario_id, part, key):
+    """A file named in an enabled ``fleet.fes_supply.<part>`` block, else []."""
+    block = fes_supply_block(scenario_id, part)
+    return (block.get(key) or []) if block else []
+
+
+def fes_supply_targets_input(scenario_id, part):
+    """The Y1 FES targets JSON when ``fleet.fes_supply.<part>`` is enabled, else []."""
+    if not fes_supply_block(scenario_id, part):
+        return []
+    return fes_supply_block(scenario_id).get("targets_file") or []
+
+
+def fes_gas_ccs_split_input(scenario_id):
+    """The year's classified ES1 lines when ``fleet.fes_supply.thermal.gas_ccs_split`` is on, else []."""
+    thermal = fes_supply_block(scenario_id, "thermal")
+    split = (thermal or {}).get("gas_ccs_split") or {}
+    if not split or not split.get("enabled", True):
+        return []
+    path = thermal.get("es1_lines_file")
+    if not path:
+        raise ValueError(f"{scenario_id}: fleet.fes_supply.thermal.gas_ccs_split needs fleet.fes_supply.thermal.es1_lines_file")
+    return path
+
+
+def fes_supply_logic_input(scenario_id, path="scripts/generators/fes_supply.py"):
+    """Track a FES long-range module as an input of those scenarios' jobs only."""
+    return path if fes_supply_block(scenario_id) else []
 ruleorder: extract_repd_dispatchable_sites > prepare_dispatchable_generator_sites
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -66,7 +150,7 @@ def get_generator_data_sources(wildcards):
     Returns:
         Dictionary with conditional inputs for thermal integration
     """
-    from scripts.utilities.scenario_detection import is_historical_scenario
+    from scripts.utilities.scenario_detection import is_historical_scenario, target_source
     
     scenario_id = wildcards.scenario
     scenario_config = scenarios[scenario_id]
@@ -77,6 +161,11 @@ def get_generator_data_sources(wildcards):
     if is_historical_scenario(scenario_config):
         # Historical: Use DUKES ONLY (no FES fallback)
         inputs['dukes_data'] = f"{resources_path}/generators/DUKES/DUKES_{modelled_year}_generators.csv"
+    elif target_source(scenario_config) == "CP30":
+        # CP30: CP30 ES1 capacities with explicit FES spatial proxy
+        fes_year = get_generation_fes_year(scenario_config)
+        inputs['fes_data'] = f"{resources_path}/FES/FES_{fes_year}_data.csv"
+        inputs['cp30_es1'] = get_generator_cp30_resource(scenario_config, 'es1')
     else:
         # Future: Use FES as primary source (DUKES not applicable)
         fes_year = scenario_config['FES_year']  # Required for future scenarios
@@ -101,7 +190,7 @@ def get_renewable_data_sources(wildcards):
     Returns:
         Dictionary with conditional inputs for renewable integration
     """
-    from scripts.utilities.scenario_detection import is_historical_scenario
+    from scripts.utilities.scenario_detection import is_historical_scenario, target_source
     
     scenario_id = wildcards.scenario
     scenario_config = scenarios[scenario_id]
@@ -119,6 +208,13 @@ def get_renewable_data_sources(wildcards):
         inputs['tidal_stream_sites'] = f"{resources_path}/renewable/tidal_stream_sites.csv"
         inputs['shoreline_wave_sites'] = f"{resources_path}/renewable/shoreline_wave_sites.csv"
         inputs['tidal_lagoon_sites'] = f"{resources_path}/renewable/tidal_lagoon_sites.csv"
+    elif target_source(scenario_config) == "CP30":
+        # CP30: Use CP30 capacity totals and FES only as explicit spatial proxy
+        fes_year = get_generation_fes_year(scenario_config)
+        inputs['use_fes'] = True
+        inputs['fes_data'] = f"{resources_path}/FES/FES_{fes_year}_data.csv"
+        inputs['cp30_es1'] = get_generator_cp30_resource(scenario_config, 'es1')
+        # Still need profiles for capacity factors
     else:
         # Future: Use FES capacity projections
         fes_year = scenario_config['FES_year']
@@ -153,518 +249,6 @@ def get_renewable_profiles(wildcards):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DUKES HISTORICAL DATA EXTRACTION
-# ══════════════════════════════════════════════════════════════════════════════
-# Extract historical generator capacity data from DUKES 5.11 (2004-2024)
-# Used as primary data source for historical scenarios (thermal generators)
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Rule to extract DUKES generator data for a specific year
-rule extract_dukes_generator_data:
-    """
-    Extract historical generator capacity data from DUKES 5.11 for a specific year.
-    
-    DUKES (Digest of UK Energy Statistics) provides authoritative historical data
-    on UK energy generation from 2004-2024. This rule extracts year-specific
-    capacity data from the DUKES_5.11_2025.xlsx file and converts it to a standardized
-    CSV format compatible with the FES data structure.
-    
-    Data Source Priority for Historical Scenarios:
-      1. DUKES (this rule) - Conventional thermal generators (coal, gas, nuclear)
-      2. REPD - Renewable generators (wind, solar, hydro, marine)
-      3. FES (fallback) - Storage, small distributed generation, recent additions
-    
-    Input:
-      - data/generators/DUKES_5.11_2025.xlsx (multi-worksheet Excel file)
-      - Year-specific worksheet (e.g., "DUKES 2015")
-    
-    Output:
-      - resources/generators/DUKES/DUKES_{year}_generators.csv
-      - Standardized format: [Company Name, Station Name, Fuel, Technology, Capacity, ...]
-    
-    Parameters:
-      - dukes_year: Year to extract (2004-2024, from wildcards)
-    
-    Process:
-      1. Read DUKES Excel file worksheet for specified year (skip 5 header rows)
-      2. Extract generator records (power stations)
-      3. Standardize fuel type and technology codes
-      4. Convert to consistent format matching FES structure
-      5. Add data_source='DUKES' column for tracking
-    
-    Usage:
-      snakemake resources/generators/DUKES/DUKES_2020_generators.csv
-    
-    Notes:
-      - DUKES provides more accurate historical data than FES retrospective views
-      - Each year has a separate worksheet in DUKES_5.11_2025.xlsx
-      - Output format designed for seamless merging with REPD and FES data
-      - Includes only operational generators for the specified year
-    """
-    input:
-        dukes_file=f"{data_path}/generators/DUKES_5.11_2025.xlsx"
-    output:
-        dukes_generators=f"{resources_path}/generators/DUKES/DUKES_{{year}}_generators.csv"
-    params:
-        dukes_year=lambda wildcards: int(wildcards.year)
-    wildcard_constraints:
-        year="20(0[4-9]|1[0-9]|2[0-4])"  # Match 2004-2024
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/extract_dukes_generator_data_{year}.log"
-    benchmark:
-        "benchmarks/DUKES/extract_dukes_{year}.txt"
-    script:
-        "../scripts/generators/DUKES_generator_data.py"
-
-
-# Aggregate rule to extract DUKES data for all historical years
-rule extract_all_dukes_data:
-    """
-    Extract DUKES generator data for all historical years (2004-2024).
-    
-    This aggregate rule triggers extraction of DUKES data for all years
-    in the historical range. Useful for pre-populating the DUKES data cache.
-    
-    Usage:
-      snakemake extract_all_dukes_data --cores 4
-    
-    Output:
-      21 DUKES CSV files (one per year from 2004-2024)
-    """
-    input:
-        expand(f"{resources_path}/generators/DUKES/DUKES_{{year}}_generators.csv", 
-               year=range(2004, 2025))
-    output:
-        summary=f"{resources_path}/generators/DUKES/extraction_complete.txt"
-    shell:
-        """
-        echo "DUKES historical generator data extracted successfully!" > {output.summary}
-        echo "Years covered: 2004-2024" >> {output.summary}
-        echo "Data source: DUKES 5.11 (Digest of UK Energy Statistics)" >> {output.summary}
-        """
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# LEGACY: TEC AND REPD PROCESSING
-# These rules are preserved for reference but not used in the main workflow.
-# The main workflow now uses DUKES (historical) + REPD + FES (future) directly.
-# ══════════════════════════════════════════════════════════════════════════════
-
-# LEGACY: Deduplicate TEC and REPD to remove renewables from TEC register
-rule deduplicate_tec_repd:
-    """
-    Remove renewable technologies from TEC register to avoid duplication with REPD.
-    
-    This rule filters out renewable plant types from the TEC register, keeping only
-    conventional thermal plants that are not covered by REPD (which provides better
-    renewable generation profiles and site data).
-    """
-    input:
-        tec_file="data/generators/tec-register-02-september-2025.csv"
-    output:
-        matches="resources/generators/tec_repd_matches.csv",
-        conventional_tec="resources/generators/tec_conventional_only.csv",
-        citations="resources/generators/references_used_dedup.json"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/deduplicate_tec_repd.log"
-    script:
-        "../scripts/generators/deduplicate_tec_repd.py"
-
-
-# Process TEC generators with enhanced location mapping and technology categorization
-rule process_tec_generators:
-    """
-    Process TEC register generators with comprehensive enhancement:
-    
-    1. Load and filter TEC register for built dispatchable projects only
-    2. Apply advanced technology categorization (thermal, storage, hybrid)
-    3. Enhanced location mapping using multiple data sources:
-       - Network bus coordinates (if available - connection site matching)
-       - DUKES power station database (authoritative coordinates)
-       - Power stations location fallback data
-       - Optional automated geocoding for unmapped sites
-    4. Generate comprehensive processed TEC dataframe for workflow use
-    
-    This rule creates the authoritative processed TEC register that's used
-    throughout the PyPSA-GB workflow, eliminating the need for multiple
-    TEC processing steps in downstream rules.
-    
-    Note: network_file input is optional - will use fallback data sources if not available.
-    """
-    input:
-        tec_conventional="resources/generators/tec_conventional_only.csv",
-        power_stations_file="data/generators/power_stations_locations.csv",
-        dukes_file="data/generators/dukes_power_station_coordinates.csv"
-    output:
-        processed_tec="resources/generators/tec_processed_complete.csv",
-        location_sources_report="resources/generators/tec_location_mapping_sources.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/process_tec_generators.log"
-    script:
-        "../scripts/generators/process_tec_generators.py"
-
-
-rule enhance_tec_locations_with_geocoding:
-    """
-    Enhance TEC location mapping with geocoding backup for unmapped sites.
-    
-    This rule provides an additional layer of location mapping by:
-    1. Loading processed TEC data with initial location mapping
-    2. Identifying sites without coordinates (location_source = 'not_found')
-    3. Using Nominatim geocoding API to find coordinates for unmapped sites
-    4. Rate limiting to respect API usage guidelines
-    5. Generating comprehensive geocoding reports
-    
-    The enhanced location mapping improves coordinate coverage for better
-    generator placement accuracy in the PyPSA network.
-    """
-    input:
-        tec_processed="resources/generators/tec_processed_complete.csv"
-    output:
-        tec_enhanced="resources/generators/tec_enhanced_with_geocoding.csv",
-        geocoding_report="resources/generators/geocoding_backup_report.csv"
-    params:
-        max_geocoding_attempts=50  # Rate limiting - adjust as needed
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/enhance_tec_locations_with_geocoding.log"
-    script:
-        "../scripts/generators/enhance_tec_locations_with_geocoding.py"
-
-
-# Map dispatchable generator locations using REPD coordinates, network buses, and fallback data
-rule map_dispatchable_generator_locations:
-    """
-    Create comprehensive dispatchable generator database with geographic locations.
-    
-    This rule combines TEC register and REPD data, mapping generator locations using:
-    1. REPD X/Y coordinates (direct from dataset)
-    2. TEC connection sites mapped to ETYS network bus coordinates
-    3. Power stations location database as fallback
-    
-    Outputs a single comprehensive CSV with all operational dispatchable generators
-    and their verified geographic coordinates, eliminating duplicate site storage.
-    """
-    input:
-        tec_conventional="data/generators/tec-register-02-september-2025.csv",
-        repd_file="data/renewables/repd-q2-jul-2025.csv",
-        network_file="resources/network/ETYS_base.nc",
-        power_stations_file="data/generators/power_stations_locations.csv"
-    output:
-        generators_with_locations="resources/generators/dispatchable_generators_with_locations.csv",
-        location_report="resources/generators/location_mapping_report.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/map_dispatchable_generator_locations.log"
-    script:
-        "../scripts/generators/map_dispatchable_generator_locations.py"
-
-
-# Prepare dispatchable generator site data from TEC + REPD
-rule prepare_dispatchable_generator_sites:
-    """
-    Create comprehensive site CSV files for all dispatchable generators in GB.
-    
-    This rule combines TEC register (conventional thermal plants) with REPD 
-    (dispatchable renewables/storage) to create technology-specific site files
-    similar to the renewable site structure.
-    
-    Dispatchable technologies include:
-    - Thermal: CCGT, OCGT, Nuclear, Coal, CHP, Gas Reciprocating
-    - Storage: Battery, Pumped Hydro, Hydrogen
-    - Biomass/Waste: Biomass, EfW, Biogas, Landfill Gas
-    - Large Hydro: Reservoir-based hydroelectric plants
-    """
-    input:
-        tec_processed="resources/generators/tec_enhanced_with_geocoding.csv",
-        repd_file="data/renewables/repd-q2-jul-2025.csv"
-    output:
-        # Core thermal generators (note: ccgt/ocgt created dynamically based on TEC data availability)
-        nuclear_sites="resources/generators/sites/nuclear_sites.csv",
-        # Storage systems
-        battery_sites="resources/generators/sites/battery_sites.csv",
-        pumped_hydro_sites="resources/generators/sites/pumped_hydro_sites.csv",
-        hydrogen_storage_sites="resources/generators/sites/hydrogen_storage_sites.csv",
-        # Biomass and waste (dispatchable renewable thermal from REPD)
-        biomass_sites="resources/generators/sites/biomass_sites.csv",
-        waste_to_energy_sites="resources/generators/sites/waste_to_energy_sites.csv",
-        biogas_sites="resources/generators/sites/biogas_sites.csv",
-        landfill_gas_sites="resources/generators/sites/landfill_gas_sites.csv",
-        sewage_gas_sites="resources/generators/sites/sewage_gas_sites.csv",
-        advanced_biofuel_sites="resources/generators/sites/advanced_biofuel_sites.csv",
-        # Geothermal (baseload renewable thermal from REPD)
-        geothermal_sites="resources/generators/sites/geothermal_sites.csv",
-        # Large hydro
-        large_hydro_sites="resources/generators/sites/large_hydro_sites.csv",
-        # Summary report
-        summary_report="resources/generators/dispatchable_sites_summary.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/prepare_dispatchable_generator_sites.log"
-    script:
-        "../scripts/generators/prepare_dispatchable_generator_sites.py"
-
-
-# Analyze unmapped generators and create comprehensive statistics
-rule analyze_unmapped_generators:
-    """
-    Analyze generators still missing location coordinates after all mapping attempts.
-    
-    This rule creates comprehensive statistics about unmapped generators including:
-    - Technology breakdown and capacity analysis
-    - Priority ranking for manual lookup
-    - Recommendations for filling remaining gaps
-    - Detailed CSV export for further analysis
-    """
-    input:
-        generators_with_wikipedia_locations="resources/generators/dispatchable_generators_with_wikipedia_locations.csv"
-    output:
-        unmapped_generators_csv="resources/generators/unmapped_generators.csv",
-        unmapped_analysis_report="resources/generators/unmapped_generators_analysis.txt"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/analyze_unmapped_generators.log"
-    script:
-        "../scripts/generators/analyze_unmapped_generators.py"
-
-
-# OPTIONAL ENRICHMENT: Enhance generator locations with Wikipedia coordinate data
-rule enhance_locations_with_wikipedia:
-    """
-    Enhance generator location database with Wikipedia power station coordinates.
-    
-    This rule scrapes Wikipedia's comprehensive lists of UK power stations to extract
-    geographic coordinates for generators missing location data. It improves the
-    location mapping success rate by matching Wikipedia data to unlocated generators.
-    """
-    input:
-        generators_with_locations="resources/generators/dispatchable_generators_with_locations.csv"
-    output:
-        generators_with_wikipedia_locations="resources/generators/dispatchable_generators_with_wikipedia_locations.csv",
-        wikipedia_coordinate_database="data/generators/wikipedia_power_station_coordinates.csv"
-    params:
-        wikipedia_coords_file="data/generators/wikipedia_power_station_coordinates.csv"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/enhance_locations_with_wikipedia.log"
-    script:
-        "../scripts/generators/enhance_locations_with_wikipedia.py"
-
-
-# OPTIONAL ENRICHMENT: Integrate DUKES 5.11 power station location data
-rule integrate_dukes_locations:
-    """
-    Integrate DUKES (Digest of UK Energy Statistics) 5.11 dataset for comprehensive
-    power station location mapping.
-    
-    This rule uses the authoritative DUKES dataset to fill remaining location gaps
-    in the generator database. DUKES provides official government data with high-quality
-    X/Y coordinates for UK power stations, offering the most comprehensive coverage
-    available for completing the location mapping process.
-    
-    The rule performs intelligent name matching between DUKES stations and unmapped
-    generators, then applies the official coordinates to achieve near-complete
-    location coverage for the generator database.
-    """
-    input:
-        generators_with_wikipedia_locations="resources/generators/dispatchable_generators_with_wikipedia_locations.csv",
-        dukes_dataset="data/generators/DUKES_5.11_2025.xlsx"
-    output:
-        generators_with_dukes_locations="resources/generators/dispatchable_generators_with_dukes_locations.csv",
-        dukes_coordinate_database="data/generators/dukes_power_station_coordinates.csv",
-        dukes_matches="resources/generators/dukes_location_matches.csv"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/integrate_dukes_locations.log"
-    script:
-        "../scripts/generators/integrate_dukes_locations.py"
-
-
-# OPTIONAL ENRICHMENT: Apply single word matching for final location mapping
-rule apply_single_word_matching:
-    """
-    Apply single word matching to find additional TEC-REPD location matches.
-    
-    This rule uses sophisticated word-based matching to identify generators
-    with similar location names between TEC and REPD datasets, significantly
-    improving location mapping success rates.
-    """
-    input:
-        generators_with_dukes_locations="resources/generators/dispatchable_generators_with_dukes_locations.csv",
-        tec_file="data/generators/tec-register-02-september-2025.csv",
-        repd_file="data/renewables/repd-q2-july-2024.csv"
-    output:
-        generators_final="resources/generators/dispatchable_generators_final.csv",
-        single_word_matches="resources/generators/single_word_tec_repd_matches.csv"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/apply_single_word_matching.log"
-    script:
-        "../scripts/generators/single_word_tec_repd_matching.py"
-
-
-# Aggregate rule for comprehensive dispatchable generator database with DUKES integration
-rule all_dispatchable_generators_with_locations:
-    """
-    Aggregate rule to create comprehensive dispatchable generator database.
-    
-    This rule serves as the main target for generating a complete database of
-    operational dispatchable generators with verified geographic locations,
-    enhanced with Wikipedia coordinate data and comprehensive DUKES 5.11
-    integration for maximum location coverage, plus comprehensive analysis
-    of any remaining unmapped generators.
-    """
-    input:
-        "resources/generators/dispatchable_generators_final.csv",
-        "resources/generators/location_mapping_report.txt",
-        "data/generators/wikipedia_power_station_coordinates.csv",
-        "data/generators/dukes_power_station_coordinates.csv",
-        "resources/generators/dukes_location_matches.csv",
-        "resources/generators/single_word_tec_repd_matches.csv"
-    output:
-        "resources/generators/dispatchable_generators_complete.txt"
-    shell:
-        """
-        echo "Comprehensive dispatchable generator database with all location matching techniques created successfully!" > {output}
-        """
-
-
-# Build final dispatchable generators CSV used by mapping/plotting
-rule build_dispatchable_generators_complete_csv:
-    input:
-        "resources/generators/dispatchable_generators_final.csv"
-    output:
-        "resources/generators/dispatchable_generators_complete.csv"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/build_dispatchable_generators_complete.log"
-    script:
-        "../scripts/generators/map_final_generators.py"
-
-
-# Build unified generators_full.csv for plotting and analysis
-rule build_generators_full:
-    input:
-        dispatchable="resources/generators/dispatchable_generators_complete.csv",
-        wind_onshore="resources/renewable/wind_onshore_sites.csv",
-        wind_offshore="resources/renewable/wind_offshore_sites.csv",
-        solar_pv="resources/renewable/solar_pv_sites.csv",
-        small_hydro="resources/renewable/small_hydro_sites.csv",
-        large_hydro="resources/renewable/large_hydro_sites.csv",
-        tidal_stream="resources/renewable/tidal_stream_sites.csv",
-        shoreline_wave="resources/renewable/shoreline_wave_sites.csv",
-        tidal_lagoon="resources/renewable/tidal_lagoon_sites.csv"
-    output:
-        "resources/generators/generators_full.csv"
-    conda:
-        "../envs/pypsa-gb.yaml"
-    log:
-        "logs/build_generators_full.log"
-    script:
-        "../scripts/generators/create_generators_full.py"
-
-
-## LEGACY: aggregate rule for individual site files (kept for compatibility)
-rule all_dispatchable_generator_sites:
-    """
-    Aggregate rule to ensure all dispatchable generator site files are created.
-    
-    This rule serves as a convenient target to generate all dispatchable generator
-    site CSV files and summary reports in one command.
-    """
-    input:
-        # Core thermal generators (dynamically created based on data)
-        "resources/generators/sites/nuclear_sites.csv",
-        # Storage systems
-        "resources/generators/sites/battery_sites.csv",
-        "resources/generators/sites/pumped_hydro_sites.csv",
-        "resources/generators/sites/hydrogen_storage_sites.csv",
-        # Biomass and waste (dispatchable renewable thermal)
-        "resources/generators/sites/biomass_sites.csv",
-        "resources/generators/sites/waste_to_energy_sites.csv",
-        "resources/generators/sites/biogas_sites.csv",
-        "resources/generators/sites/landfill_gas_sites.csv",
-        "resources/generators/sites/sewage_gas_sites.csv",
-        "resources/generators/sites/advanced_biofuel_sites.csv",
-        # Geothermal (baseload renewable thermal)
-        "resources/generators/sites/geothermal_sites.csv",
-        # Large hydro
-        "resources/generators/sites/large_hydro_sites.csv",
-        # Summary report
-        "resources/generators/dispatchable_sites_summary.txt"
-    output:
-        "resources/generators/all_dispatchable_sites_summary.txt"
-    shell:
-        """
-        echo "All dispatchable generator sites generated successfully!" > {output}
-        """
-
-
-# Rule to add FES generator data to the ETYS network
-rule add_FES_generator_data_to_network:
-    """
-    This rule adds FES generator data to the ETYS network.
-
-    Input:
-      - CSV file for each year in the FES_year list, saved in the resources directory.
-      - TEC register CSV files.
-      - ETYS Appendix B Excel file.
-      - ETYS base NetCDF file.
-
-    Output:
-      - Processed TEC register CSV file.
-      - Updated NetCDF file with FES generator data.
-
-    Script:
-      - The script "scripts/generators.py" is executed to add the FES generator data to the network.
-    """
-    input:
-        expand(f"{resources_path}/FES/FES_{{year}}_data.csv", year=fes_years),
-        f"{data_path}/generators/tec-register-11-10-2024.csv",
-        f"{data_path}/generators/tec-register-11-10-2024-manually-added-site-names.csv",
-        f"{data_path}/network/ETYS/ETYS Appendix B 2023.xlsx",
-        f"{resources_path}/network/ETYS_base.nc"
-    output:
-        f"{resources_path}/generators/TEC_register_processed.csv",
-        f"{resources_path}/network/ETYS_base_demand_generator.nc"
-    script:
-        "../scripts/generators.py"
-
-
-# Rule to generate capacities for generators
-## LEGACY: generator capacity derivation (kept for compatibility)
-rule generators_capacities:
-    """
-    This rule processes the TEC register and ETYS base demand generator data to generate capacities for generators.
-
-    Input:
-      - TEC register processed CSV file
-      - ETYS base demand generator NetCDF file
-
-    Script:
-      - The script "scripts/generators_capacities.py" is executed to generate the capacities.
-    """
-    input:
-        f"{resources_path}/generators/TEC_register_processed.csv",
-        f"{resources_path}/network/ETYS_base_demand_generator.nc",
-    script:
-        "../scripts/generators/generators_capacities.py"
-
-# ══════════════════════════════════════════════════════════════════════════════
 # MODULAR GENERATOR INTEGRATION PIPELINE
 # ══════════════════════════════════════════════════════════════════════════════
 # The generator integration is split into 3 focused stages for clarity,
@@ -688,6 +272,55 @@ rule generators_capacities:
 
 
 # Stage 1: Add weather-variable renewable generators
+def _support_register_input(scenario_id, key, brownfield_only=False):
+    """A scheme-register file read by the support labelling, or [] when unused.
+
+    ``support.labels.support_registers`` (the brownfield defaults) makes the Ofgem RO
+    register and the LCCC CfD portfolio the authority for named-fleet support
+    labels in future builds (scripts/renewables/support_register_labels.py).
+    ``brownfield_only``: only where the fleet is built brownfield (its anonymous proxies).
+    """
+    scenario = scenarios.get(scenario_id, {})
+    registers = scenario.get("support", {}).get("labels", {}).get("support_registers", {}) or {}
+    if not scenario.get("support", {}).get("labels", {}).get("enabled", False) or not registers.get("enabled", False):
+        return []
+    if is_historical_scenario(scenario) or (brownfield_only and not uses_brownfield(scenario)):
+        return []
+    if key == "logic":
+        return "scripts/renewables/support_register_labels.py"
+    return registers.get(key) or []
+
+
+def _cp30_brownfield_enabled(scenario_id):
+    """True for a brownfield scenario whose renewables are built from the named REPD fleet."""
+    sc = scenarios.get(scenario_id, {})
+    brownfield = {**(sc.get("fleet", {}).get("brownfield") or {}), **((sc.get("fleet", {}).get("spatial_proxy") or {}).get("brownfield") or {})}
+    return uses_brownfield(sc) and bool(brownfield.get("enabled", False))
+
+
+def _cp30_gsp_placement_inputs(scenario_id):
+    """GSP polygons, GSP group -> CP30 region map and Dem_per_node behind CP30 regions and GSP nodes."""
+    sc = scenarios.get(scenario_id, {})
+    regional = (sc.get("fleet", {}).get("spatial_proxy") or {}).get("regional_allocation") or {}
+    if not (uses_brownfield(sc) and regional.get("enabled", False)):
+        return []
+    files = [regional.get(key) for key in ("gsp_polygon_file", "gsp_group_region_file") if regional.get(key)]
+    if _cp30_brownfield_enabled(scenario_id):
+        files.append("data/network/ETYS/GB_network.xlsx")
+    return files
+
+
+def _proxy_profile_region_inputs(scenario_id):
+    """GSP polygons and region map that locate every site profile under proxy_profile_members: all_sites."""
+    renewables = scenarios.get(scenario_id, {}).get("renewables") or {}
+    if renewables.get("proxy_profile_basis") != "regional" or renewables.get("proxy_profile_members") != "all_sites":
+        return []
+    return [
+        renewables.get("proxy_profile_region_polygon_file") or "data/network/GSP/GSP_regions_27700_20250109.geojson",
+        renewables.get("proxy_profile_region_group_file") or "data/network/ETYS/cp30_es5_region_by_gsp_group.csv",
+    ]
+
+
 rule add_renewables_to_network:
     """
     STAGE 1: Integrate weather-variable renewable generators into network.
@@ -734,13 +367,144 @@ rule add_renewables_to_network:
         tidal_stream_sites=f"{resources_path}/renewable/tidal_stream_sites.csv",
         shoreline_wave_sites=f"{resources_path}/renewable/shoreline_wave_sites.csv",
         tidal_lagoon_sites=f"{resources_path}/renewable/tidal_lagoon_sites.csv",
-        # FES data (for future scenarios - use function to get conditional path)
-        fes_data=lambda wildcards: f"{resources_path}/FES/FES_{scenarios[wildcards.scenario].get('FES_year', 2025)}_data.csv" if not is_historical_scenario(scenarios[wildcards.scenario]) else []
+        commissioning_date_overrides=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("fleet", {}).get("commissioning", {}).get("date_overrides_file") or [],
+        # FES data (future FES source, or explicit spatial proxy for CP30)
+        fes_data=lambda wildcards: f"{resources_path}/FES/FES_{get_generation_fes_year(scenarios[wildcards.scenario])}_data.csv" if not is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        # The FES edition's own GSP info, the declared island positions, and Dem_per_node (GSP rows on
+        # their demand node on the FES long-range chain), 27 Oct 2026.
+        fes_gsp_info=lambda wildcards: f"data/network/ETYS/fes{get_generation_fes_year(scenarios[wildcards.scenario])}_regional_breakdown_gsp_info.csv" if not is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        gsp_declared_points=lambda wildcards: "data/network/GSP/gsp_declared_points.csv" if not is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        gsp_dem_per_node=lambda wildcards: "data/network/ETYS/GB_network.xlsx" if not is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        cp30_es1=lambda wildcards: get_generator_cp30_resource(scenarios[wildcards.scenario], 'es1'),
+        cp30_es5=lambda wildcards: get_generator_cp30_resource(scenarios[wildcards.scenario], 'es5'),
+        # Imported helpers can modify explicit CP30 connection points; make
+        # them DAG inputs so their changes cannot leave stale renewable mapping.
+        cp30_connection_allocation_logic="scripts/CP30/connection_allocation.py",
+        cp30_spatial_allocation_logic="scripts/CP30/spatial_allocation.py",
+        hnd_hybrid_logic="scripts/CP30/hnd_hybrid.py",
+        spatial_mapping_logic="scripts/utilities/spatial_utils.py",
+        # Declared even when disabled so a future source-backed allocation change
+        # invalidates the CP30 renewable integration reproducibly.
+        cp30_connection_allocation=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("offshore_connection_allocation", {})
+            .get("file", [])
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_regional_anchors=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("regional_allocation", {})
+            .get("region_anchor_file", [])
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        renewable_support_overrides=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("renewable_support_overrides_file") or [],
+        historical_station_unit_splits=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("historical_station_unit_splits_file") or [],
+        renewable_performance_factor_registry=lambda wildcards: (
+            scenarios.get(wildcards.scenario, {})
+            .get("renewables", {}).get("performance_factor_registry", {})
+            .get("file", [])
+            if scenarios.get(wildcards.scenario, {})
+            .get("renewables", {}).get("performance_factor_registry", {})
+            .get("enabled", False) else []
+        ),
+        hnd_project_portfolio=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("hnd_project_allocation", {}).get("portfolio_file", [])
+            if scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("hnd_project_allocation", {}).get("enabled", False) else []
+        ),
+        hnd_project_crosswalk=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("hnd_project_allocation", {}).get("crosswalk_file", [])
+            if scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("hnd_project_allocation", {}).get("enabled", False) else []
+        ),
+        # Brownfield CP30 fleet: named REPD pipeline sites and the offshore landing
+        # crosswalk. Declared for every scenario so the DAG is stable; only a CP30
+        # scenario with fleet.spatial_proxy.brownfield.enabled reads them.
+        wind_onshore_pipeline_sites=f"{resources_path}/renewable/wind_onshore_pipeline_sites.csv",
+        wind_offshore_pipeline_sites=f"{resources_path}/renewable/wind_offshore_pipeline_sites.csv",
+        solar_pv_pipeline_sites=f"{resources_path}/renewable/solar_pv_pipeline_sites.csv",
+        cp30_brownfield_logic="scripts/CP30/brownfield_fleet.py",
+        # Regional proxy profiles and the GSP-node placement are imported by the
+        # integration script; declared so a change to either re-runs it (15 Oct 2026).
+        proxy_profiles_logic="scripts/generators/proxy_profiles.py",
+        gsp_nodes_logic="scripts/utilities/gsp_nodes.py",
+        # CP30 brownfield placement data (15 Oct 2026): the declared proxy relocations,
+        # and the GSP polygons, group-to-region map and Dem_per_node table behind the
+        # CP30 regions and the GSP-node placement ([] for every other scenario).
+        cp30_proxy_relocations=lambda wildcards: (
+            "data/network/ETYS/cp30_proxy_relocations.csv"
+            if _cp30_brownfield_enabled(wildcards.scenario) else []
+        ),
+        cp30_gsp_placement=lambda wildcards: _cp30_gsp_placement_inputs(wildcards.scenario),
+        proxy_profile_regions=lambda wildcards: _proxy_profile_region_inputs(wildcards.scenario),
+        # Large-hydro units with no site profile (the CP30 proxies) get a
+        # CP30-calibrated inflow CF with the weather year's monthly shape from
+        # ESPENI metered hydro (audit 26 Sep 2026).
+        large_hydro_monthly_shape=f"{data_path}/renewables/hydro/espeni_npshyd_monthly_shape.csv",
+        large_hydro_inflow_logic="scripts/renewables/large_hydro_inflow.py",
+        renewable_performance_factor_logic="scripts/generators/renewable_performance_factors.py",
+        # Declared named projects not deliverable in early years (Lewis farms
+        # behind the Western Isles link); read by brownfield_fleet.py.
+        cp30_named_fleet_exclusions=lambda wildcards: (
+            {**(scenarios[wildcards.scenario].get("fleet", {}).get("brownfield") or {}),
+             **(scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("brownfield") or {})}
+            .get("named_exclusions_file", "data/renewables/cp30_named_fleet_exclusions.csv")
+            if scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("brownfield", {}).get("enabled", False) else []
+        ),
+        cp30_offshore_landing_crosswalk=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("brownfield", {}).get("offshore_landing_crosswalk", [])
+            if scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {})
+            .get("brownfield", {}).get("enabled", False) else []
+        ),
+        # Scheme registers: named sites are labelled ROC/CfD from the Ofgem RO
+        # register and the LCCC portfolio (26 Sep 2026).
+        ro_register=lambda wildcards: _support_register_input(wildcards.scenario, "ro_register"),
+        ro_certificates=lambda wildcards: _support_register_input(wildcards.scenario, "ro_certificates"),
+        lccc_cfd_portfolio=lambda wildcards: _support_register_input(wildcards.scenario, "lccc_portfolio"),
+        support_repd=lambda wildcards: _support_register_input(wildcards.scenario, "repd"),
+        support_crosswalk_overrides=lambda wildcards: _support_register_input(wildcards.scenario, "crosswalk_overrides"),
+        # Named sites' CfD contracts checked against the LCCC portfolio: part-
+        # contracted, multi-round and terminated (F19, rebuild batch of 13 Oct 2026).
+        checked_cfd_contracts=lambda wildcards: _support_register_input(wildcards.scenario, "checked_cfd_contracts"),
+        support_register_logic=lambda wildcards: _support_register_input(wildcards.scenario, "logic"),
+        # CfD allocation-round schedule the increment is labelled from, net of
+        # the named fleet's rounds (G1, 27 Sep 2026).
+        cfd_vintage_schedule=lambda wildcards: scenarios.get(wildcards.scenario, {}).get("support", {}).get(
+            "labels", {}).get("cfd_vintage_schedule_file") or [],
+        cfd_vintage_logic="scripts/generators/cfd_vintage_labels.py",
+        # The profile rule's third offshore site file: its capacities are the
+        # divisors that turn MW profile columns into capacity factors (G2).
+        offshore_pipeline_processed=f"{resources_path}/renewable/offshore_pipeline_processed.csv",
+        # Task Y6b: the Y5 offshore landing table of the year replaces the FES Direct
+        # offshore rows in FES long-range builds ([] for every other scenario).
+        fes_offshore_landing=lambda wildcards: fes_supply_input(wildcards.scenario, "offshore_landing", "file"),
+        fes_offshore_landing_projects=lambda wildcards: fes_supply_input(
+            wildcards.scenario, "offshore_landing", "projects_file"),
+        fes_supply_logic=lambda wildcards: fes_supply_logic_input(wildcards.scenario),
+        # Land boundary for the offshore-bus placement exclusion (G5).
+        placement_land_boundary=lambda wildcards: (
+            (scenarios.get(wildcards.scenario, {}).get("network", {}).get("spatial_mapping", {}) or {})
+            .get("placement_exclusions", {}).get("land_boundary_file") or []
+            if (scenarios.get(wildcards.scenario, {}).get("network", {}).get("spatial_mapping", {}) or {})
+            .get("placement_exclusions", {}).get("enabled", False) else []
+        ),
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables.pkl",
-        summary=f"{resources_path}/generators/{{scenario}}_renewables_summary.csv"
+        summary=f"{resources_path}/generators/{{scenario}}_renewables_summary.csv",
+        brownfield_audit=f"{resources_path}/generators/{{scenario}}_cp30_brownfield_audit.csv",
+        brownfield_summary=f"{resources_path}/generators/{{scenario}}_cp30_brownfield_audit.json"
     params:
-        scenario_config=lambda wildcards: scenarios.get(wildcards.scenario, {}),
+        scenario_config=lambda wildcards: model_scenario_param(scenarios.get(wildcards.scenario, {})),
         is_historical=lambda wildcards: is_historical_scenario(scenarios.get(wildcards.scenario, {}))
     log:
         "logs/integrate_renewable_generators_{scenario}.log"
@@ -801,6 +565,112 @@ rule extract_repd_dispatchable_sites:
         "../envs/pypsa-gb.yaml"
     script:
         "../scripts/generators/extract_repd_dispatchable_sites.py"
+
+
+# Historical support labels are built before marginal costs, so evidence-backed
+# ROC stations influence the dispatch rather than being added only to a
+# post-solve accounting copy.
+def _historical_roc_station_labels(scenario_id):
+    return scenarios.get(scenario_id, {}).get("support", {}).get("labels", {}).get(
+        "historical_roc_station_labels", {}
+    )
+
+
+def _historical_roc_outturn_input(scenario_id):
+    labels = _historical_roc_station_labels(scenario_id)
+    if not labels.get("enabled", False):
+        return []
+    year = int(scenarios[scenario_id].get("modelled_year"))
+    return f"{resources_path}/analysis/ofgem_roc_{year}_calendar_issued_stations.csv"
+
+
+def _historical_roc_crosswalk_input(scenario_id):
+    labels = _historical_roc_station_labels(scenario_id)
+    return (
+        f"{resources_path}/analysis/{scenario_id}_repd_roc_station_mapping.csv"
+        if labels.get("enabled", False) else []
+    )
+
+
+def _historical_roc_registry_input(scenario_id):
+    labels = _historical_roc_station_labels(scenario_id)
+    return labels.get("registry_file", []) if labels.get("enabled", False) else []
+
+
+def _historical_roc_overrides_input(scenario_id):
+    labels = _historical_roc_station_labels(scenario_id)
+    return labels.get("station_overrides_file", []) if labels.get("enabled", False) else []
+
+
+def _historical_roc_source_evidence_input(scenario_id):
+    labels = _historical_roc_station_labels(scenario_id)
+    return (
+        f"{resources_path}/analysis/{scenario_id}_roc_station_source_evidence.csv"
+        if labels.get("enabled", False) else []
+    )
+
+
+def _historical_roc_physical_overlay_actions_input(scenario_id):
+    return scenarios.get(scenario_id, {}).get("support", {}).get("labels", {}).get(
+        "historical_roc_physical_overlay", {}
+    ).get("actions_file") or []
+
+
+def _historical_roc_representation_assumptions_input(scenario_id):
+    return _historical_roc_station_labels(scenario_id).get(
+        "residual_representation_assumptions_file"
+    ) or []
+
+
+rule build_historical_roc_station_source_evidence:
+    """Search all Ofgem issuing stations in REPD and DUKES before a historical solve."""
+    input:
+        outturn=lambda wc: _historical_roc_outturn_input(wc.scenario),
+        registry=lambda wc: _historical_roc_registry_input(wc.scenario),
+        renewable_overrides=lambda wc: scenarios[wc.scenario].get("support", {}).get(
+            "labels", {}
+        ).get("renewable_support_overrides_file") or [],
+        generator_overrides=lambda wc: scenarios[wc.scenario].get("support", {}).get(
+            "labels", {}
+        ).get("dispatchable_support_overrides_file") or [],
+        repd_2021="data/renewables/renewable-energy-planning-database-q1-march-2021.csv",
+        repd_2024="data/renewables/repd-q2-july-2024.csv",
+        repd_2025="data/renewables/repd-q2-jul-2025.csv",
+        dukes="data/generators/DUKES_5.11_2025.xlsx",
+    output:
+        mapping=f"{resources_path}/analysis/{{scenario}}_roc_station_source_evidence.csv",
+        summary=f"{resources_path}/analysis/{{scenario}}_roc_station_source_evidence_summary.json",
+    conda: "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        scenario="[A-Za-z0-9_-]+"
+    shell:
+        "python scripts/consumer_bill/build_roc_station_source_evidence.py "
+        "--outturn {input.outturn} --registry {input.registry} "
+        "--renewable-overrides {input.renewable_overrides} "
+        "--generator-overrides {input.generator_overrides} "
+        "--repd {input.repd_2021} {input.repd_2024} {input.repd_2025} "
+        "--dukes {input.dukes} --mapping-output {output.mapping} "
+        "--summary-output {output.summary}"
+
+
+rule extract_historical_roc_calendar_outturn:
+    """Create the full-year ROC station register needed by a historic build."""
+    input:
+        certificates_csv="data/market/ofgem_renewables_obligation/certificates_ro_current.csv",
+    output:
+        stations_csv=f"{resources_path}/analysis/ofgem_roc_{{year}}_calendar_issued_stations.csv",
+        technology_csv=f"{resources_path}/analysis/ofgem_roc_{{year}}_calendar_issued_by_technology.csv",
+        summary_json=f"{resources_path}/analysis/ofgem_roc_{{year}}_calendar_issued_summary.json",
+    params:
+        year=lambda wc: int(wc.year),
+        period_start=lambda wc: None,
+        period_end=lambda wc: None,
+    conda:
+        "../envs/pypsa-gb.yaml"
+    wildcard_constraints:
+        year="[0-9]{4}"
+    script:
+        "../scripts/consumer_bill/extract_ofgem_roc_calendar_outturn.py"
 
 
 # Stage 2: Add dispatchable thermal generators
@@ -873,13 +743,107 @@ rule add_thermal_generators_to_network:
         sewage_gas_sites=f"{resources_path}/generators/sites/sewage_gas_sites.csv",
         advanced_biofuel_sites=f"{resources_path}/generators/sites/advanced_biofuel_sites.csv",
         geothermal_sites=f"{resources_path}/generators/sites/geothermal_sites.csv",
+        historical_additional_thermal_sites="data/generators/historical_additional_thermal_sites.csv",
+        large_hydro_source_sites=f"{resources_path}/renewable/large_hydro_sites.csv",
+        # Historical years: large-hydro inflow = ESPENI metered hydro, day by day (large_hydro_inflow.py).
+        historical_station_buses=lambda wildcards: "data/generators/historical_station_buses.csv" if is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        offshore_landing_crosswalk=lambda wildcards: "data/network/ETYS/repd_offshore_landing_crosswalk.csv" if is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        espeni_metered_hydro=lambda wildcards: f"{data_path}/demand/espeni.csv" if is_historical_scenario(scenarios[wildcards.scenario]) else [],
+        dukes_roc_hydro_supplement=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("renewables", {}).get("hydro", {}).get("large_hydro", {}).get(
+            "roc_hydro_supplement_file"
+        ) or [],
+        support_overrides=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("dispatchable_support_overrides_file") or [],
+        cfd_tranche_mapping=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("historical_cfd_tranches", {}).get("mapping_file") or [],
+        cfd_tranche_actuals=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("historical_cfd_tranches", {}).get("actuals_file") or [],
+        historical_roc_outturn=lambda wildcards: _historical_roc_outturn_input(wildcards.scenario),
+        historical_roc_registry=lambda wildcards: _historical_roc_registry_input(wildcards.scenario),
+        historical_roc_crosswalk=lambda wildcards: _historical_roc_crosswalk_input(wildcards.scenario),
+        historical_roc_overrides=lambda wildcards: _historical_roc_overrides_input(wildcards.scenario),
+        historical_roc_source_evidence=lambda wildcards: _historical_roc_source_evidence_input(wildcards.scenario),
+        historical_roc_physical_overlay_actions=lambda wildcards: _historical_roc_physical_overlay_actions_input(wildcards.scenario),
+        historical_roc_representation_assumptions=lambda wildcards: _historical_roc_representation_assumptions_input(wildcards.scenario),
+        historical_roc_residual_output_calibration=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("support", {}).get("labels", {}).get("historical_roc_station_labels", {}).get(
+            "residual_output_calibration_file"
+        ) or [],
+        generator_monthly_availability=lambda wildcards: scenarios.get(
+            wildcards.scenario, {}
+        ).get("thermal", {}).get("availability_factors", {}).get("generator_monthly_file") or [],
+        espeni_dispatch=f"{data_path}/demand/espeni.csv",
+        # Declared nuclear stations for CP30 scenarios (replaces the FES nuclear
+        # proxy; see scripts/CP30/nuclear_schedule.py).
+        cp30_nuclear_station_schedule=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("nuclear_station_schedule") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_nuclear_schedule_logic="scripts/CP30/nuclear_schedule.py",
+        # Declared gas stations and the CP30 gas split (items MR1 and MR2; see
+        # scripts/CP30/gas_schedule.py).
+        cp30_ccs_biomass_station_schedule=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("ccs_biomass_station_schedule") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_biomass_station_schedule=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("biomass_station_schedule") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_gas_station_schedule=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("gas_station_schedule") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_gas_schedule_logic="scripts/CP30/gas_schedule.py",
+        # Plant CP30 omits but that is contracted for 2030 (Net Zero Teesside Power).
+        cp30_committed_overlay=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("committed_overlay") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_committed_overlay_logic="scripts/CP30/committed_overlay.py",
+        # Named CfD units carved out of the CP30 waste and biogas proxies
+        # (scripts/CP30/cfd_station_schedule.py).
+        cp30_cfd_station_schedule=lambda wildcards: (
+            scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("cfd_station_schedule") or []
+            if uses_brownfield(scenarios[wildcards.scenario]) else []
+        ),
+        cp30_cfd_station_schedule_logic="scripts/CP30/cfd_station_schedule.py",
+        # Land boundary for the offshore-bus exclusion when placing those units
+        # (network.spatial_mapping.placement_exclusions.land_boundary_file, else the default).
+        cp30_placement_land_boundary=lambda wildcards: (
+            ((scenarios[wildcards.scenario].get("network", {}).get("spatial_mapping", {}) or {})
+             .get("placement_exclusions", {}) or {}).get("land_boundary_file")
+            or "data/network/GSP/GSP_regions_27700_20250109.geojson"
+            if uses_brownfield(scenarios[wildcards.scenario])
+            and scenarios[wildcards.scenario].get("fleet", {}).get("spatial_proxy", {}).get("cfd_station_schedule") else []
+        ),
+        cp30_generation_logic="scripts/CP30/generation.py",
+        # Task Y6b: the year's declared station schedule for FES long-range builds ([] otherwise),
+        # and the year's ES1 lines when the gas CCS split is on (stage 5).
+        fes_station_schedule=lambda wildcards: fes_supply_input(wildcards.scenario, "thermal", "station_schedule"),
+        fes_es1_lines=lambda wildcards: fes_gas_ccs_split_input(wildcards.scenario),
+        fes_supply_logic=lambda wildcards: fes_supply_logic_input(wildcards.scenario),
+        # RO share of the anonymous CP30 biomass and energy-from-waste proxies
+        # from the Ofgem register (26 Sep 2026).
+        ro_register=lambda wildcards: _support_register_input(wildcards.scenario, "ro_register", brownfield_only=True),
+        ro_certificates=lambda wildcards: _support_register_input(wildcards.scenario, "ro_certificates", brownfield_only=True),
+        support_register_logic=lambda wildcards: _support_register_input(wildcards.scenario, "logic", brownfield_only=True),
         # Generator characteristics database
         fuel_data=f"{data_path}/generators/generator_data_by_fuel.csv"
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal.pkl",
-        summary=f"{resources_path}/generators/{{scenario}}_thermal_summary.csv"
+        summary=f"{resources_path}/generators/{{scenario}}_thermal_summary.csv",
+        pre_solve_roc_mapping=f"{resources_path}/generators/{{scenario}}_pre_solve_roc_mapping.csv",
+        pre_solve_roc_overlay_actions=f"{resources_path}/generators/{{scenario}}_pre_solve_roc_overlay_actions.csv",
+        pre_solve_roc_capacity_ledger=f"{resources_path}/generators/{{scenario}}_pre_solve_roc_capacity_ledger.csv"
     params:
-        scenario_config=lambda wildcards: scenarios[wildcards.scenario]
+        scenario_config=lambda wildcards: model_scenario_param(scenarios[wildcards.scenario])
     log:
         "logs/integrate_thermal_generators_{scenario}.log"
     benchmark:
@@ -918,7 +882,8 @@ rule finalize_generator_integration:
       - VoLL parameter (from scenario configuration)
     
     Output:
-      - Final network: {scenario}_base_demand_generators.nc (READY FOR OPTIMIZATION)
+      - Network: {scenario}_network_demand_renewables_thermal_generators.pkl (storage, hydrogen and
+        interconnectors are added after it)
       - Full generators CSV: {scenario}_generators_full.csv
       - Summary by carrier: {scenario}_generators_summary_by_carrier.csv
       - Technology summary: {scenario}_technology_capacity_summary.csv
@@ -938,7 +903,7 @@ rule finalize_generator_integration:
         csv_technology_summary=f"{resources_path}/generators/{{scenario}}_technology_capacity_summary.csv",
         csv_integration_report=f"{resources_path}/generators/{{scenario}}_generator_integration_report.txt"
     params:
-        voll=lambda w: scenarios[w.scenario].get('voll', 6000.0)  # Value of Lost Load in £/MWh
+        voll=lambda w: scenarios[w.scenario].get('solve', {}).get('voll', 6000.0)  # Value of Lost Load in £/MWh
     log:
         "logs/finalize_generator_integration_{scenario}.log"
     benchmark:
@@ -980,6 +945,19 @@ def _carrier_correction_factors_file(scenario_id):
     return []
 
 
+def _future_cost_source_file(scenario_id):
+    """Return the generated commodity source required by a future-cost case."""
+    future_costs = scenarios.get(scenario_id, {}).get('marginal_costs', {}).get(
+        'future_costs', {}
+    )
+    if not future_costs.get('enabled', False):
+        return []
+    cases = future_costs.get('cases', {})
+    case_name = str(future_costs.get('case', 'central')).lower()
+    source_file = cases.get(case_name, {}).get('source_file')
+    return source_file or []
+
+
 rule calibrate_daily_empirical_mc:
     """
     Fetch ELEXON B1610 + MID data and calibrate per-generator empirical
@@ -994,7 +972,7 @@ rule calibrate_daily_empirical_mc:
     output:
         daily_mc=f"{resources_path}/marginal_costs/{{scenario}}_daily_empirical_mc.csv",
     params:
-        scenario_config=lambda w: scenarios[w.scenario],
+        scenario_config=lambda w: scenario_param(scenarios[w.scenario]),
         data_dir="resources/market/elexon",
     log:
         "logs/calibrate_daily_mc_{scenario}.log"
@@ -1021,7 +999,7 @@ rule calibrate_renewable_empirical_mc:
     output:
         renewable_mc=f"{resources_path}/marginal_costs/{{scenario}}_renewable_empirical_mc.csv",
     params:
-        scenario_config=lambda w: scenarios[w.scenario],
+        scenario_config=lambda w: scenario_param(scenarios[w.scenario]),
         data_dir="resources/market/elexon",
     log:
         "logs/calibrate_renewable_mc_{scenario}.log"
@@ -1039,6 +1017,18 @@ rule calibrate_renewable_empirical_mc:
 # MARGINAL COST CALCULATION
 # ══════════════════════════════════════════════════════════════════════════════
 
+rule fetch_neso_cp2030_annex4_costs:
+    """Download and parse NESO Clean Power 2030 Annex 4 into an auditable JSON input."""
+    output:
+        pdf=f"{resources_path}/market/source/neso_clean_power_2030_annex4.pdf",
+        costs=f"{resources_path}/market/neso_clean_power_2030_annex4_costs.json",
+    log:
+        "logs/market/fetch_neso_cp2030_annex4_costs.log"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/market/fetch_neso_cp2030_annex4_costs.py"
+
 rule apply_marginal_costs_to_network:
     """
     Compute and apply marginal costs to thermal generators.
@@ -1047,7 +1037,7 @@ rule apply_marginal_costs_to_network:
     --------------
     Marginal costs are configured in YAML files (no code editing needed):
 
-    In config/defaults.yaml (project-wide defaults):
+    In config/defaults/ (project-wide defaults, file base/marginal_costs.yaml):
         marginal_costs:
           carbon_price: 85.0              # £/tonne CO2
           fuel_prices:
@@ -1070,7 +1060,7 @@ rule apply_marginal_costs_to_network:
       1. Scenario-specific override (scenarios.yaml)
       2. Historical lookup tables (for modelled_year ≤ 2024)
       3. FES dynamic prices (if FES_year specified and use_fes_prices=true)
-      4. Configuration defaults (defaults.yaml)
+      4. Configuration defaults (config/defaults/)
       5. Fallback hardcoded values
 
     Historical scenarios (≤2024): Uses built-in historical lookup tables
@@ -1107,21 +1097,23 @@ rule apply_marginal_costs_to_network:
     input:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
         # Optional: FES price inputs for future scenarios (>2024)
-        fuel_prices=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
-        carbon_prices=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else [],
+        fuel_prices=lambda w: get_cost_price_file(w.scenario, 'fuel_prices'),
+        carbon_prices=lambda w: get_cost_price_file(w.scenario, 'carbon_prices'),
         # Optional: Daily thermal empirical MC calibration
         daily_mc=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_daily_empirical_mc.csv" if _daily_mc_enabled(w.scenario) else [],
         # Optional: Renewable empirical MC calibration
         renewable_mc=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_renewable_empirical_mc.csv" if _renewable_mc_enabled(w.scenario) else [],
         # Optional: Carrier correction factors (bridges historical calibration to future)
         correction_factors=lambda w: _carrier_correction_factors_file(w.scenario),
+        # Optional: generated external commodity source (e.g. NESO Annex 4).
+        future_cost_source=lambda w: _future_cost_source_file(w.scenario),
     output:
         network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators_costs.pkl",
         marginal_costs_csv=f"{resources_path}/generators/{{scenario}}_marginal_costs_breakdown.csv"
     params:
-        scenario_config=lambda w: scenarios[w.scenario],
-        fuel_price_file=lambda w: f"{resources_path}/marginal_costs/fuel_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
-        carbon_price_file=lambda w: f"{resources_path}/marginal_costs/carbon_prices_{scenarios[w.scenario].get('FES_year', 2024)}.csv" if scenarios[w.scenario].get('modelled_year', 2020) > 2024 and scenarios[w.scenario].get('FES_year') else None,
+        scenario_config=lambda w: model_scenario_param(scenarios[w.scenario]),
+        fuel_price_file=lambda w: get_cost_price_param(w.scenario, 'fuel_prices'),
+        carbon_price_file=lambda w: get_cost_price_param(w.scenario, 'carbon_prices'),
         thermal_mc_file=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_daily_empirical_mc.csv" if _daily_mc_enabled(w.scenario) else None,
         renewable_mc_file=lambda w: f"{resources_path}/marginal_costs/{w.scenario}_renewable_empirical_mc.csv" if _renewable_mc_enabled(w.scenario) else None,
         correction_factors_file=lambda w: _carrier_correction_factors_file(w.scenario) or None,
@@ -1173,15 +1165,12 @@ rule integrate_generators:
       Stage 2: Thermal generators (CCGT, nuclear, biomass, waste)
       Stage 3: Finalization (load shedding + comprehensive exports)
     
-    Use this as the main target for generator integration:
-        snakemake integrate_generators_{scenario} --cores 4
-    
-    Or target final output directly:
-        snakemake resources/network/{scenario}_base_demand_generators.nc --cores 4
+    Target it through its marker file:
+        snakemake resources/generators/{scenario}_integration_complete.txt --cores 4
     """
     input:
         # Final outputs from 3-stage pipeline
-        network=f"{resources_path}/network/{{scenario}}_base_demand_generators.nc",
+        network=f"{resources_path}/network/{{scenario}}_network_demand_renewables_thermal_generators.pkl",
         csv_generators_full=f"{resources_path}/generators/{{scenario}}_generators_full.csv",
         csv_generators_summary=f"{resources_path}/generators/{{scenario}}_generators_summary_by_carrier.csv",
         csv_technology_summary=f"{resources_path}/generators/{{scenario}}_technology_capacity_summary.csv",
@@ -1200,32 +1189,6 @@ rule integrate_generators:
         """
 
 
-# Legacy aggregate rule (backward compatibility)
-rule add_generators:
-    """
-    LEGACY: Aggregate target for old single-stage integration workflow.
-    
-    ⚠️  This is kept for backward compatibility only.
-    ⚠️  New workflows should use: integrate_generators (3-stage pipeline)
-    
-    This was the original single-rule approach (all-in-one integration).
-    """
-    input:
-        network=f"{resources_path}/network/{{scenario}}_base_demand_generators.nc",
-        csv_full=f"{resources_path}/generators/{{scenario}}_generators_full.csv",
-        csv_summary=f"{resources_path}/generators/{{scenario}}_generators_summary_by_carrier.csv",
-        csv_tech=f"{resources_path}/generators/{{scenario}}_technology_capacity_summary.csv",
-        csv_report=f"{resources_path}/generators/{{scenario}}_generator_integration_report.txt",
-        csv_export_marker=f"{resources_path}/network/csv/{{scenario}}_base_demand_generators/export_complete.txt"
-    output:
-        ready=f"{resources_path}/generators/{{scenario}}_pipeline_complete.txt"
-    shell:
-        """
-        echo "Generator integration pipeline complete" > {output.ready}
-        echo "(Using 3-stage modular approach)" >> {output.ready}
-        """
-
-
 # =============================================================================
 # LEGACY MARGINAL COST RULES - REMOVED
 # =============================================================================
@@ -1239,7 +1202,7 @@ rule add_generators:
 # This rule uses scripts/generators/apply_marginal_costs.py and is integrated
 # into the standard workflow.
 #
-# Configuration is now via config/defaults.yaml and config/scenarios.yaml.
+# Configuration is now via config/defaults/ and config/scenarios.yaml.
 # See documentation for details.
 # =============================================================================
 

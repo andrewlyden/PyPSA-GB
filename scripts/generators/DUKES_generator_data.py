@@ -412,10 +412,28 @@ def geocode_thermal_generators_from_postcodes(df: pd.DataFrame) -> pd.DataFrame:
 
     # Save updated cache
     geocoder._save_cache()
+    _raise_on_geocoding_network_failures(geocoder.network_failures, "postcodes.io")
     
     logger.info(f"✓ Successfully geocoded {geocoded_count}/{needs_geocoding.sum()} thermal generators from postcodes")
 
     return df
+
+
+def _raise_on_geocoding_network_failures(stations, service: str) -> None:
+    """Fail the build when a geocoding request errored (F25.12).
+
+    The committed caches (``data/generators/*_cache*``) answer every DUKES
+    station already, so a request is made only for a new station. A network
+    or server error used to leave the station without coordinates and was
+    recorded as a permanent lookup failure; now the build stops, successful
+    lookups having been cached, and a re-run retries only the errored ones.
+    """
+    if stations:
+        listed = ", ".join(sorted(map(str, stations))[:10])
+        raise RuntimeError(
+            f"{service} geocoding hit network or server errors for {len(stations)} "
+            f"station(s): {listed}. Successful lookups are cached; re-run to retry."
+        )
 
 
 def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/nominatim_cache.csv") -> pd.DataFrame:
@@ -507,6 +525,7 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
     geocoded_count = 0
     new_cache_entries = []
     new_failures = []
+    network_failures = []
     
     for idx in df[needs_geocoding].index:
         station_name = df.loc[idx, 'station_name']
@@ -535,6 +554,7 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
         ]
         
         found = False
+        transient = False
         for query in queries:
             params = {
                 'q': query,
@@ -544,6 +564,8 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
             
             try:
                 response = requests.get(url, params=params, headers=headers, timeout=10)
+                if response.status_code != 200:
+                    transient = True  # rate limit or server error: not an answer
                 
                 if response.status_code == 200:
                     results = response.json()
@@ -576,12 +598,17 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
                         break
                         
             except Exception as e:
+                transient = True
                 logger.warning(f"  Error geocoding {station_name}: {e}")
                 continue
             
             time.sleep(1.1)  # Rate limit: 1 request per second
         
-        if not found:
+        if not found and transient:
+            # F25.12: a network or server error is not a failed lookup; never
+            # write it to the committed failure cache.
+            network_failures.append(station_name)
+        elif not found:
             logger.warning(f"  ✗ Could not geocode: {station_name}")
             new_failures.append(station_name)
         
@@ -609,6 +636,7 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
         logger.info(f"✓ Saved {len(new_failures)} new failures to cache (total: {len(all_failures)})")
     
     logger.info(f"✓ Successfully geocoded {geocoded_count}/{needs_geocoding.sum()} thermal generators using Nominatim")
+    _raise_on_geocoding_network_failures(network_failures, "Nominatim")
     
     return df
 
@@ -689,6 +717,7 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
     geocoded_count = 0
     new_cache_entries = []
     new_failures = []
+    network_failures = []
     
     for idx in df[needs_geocoding].index:
         station_name = df.loc[idx, 'station_name']
@@ -721,6 +750,7 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
                 queries.append(f"{location_clean}, United Kingdom")
         
         found = False
+        transient = False
         for query in queries:
             params = {
                 'q': query,
@@ -730,6 +760,8 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
             
             try:
                 response = requests.get(url, params=params, headers=headers, timeout=10)
+                if response.status_code != 200:
+                    transient = True  # rate limit or server error: not an answer
                 
                 if response.status_code == 200:
                     results = response.json()
@@ -766,12 +798,15 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
                             logger.warning(f"  ✗ {station_name}: Result outside UK bounds ({lat:.2f}, {lon:.2f})")
                         
             except Exception as e:
+                transient = True
                 logger.warning(f"  Error geocoding {station_name}: {e}")
                 continue
             
             time.sleep(1.1)  # Rate limit
         
-        if not found:
+        if not found and transient:
+            network_failures.append(station_name)
+        elif not found:
             logger.warning(f"  ✗ Could not geocode: {station_name} (location: {location})")
             new_failures.append(station_name)
         
@@ -794,6 +829,7 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
         logger.info(f"✓ Saved {len(new_failures)} new failures to cache (total: {len(all_failures)})")
     
     logger.info(f"✓ Successfully geocoded {geocoded_count}/{needs_geocoding.sum()} thermal generators using location fallback")
+    _raise_on_geocoding_network_failures(network_failures, "Nominatim location fallback")
     
     return df
 

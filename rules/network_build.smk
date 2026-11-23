@@ -19,7 +19,7 @@ NETWORK MODEL SELECTION:
   - Wildcards constrained to prevent invalid scenario/model combinations
 
 ETYS YEAR SELECTION:
-  - Configured via etys.year in defaults.yaml or per-scenario in scenarios.yaml
+  - Configured via network.etys.year in config/defaults/ or per-scenario in scenarios.yaml
   - Supports 2022, 2023, 2024 (file naming handled by etys_file_registry.py)
 
 DATA SOURCES:
@@ -28,7 +28,7 @@ DATA SOURCES:
   • Zonal: CSV files with zone definitions and inter-zone links
 
 DOCUMENTATION:
-  • docs/NETWORK_BUILD_RULE.md
+  • https://pypsa-gb.readthedocs.io (Model > Network)
 
 For network clustering rules, see network_clustering.smk
 """
@@ -63,9 +63,11 @@ from scripts.network_build.etys_file_registry import get_etys_input_files
 # Uses: scenarios, run_ids from main Snakefile
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Use scenarios and run_ids from main Snakefile (no config reloading)
+# Use scenarios and build_ids from main Snakefile (no config reloading).
+# build_ids = the scenarios whose network is built: run_ids without a
+# network_from, plus every network_from parent (see the Snakefile).
 _sc_defs = scenarios
-_run_ids = run_ids
+_run_ids = build_ids
 
 # Categorize scenarios by network model type
 _etys_scenarios = sorted([
@@ -106,7 +108,7 @@ ALL_SCENARIO_REGEX = _regex_from_list(_run_ids)
 
 # Collect unique ETYS years used across all ETYS scenarios
 _etys_years_used = sorted(set(
-    _sc_defs.get(sid, {}).get("etys", {}).get("year", 2023)
+    _sc_defs.get(sid, {}).get("network", {}).get("etys", {}).get("year", 2023)
     for sid in _etys_scenarios
 ))
 ETYS_YEAR_REGEX = _regex_from_list([str(y) for y in _etys_years_used]) if _etys_years_used else r"(?!x)x"
@@ -206,9 +208,21 @@ def get_network_model(scenario):
                         f"Available scenarios: {list(_sc_defs.keys())}")
 
 
+def get_cp30_dated_works_input(scenario_config):
+    """The CP30-dated Appendix B works table, for an enabled network.reinforcements block that names it.
+
+    A CP30 2030 scenario choice (15 Oct 2026; ETYS_upgrades.add_cp30_dated_works):
+    every other scenario gets no input.
+    """
+    cp30 = (scenario_config or {}).get("network", {}).get("reinforcements", {}) or {}
+    if not cp30.get("enabled", False) or not cp30.get("appendix_b_dated_works_file"):
+        return []
+    return [cp30["appendix_b_dated_works_file"]]
+
+
 def _get_etys_year(scenario):
     """Get the ETYS publication year for a given scenario (default: 2023)."""
-    return _sc_defs.get(scenario, {}).get("etys", {}).get("year", 2023)
+    return _sc_defs.get(scenario, {}).get("network", {}).get("etys", {}).get("year", 2023)
 
 
 def get_network_inputs(scenario):
@@ -272,7 +286,12 @@ rule process_ETYS_data:
     """
     input:
         etys_files=lambda wildcards: get_etys_input_files(int(wildcards.etys_year), data_path),
-        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv"
+        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv",
+        # Imported modules that decide the impedance values written to the
+        # components CSV (zero/missing policy and ELECTRICAL_DEFAULTS).
+        branch_units_logic="scripts/network_build/branch_units.py",
+        branch_attributes_logic="scripts/network_build/branch_attributes.py",
+        etys_registry_logic="scripts/network_build/etys_file_registry.py"
     output:
         components=f"{resources_path}/network/ETYS_{{etys_year}}_components.csv",
         buses=f"{resources_path}/network/ETYS_{{etys_year}}_buses.csv"
@@ -310,11 +329,11 @@ rule build_ETYS_base_network:
       • ETYS Appendix B Excel file (needed for upgrade data)
 
     ETYS YEAR:
-      Configured via etys.year in defaults.yaml or per-scenario in scenarios.yaml.
+      Configured via network.etys.year in config/defaults/ or per-scenario in scenarios.yaml.
       Supports: 2022, 2023, 2024
 
     NETWORK UPGRADES:
-      When etys_upgrades.enabled=true in scenario config, applies:
+      When network.upgrades.enabled=true in scenario config, applies:
       • Circuit additions/removals/modifications
       • Transformer additions/removals
       Upgrades are filtered to include only those <= modelled_year.
@@ -332,15 +351,59 @@ rule build_ETYS_base_network:
     input:
         components=lambda wildcards: f"{resources_path}/network/ETYS_{_get_etys_year(wildcards.scenario)}_components.csv",
         buses=lambda wildcards: f"{resources_path}/network/ETYS_{_get_etys_year(wildcards.scenario)}_buses.csv",
+        # Imported by ETYS_network.py; track it so topology/parser changes
+        # rebuild existing scenario networks rather than retaining stale files.
+        etys_upgrade_logic="scripts/network_build/ETYS_upgrades.py",
+        # Holds behaviour since 26 Sep 2026 (HVDC_TERMINAL_ENABLING_WORKS).
+        etys_registry_logic="scripts/network_build/etys_file_registry.py",
+        # Converts every branch to PyPSA units once (since 27 Sep 2026).
+        branch_units_logic="scripts/network_build/branch_units.py",
+        # Seasonal ratings and ETYS licensee on every branch (27 Sep 2026).
+        branch_attributes_logic="scripts/network_build/branch_attributes.py",
+        cp30_reinforcement_logic="scripts/CP30/reinforcements.py",
+        cp30_reinforcement_layer_logic="scripts/CP30/reinforcement_layer.py",
+        hnd_hybrid_logic="scripts/CP30/hnd_hybrid.py",
         etys_file=lambda wildcards: get_etys_input_files(_get_etys_year(wildcards.scenario), data_path)[0],
-        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv"
+        substation_coords=f"{data_path}/network/ETYS/substation_coordinates.csv",
+        # Reviewed per-bus positions (network audit 15 Oct 2026).
+        bus_coordinate_overrides=f"{data_path}/network/ETYS/bus_coordinate_overrides.csv",
+        # Later-year Appendix B rows CP30 N1 requires by 2030 (CP30 2030 only).
+        cp30_appendix_b_dated_works=lambda wildcards: get_cp30_dated_works_input(scenarios[wildcards.scenario]),
+        cp30_reinforcement_reference=lambda wildcards: (
+            scenarios[wildcards.scenario].get("network", {}).get("reinforcements", {})
+            .get("reference_file", [])
+        ),
+        cp30_reinforcement_manifest=lambda wildcards: (
+            scenarios[wildcards.scenario].get("network", {}).get("reinforcements", {})
+            .get("manifest_file", [])
+        ),
+        cp30_reinforcement_components=lambda wildcards: (
+            scenarios[wildcards.scenario].get("network", {}).get("reinforcements", {})
+            .get("components_file", [])
+        ),
+        hnd_asset_register=lambda wildcards: (
+            scenarios[wildcards.scenario].get("network", {}).get("hnd_hybrid", {}).get("asset_register", [])
+            if scenarios[wildcards.scenario].get("network", {}).get("hnd_hybrid", {}).get("enabled", False) else []
+        )
     output:
-        network=f"{resources_path}/network/{{scenario}}_network.nc"
+        network=f"{resources_path}/network/{{scenario}}_network.nc",
+        # Kept beside the built network so every ETYS scenario has an explicit
+        # record of source rows that could not be represented in PyPSA.
+        etys_upgrade_audit=f"{resources_path}/network/{{scenario}}_etys_upgrade_audit.csv",
+        cp30_reinforcement_audit=f"{resources_path}/network/{{scenario}}_cp30_reinforcement_audit.csv",
+        hnd_hybrid_audit=f"{resources_path}/network/{{scenario}}_hnd_hybrid_audit.csv"
     params:
         scenario=lambda wildcards: wildcards.scenario,
         modelled_year=lambda wildcards: scenarios[wildcards.scenario].get("modelled_year", 2020),
-        etys_upgrades_enabled=lambda wildcards: scenarios[wildcards.scenario].get("etys_upgrades", {}).get("enabled", False),
-        etys_upgrade_year=lambda wildcards: scenarios[wildcards.scenario].get("etys_upgrades", {}).get("upgrade_year", None)
+        etys_upgrades_enabled=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("enabled", False),
+        etys_upgrade_year=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("upgrade_year", None),
+        etys_documented_topology_corrections=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("documented_topology_corrections", {}),
+        etys_engineering_fallbacks=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("engineering_fallbacks", {}),
+        etys_topology_sensitivities=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("topology_sensitivities", []),
+        etys_busbar_alias_fallback=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("busbar_alias_fallback", True),
+        etys_prune_dead_islands=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("upgrades", {}).get("prune_dead_islands", True),
+        cp30_reinforcements=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("reinforcements", {}),
+        hnd_hybrid=lambda wildcards: scenarios[wildcards.scenario].get("network", {}).get("hnd_hybrid", {})
     conda:
         "../envs/pypsa-gb.yaml"
     log:
@@ -381,8 +444,8 @@ rule build_reduced_base_network:
       • ~10x faster simulation vs ETYS
 
     SEE ALSO:
-      • scripts/build_network.py - Flexible network builder
-      • docs/NETWORK_MODELS.md - Network model comparison
+      • scripts/network_build/build_network.py - Flexible network builder
+      • https://pypsa-gb.readthedocs.io (Model > Network) - Network model comparison
     """
     input:
         lambda wildcards: get_network_inputs(wildcards.scenario) if get_network_model(wildcards.scenario) == "Reduced" else []
@@ -437,8 +500,8 @@ rule build_zonal_base_network:
       • ~100x faster simulation vs ETYS
 
     SEE ALSO:
-      • scripts/build_network.py - Handles both Reduced and Zonal
-      • docs/NETWORK_MODELS.md - When to use each network type
+      • scripts/network_build/build_network.py - Handles both Reduced and Zonal
+      • https://pypsa-gb.readthedocs.io (Model > Network) - When to use each network type
     """
     input:
         lambda wildcards: get_network_inputs(wildcards.scenario) if get_network_model(wildcards.scenario) == "Zonal" else []

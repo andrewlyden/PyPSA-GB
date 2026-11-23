@@ -1,0 +1,34 @@
+{#- Shibuya's repo card with the counts written in at build time (docs/source/conf.py _repo_stats): the theme fills them in the browser from GitHub's unauthenticated API, which shows 0 when that call is refused. -#}
+{%- if source_type and source_user and source_repo and source_type in ("github", "gitlab") -%}
+
+{%- if source_type == "github" -%}
+  {%- set source_url = "https://github.com/{}/{}".format(source_user, source_repo) -%}
+{%- else -%}
+  {%- set source_url = "https://gitlab.com/{}/{}".format(source_user, source_repo) -%}
+{%- endif -%}
+
+<a class="js-repo-stats repo-stats flex items-center" href="{{ source_url }}"
+  data-type="{{ source_type }}" data-user="{{ source_user }}" data-repo="{{ source_repo }}">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:{{ source_type }}"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    {% set repo = source_user + "/" + source_repo %}
+    {% if repo|count > 17 %}
+      <span>{{ source_repo }}</span>
+    {% else %}
+      <span>{{ repo }}</span>
+    {% endif %}
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">{{ repo_stars or 0 }}</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">{{ repo_forks or 0 }}</strong>
+      </span>
+    </span>
+  </span>
+</a>
+{%- endif -%}

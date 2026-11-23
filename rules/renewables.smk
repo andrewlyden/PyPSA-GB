@@ -46,108 +46,28 @@ atlite_cutouts_path = f"{resources_path}/atlite/cutouts"
 renewable_data_path = f"{resources_path}/renewable"
 
 
-def _extract_from_scenarios(key):
-    """Extract values from active scenarios for the renewables module."""
-    try:
-        return sorted({scenarios[rid][key] for rid in run_ids if key in scenarios.get(rid, {})})
-    except Exception as e:
-        print(f"Warning: Could not extract {key} from scenarios: {e}")
-        return [2020]
+def _get_required_profile_years():
+    """Weather years whose profiles the built scenarios read."""
+    return sorted({scenarios[sid].get("renewables_year", 2020) for sid in build_ids if sid in scenarios})
 
+required_years = _get_required_profile_years()
 
-def _get_required_cutout_years():
-    """Return set of cutout years required by active scenarios."""
-    years = set()
-    try:
-        for sid in run_ids:
-            if sid in scenarios:
-                sc = scenarios[sid]
-                years.add(sc.get("renewables_year", 2020))
-                years.add(sc.get("demand_year", 2020))
-    except Exception as e:
-        print(f"Warning: Could not determine required years: {e}")
-        years.add(2020)
-    return years
+# Missing cutouts are declared as rule inputs below, so Snakemake can report
+# them for the requesting rule without filesystem probing during workflow parsing.
 
+# The offshore pipeline is cut at the latest modelled year of ANY defined
+# scenario, not of the selected ones: the processed file (and so every offshore
+# profile) must not change with the run selection. Profile files are shared by
+# every scenario with that weather year whatever its modelled year, so extra
+# pipeline columns are simply not picked up by an earlier-year integration.
+pipeline_reference_year = max(
+    int(cfg["modelled_year"]) for cfg in scenarios.values() if cfg.get("modelled_year")
+)
 
-def _get_available_cutouts():
-    """List existing cutout files for required years, error if missing."""
-    from pathlib import Path
-    import sys
-    
-    # Add scripts to path for imports
-    sys.path.insert(0, 'scripts')
-    from scripts.utilities.scenario_detection import check_cutout_availability, is_historical_scenario
-
-    cutout_dir = Path(atlite_cutouts_path)
-    if not cutout_dir.exists():
-        raise FileNotFoundError(
-            "Cutout directory not found: "
-            f"{cutout_dir}\n"
-            "Generate cutouts first: snakemake -s Snakefile_cutouts --cores 4"
-        )
-
-    req_years = _get_required_cutout_years()
-    have, missing = [], []
-    missing_details = []
-    
-    for y in sorted(req_years):
-        p = cutout_dir / f"uk-{y}.nc"
-        if p.exists():
-            have.append(str(p))
-        else:
-            missing.append(str(p))
-            
-            # Find which scenarios need this year
-            scenarios_needing_year = [
-                sid for sid in run_ids 
-                if sid in scenarios and scenarios[sid].get('renewables_year') == y
-            ]
-            
-            if scenarios_needing_year:
-                scenario_type = "HISTORICAL" if y <= 2024 else "FUTURE"
-                missing_details.append(
-                    f"  • uk-{y}.nc (required by {', '.join(scenarios_needing_year)}) [{scenario_type}]"
-                )
-
-    if missing:
-        error_msg = (
-            "=" * 80 + "\n"
-            "❌ MISSING WEATHER CUTOUT FILES\n"
-            "=" * 80 + "\n"
-            f"Required cutout files not found:\n" +
-            "\n".join(missing_details) + "\n\n" +
-            "🔧 SOLUTION:\n"
-            "1. Update config/cutouts_config.yaml to include missing years:\n"
-            f"   years_to_process: {sorted(list(req_years))}\n\n"
-            "2. Run cutout generation workflow:\n"
-            "   snakemake -s Snakefile_cutouts --cores 2\n\n"
-            "This will download and process ERA5 weather data for the required years.\n"
-            "Note: Cutout generation can take 30-60 minutes per year.\n"
-            "=" * 80
-        )
-        raise FileNotFoundError(error_msg)
-
-    return have
-
-
-# Static lists used by rules
-required_years = _get_required_cutout_years()
-expected_cutouts = [f"{atlite_cutouts_path}/uk-{y}.nc" for y in sorted(required_years)]
-
-# Early check (fail-fast) for missing cutouts
-try:
-    _avail = _get_available_cutouts()
-    print(
-        "[OK] Found "
-        f"{len(_avail)} cutout files for required years {sorted(required_years)}"
-    )
-    for _c in _avail:
-        print(f"   - {_c}")
-except FileNotFoundError as e:
-    print(f"\n{e}\n")
-    import sys
-    sys.exit(1)
+# Profiles are made one weather year per job, so adding a year to the run
+# selection makes that year's profiles without regenerating the others.
+wildcard_constraints:
+    renewables_year=r"\d{4}"
 
 
 # Prepare site data for renewables in REPD
@@ -192,7 +112,10 @@ rule prepare_renewable_site_data:
     """
     input:
         repd="data/renewables/repd-q2-jul-2025.csv",
-        offshore_pipeline="data/renewables/future_offshore_sites/offshore_pipeline.csv"
+        offshore_pipeline="data/renewables/future_offshore_sites/offshore_pipeline.csv",
+        historical_site_overrides="data/renewables/historical_renewable_site_overrides.csv",
+        cfd_round_corrections="data/market/lccc/cfd_round_corrections.csv",
+        support_labels="scripts/renewables/repd_support_labels.py"
     output:
         wind_onshore_repd=f"{renewable_data_path}/wind_onshore_sites.csv",
         wind_offshore_repd=f"{renewable_data_path}/wind_offshore_sites.csv",
@@ -204,14 +127,63 @@ rule prepare_renewable_site_data:
         tidal_lagoon=f"{renewable_data_path}/tidal_lagoon_sites.csv",
         offshore_pipeline_processed=f"{renewable_data_path}/offshore_pipeline_processed.csv"
     params:
-        renewables_years=required_years,
-        modelled_years=_extract_from_scenarios("modelled_year")
+        pipeline_reference_year=pipeline_reference_year
     log:
         "logs/prepare_renewable_site_data.log"
     conda:
         "../envs/pypsa-gb.yaml"
     script:
         "../scripts/renewables/prepare_renewable_site_data.py"
+
+
+rule prepare_future_pipeline_sites:
+    """
+    Extract the named REPD pipeline (under construction, consented, in planning)
+    for the three weather-variable carriers, one site file per technology.
+
+    The historical site files above keep only operational projects, which a
+    2030 scenario cannot be built from. These companion files carry status,
+    planning milestones, coordinates and REPD's own CfD round and ROC banding so
+    a brownfield CP30 fleet can place, date and label named projects and proxy
+    only the residual. Which statuses a scenario includes is decided in its
+    ``spatial_proxy.brownfield`` configuration, not here.
+    """
+    input:
+        repd="data/renewables/repd-q2-jul-2025.csv",
+        offshore_pipeline="data/renewables/future_offshore_sites/offshore_pipeline.csv",
+        logic="scripts/renewables/prepare_future_pipeline_sites.py",
+        cfd_round_corrections="data/market/lccc/cfd_round_corrections.csv",
+        support_labels="scripts/renewables/repd_support_labels.py",
+    output:
+        wind_offshore=f"{renewable_data_path}/wind_offshore_pipeline_sites.csv",
+        wind_onshore=f"{renewable_data_path}/wind_onshore_pipeline_sites.csv",
+        solar_pv=f"{renewable_data_path}/solar_pv_pipeline_sites.csv",
+        summary=f"{renewable_data_path}/pipeline_sites_summary.csv",
+    log:
+        "logs/prepare_future_pipeline_sites.log"
+    conda:
+        "../envs/pypsa-gb.yaml"
+    script:
+        "../scripts/renewables/prepare_future_pipeline_sites.py"
+
+
+# Fetch a weather cutout when it is missing, so a fresh clone can run without
+# Snakefile_cutouts: a copy in data/atlite/cutouts/ first, then the published
+# Zenodo record (10.5281/zenodo.18325225, ~700 MB a year), and only then ERA5
+# through atlite (hours per year, needs a CDS API key).
+rule retrieve_cutout:
+    output:
+        f"{atlite_cutouts_path}/uk-{{cutout_year}}.nc"
+    wildcard_constraints:
+        cutout_year=r"\d{4}"
+    params:
+        years=lambda wc: [int(wc.cutout_year)],
+        config={"zenodo": {"enabled": True, "verify_checksum": True}},
+    log:
+        "logs/retrieve_cutout_{cutout_year}.log"
+    retries: 1
+    script:
+        "../scripts/utilities/prepare_cutouts.py"
 
 
 # Generate renewable profiles using atlite methods
@@ -258,42 +230,35 @@ rule generate_renewable_profiles:
       - Each site becomes an individual generator in the PyPSA network
     
     See Also:
-      - scripts/map_renewable_profiles.py for implementation details
+      - scripts/renewables/map_renewable_profiles.py for implementation details
       - rules/generators.smk for how profiles are integrated into network
     """
     input:
-        cutouts=expected_cutouts,
+        cutouts=lambda wc: [f"{atlite_cutouts_path}/uk-{wc.renewables_year}.nc"],
+        offshore_pipeline_processed=rules.prepare_renewable_site_data.output.offshore_pipeline_processed,
         wind_onshore=rules.prepare_renewable_site_data.output.wind_onshore_repd,
         wind_offshore=rules.prepare_renewable_site_data.output.wind_offshore_repd,
         solar_pv=rules.prepare_renewable_site_data.output.solar_pv_repd,
-        small_hydro=rules.prepare_renewable_site_data.output.small_hydro  # For future hydro timeseries
+        small_hydro=rules.prepare_renewable_site_data.output.small_hydro,  # For future hydro timeseries
+        # Named pipeline projects receive coordinate-based profiles too, so a
+        # brownfield future scenario can place them by site.
+        wind_onshore_pipeline=rules.prepare_future_pipeline_sites.output.wind_onshore,
+        wind_offshore_pipeline=rules.prepare_future_pipeline_sites.output.wind_offshore,
+        solar_pv_pipeline=rules.prepare_future_pipeline_sites.output.solar_pv,
     output:
         # Weather-variable renewables (require atlite-based timeseries)
-        wind_onshore_profiles=expand(
-            f"{renewable_data_path}/profiles/wind_onshore_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        ),
-        wind_offshore_profiles=expand(
-            f"{renewable_data_path}/profiles/wind_offshore_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        ),
-        solar_pv_profiles=expand(
-            f"{renewable_data_path}/profiles/solar_pv_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        )
+        wind_onshore_profiles=[f"{renewable_data_path}/profiles/wind_onshore_{{renewables_year}}.csv"],
+        wind_offshore_profiles=[f"{renewable_data_path}/profiles/wind_offshore_{{renewables_year}}.csv"],
+        solar_pv_profiles=[f"{renewable_data_path}/profiles/solar_pv_{{renewables_year}}.csv"]
         # Note: Removed other technologies as they don't require weather-based timeseries:
         # - Geothermal: dispatchable baseload (p_max_pu ~0.9)
         # - Large Hydro: storage-like operation (no generation profile needed)
         # - Tidal Stream/Wave/Lagoon: separate rule
         # - Storage technologies: modeled as storage units, not generators
     params:
-        renewables_year=lambda wc: sorted(required_years),
-        scenario_configs=lambda wc: {rid: {} for rid in ["HT35"]}
+        renewables_year=lambda wc: [int(wc.renewables_year)],
     log:
-        expand(
-            "logs/generate_renewable_profiles_optimized_{renewables_year}.log",
-            renewables_year=required_years,
-        )
+        "logs/generate_renewable_profiles_optimized_{renewables_year}.log"
     conda:
         "../envs/pypsa-gb.yaml"
     script:
@@ -313,25 +278,13 @@ rule generate_marine_profiles:
         tidal_lagoon=rules.prepare_renewable_site_data.output.tidal_lagoon
     output:
         # Marine renewables (predictable cyclic timeseries)
-        tidal_stream_profiles=expand(
-            f"{renewable_data_path}/profiles/tidal_stream_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        ),
-        shoreline_wave_profiles=expand(
-            f"{renewable_data_path}/profiles/shoreline_wave_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        ),
-        tidal_lagoon_profiles=expand(
-            f"{renewable_data_path}/profiles/tidal_lagoon_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        )
+        tidal_stream_profiles=[f"{renewable_data_path}/profiles/tidal_stream_{{renewables_year}}.csv"],
+        shoreline_wave_profiles=[f"{renewable_data_path}/profiles/shoreline_wave_{{renewables_year}}.csv"],
+        tidal_lagoon_profiles=[f"{renewable_data_path}/profiles/tidal_lagoon_{{renewables_year}}.csv"]
     params:
-        renewables_year=lambda wc: sorted(required_years)
+        renewables_year=lambda wc: [int(wc.renewables_year)]
     log:
-        expand(
-            "logs/generate_marine_profiles_{renewables_year}.log",
-            renewables_year=required_years,
-        )
+        "logs/generate_marine_profiles_{renewables_year}.log"
     conda:
         "../envs/pypsa-gb.yaml"
     script:
@@ -351,21 +304,12 @@ rule generate_hydro_profiles:
         small_hydro=rules.prepare_renewable_site_data.output.small_hydro
     output:
         # Hydro renewables (different operational models)
-        large_hydro_profiles=expand(
-            f"{renewable_data_path}/profiles/large_hydro_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        ),
-        small_hydro_profiles=expand(
-            f"{renewable_data_path}/profiles/small_hydro_{{renewables_year}}.csv",
-            renewables_year=required_years,
-        )
+        large_hydro_profiles=[f"{renewable_data_path}/profiles/large_hydro_{{renewables_year}}.csv"],
+        small_hydro_profiles=[f"{renewable_data_path}/profiles/small_hydro_{{renewables_year}}.csv"]
     params:
-        renewables_year=lambda wc: sorted(required_years)
+        renewables_year=lambda wc: [int(wc.renewables_year)]
     log:
-        expand(
-            "logs/generate_hydro_profiles_{renewables_year}.log",
-            renewables_year=required_years,
-        )
+        "logs/generate_hydro_profiles_{renewables_year}.log"
     conda:
         "../envs/pypsa-gb.yaml"
     script:
@@ -375,15 +319,15 @@ rule generate_hydro_profiles:
 rule all_renewable_profiles:
     input:
         # Weather-variable renewables
-        wind_onshore_profiles=rules.generate_renewable_profiles.output.wind_onshore_profiles,
-        wind_offshore_profiles=rules.generate_renewable_profiles.output.wind_offshore_profiles,
-        solar_pv_profiles=rules.generate_renewable_profiles.output.solar_pv_profiles,
+        wind_onshore_profiles=expand(f"{renewable_data_path}/profiles/wind_onshore_{{renewables_year}}.csv", renewables_year=required_years),
+        wind_offshore_profiles=expand(f"{renewable_data_path}/profiles/wind_offshore_{{renewables_year}}.csv", renewables_year=required_years),
+        solar_pv_profiles=expand(f"{renewable_data_path}/profiles/solar_pv_{{renewables_year}}.csv", renewables_year=required_years),
         # Marine renewables
-        tidal_stream_profiles=rules.generate_marine_profiles.output.tidal_stream_profiles,
-        shoreline_wave_profiles=rules.generate_marine_profiles.output.shoreline_wave_profiles,
-        tidal_lagoon_profiles=rules.generate_marine_profiles.output.tidal_lagoon_profiles,
+        tidal_stream_profiles=expand(f"{renewable_data_path}/profiles/tidal_stream_{{renewables_year}}.csv", renewables_year=required_years),
+        shoreline_wave_profiles=expand(f"{renewable_data_path}/profiles/shoreline_wave_{{renewables_year}}.csv", renewables_year=required_years),
+        tidal_lagoon_profiles=expand(f"{renewable_data_path}/profiles/tidal_lagoon_{{renewables_year}}.csv", renewables_year=required_years),
         # Hydro renewables
-        large_hydro_profiles=rules.generate_hydro_profiles.output.large_hydro_profiles,
-        small_hydro_profiles=rules.generate_hydro_profiles.output.small_hydro_profiles
+        large_hydro_profiles=expand(f"{renewable_data_path}/profiles/large_hydro_{{renewables_year}}.csv", renewables_year=required_years),
+        small_hydro_profiles=expand(f"{renewable_data_path}/profiles/small_hydro_{{renewables_year}}.csv", renewables_year=required_years)
     output:
         summary=f"{renewable_data_path}/all_renewable_profiles_summary.txt"

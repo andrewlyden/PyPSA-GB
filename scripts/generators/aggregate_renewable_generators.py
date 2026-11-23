@@ -70,24 +70,30 @@ _IGNORE_COLUMNS = {
 def aggregate_renewables_by_bus(
     network: pypsa.Network,
     carriers: Optional[List[str]] = None,
+    preserve_support_types: Optional[List[str]] = None,
     logger: Optional[logging.Logger] = None,
 ) -> Tuple[pypsa.Network, int]:
     """
     Aggregate renewable generators per (bus, carrier) group.
 
-    For each group of renewable generators sharing the same bus and carrier:
+    For each eligible group of renewable generators sharing the same bus and
+    carrier:
       - p_nom is summed
       - p_max_pu is capacity-weighted averaged:
             p_max_pu_agg(t) = sum(p_nom_i * p_max_pu_i(t)) / sum(p_nom_i)
       - Static attributes are taken from the largest-capacity member
       - lat/lon are capacity-weighted centroids (for plotting)
 
-    Non-renewable generators are passed through unchanged.
+    Non-renewable generators are passed through unchanged. Support types in
+    ``preserve_support_types`` also pass through unchanged, retaining the
+    individual site identity needed for ROC/CfD accounting.
 
     Args:
         network: PyPSA network (modified in-place).
         carriers: List of carrier names to aggregate. Defaults to all
             standard renewable carriers.
+        preserve_support_types: Support types that must remain individual
+            generators, for example ``["ROC", "CfD"]``.
         logger: Logger instance. If None, a module-level logger is used.
 
     Returns:
@@ -107,10 +113,28 @@ def aggregate_renewables_by_bus(
         logger.info("No generators in network — nothing to aggregate.")
         return network, 0
 
-    # Split generators into renewable (to aggregate) and other (to keep)
+    # Split generators into renewable (potentially to aggregate) and other
+    # (always keep). Scheme-supported sites retain individual provenance for
+    # station-level certificate/payment accounting.
     is_renewable = gen_df["carrier"].isin(carriers_set)
     renewable_df = gen_df[is_renewable].copy()
     other_df = gen_df[~is_renewable].copy()
+
+    preserved_support_types = {
+        str(value).strip() for value in (preserve_support_types or [])
+        if str(value).strip()
+    }
+    if preserved_support_types and "support_type" in renewable_df.columns:
+        support_values = renewable_df["support_type"].fillna("").astype(str).str.strip()
+        preserve_mask = support_values.isin(preserved_support_types)
+        preserved_df = renewable_df.loc[preserve_mask].copy()
+        renewable_df = renewable_df.loc[~preserve_mask].copy()
+        other_df = pd.concat([other_df, preserved_df], axis=0)
+        logger.info(
+            "Preserving %d scheme-supported renewable generators individually (%s)",
+            len(preserved_df),
+            ", ".join(sorted(preserved_support_types)),
+        )
 
     if renewable_df.empty:
         logger.info("No renewable generators matching specified carriers — nothing to aggregate.")
@@ -134,7 +158,20 @@ def aggregate_renewables_by_bus(
     group_keys = ["bus", "carrier"]
     if "support_type" in renewable_df.columns:
         group_keys.append("support_type")
-    groups = renewable_df.groupby(group_keys)
+    # Contract vintage and ROC banding must also split groups. The aggregated
+    # generator takes its static attributes from the largest member, so mixing
+    # allocation rounds on one bus would silently relabel the smaller tranches
+    # with the largest one's round and settle them all at its strike price.
+    for vintage_column in ("cfd_round", "ro_banding"):
+        if vintage_column in renewable_df.columns:
+            values = renewable_df[vintage_column].fillna("").astype(str).str.strip()
+            if values.nunique() > 1:
+                group_keys.append(vintage_column)
+                logger.info(
+                    "Splitting aggregation groups by %s (%d distinct values) so contract "
+                    "vintage survives aggregation", vintage_column, values.nunique(),
+                )
+    groups = renewable_df.groupby(group_keys, dropna=False)
     n_groups = len(groups)
 
     for group_key, group in groups:
@@ -175,13 +212,16 @@ def aggregate_renewables_by_bus(
         largest_idx = group["p_nom"].idxmax()
         base = group.loc[largest_idx].copy()
 
-        # Create aggregated name (include support_type when grouping by it
-        # to avoid collisions, e.g. CfD vs merchant on same bus+carrier)
-        if "support_type" in group_keys and len(group_key) > 2:
-            support = group_key[2]
-            agg_name = f"{bus}_{carrier}_{support}__agg{n_members}"
-        else:
-            agg_name = f"{bus}_{carrier}__agg{n_members}"
+        # Create the aggregated name from every grouping key beyond bus and
+        # carrier, so two groups that differ only in support type, allocation
+        # round or ROC banding cannot collide on one name.
+        suffixes = [
+            str(part).strip().replace(" ", "-")
+            for part in group_key[2:]
+            if str(part).strip() not in ("", "nan")
+        ]
+        prefix = "_".join([bus, carrier, *suffixes])
+        agg_name = f"{prefix}__agg{n_members}"
         base.name = agg_name
 
         # Sum capacity fields

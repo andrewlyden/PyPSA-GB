@@ -1,0 +1,49 @@
+# Round-trip efficiency (share 0-1) of each storage carrier built from the FES building blocks
+# (add_storage.py). Each leg (efficiency_store, efficiency_dispatch) is the square root of the value.
+# Code defaults in add_storage.py must match. Diagnose fleet round trips with
+# scripts/market/diagnose_storage_degeneracy.py. Changing a value requires a re-solve.
+round_trip_efficiencies:
+  Battery: 0.8464                          # 0.92 per leg, grid-scale lithium
+  Domestic Battery: 0.8464                 # same cells, behind the meter
+  Pumped Storage Hydroelectricity: 0.7569  # 0.87 per leg
+  LAES: 0.55                               # storage_parameters.py LAES RTE
+  # CP30's long-duration storage ("other storage", mostly existing pumped hydro): its implied round
+  # trip, 10,441.5 / 14,848.7 GWh = 0.703.
+  LDES: 0.70
+
+# Storage dispatch cost by carrier (GBP/MWh discharged) where the storage data has no marginal_cost:
+# variable O&M and degradation, and a tie-break against the zero-price degeneracy in which an
+# interior-point solve charges and discharges a unit at once (see solve.solver.crossover). Applied in
+# add_storage.py and enforced as a floor in the wholesale solve
+# (market.wholesale.storage_marginal_cost_floor).
+dispatch_costs:
+  default: 1.0
+  Battery: 1.0
+  battery: 1.0
+  LAES: 1.5
+  CAES: 1.0
+  pumped_hydro: 0.5
+  "Pumped Storage Hydroelectricity": 0.5
+
+# Standing loss (share of stored energy lost per hour) by storage carrier; carriers not listed take
+# default. Code defaults: add_storage.py DEFAULT_STORAGE_STANDING_LOSSES.
+standing_losses:
+  default: 0.0
+  Battery: 0.00005
+  "Domestic Battery": 0.00005
+  battery: 0.00005
+  LAES: 0.0
+  "Liquid Air Energy Storage": 0.0
+  "Pumped Storage Hydroelectricity": 0.0
+  pumped_hydro: 0.0
+
+# Capacity-aware storage placement. After nearest-bus mapping no bus may hold more storage power than
+# max_loading x the rating of the lines, transformers and links touching it (MW per MVA); the excess
+# goes to the same substation's other busbars with headroom, else to the nearest bus of at least
+# min_target_voltage_kv (kV) within search_radius_km. Code defaults: add_storage.py
+# DEFAULT_STORAGE_PLACEMENT.
+placement:
+  enabled: true
+  max_loading: 1.0
+  search_radius_km: 40.0
+  min_target_voltage_kv: 132.0

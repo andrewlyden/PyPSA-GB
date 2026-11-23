@@ -1,0 +1,50 @@
+{
+  "purpose": "External BSUoS allowance for the parts of balancing the dispatch model does not produce. Constraint cost is excluded here because the consumer bill takes it from PyPSA redispatch; counting both would double-count constraints.",
+  "regulatory_year": "2024-25",
+  "price_year": 2024,
+  "price_basis_note": "Nominal outturn for regulatory year 2024-25, whose mid-point falls in 2024. It is treated as 2024 money and rebased by the projector's declared index; it is not deflated within the year.",
+  "settlement_periods_in_category_file": 17512,
+  "balancing_cost_by_category_gbp": {
+    "Energy Imbalance": -13715410.567000002,
+    "Frequency Control": 21025177.097099736,
+    "Positive Reserve": 107475127.01327354,
+    "Constraints": 1903409179.0788734,
+    "Negative Reserve": 6910274.551985297,
+    "Other": 54288963.58276801
+  },
+  "balancing_cost_category_total_gbp": 2079393310.757,
+  "constraint_cost_gbp": 1903409179.0788734,
+  "total_actual_bsuos_cost_gbp": 3307604144.9000006,
+  "non_constraint_cost_gbp": 1404194965.8211272,
+  "internal_and_contracted_residual_gbp": 1228210834.1430006,
+  "chargeable_final_demand_mwh": 275151189.05,
+  "non_constraint_gbp_per_mwh_final_demand": 5.103357796378482,
+  "constraint_gbp_per_mwh_final_demand": 6.917684730531872,
+  "total_gbp_per_mwh_final_demand": 12.021042526910353,
+  "method": "Sum the published half-hourly balancing-cost categories over the regulatory year to obtain constraint spend. Subtract it from total actual BSUoS cost in the Settlement Final dataset for the same year, and divide by the summed chargeable volume. The residual between total actual cost and the summed categories is NESO internal and contracted cost and is retained inside the non-constraint figure.",
+  "caveats": [
+    "The 'Constraints' category covers all constraint actions, not only thermal ones, so the modelled thermal redispatch cost that replaces it is a narrower quantity.",
+    "BSUoS has been recovered from final demand only since April 2023, so earlier years are not comparable on this volume basis.",
+    "This is an outturn decomposition for one regulatory year, not a 2030 forecast. Only its level is carried forward, held flat in real terms."
+  ],
+  "sources": {
+    "balancing_cost_categories": {
+      "dataset": "Daily Balancing Services Use of System (BSUoS) Cost Data",
+      "dataset_id": "d13d78fc-60d9-4f4d-87b6-e25a20f669c0",
+      "resource_id": "527a5f40-942b-416b-99df-81a51c30d041",
+      "filename": "q1_cost_fy2425.csv",
+      "download_url": "https://api.neso.energy/dataset/d13d78fc-60d9-4f4d-87b6-e25a20f669c0/resource/527a5f40-942b-416b-99df-81a51c30d041/download/q1_cost_fy2425.csv",
+      "local_file": "data/market/neso_balancing_costs/neso_daily_balancing_costs_2024_25.csv",
+      "sha256": "ce421c9670be4efb4f7be012a6c8c5535a515d670a976895e9dc0e811b0b99a5"
+    },
+    "bsuos_settlement_final": {
+      "dataset": "Current Balancing Services Use of System (BSUoS) Charges, Historic SF 2024-2025",
+      "dataset_id": "d6a4bf54-c63f-4014-a716-49fd3878ca52",
+      "resource_id": "320cdc0d-457f-4849-a0fc-bf6bdd4e21e5",
+      "filename": "2024-2025-sf.csv",
+      "download_url": "https://api.neso.energy/dataset/d6a4bf54-c63f-4014-a716-49fd3878ca52/resource/320cdc0d-457f-4849-a0fc-bf6bdd4e21e5/download/2024-2025-sf.csv",
+      "local_file": "data/market/neso_balancing_costs/neso_bsuos_settlement_final_2024_25.csv",
+      "sha256": "fa86fe603536978e8d8a129b4d5c77d3c973f4b48e5ffa26aaf64ff5653de4b0"
+    }
+  }
+}

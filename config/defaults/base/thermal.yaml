@@ -1,0 +1,85 @@
+# Smoothing of ESPENI-derived nuclear availability before it is applied as p_max_pu: "hourly" keeps
+# the raw signal (individual plant outages), "daily" or "monthly" average it over days or months.
+nuclear_smoothing: "hourly"    # "hourly" | "daily" | "monthly"
+
+# Thermal availability factors (share 0-1 of capacity): caps on thermal output for real-world
+# availability. Biomass is limited by pellet supply and maintenance; small biofuel CHP plants
+# (biogas, landfill and sewage gas) follow heat demand. Historical values are calibrated to ESPENI
+# dispatch or Ofgem RO output.
+availability_factors:
+  enabled: false
+  # Optional station-by-month evidence for historical validation; named values replace (not
+  # multiply) the carrier factor.
+  generator_monthly_file: null
+  factors:
+    biomass: 0.53           # 2252/4225 (ESPENI actual / installed)
+    biogas: 0.15            # CHP heat-led, low electrical load factor
+    landfill_gas: 0.5270    # 2020 Ofgem ROC-eligible output / issuing-station DNC
+    sewage_gas: 0.5593      # 2020 Ofgem ROC-eligible output / issuing-station DNC
+    advanced_biofuel: 0.15  # CHP / small distributed
+    waste_to_energy: 0.80   # More continuous operation
+  # Must-run minimum output (p_min_pu, share of capacity)
+  min_output:
+    biomass: 0.40           # ROC revenue protection; rarely below 40%
+    waste_to_energy: 0.50   # Continuous waste processing obligation
+  # {carrier: hours}. At solve time the listed carriers' hourly floor becomes an
+  # energy budget: each unit delivers at least the floor's energy in every block
+  # of that many hours of a Stage 1 optimisation, timing free up to p_max_pu, and
+  # the BM drops the hourly floor (scripts/market/market_utils.py). Empty = off.
+  min_output_energy_window_hours: {}
+
+# Option for historical validation: anchor the listed carriers to observed commitment decisions the
+# LP does not represent. Never inherited by future scenarios unless set.
+dispatch_anchors:
+  enabled: false
+  carriers: []
+
+# Reproducible planned maintenance and forced outages for thermal plant, applied to p_max_pu only
+# (no unit commitment). Per carrier: planned outages per year, their duration (hours) and months,
+# forced outage rate (share of hours) and mean forced-outage duration (hours).
+outages:
+  enabled: true
+  seed: 42
+  carriers:
+    CCGT:
+      planned_outages_per_year: 1
+      planned_outage_duration_hours: 168
+      planned_outage_months: [4, 5, 6, 7, 8, 9]
+      forced_outage_rate: 0.06
+      forced_outage_mean_duration_hours: 72
+    OCGT:
+      planned_outages_per_year: 1
+      planned_outage_duration_hours: 96
+      planned_outage_months: [4, 5, 6, 7, 8, 9]
+      forced_outage_rate: 0.04
+      forced_outage_mean_duration_hours: 48
+    gas_engine:
+      planned_outages_per_year: 1
+      planned_outage_duration_hours: 96
+      planned_outage_months: [4, 5, 6, 7, 8, 9]
+      forced_outage_rate: 0.04
+      forced_outage_mean_duration_hours: 48
+    CCS Gas:
+      planned_outages_per_year: 1
+      planned_outage_duration_hours: 168
+      planned_outage_months: [4, 5, 6, 7, 8, 9]
+      forced_outage_rate: 0.08
+      forced_outage_mean_duration_hours: 96
+    CCS Biomass:
+      planned_outages_per_year: 1
+      planned_outage_duration_hours: 168
+      planned_outage_months: [4, 5, 6, 7, 8, 9]
+      forced_outage_rate: 0.10
+      forced_outage_mean_duration_hours: 96
+
+# Per-unit ramp limits (share of p_nom per hour): linear LP constraints, not unit commitment.
+ramping:
+  enabled: true
+  carriers:
+    CCGT: {ramp_limit_up: 0.50, ramp_limit_down: 0.50}
+    OCGT: {ramp_limit_up: 1.00, ramp_limit_down: 1.00}
+    gas_engine: {ramp_limit_up: 1.00, ramp_limit_down: 1.00}
+    CCS Gas: {ramp_limit_up: 0.35, ramp_limit_down: 0.35}
+    # CCS Biomass has no ramp limit: it is must-run at full availability, and a limit would make
+    # that floor infeasible at the end of an outage.
+    Hydrogen: {ramp_limit_up: 0.50, ramp_limit_down: 0.50}

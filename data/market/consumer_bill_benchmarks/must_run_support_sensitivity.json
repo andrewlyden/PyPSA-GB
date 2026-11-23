@@ -1,0 +1,34 @@
+{
+  "purpose": "Bill sensitivity (user decision, 8 Oct 2026): the support the CP30 2030 must-run plant without a contract would need. The CP30 scenario holds biomass and biogas to the pathway's energy (a daily energy budget, scenarios.yaml min_output_energy_window_hours), so plant with no CfD, RO or other contract runs at a loss the central bill never pays for. This line pays each such unit's 2030 going-forward shortfall, recovered on the bill line its support would ride on.",
+  "decided": "user, 8 Oct 2026 ('add that consumer bill line as a sensitivity')",
+  "component_id": "must_run_support_gap",
+  "label": "Support for must-run plant without a contract (sensitivity)",
+  "case_id": "private",
+  "cost_basis": {
+    "description": "Going-forward cash in calendar 2030, private case of the market run group's register: revenue (wholesale + balancing settlement, support, Capacity Market) less fuel and carbon, fixed and variable O&M, insurance and generator TNUoS. Capital is sunk and is not paid; a unit at or above zero gets nothing.",
+    "revenue_columns": ["market_revenue_gbp", "support_revenue_gbp", "capacity_market_revenue_gbp"],
+    "cost_columns": ["fuel_carbon_gbp", "annual_fixed_om_gbp", "annual_variable_om_gbp", "annual_insurance_gbp", "annual_generator_tnuos_gbp"]
+  },
+  "groups": [
+    {
+      "id": "merchant_biomass",
+      "carrier": "biomass",
+      "support_types": ["merchant"],
+      "recovery_line": "cfd",
+      "route": "A bridging CfD on the model of Drax's 2027-31 contract. Lynemouth's investment contract (LCCC INV-LYN-001, from 23 Jun 2018) ends in 2027; no successor is announced, so the pathway's output from it is unpaid in the central case."
+    },
+    {
+      "id": "merchant_biogas",
+      "carrier": "biogas",
+      "support_types": ["merchant"],
+      "recovery_line": "renewables_obligation",
+      "route": "Renewables Obligation-type support per MWh (anaerobic digestion holds RO and feed-in tariff accreditation today). These are CP30's 'Other renewables' proxies, carried as merchant with no support."
+    }
+  ],
+  "excluded": [
+    {"carrier": "biomass", "support_types": ["CfD", "ROC"], "reason": "under contract: Drax's bridging CfD and MGT Teesside's investment contract pay strike less reference price; ROC biomass covers its costs."},
+    {"carrier": "waste_to_energy", "reason": "the register carries no gate fees; the gate fee (WRAP, capped at the UK's 16.82 Mt) covers the going-forward shortfall, as the legacy valuation credits it."},
+    {"carrier": "CHP", "reason": "heat-credited marginal cost; positive going-forward cash in 2030."}
+  ],
+  "scope_note": "Applies to every case whose bill is the market bill: the legacy plant stays private in every one of them, so the line is the same. A tariff case (the state buys the existing fleet) already carries these units' costs at cost of service, so the line does not apply there and narrows the gap between the two by its own amount."
+}

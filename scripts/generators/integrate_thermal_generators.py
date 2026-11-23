@@ -38,6 +38,7 @@ Date: 2025-10-10
 
 import pandas as pd
 import pypsa
+import logging
 import os
 from pathlib import Path
 import time
@@ -49,6 +50,7 @@ from scripts.utilities.network_io import load_network, save_network
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary, log_stage_timing, log_stage_summary
 from scripts.utilities.carrier_definitions import get_carrier_definitions, add_carriers_to_network
 import difflib
+import re
 
 # Import shared spatial utilities and renewable generator functions
 import sys
@@ -60,11 +62,136 @@ from scripts.utilities.spatial_utils import (
     _DIST_GSP_TO_BUS_KM, _DIST_THERMAL_KM, _SHETL_LAT_MIN, _SPTL_LAT_MIN,
     _FALLBACK_MAJOR_BUS_COUNT,
 )
-from integrate_renewable_generators import load_generator_characteristics
+from integrate_renewable_generators import (
+    _assign_subsidy_attributes,
+    load_generator_characteristics,
+)
+from scripts.CP30.generation import load_cp30_generation_capacities, scale_proxy_to_cp30_targets, target_member_carriers
+from scripts.CP30.nuclear_schedule import (
+    CCS_BIOMASS_DATA_SOURCE as CCS_BIOMASS_SCHEDULE_SOURCE, DATA_SOURCE as NUCLEAR_SCHEDULE_SOURCE,
+    apply_nuclear_station_schedule,
+)
+from scripts.CP30.committed_overlay import (
+    DATA_SOURCE as OVERLAY_SOURCE, apply_committed_overlay, apply_overlay_carve_out, resolve_overlay_carve_out,
+)
+from scripts.CP30.gas_schedule import (
+    BIOMASS_CARRIERS as SCHEDULE_BIOMASS_CARRIERS, BIOMASS_DATA_SOURCE as BIOMASS_SCHEDULE_SOURCE,
+    DATA_SOURCE as GAS_SCHEDULE_SOURCE, GAS_CARRIERS as SCHEDULE_GAS_CARRIERS, apply_gas_station_schedule,
+)
+from scripts.CP30.cfd_station_schedule import (
+    CFD_STATION_SOURCE as CFD_STATION_SCHEDULE_SOURCE, apply_cfd_station_schedule,
+)
+from scripts.utilities.scenario_detection import target_source, uses_brownfield
+from scripts.generators.fes_supply import (
+    apply_fes_thermal, fes_supply_part, restore_declared_buses, schedule_data_source,
+)
+from scripts.generators.thermal_availability import apply_thermal_outage_availability
+from scripts.generators.thermal_ramping import apply_thermal_ramp_limits
+from scripts.generators.support_scheme_tranches import (
+    apply_generator_monthly_availability,
+    apply_physical_commissioning_gates,
+    split_historical_cfd_tranches,
+)
+from scripts.generators.historical_dispatch_anchors import apply_historical_dispatch_anchors
+from scripts.generators.historical_roc_physical_overlay import (
+    apply_historical_roc_physical_overlay,
+)
+from scripts.generators.ofgem_roc_capacity_overlay import apply_ofgem_roc_capacity_overlay
+from scripts.consumer_bill.map_pypsa_generators_to_ofgem_roc import (
+    apply_historical_dispatch_labels,
+)
 import numpy as np
 
 # Initialize logging
 logger = setup_logging("integrate_thermal_generators")
+
+
+def add_missing_dukes_hydro(
+    thermal_data: pd.DataFrame,
+    dukes_data: pd.DataFrame,
+    repd_hydro_path: str | Path,
+    logger,
+) -> pd.DataFrame:
+    """Supplement REPD with named legacy DUKES hydro stations.
+
+    REPD is a planning register and omits much of the pre-1990 conventional
+    hydro fleet.  DUKES 5.11 contains those major power producer stations.  We
+    union the two station registers by normalised name and add only DUKES
+    stations absent from the unaggregated REPD source list.
+    """
+    if dukes_data.empty or not Path(repd_hydro_path).exists():
+        return thermal_data
+
+    def normalise(value):
+        text = str(value or "").lower()
+        text = re.sub(r"\b(hydro scheme|hydro|power station)\b", " ", text)
+        return re.sub(r"[^a-z0-9]+", "", text)
+
+    repd = pd.read_csv(repd_hydro_path)
+    repd_names = {
+        normalise(value) for value in repd.get("site_name", pd.Series(dtype=object))
+    }
+    hydro = dukes_data.loc[
+        dukes_data["fuel_type"].astype(str).str.fullmatch("Hydro", case=False, na=False)
+    ].copy()
+    hydro = hydro.loc[~hydro["station_name"].map(normalise).isin(repd_names)].copy()
+    if hydro.empty:
+        return thermal_data
+    hydro["fuel_type"] = "large_hydro"
+    hydro["source_site_name"] = hydro["station_name"]
+    hydro["data_source"] = "DUKES_5.11_legacy_hydro_supplement"
+    hydro["support_type"] = "merchant"
+    logger.info(
+        "Adding %d legacy DUKES hydro stations omitted from REPD (%.1f MW)",
+        len(hydro), hydro["capacity_mw"].sum(),
+    )
+    return pd.concat([thermal_data, hydro], ignore_index=True, sort=False)
+
+
+def add_roc_evidenced_dukes_hydro(
+    thermal_data: pd.DataFrame,
+    network: pypsa.Network,
+    supplement_path: str | Path | None,
+    logger,
+) -> pd.DataFrame:
+    """Add audited legacy hydro stations omitted by the historical DUKES extract.
+
+    The historical DUKES table used by the standard build aggregates or omits
+    some sub-20 MW hydro stations. This narrow supplement contains only stations
+    independently evidenced by the Ofgem calendar-year ROC outturn and a named
+    DUKES 5.11 station record, so it cannot introduce unreviewed capacity.
+    """
+    if not supplement_path:
+        return thermal_data
+    path = Path(str(supplement_path))
+    if not path.exists():
+        raise FileNotFoundError(f"ROC-evidenced DUKES hydro supplement not found: {path}")
+    supplement = pd.read_csv(path)
+    required = {
+        "station_name", "fuel_type", "capacity_mw", "source_site_name",
+        "support_type", "ro_banding", "ro_accreditation_reference",
+    }
+    if missing := required.difference(supplement.columns):
+        raise ValueError(f"ROC-evidenced DUKES hydro supplement is missing: {sorted(missing)}")
+
+    def normalise(value):
+        return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+    existing_names = {normalise(name) for name in network.generators.index}
+    for column in ("station_name", "source_site_name"):
+        if column in thermal_data.columns:
+            existing_names.update(thermal_data[column].dropna().map(normalise))
+    supplement = supplement.loc[
+        ~supplement["station_name"].map(normalise).isin(existing_names)
+    ].copy()
+    if supplement.empty:
+        logger.info("All ROC-evidenced DUKES hydro stations are already represented")
+        return thermal_data
+    logger.info(
+        "Adding %d ROC-evidenced legacy DUKES hydro stations (%.1f MW) from %s",
+        len(supplement), supplement["capacity_mw"].sum(), path,
+    )
+    return pd.concat([thermal_data, supplement], ignore_index=True, sort=False)
 
 
 def build_historical_bus_distribution(network: pypsa.Network, carrier: str) -> dict:
@@ -156,25 +283,36 @@ def _get_buses_in_region(network: pypsa.Network, region: str) -> list:
     Get list of bus names within a transmission region based on latitude.
 
     Uses approximate latitude bands matching the transmission network boundaries:
-    - SHETL: Northern Scotland (y > 57.0)
-    - SPTL: Southern Scotland (55.5 < y <= 57.0)
-    - NGET: England & Wales (y <= 55.5)
+    - SHETL: Northern Scotland (lat > 57.0)
+    - SPTL: Southern Scotland (55.5 < lat <= 57.0)
+    - NGET: England & Wales (lat <= 55.5)
+
+    Bus ``y`` is latitude on a WGS84 network but northing in metres on an
+    OSGB36 one (the ETYS build); northings are converted to latitude first.
+    Until 23 Sep 2026 they were compared with the degree thresholds directly,
+    which put every ETYS bus in SHETL and left NGET and SPTL empty.
 
     Args:
-        network: PyPSA Network with buses having 'y' coordinate (latitude)
+        network: PyPSA Network with buses having 'x'/'y' coordinates
         region: Region code ('SHETL', 'SPTL', or 'NGET')
 
     Returns:
         List of bus names in the region
     """
     buses = network.buses
+    lat = buses['y'].astype(float)
+    if buses['x'].abs().max() > 180:
+        from pyproj import Transformer
+        to_wgs84 = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
+        _, lat_values = to_wgs84.transform(buses['x'].astype(float).values, buses['y'].astype(float).values)
+        lat = pd.Series(lat_values, index=buses.index)
 
     if region == 'SHETL':
-        region_buses = buses[buses['y'] > _SHETL_LAT_MIN]
+        region_buses = buses[lat > _SHETL_LAT_MIN]
     elif region == 'SPTL':
-        region_buses = buses[(buses['y'] > _SPTL_LAT_MIN) & (buses['y'] <= _SHETL_LAT_MIN)]
+        region_buses = buses[(lat > _SPTL_LAT_MIN) & (lat <= _SHETL_LAT_MIN)]
     else:  # NGET
-        region_buses = buses[buses['y'] <= _SPTL_LAT_MIN]
+        region_buses = buses[lat <= _SPTL_LAT_MIN]
 
     return region_buses.index.tolist()
 
@@ -182,7 +320,8 @@ def _get_buses_in_region(network: pypsa.Network, region: str) -> list:
 def distribute_fes_generators_spatially(
     fes_data: pd.DataFrame,
     network: pypsa.Network,
-    repd_sites: pd.DataFrame = None
+    repd_sites: pd.DataFrame = None,
+    reference_sites: dict | None = None,
 ) -> pd.DataFrame:
     """
     Distribute FES "Direct" connected generators spatially based on transmission region.
@@ -204,6 +343,9 @@ def distribute_fes_generators_spatially(
         fes_data: DataFrame with FES generators (must have 'gsp', 'capacity_mw', 'fuel_type' columns)
         network: PyPSA Network with existing generators and buses
         repd_sites: Optional REPD sites DataFrame for additional spatial reference
+        reference_sites: Optional ``{carrier: DataFrame}`` of placed sites (with
+            ``bus`` and ``capacity_mw``) whose capacity-weighted buses are the
+            pattern for that carrier, ahead of the historical and REPD patterns
 
     Returns:
         Updated DataFrame with generators distributed across buses within their regions
@@ -252,17 +394,27 @@ def distribute_fes_generators_spatially(
             logger.warning(f"    No buses found in region {region}, using all buses")
             region_buses = set(network.buses.index)
 
-        # Get historical bus distribution for this carrier
-        bus_weights = build_historical_bus_distribution(network, carrier)
+        bus_weights = {}
+        reference = (reference_sites or {}).get(carrier)
+        if reference is not None and len(reference) > 0:
+            in_region = reference[reference['bus'].isin(region_buses)]
+            if len(in_region) > 0:
+                bus_capacity = in_region.groupby('bus')['capacity_mw'].sum()
+                bus_weights = (bus_capacity / bus_capacity.sum()).to_dict()
+                logger.info(f"    Using reference-site pattern: {len(bus_weights)} buses in {region}")
 
-        # Filter to only buses in the region
-        if bus_weights:
-            bus_weights = {b: w for b, w in bus_weights.items() if b in region_buses}
-            # Re-normalize weights after filtering
+        # Get historical bus distribution for this carrier
+        if not bus_weights:
+            bus_weights = build_historical_bus_distribution(network, carrier)
+
+            # Filter to only buses in the region
             if bus_weights:
-                total_weight = sum(bus_weights.values())
-                bus_weights = {b: w / total_weight for b, w in bus_weights.items()}
-                logger.info(f"    Using historical pattern: {len(bus_weights)} buses in {region}")
+                bus_weights = {b: w for b, w in bus_weights.items() if b in region_buses}
+                # Re-normalize weights after filtering
+                if bus_weights:
+                    total_weight = sum(bus_weights.values())
+                    bus_weights = {b: w / total_weight for b, w in bus_weights.items()}
+                    logger.info(f"    Using historical pattern: {len(bus_weights)} buses in {region}")
 
         if not bus_weights:
             # No historical pattern in region - try to use REPD sites if available
@@ -332,6 +484,109 @@ def distribute_fes_generators_spatially(
         return result_df
     else:
         return fes_data
+
+
+def check_min_output_within_availability(avail_config: dict) -> None:
+    """Refuse a must-run floor above the carrier's availability cap.
+
+    ``min_output`` above ``factors`` is p_min_pu > p_max_pu in every hour, an
+    infeasible LP. The two halves are usually set in different places (the cap
+    inherited from config/defaults/, the floor in the scenario): the CP30 waste
+    floor 0.55 sat under the inherited 0.80 cap, and the CP30-implied cap of
+    about 0.62 (ES1 12.8 TWh on 2,481 MW is CF 0.59; audit 26 Sep 2026) must
+    stay above it.
+    """
+    factors = avail_config.get('factors', {}) or {}
+    floors = avail_config.get('min_output', {}) or {}
+    floor_over_cap = {
+        carrier: (float(floors[carrier]), float(factors[carrier]))
+        for carrier in set(factors) & set(floors)
+        if float(floors[carrier]) > float(factors[carrier])
+    }
+    if floor_over_cap:
+        raise ValueError(
+            "thermal.availability_factors: min_output above the availability factor "
+            f"(floor, cap) for {floor_over_cap}"
+        )
+
+
+GROUP_OVERRIDE_KEYS = {"carrier", "data_source", "factor", "min_output"}
+
+
+def apply_thermal_group_overrides(network, overrides, logger: logging.Logger) -> pd.DataFrame:
+    """``thermal.availability_factors.group_overrides``: cap and floor per (carrier, data_source).
+
+    The carrier values (``factors``, ``min_output``) treat a carrier as one fleet. A
+    CP30 carrier can hold groups that the pathway runs differently: ES1 runs
+    transmission biomass (Drax, Lynemouth, MGT Teesside, the station schedule) at
+    CF 0.40 and distributed biomass (the CP30 proxy) at 0.37, while the two are one
+    ``biomass`` carrier here (gas_cal, 14 Oct 2026). Each entry names ``carrier`` and
+    ``data_source`` and sets ``factor`` (static ``p_max_pu``) and/or ``min_output``
+    (static ``p_min_pu``) on those generators, after the carrier values. An entry
+    that matches no generator, or leaves a unit's floor above its cap, is refused.
+    Call before outage availability, which multiplies the static cap.
+
+    Returns one row per entry: carrier, data_source, generators, p_nom_mw, factor, min_output.
+    """
+    records = []
+    if not overrides:
+        return pd.DataFrame(columns=["carrier", "data_source", "generators", "p_nom_mw", "factor", "min_output"])
+    if "data_source" not in network.generators.columns:
+        raise ValueError("thermal.availability_factors.group_overrides needs generators.data_source")
+    gens = network.generators
+    for entry in overrides:
+        entry = dict(entry or {})
+        unknown = set(entry) - GROUP_OVERRIDE_KEYS
+        if unknown:
+            raise ValueError(f"group_overrides entry has unknown keys {sorted(unknown)}: {entry}")
+        if not entry.get("carrier") or not entry.get("data_source"):
+            raise ValueError(f"group_overrides entry needs carrier and data_source: {entry}")
+        if "factor" not in entry and "min_output" not in entry:
+            raise ValueError(f"group_overrides entry sets neither factor nor min_output: {entry}")
+        mask = gens["carrier"].eq(entry["carrier"]) & gens["data_source"].astype(str).eq(str(entry["data_source"]))
+        names = gens.index[mask]
+        if not len(names):
+            raise ValueError(f"group_overrides entry matches no generator: {entry}")
+        if "factor" in entry:
+            factor = float(entry["factor"])
+            if not 0.0 < factor <= 1.0:
+                raise ValueError(f"group_overrides factor must be in (0, 1]: {entry}")
+            if any(n in network.generators_t.p_max_pu.columns for n in names):
+                raise ValueError(f"group_overrides factor on generators with a p_max_pu profile: {entry}")
+            network.generators.loc[names, "p_max_pu"] = factor
+        if "min_output" in entry:
+            floor = float(entry["min_output"])
+            if not 0.0 <= floor <= 1.0:
+                raise ValueError(f"group_overrides min_output must be in [0, 1]: {entry}")
+            network.generators.loc[names, "p_min_pu"] = floor
+        caps = pd.to_numeric(network.generators.loc[names, "p_max_pu"], errors="coerce").fillna(1.0)
+        floors = pd.to_numeric(network.generators.loc[names, "p_min_pu"], errors="coerce").fillna(0.0)
+        if (floors > caps + 1e-12).any():
+            raise ValueError(f"group_overrides leaves min_output above the availability factor: {entry}")
+        p_nom = float(network.generators.loc[names, "p_nom"].sum())
+        records.append({"carrier": entry["carrier"], "data_source": entry["data_source"],
+                        "generators": len(names), "p_nom_mw": p_nom,
+                        "factor": float(caps.mean()), "min_output": float(floors.mean())})
+        logger.info(
+            f"  group override {entry['carrier']} / {entry['data_source']}: {len(names)} generators, "
+            f"{p_nom:,.0f} MW, p_max_pu {caps.mean():.3f}, p_min_pu {floors.mean():.3f}"
+        )
+    return pd.DataFrame(records)
+
+
+def capacity_weighted_fleet_profile(profiles_df: pd.DataFrame) -> pd.Series:
+    """Fleet capacity factor: total MW over total site capacity (column peaks).
+
+    ``profiles_df.mean(axis=1)`` of MW columns is an average site OUTPUT in MW,
+    not a CF; clipped to [0, 1] it pinned the CP30 marine fleet at full output
+    in 16% of hours (CF 0.467 against 0.218; audit 26 Sep 2026).
+    """
+    if profiles_df.empty:
+        return pd.Series(dtype=float)
+    if float(profiles_df.max().max()) <= 1.0:
+        return profiles_df.mean(axis=1)
+    capacity = float(profiles_df.max().sum())
+    return profiles_df.sum(axis=1) / capacity if capacity > 0 else profiles_df.sum(axis=1) * 0.0
 
 
 def apply_renewable_profiles_to_fes(
@@ -478,8 +733,13 @@ def apply_renewable_profiles_to_fes(
                         profile_source = list(bus_to_profile.values())[0]
                 
                 if profile_source and profile_source in profiles_df.columns:
-                    # Get profile and align to network snapshots
+                    # Get profile and align to network snapshots. The column is
+                    # the REPD site's MW series; divide by that generator's
+                    # capacity before it is clipped as a capacity factor.
                     profile = profiles_df[profile_source]
+                    source_p_nom = float(network.generators.at[profile_source, 'p_nom'])                         if profile_source in network.generators.index else 0.0
+                    if profile.max() > 1.0:
+                        profile = profile / (source_p_nom if source_p_nom > 0 else profile.max())
                     
                     # Align timestamps - handle year mismatch with leap year safety
                     if hasattr(network.snapshots[0], 'year'):
@@ -510,7 +770,7 @@ def apply_renewable_profiles_to_fes(
             # No REPD reference profiles - use average from all available profiles
             logger.warning(f"No REPD generators with profiles for {profile_carrier} - using regional average")
             
-            avg_profile = profiles_df.mean(axis=1)
+            avg_profile = capacity_weighted_fleet_profile(profiles_df)
             
             # Align to network snapshots with leap year safety
             if hasattr(network.snapshots[0], 'year'):
@@ -572,6 +832,10 @@ def load_gsp_to_bus_mapping(network: pypsa.Network) -> dict:
         if lookup_path.exists():
             try:
                 df = pd.read_csv(lookup_path)
+                # The ETYS/FES 2024 GSP file uses Name/Latitude/Longitude; it was
+                # never read before 23 Sep 2026, so no GSP mapped at all.
+                if {'Name', 'Latitude', 'Longitude'}.issubset(df.columns) and 'gsp_name' not in df.columns:
+                    df = df.rename(columns={'Name': 'gsp_name', 'Latitude': 'gsp_lat', 'Longitude': 'gsp_lon'})
                 if 'gsp_name' in df.columns and 'gsp_lat' in df.columns and 'gsp_lon' in df.columns:
                     gsp_coords = df[['gsp_name', 'gsp_lat', 'gsp_lon']].copy()
                     gsp_coords.columns = ['gsp', 'lat', 'lon']
@@ -654,7 +918,7 @@ def load_gsp_to_bus_mapping(network: pypsa.Network) -> dict:
             bus_degree[b0] = bus_degree.get(b0, 0) + 1
             bus_degree[b1] = bus_degree.get(b1, 0) + 1
         
-        # Get top-N most connected buses (N from spatial_mapping config)
+        # Get top-N most connected buses (N from network.spatial_mapping config)
         sorted_buses = sorted(bus_degree.items(), key=lambda x: x[1], reverse=True)
         major_buses = [b for b, _ in sorted_buses[:_FALLBACK_MAJOR_BUS_COUNT]]
     
@@ -698,18 +962,32 @@ def apply_gsp_to_bus_mapping(thermal_data: pd.DataFrame, network: pypsa.Network)
         return thermal_data
     
     logger.info(f"Applying GSP-to-bus mapping for {needs_mapping.sum()} generators without bus assignments")
-    
+
+    # Initialize bus column if it doesn't exist
+    if 'bus' not in thermal_data.columns:
+        thermal_data['bus'] = pd.NA
+
+    # FES 2025 names the ETYS node behind each GSP row; use it when it is a bus
+    # of this network, before any name or coordinate matching.
+    if 'node_id' in thermal_data.columns:
+        node = thermal_data['node_id'].astype('string').str.strip()
+        by_node = needs_mapping & node.isin(network.buses.index)
+        thermal_data.loc[by_node, 'bus'] = node[by_node]
+        logger.info(
+            f"GSP-to-bus mapping: {int(by_node.sum())} generators "
+            f"({thermal_data.loc[by_node, 'capacity_mw'].sum():,.1f} MW) placed at their FES node"
+        )
+        needs_mapping = needs_mapping & ~by_node
+        if needs_mapping.sum() == 0:
+            return thermal_data
+
     # Load GSP-to-bus mapping
     gsp_mapping = load_gsp_to_bus_mapping(network)
     
     if not gsp_mapping:
         logger.warning("No GSP-to-bus mapping available")
         return thermal_data
-    
-    # Initialize bus column if it doesn't exist
-    if 'bus' not in thermal_data.columns:
-        thermal_data['bus'] = pd.NA
-    
+
     # Apply mapping
     mapped_count = 0
     unmapped_gsps = set()
@@ -1108,6 +1386,9 @@ def load_fes_generators(fes_path: str, modelled_year: int, fes_scenario: str = N
             'capacity_mw': float(capacity),
             'fuel_type': carrier,
             'gsp': row.get('GSP', None),
+            # FES 2025 names the ETYS node behind each GSP row; the GSP mapping
+            # uses it before falling back to GSP coordinates.
+            'node_id': row.get('Node ID', None),
             'data_source': 'FES'
         }
         generators.append(gen)
@@ -1136,6 +1417,146 @@ def load_fes_generators(fes_path: str, modelled_year: int, fes_scenario: str = N
         logger.warning(f"No FES generators found for year {modelled_year}")
     
     return fes_df
+
+
+def load_cp30_generators(
+    cp30_es1_path: str,
+    fes_path: str,
+    modelled_year: int,
+    cp30_pathway: str,
+    spatial_fes_scenario: str = None,
+    nuclear_station_schedule: str | None = None,
+    ccs_biomass_station_schedule: str | None = None,
+    biomass_station_schedule: str | None = None,
+    gas_station_schedule: str | None = None,
+    gas_class_efficiency: dict | None = None,
+    committed_overlay: str | None = None,
+    ccs_gas_support_type: str | None = None,
+    committed_overlay_carve_out: dict | None = None,
+) -> pd.DataFrame:
+    """Load CP30 dispatchable generation and distribute using FES spatial proxy rows.
+
+    ``nuclear_station_schedule`` replaces the FES nuclear proxy with declared
+    stations at their real connection buses, conserving the CP30 nuclear total.
+    ``gas_station_schedule`` does the same for the CP30 gas line after it is
+    split into CCGT, OCGT and gas engines (items MR1 and MR2), with per-unit
+    CCGT efficiencies around ``gas_class_efficiency``. ``committed_overlay``
+    appends plant CP30 omits but that is contracted and being built (Net Zero
+    Teesside Power), refusing any carrier CP30 already gives capacity.
+    ``committed_overlay_carve_out`` (``fleet.spatial_proxy.committed_overlay_carve_out``)
+    takes an overlay carrier's MW out of a member carrier of a CP30 line before the
+    station schedules run, so NZT sits inside CP30's gas total, not on top of it.
+    ``ccs_gas_support_type`` (New Dispatch, 8 Oct 2026) labels CP30's own CCS gas
+    proxies with that support (``DPA``): CP30's New Dispatch pathway carries 1,410 MW
+    of gas CCS in 2030, which would otherwise be merchant; the label is kept through
+    the projected CfD/merchant split (``support_label_declared``).
+    """
+    logger.info(f"Loading CP30 dispatchable generation for {cp30_pathway} {modelled_year}")
+    targets = load_cp30_generation_capacities(
+        cp30_es1_path,
+        cp30_pathway,
+        modelled_year,
+        groups=["thermal"],
+    )
+    if targets.empty:
+        logger.warning("No CP30 dispatchable generation targets found")
+        return pd.DataFrame()
+
+    proxy = load_fes_generators(fes_path, modelled_year, spatial_fes_scenario)
+    if proxy.empty:
+        logger.warning("No FES dispatchable spatial proxy rows found for CP30")
+        return pd.DataFrame()
+
+    scaled = scale_proxy_to_cp30_targets(
+        proxy,
+        targets,
+        proxy_carrier_col="fuel_type",
+        output_carrier_col="fuel_type",
+        capacity_col="capacity_mw",
+        name_prefix="CP30",
+    )
+    if scaled.empty:
+        logger.warning("CP30 dispatchable targets could not be matched to FES spatial proxy carriers")
+        return pd.DataFrame()
+
+    # Keep the CP30 carrier as the technology label too; the original CP30 labels
+    # remain available in cp30_source_type/cp30_source_subtype.
+    scaled["technology"] = scaled["fuel_type"]
+
+    if nuclear_station_schedule:
+        nuclear_target = float(targets.loc[targets["carrier"].eq("nuclear"), "capacity_mw"].sum())
+        if nuclear_target > 0:
+            scaled = apply_nuclear_station_schedule(scaled, nuclear_station_schedule, nuclear_target, logger)
+
+    # CP30's CCS biomass is a converted Drax unit (its transmission biomass line
+    # falls by about one unit the year CCS biomass appears): one named,
+    # transmission-connected station on a Power BECCS CfD (item MR7).
+    if ccs_biomass_station_schedule:
+        beccs_target = float(targets.loc[targets["carrier"].eq("CCS Biomass"), "capacity_mw"].sum())
+        if beccs_target > 0:
+            scaled = apply_nuclear_station_schedule(
+                scaled, ccs_biomass_station_schedule, beccs_target, logger,
+                carrier="CCS Biomass", data_source=CCS_BIOMASS_SCHEDULE_SOURCE)
+
+    # Declared carve-out (user decision, 14 Oct 2026): the overlay's MW come out of
+    # a member of a CP30 line (NZT out of CCGT) before the schedules fill it.
+    carve_out = resolve_overlay_carve_out(committed_overlay_carve_out)
+    if carve_out:
+        if not committed_overlay:
+            raise ValueError("committed_overlay_carve_out is set but there is no committed_overlay")
+        scaled = apply_overlay_carve_out(scaled, committed_overlay, carve_out, targets, logger)
+
+    # The CP30 gas line has already been split across CCGT, OCGT and gas
+    # engines on the proxy's shares; each carrier's scaled total is its target.
+    gas_targets = scaled[scaled["fuel_type"].isin(SCHEDULE_GAS_CARRIERS)].groupby("fuel_type")["capacity_mw"].sum()
+    if len(gas_targets):
+        logger.info(
+            "CP30 gas line split on FES proxy shares: "
+            + ", ".join(f"{carrier} {mw:,.1f} MW" for carrier, mw in gas_targets.items())
+        )
+    if gas_station_schedule and len(gas_targets):
+        class_efficiency = {carrier: float((gas_class_efficiency or {}).get(carrier, np.nan))
+                            for carrier in SCHEDULE_GAS_CARRIERS}
+        missing = [carrier for carrier, value in class_efficiency.items()
+                   if carrier in gas_targets.index and not np.isfinite(value)]
+        if missing:
+            raise ValueError(f"No class efficiency configured for gas carriers {missing} "
+                             "(marginal_costs.future_costs.efficiency_defaults)")
+        scaled = apply_gas_station_schedule(scaled, gas_station_schedule, gas_targets.to_dict(),
+                                            class_efficiency, logger)
+
+    # Transmission biomass at named stations; the distribution residual stays on
+    # FES GSP rows (item MR6).
+    if biomass_station_schedule:
+        biomass_target = float(targets.loc[targets["carrier"].eq("biomass"), "capacity_mw"].sum())
+        if biomass_target > 0:
+            scaled = apply_gas_station_schedule(
+                scaled, biomass_station_schedule, {"biomass": biomass_target}, {}, logger,
+                carriers=SCHEDULE_BIOMASS_CARRIERS, data_source=BIOMASS_SCHEDULE_SOURCE,
+                residual_rows="non_direct")
+
+    if committed_overlay:
+        scaled = apply_committed_overlay(scaled, committed_overlay, targets, logger, carve_out=carve_out)
+
+    if ccs_gas_support_type:
+        ccs = scaled["fuel_type"].eq("CCS Gas")
+        if not ccs.any():
+            raise ValueError(f"ccs_gas_support_type is {ccs_gas_support_type!r} but the CP30 pathway has no CCS gas")
+        scaled.loc[ccs, "support_type"] = str(ccs_gas_support_type)
+        scaled.loc[ccs, "support_label_declared"] = True
+        logger.info(f"CP30 CCS gas: {int(ccs.sum())} proxy rows ({float(scaled.loc[ccs, 'capacity_mw'].sum()):,.0f} MW) "
+                    f"labelled {ccs_gas_support_type}")
+
+    scaled_summary = scaled.groupby("fuel_type")["capacity_mw"].sum()
+    logger.info("CP30 dispatchable generation capacity targets applied:")
+    for _, target in targets.sort_values("capacity_mw", ascending=False).iterrows():
+        members = target_member_carriers(target)
+        members = members + tuple(c for c, e in carve_out.items() if e["cp30_line"] == target["carrier"])
+        actual_mw = float(sum(scaled_summary.get(member, 0.0) for member in members))
+        label = target["carrier"] if len(members) == 1 else f"{target['carrier']} ({' + '.join(members)})"
+        logger.info(f"  {label}: target={target['capacity_mw']:,.1f} MW, scaled={actual_mw:,.1f} MW")
+
+    return scaled
 
 
 def load_repd_thermal_sites(site_files: dict) -> pd.DataFrame:
@@ -1205,6 +1626,36 @@ def load_repd_thermal_sites(site_files: dict) -> pd.DataFrame:
     else:
         logger.warning("No REPD thermal sites loaded")
         return pd.DataFrame()
+
+
+def load_historical_additional_thermal_sites(
+    path: str | Path | None, modelled_year: int
+) -> pd.DataFrame:
+    """Return reviewed historical stations that are absent from DUKES/REPD."""
+    if not path:
+        return pd.DataFrame()
+    sites = pd.read_csv(path)
+    required = {
+        'modelled_year', 'station_name', 'source_site_name', 'capacity_mw',
+        'fuel_type', 'x_coord', 'y_coord', 'operational_date', 'data_source',
+    }
+    missing = required.difference(sites.columns)
+    if missing:
+        raise ValueError(f"Historical thermal site file is missing columns: {sorted(missing)}")
+    years = pd.to_numeric(sites['modelled_year'], errors='raise')
+    sites = sites.loc[years.eq(int(modelled_year))].copy()
+    if sites.empty:
+        return sites
+    if sites['station_name'].duplicated().any():
+        raise ValueError("Historical thermal site names must be unique within a model year")
+    sites['capacity_mw'] = pd.to_numeric(sites['capacity_mw'], errors='raise')
+    if (sites['capacity_mw'] <= 0).any():
+        raise ValueError("Historical thermal sites require positive capacity")
+    logger.info(
+        "Loaded %d reviewed historical thermal site overlay(s) for %s",
+        len(sites), modelled_year,
+    )
+    return sites
 
 
 def scale_repd_bioenergy_to_fes(repd_df: pd.DataFrame,
@@ -1407,13 +1858,83 @@ def standardize_repd_for_merge(repd_df: pd.DataFrame) -> pd.DataFrame:
     standard_df = repd_df.copy()
     
     # Ensure standard column names exist
-    if 'station_name' not in standard_df.columns and 'Site Name' in standard_df.columns:
-        standard_df['station_name'] = standard_df['Site Name']
+    # REPD thermal-site extraction already standardises ``Site Name`` to
+    # ``site_name``.  Preserve it as the PyPSA component name; otherwise the
+    # integration falls back to anonymous names such as ``gen_biogas_245`` and
+    # an accredited-station / ROC mapping becomes impossible after the build.
+    if 'station_name' not in standard_df.columns:
+        if 'source_site_name' in standard_df.columns:
+            standard_df['station_name'] = standard_df['source_site_name']
+        elif 'site_name' in standard_df.columns:
+            standard_df['station_name'] = standard_df['site_name']
+        elif 'Site Name' in standard_df.columns:
+            standard_df['station_name'] = standard_df['Site Name']
     
     if 'technology' not in standard_df.columns:
         standard_df['technology'] = standard_df['fuel_type']
     
     return standard_df
+
+
+def apply_generator_support_overrides(
+    network: pypsa.Network,
+    overrides_path: str | Path | None,
+    modelled_year: int,
+) -> pypsa.Network:
+    """Apply audited unit-level support labels after generator integration."""
+    if not overrides_path:
+        return network
+    path = Path(overrides_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Generator support override file not found: {path}")
+
+    overrides = pd.read_csv(path)
+    required = {"generator_name", "support_type"}
+    missing = required - set(overrides.columns)
+    if missing:
+        raise ValueError(f"Support override file is missing columns: {sorted(missing)}")
+    if "modelled_year" in overrides.columns:
+        years = pd.to_numeric(overrides["modelled_year"], errors="coerce")
+        overrides = overrides.loc[years.eq(int(modelled_year))].copy()
+    if overrides.empty:
+        logger.info("No generator support overrides apply in %s", modelled_year)
+        return network
+    if overrides["generator_name"].duplicated().any():
+        duplicate_names = overrides.loc[
+            overrides["generator_name"].duplicated(keep=False), "generator_name"
+        ].tolist()
+        raise ValueError(f"Duplicate generator support overrides: {duplicate_names}")
+
+    absent = sorted(set(overrides["generator_name"]) - set(network.generators.index))
+    if absent:
+        raise ValueError(
+            "Support overrides name generators absent from the integrated network: "
+            + ", ".join(absent)
+        )
+
+    for row in overrides.to_dict("records"):
+        name = row["generator_name"]
+        support_type = str(row["support_type"]).strip()
+        if support_type not in {"CfD", "ROC", "merchant"}:
+            raise ValueError(f"Invalid support_type {support_type!r} for {name}")
+        network.generators.loc[name, "support_type"] = support_type
+        for attribute in ("ro_banding", "cfd_id", "support_evidence", "support_notes"):
+            value = row.get(attribute)
+            if pd.notna(value) and str(value).strip():
+                network.generators.loc[name, attribute] = value
+        # The original audited dispatchable-support file predates the separate
+        # ROC-reference field.  Its ``cfd_id`` column therefore carries either
+        # an LCCC contract id (for CfDs) or an Ofgem accreditation reference
+        # (for ROCs).  Preserve the legacy column, but expose ROC evidence in
+        # the unambiguous field consumed by the pre-solve station mapper.
+        if support_type == "ROC":
+            reference = row.get("ro_accreditation_reference", row.get("cfd_id"))
+            if pd.notna(reference) and str(reference).strip():
+                network.generators.loc[name, "ro_accreditation_reference"] = str(reference).strip()
+
+    counts = overrides["support_type"].value_counts().to_dict()
+    logger.info("Applied %d audited generator support overrides: %s", len(overrides), counts)
+    return network
 
 
 def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, fuel_data_path: str = None, solve_mode: str = None) -> pypsa.Network:
@@ -1489,6 +2010,9 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
             'ccgt': 'CCGT',
             'combined cycle gas turbine': 'CCGT',
             'sour gas': 'CCGT',              # Connahs Quay - sour gas CCGT plant
+            'ccs gas': 'CCS Gas',
+            'ccs biomass': 'CCS Biomass',
+            'hydrogen': 'Hydrogen',
             'ocgt': 'OCGT',
             'open cycle gas turbine': 'OCGT',
             'single cycle': 'OCGT',          # DUKES 2022+ uses 'Single cycle' for OCGT
@@ -1545,11 +2069,34 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
         if capacity_mw <= 0:
             continue
         
-        # Generate generator name if not provided
-        gen_name = row.get('station_name', f"gen_{fuel_type}_{idx}")
-        gen_name = str(gen_name).strip()
-        if not gen_name or gen_name == 'nan':
-            gen_name = f"gen_{fuel_type}_{idx}"
+        # Prefer the source station name.  REPD dispatchable-site extraction
+        # supplies this for biomass, biogas, landfill and sewage-gas sites;
+        # previously these rows became anonymous ``gen_<carrier>_<index>``
+        # components, which prevented a traceable RO-station reconciliation.
+        name_candidates = (
+            row.get('station_name'),
+            row.get('source_site_name'),
+            row.get('site_name'),
+        )
+        gen_name = next(
+            (str(value).strip() for value in name_candidates
+             if pd.notna(value) and str(value).strip()),
+            f"gen_{fuel_type}_{idx}",
+        )
+
+        # Source station names are not globally unique.  Preserve every REPD
+        # site by making a collision unambiguous with its durable REPD ID,
+        # rather than silently skipping capacity as the old integration did.
+        data_source = str(row.get('data_source', '')).strip()
+        if data_source.upper() == 'REPD' and gen_name in network.generators.index:
+            repd_ref_id = row.get('repd_ref_id')
+            suffix = str(repd_ref_id).strip() if pd.notna(repd_ref_id) else str(idx)
+            candidate_name = f"{gen_name}__REPD_{suffix}"
+            collision_number = 2
+            while candidate_name in network.generators.index:
+                candidate_name = f"{gen_name}__REPD_{suffix}_{collision_number}"
+                collision_number += 1
+            gen_name = candidate_name
         
         # Determine bus location
         if 'bus' in row and pd.notna(row['bus']):
@@ -1562,6 +2109,7 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
                 logger.warning(f"Network has no buses, skipping generator {gen_name}")
                 continue
             bus = network.buses.index[0]
+            logger.warning(f"No bus, GSP or node for {gen_name} ({capacity_mw:,.1f} MW); placed at first bus {bus}")
         
         # Verify bus exists in network - use fallback if not found
         if bus not in network.buses.index:
@@ -1656,6 +2204,28 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
         # Add data source if available
         if 'data_source' in row:
             gen_attrs['data_source'] = str(row['data_source'])
+
+        # Persist source identity and support-relevant REPD fields on the
+        # component.  This gives downstream consumer-bill analysis a direct,
+        # auditable link to the source site instead of recovering it from a
+        # generated PyPSA name.
+        for attribute in (
+            'source_site_name', 'repd_ref_id', 'operational_date',
+            'ro_banding', 'cfd_round', 'support_type',
+            'cfd_id', 'cfd_technology', 'bmu_id', 'ro_accreditation_reference',
+            'support_evidence', 'support_notes', 'ro_support_source',
+            # Per-unit heat rate and its evidence (CP30 gas schedule, MR1);
+            # apply_marginal_costs prefers unit_efficiency to the class value.
+            'unit_efficiency', 'efficiency_source', 'gas_capacity_basis',
+        ):
+            value = row.get(attribute)
+            if pd.notna(value) and str(value).strip():
+                gen_attrs[attribute] = value
+        # A dated station keeps its commissioning year, which the finance
+        # register uses to vintage it.
+        build_year = pd.to_numeric(row.get('build_year'), errors='coerce')
+        if pd.notna(build_year) and build_year > 0:
+            gen_attrs['build_year'] = int(build_year)
         
         # Add coordinates if available (needed for plotting and validation)
         if 'lat' in row and pd.notna(row['lat']):
@@ -1665,7 +2235,8 @@ def add_thermal_generators(network: pypsa.Network, thermal_data: pd.DataFrame, f
         if 'lon' in row and pd.notna(row['lon']):
             gen_attrs['lon'] = float(row['lon'])
 
-        # Skip if generator already exists (avoid PyPSA print warning)
+        # Non-REPD duplicate names retain the existing conservative behaviour.
+        # REPD collisions were disambiguated above with their reference ID.
         if gen_name in network.generators.index:
             logger.debug(f"Skipping duplicate generator: {gen_name}")
             continue
@@ -1725,10 +2296,20 @@ def main():
         scenario_name = snk.wildcards.scenario
         scenario_config = snk.params.scenario_config
         modelled_year = scenario_config.get('modelled_year', 2020)
-        fes_scenario = scenario_config.get('FES_scenario', None)  # FES pathway from config
+        # Where the numbers come from (CP30 targets: FES is only a spatial proxy) and how the
+        # fleet is built (brownfield: CP30 totals placed through the named-station schedules).
+        cp30_targets = target_source(scenario_config) == 'CP30'
+        brownfield = uses_brownfield(scenario_config)
+        spatial_proxy = scenario_config.get('fleet', {}).get('spatial_proxy', {}) if brownfield else {}
+        fes_scenario = spatial_proxy.get('FES_scenario') if cp30_targets else scenario_config.get('FES_scenario', None)
+        # Task Y6b: {} unless a FES long-range scenario sets fleet.fes_supply (today's behaviour otherwise).
+        fes_thermal = fes_supply_part(scenario_config, 'thermal') if not brownfield else {}
         
         logger.info(f"Scenario: {scenario_name}, Modelled Year: {modelled_year}")
-        if fes_scenario:
+        if cp30_targets:
+            logger.info(f"CP30 Pathway: {scenario_config.get('CP30_pathway')}")
+            logger.info(f"Spatial FES proxy pathway: {fes_scenario}")
+        elif fes_scenario:
             logger.info(f"FES Scenario/Pathway: {fes_scenario}")
         
         # =====================================================================
@@ -1742,8 +2323,15 @@ def main():
         
         # Load DUKES data (if historical scenario)
         dukes_df = pd.DataFrame()
+        dukes_raw_df = pd.DataFrame()
         if hasattr(snk.input, 'dukes_data'):
             logger.info("Historical scenario detected - loading DUKES data")
+            # Retain an unfiltered copy for the explicitly configured legacy-
+            # hydro supplement. ``load_dukes_generators`` correctly removes
+            # renewable fuels from the thermal stack, so passing its output to
+            # that supplement would otherwise leave it no hydro stations.
+            dukes_raw_df = pd.read_csv(snk.input.dukes_data)
+            dukes_raw_df = apply_plant_phase_out_filtering(dukes_raw_df, modelled_year)
             dukes_df = load_dukes_generators(snk.input.dukes_data)
             # Apply phase-out filtering to remove closed/decommissioned plants
             # and adjust capacity for plants running at reduced output
@@ -1752,23 +2340,93 @@ def main():
         else:
             logger.info("Future scenario - DUKES data not applicable")
         
-        # Load FES data (future scenarios only)
+        # Load future projection data (FES or CP30 with explicit FES spatial proxy)
         fes_df = pd.DataFrame()
         if hasattr(snk.input, 'fes_data'):
             if len(dukes_df) == 0:
-                # Future scenario - load FES as primary source
-                logger.info("Future scenario - loading FES data as primary source")
-                fes_df = load_fes_generators(snk.input.fes_data, modelled_year, fes_scenario)
+                if brownfield:
+                    logger.info("Future CP30 scenario - loading CP30 capacities with FES spatial proxy")
+                    fes_df = load_cp30_generators(
+                        snk.input.cp30_es1,
+                        snk.input.fes_data,
+                        modelled_year,
+                        scenario_config.get('CP30_pathway'),
+                        fes_scenario,
+                        nuclear_station_schedule=spatial_proxy.get('nuclear_station_schedule'),
+                        ccs_biomass_station_schedule=spatial_proxy.get('ccs_biomass_station_schedule'),
+                        biomass_station_schedule=spatial_proxy.get('biomass_station_schedule'),
+                        gas_station_schedule=spatial_proxy.get('gas_station_schedule'),
+                        gas_class_efficiency=scenario_config.get('marginal_costs', {})
+                            .get('future_costs', {}).get('efficiency_defaults', {}),
+                        committed_overlay=spatial_proxy.get('committed_overlay'),
+                        ccs_gas_support_type=spatial_proxy.get('ccs_gas_support_type'),
+                        committed_overlay_carve_out=spatial_proxy.get('committed_overlay_carve_out'),
+                    )
+                    # Named CfD units inside CP30's waste and Other Renewables
+                    # proxies (K3, Energy Works Hull, AR5 geothermal), carved out
+                    # of the proxy at the nearest bus to the site; totals unchanged.
+                    cfd_station_schedule = spatial_proxy.get('cfd_station_schedule')
+                    if cfd_station_schedule and len(fes_df):
+                        fes_df = apply_cfd_station_schedule(
+                            fes_df, cfd_station_schedule, network, logger,
+                            protected_sources=(NUCLEAR_SCHEDULE_SOURCE, CCS_BIOMASS_SCHEDULE_SOURCE,
+                                               BIOMASS_SCHEDULE_SOURCE, GAS_SCHEDULE_SOURCE, OVERLAY_SOURCE),
+                            land_boundary_file=(getattr(snk.input, 'cp30_placement_land_boundary', None)
+                                                or (((scenario_config.get('network', {}) or {}).get('spatial_mapping', {}) or {})
+                                                    .get('placement_exclusions', {}) or {}).get('land_boundary_file')
+                                                or "default"),
+                        )
+                    sources = fes_df.get('data_source', pd.Series(index=fes_df.index))
+                    for schedule_source, label in ((NUCLEAR_SCHEDULE_SOURCE, 'Nuclear'),
+                                                   (CCS_BIOMASS_SCHEDULE_SOURCE, 'CCS biomass'),
+                                                   (BIOMASS_SCHEDULE_SOURCE, 'Biomass'),
+                                                   (GAS_SCHEDULE_SOURCE, 'Gas'),
+                                                   (OVERLAY_SOURCE, 'Committed overlay'),
+                                                   (CFD_STATION_SCHEDULE_SOURCE, 'CfD station')):
+                        scheduled = sources.eq(schedule_source)
+                        if scheduled.any():
+                            absent = sorted(set(fes_df.loc[scheduled, 'bus']) - set(network.buses.index))
+                            if absent:
+                                raise ValueError(
+                                    f"{label} station schedule names buses absent from this network: {absent}"
+                                )
+                else:
+                    logger.info("Future scenario - loading FES data as primary source")
+                    fes_df = load_fes_generators(snk.input.fes_data, modelled_year, fes_scenario)
+                    # Task Y6b (FES 2050 plan, year-generic in stage 5): the Gen_BB009 gas
+                    # CCS split (or carrier remap) and the declared station schedule for Direct rows.
+                    if fes_thermal:
+                        es1_lines_path = (getattr(snk.input, 'fes_es1_lines', None)
+                                          or fes_thermal.get('es1_lines_file'))
+                        fes_df = apply_fes_thermal(
+                            fes_df,
+                            {**fes_thermal,
+                             'station_schedule': getattr(snk.input, 'fes_station_schedule', None)
+                             or fes_thermal.get('station_schedule')},
+                            logger,
+                            year=int(modelled_year),
+                            es1_lines=pd.read_csv(es1_lines_path) if es1_lines_path else None,
+                        )
+                        scheduled = fes_df['data_source'].eq(schedule_data_source(modelled_year))
+                        absent = sorted(set(fes_df.loc[scheduled, 'bus']) - set(network.buses.index))
+                        if absent:
+                            raise ValueError(f"FES {modelled_year} station schedule names buses absent from this network: {absent}")
             else:
                 # Historical scenario - NO FES fallback
                 logger.info("Historical scenario - NOT loading FES (using DUKES + REPD only)")
         else:
             if len(dukes_df) == 0:
-                logger.warning("No thermal generator data available (no DUKES or FES)")
+                logger.warning("No thermal generator data available (no DUKES or FES/CP30)")
         
         # Load REPD dispatchable renewable thermal
         repd_df = pd.DataFrame()
-        if hasattr(snk.input, 'biomass_sites'):
+        if brownfield:
+            logger.info("CP30 scenario - skipping REPD thermal sites to avoid double-counting CP30 ES1 biomass/waste totals")
+        elif fes_thermal:
+            # The generic future path adds REPD bioenergy scaled to the FES totals ON TOP
+            # of the FES bioenergy rows (merge_generator_data_sources), counting it twice.
+            logger.info("FES long-range scenario - skipping REPD thermal sites: FES GSP rows carry bioenergy and waste")
+        elif hasattr(snk.input, 'biomass_sites'):
             logger.info("Loading REPD dispatchable renewable thermal sites")
             repd_site_files = {
                 'biomass': snk.input.biomass_sites,
@@ -1783,6 +2441,66 @@ def main():
             repd_df = standardize_repd_for_merge(repd_df)
         else:
             logger.info("REPD thermal sites not available for this scenario")
+
+        additional_thermal = load_historical_additional_thermal_sites(
+            getattr(snk.input, 'historical_additional_thermal_sites', None),
+            modelled_year,
+        )
+        if not additional_thermal.empty:
+            repd_df = pd.concat([repd_df, additional_thermal], ignore_index=True, sort=False)
+
+        subsidy_config = scenario_config.get('support', {}).get('labels', {})
+        if subsidy_config.get('enabled', False):
+            subsidy_kwargs = {
+                'modelled_year': modelled_year,
+                'roc_eligibility_years': subsidy_config.get('roc_eligibility_years', 20),
+                'fes_cfd_fractions': subsidy_config.get('fes_cfd_fractions', {}),
+                'logger': logger,
+                'roc_closure_date': subsidy_config.get('roc_closure_date', '2017-04-01'),
+                'default_roc_bandings': subsidy_config.get('default_roc_bandings', {}),
+            }
+            if len(repd_df) > 0:
+                logger.info("Assigning CfD/ROC support to REPD dispatchable renewables")
+                repd_df = _assign_subsidy_attributes(repd_df, **subsidy_kwargs)
+            if len(fes_df) > 0:
+                logger.info("Assigning projected CfD/merchant support to FES dispatchable generation")
+                # Stations placed by the nuclear schedule already carry an
+                # evidenced support label and contract round; the projected
+                # split must not overwrite them.
+                scheduled = fes_df.get('data_source', pd.Series(index=fes_df.index)).isin(
+                    [NUCLEAR_SCHEDULE_SOURCE, CCS_BIOMASS_SCHEDULE_SOURCE, BIOMASS_SCHEDULE_SOURCE, OVERLAY_SOURCE,
+                     CFD_STATION_SCHEDULE_SOURCE])
+                if 'support_label_declared' in fes_df.columns:
+                    scheduled |= fes_df['support_label_declared'].eq(True)
+                projected = _assign_subsidy_attributes(fes_df.loc[~scheduled], **subsidy_kwargs)
+                # CP30 distribution biomass and energy from waste are anonymous
+                # proxies: give them the RO share the Ofgem register implies
+                # (scripts/renewables/support_register_labels.py).
+                registers_config = subsidy_config.get('support_registers', {}) or {}
+                if brownfield and registers_config.get('enabled', False):
+                    from scripts.renewables.support_register_labels import (
+                        apply_ro_register_share_to_proxies,
+                        load_ro_register,
+                    )
+                    proxy_share = registers_config.get('dispatchable_proxy_share', {}) or {}
+                    if proxy_share.get('enabled', True):
+                        ro_reference = registers_config.get('ro_reference_date') or f"{modelled_year}-04-01"
+                        ro_register = load_ro_register(
+                            snk.input.ro_register, ro_reference,
+                            certificates_path=snk.input.ro_certificates,
+                            default_bandings=subsidy_config.get('default_roc_bandings', {}),
+                        )
+                        schedule_names = fes_df.loc[scheduled].get(
+                            'station_name', pd.Series(dtype=object)).dropna().astype(str).tolist()
+                        projected, _ = apply_ro_register_share_to_proxies(
+                            projected, ro_register,
+                            carriers=tuple(proxy_share.get('carriers', ['biomass', 'waste_to_energy'])),
+                            min_certificate_year=proxy_share.get('min_certificate_year', 2023),
+                            carrier_col='fuel_type',
+                            exclude_names=schedule_names,
+                            logger=logger,
+                        )
+                fes_df = pd.concat([projected, fes_df.loc[scheduled]], ignore_index=True, sort=False)
         
         # =====================================================================
         # PART 2: MERGE DATA SOURCES WITH PRIORITY HANDLING
@@ -1791,6 +2509,8 @@ def main():
         logger.info("PART 2: MERGING DATA SOURCES")
         if len(dukes_df) > 0:
             logger.info("Historical scenario: DUKES > REPD (NO FES)")
+        elif brownfield:
+            logger.info("Future CP30 scenario: CP30 ES1 capacities + explicit FES spatial proxy")
         else:
             logger.info("Future scenario: FES + REPD (scaled to FES targets)")
         logger.info("-" * 80)
@@ -1802,6 +2522,20 @@ def main():
             dukes_df, repd_df, fes_df, modelled_year,
             fes_data_path=fes_data_path,
             fes_pathway=fes_scenario
+        )
+        hydro_config = scenario_config.get('renewables', {}).get('hydro', {}).get('large_hydro', {})
+        if len(dukes_raw_df) > 0 and hydro_config.get('dukes_legacy_supplement', True):
+            thermal_data = add_missing_dukes_hydro(
+                thermal_data,
+                dukes_raw_df,
+                snk.input.large_hydro_source_sites,
+                logger,
+            )
+        thermal_data = add_roc_evidenced_dukes_hydro(
+            thermal_data,
+            network,
+            getattr(snk.input, "dukes_roc_hydro_supplement", None),
+            logger,
         )
         
         if len(thermal_data) == 0:
@@ -1825,10 +2559,16 @@ def main():
             logger.info("-" * 80)
             logger.info("Using historical spatial patterns to distribute Direct-connected capacity")
             
+            # Residual Direct OCGT and gas-engine capacity follows the named gas
+            # stations (co-location with existing gas connections) rather than
+            # the best-connected buses.
+            sources = thermal_data.get('data_source', pd.Series(index=thermal_data.index))
+            gas_sites = thermal_data[sources.eq(GAS_SCHEDULE_SOURCE)]
             thermal_data = distribute_fes_generators_spatially(
                 thermal_data, 
                 network,
-                repd_sites=repd_df if len(repd_df) > 0 else None
+                repd_sites=repd_df if len(repd_df) > 0 else None,
+                reference_sites={carrier: gas_sites for carrier in SCHEDULE_GAS_CARRIERS} if len(gas_sites) else None,
             )
             stage_times['2.5. Spatial distribution'] = time.time() - stage_start_spatial
         
@@ -1868,8 +2608,9 @@ def main():
                     lats = pd.to_numeric(thermal_data['lat'], errors='coerce')
                     valid_coords = lons.notna() & lats.notna()
                     
-                    thermal_data['x_coord'] = pd.NA
-                    thermal_data['y_coord'] = pd.NA
+                    # Float columns: an object-typed column breaks np.isnan in map_sites_to_buses.
+                    thermal_data['x_coord'] = np.nan
+                    thermal_data['y_coord'] = np.nan
                     
                     if valid_coords.sum() > 0:
                         x, y = transformer.transform(lons[valid_coords].values, lats[valid_coords].values)
@@ -2016,7 +2757,10 @@ def main():
             logger.info("Spatial nearest-distance mapping may have assigned them to nearby 132kV buses")
             
             thermal_data = apply_etys_bmu_mapping(thermal_data, network)
-            
+            if fes_thermal:
+                # The declared stations keep their evidenced buses (task Y6b).
+                thermal_data = restore_declared_buses(thermal_data, logger)
+
             stage_times['3.5. ETYS BMU mapping'] = time.time() - stage_start_bmu
         
         # =====================================================================
@@ -2071,6 +2815,11 @@ def main():
             network,
             thermal_data,
             fuel_data_path=str(snk.input.fuel_data)
+        )
+        network = apply_generator_support_overrides(
+            network,
+            subsidy_config.get('dispatchable_support_overrides_file'),
+            modelled_year,
         )
         thermal_added = len(network.generators) - thermal_before
         logger.info(f"Added {thermal_added} thermal generators to network")
@@ -2203,7 +2952,7 @@ def main():
                             
                             # Optional smoothing controlled by config
                             # "hourly" = raw signal, "daily" = daily average, "monthly" = legacy
-                            smoothing = scenario_config.get('nuclear_availability_smoothing', 'hourly')
+                            smoothing = scenario_config.get('thermal', {}).get('nuclear_smoothing', 'hourly')
                             if smoothing == 'monthly':
                                 monthly_avg = availability.resample('MS').mean()
                                 availability = monthly_avg.reindex(availability.index, method='ffill')
@@ -2263,7 +3012,7 @@ def main():
         # Biomass (Drax, Lynemouth) does not run at 100% CF due to pellet supply
         # logistics and planned maintenance. Small biofuel (biogas, LFG, sewage)
         # are CHP plants that follow heat demand, not wholesale price signals.
-        avail_config = scenario_config.get('thermal_availability_factors', {})
+        avail_config = scenario_config.get('thermal', {}).get('availability_factors', {})
         if avail_config.get('enabled', False):
             stage_start = time.time()
             logger.info("-" * 80)
@@ -2271,6 +3020,7 @@ def main():
             logger.info("-" * 80)
 
             avail_factors = avail_config.get('factors', {})
+            check_min_output_within_availability(avail_config)
             corrections = 0
             for carrier, factor in avail_factors.items():
                 factor = float(factor)
@@ -2320,7 +3070,164 @@ def main():
             if min_corrections:
                 logger.info(f"Applied must-run min_output to {min_corrections} generators")
 
+            # Per-group values (ES1 calibration by connection), after the carrier ones.
+            apply_thermal_group_overrides(network, avail_config.get('group_overrides') or [], logger)
+
             stage_times['4d. Thermal availability'] = time.time() - stage_start
+
+        # Historical years: the 2030 placement audit's declared connection buses (stations and
+        # offshore landings), after the name-prefix heuristic (scripts/generators/declared_buses.py).
+        if target_source(scenario_config) == 'historical':
+            from scripts.generators.declared_buses import apply_declared_buses
+            apply_declared_buses(network, getattr(snk.input, 'historical_station_buses', None),
+                                 getattr(snk.input, 'offshore_landing_crosswalk', None), logger)
+
+        # Historical years: the whole large-hydro fleet (site units and the DUKES supplements added
+        # above) takes ESPENI's metered hydro output as its daily inflow.
+        from scripts.renewables.large_hydro_inflow import apply_historical_metered_hydro
+        apply_historical_metered_hydro(
+            network, scenario_config, scenario_config.get('renewables_year', modelled_year),
+            getattr(snk.input, 'espeni_metered_hydro', None) or None, logger,
+        )
+
+        # Named station/month observations replace the broad carrier factor.
+        # This is intentionally an explicit historical-validation input, not a
+        # future-scenario assumption.
+        monthly_availability = avail_config.get('generator_monthly_file')
+        if monthly_availability and is_historical:
+            apply_generator_monthly_availability(
+                network, monthly_availability, modelled_year, logger
+            )
+
+        # One physical project may contain multiple CfD contracts with
+        # different support start dates.  Split those contract shares before
+        # marginal costs and dispatch are calculated, preserving any merchant
+        # residual and the source p_max_pu profile.
+        tranche_config = subsidy_config.get('historical_cfd_tranches', {})
+        if subsidy_config.get('enabled', False) and tranche_config.get('enabled', False):
+            split_historical_cfd_tranches(
+                network,
+                tranche_config['mapping_file'],
+                tranche_config['actuals_file'],
+                logger,
+            )
+
+        # Evidence-backed ROC labels must be available before marginal costs
+        # are calculated, rather than being applied only to a post-solve audit
+        # copy of the network.  The full calendar-year outturn supplies actual
+        # bands, while the strict post-solve reconciliation remains the guard
+        # against claiming an inferred label as a certificate observation.
+        roc_label_config = subsidy_config.get('historical_roc_station_labels', {})
+        roc_label_output = Path(str(snk.output.pre_solve_roc_mapping))
+        roc_overlay_output = Path(str(snk.output.pre_solve_roc_overlay_actions))
+        roc_capacity_output = Path(str(snk.output.pre_solve_roc_capacity_ledger))
+        roc_physical_overlay_config = subsidy_config.get(
+            'historical_roc_physical_overlay', {}
+        )
+        if is_historical and roc_physical_overlay_config.get('enabled', False):
+            network, roc_overlay_report = apply_historical_roc_physical_overlay(
+                network,
+                snk.input.historical_roc_registry,
+                snk.input.historical_roc_physical_overlay_actions,
+                roc_physical_overlay_config,
+                logger,
+            )
+            roc_overlay_output.parent.mkdir(parents=True, exist_ok=True)
+            roc_overlay_report.to_csv(roc_overlay_output, index=False)
+        else:
+            roc_overlay_output.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(columns=[
+                'Accreditation reference', 'capacity_action', 'execution_status',
+                'source_generators', 'created_generators', 'ofgem_dnc_mw',
+                'model_capacity_before_mw', 'model_capacity_after_mw',
+                'capacity_added_mw', 'method',
+            ]).to_csv(roc_overlay_output, index=False)
+        if is_historical and roc_label_config.get('enabled', False):
+            required_inputs = {
+                'historical_roc_outturn': snk.input.historical_roc_outturn,
+                'historical_roc_registry': snk.input.historical_roc_registry,
+                'historical_roc_crosswalk': snk.input.historical_roc_crosswalk,
+                'historical_roc_overrides': snk.input.historical_roc_overrides,
+                'historical_roc_source_evidence': snk.input.historical_roc_source_evidence,
+            }
+            missing_inputs = [name for name, path in required_inputs.items() if not path]
+            if missing_inputs:
+                raise ValueError(
+                    'historical_roc_station_labels is enabled but inputs are missing: '
+                    f'{missing_inputs}'
+                )
+            outturn = pd.read_csv(str(snk.input.historical_roc_outturn))
+            registry = pd.read_csv(str(snk.input.historical_roc_registry))
+            crosswalk = pd.read_csv(str(snk.input.historical_roc_crosswalk))
+            overrides = pd.read_csv(str(snk.input.historical_roc_overrides))
+            source_evidence = pd.read_csv(str(snk.input.historical_roc_source_evidence))
+            network, roc_mapping, roc_summary = apply_historical_dispatch_labels(
+                network,
+                outturn,
+                registry,
+                crosswalk,
+                overrides,
+                float(roc_label_config.get('buyout_price', 50.05)),
+                source_evidence,
+            )
+            roc_label_output.parent.mkdir(parents=True, exist_ok=True)
+            roc_mapping.to_csv(roc_label_output, index=False)
+            network, roc_capacity_ledger = apply_ofgem_roc_capacity_overlay(
+                network, outturn, registry, roc_mapping,
+                snk.input.historical_roc_representation_assumptions, logger,
+                residual_output_calibration_path=(
+                    snk.input.historical_roc_residual_output_calibration
+                    if snk.input.historical_roc_residual_output_calibration
+                    else None
+                ),
+                modelled_year=modelled_year,
+            )
+            roc_capacity_output.parent.mkdir(parents=True, exist_ok=True)
+            roc_capacity_ledger.to_csv(roc_capacity_output, index=False)
+            logger.info(
+                'Applied %d Ofgem-station-evidenced ROC labels before solve; '
+                '%d inferred labels remain distinct.',
+                roc_summary['labels_applied'],
+                roc_summary['inherited_roc_labels_preserved'],
+            )
+        else:
+            roc_label_output.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(columns=[
+                'generator', 'mapping_status', 'mapping_method',
+                'ro_accreditation_reference',
+            ]).to_csv(roc_label_output, index=False)
+            pd.DataFrame().to_csv(roc_capacity_output, index=False)
+
+        anchor_config = scenario_config.get('thermal', {}).get('dispatch_anchors', {})
+        if is_historical and anchor_config.get('enabled', False):
+            apply_historical_dispatch_anchors(
+                network, anchor_config, snk.input.espeni_dispatch, logger
+            )
+
+        # Planned maintenance and forced outage profiles are independent of unit
+        # commitment: they only reduce available capacity at each snapshot.
+        outage_config = scenario_config.get('thermal', {}).get('outages', {})
+        if outage_config.get('enabled', False):
+            stage_start = time.time()
+            logger.info("Applying thermal planned/forced outage availability")
+            apply_thermal_outage_availability(network, outage_config, logger)
+            stage_times['4e. Thermal outage availability'] = time.time() - stage_start
+
+        ramping_config = scenario_config.get('thermal', {}).get('ramping', {})
+        if ramping_config.get('enabled', False):
+            stage_start = time.time()
+            logger.info("Applying LP-compatible thermal ramp limits")
+            apply_thermal_ramp_limits(network, ramping_config, logger)
+            stage_times['4f. Thermal ramp limits'] = time.time() - stage_start
+
+        # Apply commissioning last, after carrier/monthly/outage availability,
+        # must-run floors and CfD tranche splitting. This guarantees every
+        # physical unit and contract tranche has p_min_pu <= p_max_pu.
+        commissioning_config = scenario_config.get('fleet', {}).get('commissioning', {})
+        if int(modelled_year) <= 2024 and commissioning_config.get(
+            'profile_gate_within_solve_period', False
+        ):
+            apply_physical_commissioning_gates(network, logger)
 
         # =====================================================================
         # STAGE 5: CREATE SUMMARY

@@ -635,6 +635,10 @@ def retrieve_elexon_market_data(
     all_bid_ladders = []
     n_cached = 0
     n_fetched = 0
+    # F25.12: a day whose fetch or processing raised is recorded and the
+    # retrieval fails after the loop, before any output or the processed
+    # cache is written (a dropped day used to be cached as complete).
+    failed_days = {}
 
     def _raw_cache_exists(date_str: str) -> bool:
         if not cache_dir:
@@ -706,12 +710,14 @@ def retrieve_elexon_market_data(
                         logger.info(f"  Day complete: {date_str}")
                         _consume_day_result(future.result())
                     except Exception as e:
+                        failed_days[date_str] = repr(e)
                         logger.error(f"  Failed to process {date_str}: {e}")
         except (OSError, PermissionError) as exc:
             logger.warning(
                 "Process-based parallelism is unavailable; falling back to "
                 f"threaded day processing ({exc})"
             )
+            failed_days.clear()  # every task is re-run below
             with ThreadPoolExecutor(max_workers=parallel_days) as executor:
                 future_to_date = {
                     executor.submit(_process_bod_day, task): task["date"]
@@ -723,6 +729,7 @@ def retrieve_elexon_market_data(
                         logger.info(f"  Day complete: {date_str}")
                         _consume_day_result(future.result())
                     except Exception as e:
+                        failed_days[date_str] = repr(e)
                         logger.error(f"  Failed to process {date_str}: {e}")
     else:
         for i, task in enumerate(tasks):
@@ -732,6 +739,7 @@ def retrieve_elexon_market_data(
                 result = _process_bod_day(task)
                 _consume_day_result(result)
             except Exception as e:
+                failed_days[date_str] = repr(e)
                 logger.error(f"  Failed to fetch {date_str}: {e}")
                 continue
 
@@ -741,6 +749,12 @@ def retrieve_elexon_market_data(
     logger.info(
         f"BOD source summary: {n_cached} days from cache, {n_fetched} days fetched"
     )
+    if failed_days:
+        listed = ", ".join(f"{day} ({err})" for day, err in sorted(failed_days.items())[:10])
+        raise RuntimeError(
+            f"ELEXON BOD retrieval failed for {len(failed_days)} of {len(tasks)} days: "
+            f"{listed}. Days already fetched are in the raw cache; re-run to retry."
+        )
 
     if all_offers:
         combined_offers = pd.concat(all_offers, axis=0).sort_index()
@@ -1904,8 +1918,13 @@ def main():
     scenario_config = snakemake.params.scenario_config
     solve_period = scenario_config.get("solve_period", {})
 
-    start_date = solve_period.get("start", "2023-01-01 00:00")[:10]
-    end_date = solve_period.get("end", "2023-01-07 23:00")[:10]
+    solve_dates = getattr(snakemake.params, "solve_dates", None)
+    if solve_dates:
+        # Resolved in rules/market.smk (_elexon_solve_dates), which also keys the cache.
+        start_date, end_date = solve_dates
+    else:
+        start_date = solve_period.get("start", "2023-01-01 00:00")[:10]
+        end_date = solve_period.get("end", "2023-01-07 23:00")[:10]
 
     output_dir = str(Path(snakemake.output.offers_file).parent)
     ladder_cfg = (

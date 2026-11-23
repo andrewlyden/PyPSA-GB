@@ -1,0 +1,40 @@
+voll: 6000.0                      # Value of lost load (GBP/MWh)
+
+#
+# SOLVER CONFIGURATION
+#
+solver:
+  name: "gurobi"                  # Options: gurobi, highs, glpk, cplex
+  # Barrier scales poorly past two threads on these LPs; the market rules declare
+  # threads: 2 so four months can solve at once on a 4-core machine.
+  threads: 2
+  method: 2                       # 0=primal, 1=dual, 2=barrier
+  # Barrier without crossover returns interior (non-vertex) solutions. Where the
+  # price is exactly zero a storage unit is indifferent between charging and
+  # discharging, so an interior point can do both at once and dissipate energy
+  # through round-trip losses. The market stages' storage_marginal_cost_floor and
+  # storage.dispatch_costs break that tie; crossover (-1) is the slower alternative.
+  crossover: 0                    # 0=disabled (faster), -1=auto (enables crossover)
+  # Fast barrier profile. The market solves run these options through a fallback
+  # ladder (scripts/market/market_utils.py solve_with_fallback): configured ->
+  # conservative barrier (NumericFocus 3, BarHomogeneous 1, ScaleFlag 2,
+  # DualReductions 0) -> dual simplex with crossover; a window that needs a later
+  # rung is logged as a WARNING.
+  BarHomogeneous: 0               # 0=standard barrier; 1 is the conservative fallback rung
+  BarConvTol: 1.e-4               # Relaxed for numerical stability with large storage
+  FeasibilityTol: 1.e-4           # Relaxed for numerical stability with large storage
+  OptimalityTol: 1.e-4            # Relaxed for numerical stability with large storage
+  NumericFocus: 0                 # 0=Gurobi default; 3 is the conservative fallback rung
+  ScaleFlag: -1                   # -1=Gurobi auto scaling; 2 is the conservative fallback rung
+  DualReductions: 1               # 1=Gurobi default; 0 is the conservative fallback rung
+  BarIterLimit: 200               # Barrier iteration cap (Gurobi default 1000)
+  # How linopy hands the model to the solver in the market stages: "direct"
+  # (through gurobipy/highspy, fastest) | "lp" | "mps" (write a file and read it
+  # back). Not a Gurobi parameter: read by market_utils.solver_io_kwargs.
+  io_api: "direct"
+
+#
+# OPTIMIZATION MODE
+#
+# LP: fast, no unit commitment. MILP: slow, full unit commitment constraints.
+mode: "LP"                # Options: "LP" or "MILP"

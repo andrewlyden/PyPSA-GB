@@ -5,6 +5,10 @@ import logging
 import time
 from pathlib import Path
 from scripts.utilities.logging_config import setup_logging, log_dataframe_info, log_network_info, log_execution_summary
+from scripts.network_build.branch_units import (
+    BRANCH_UNITS_META_KEY, UNITS_PU100, UNITS_PYPSA, set_branch_units,
+    convert_network_pu100_to_pypsa,
+)
 
 
 def build_reduced_network(logger=None):
@@ -47,10 +51,15 @@ def build_reduced_network(logger=None):
     for bus_id, bus_data in df_buses.iterrows():
         network.add("Bus", bus_id, **bus_data.to_dict())
     
-    # Add lines
+    # Add lines. lines.csv is the branch table of GBreducednetwork.m
+    # (MATPOWER, baseMVA = 100): r, x, b are per unit on 100 MVA, not the ohm
+    # and siemens PyPSA reads. Converted once below, as for ETYS
+    # (scripts/network_build/branch_units.py).
     logger.info(f"Adding {len(df_lines)} lines to network")
     for line_id, line_data in df_lines.iterrows():
         network.add("Line", line_id, **line_data.to_dict())
+    set_branch_units(network, UNITS_PU100)
+    convert_network_pu100_to_pypsa(network, logger)
     
     # Set metadata
     network.name = 'Reduced Network'
@@ -197,8 +206,9 @@ def build_network_by_type(network_model: str, logger=None):
     builder_func = NETWORK_BUILDERS[network_model]
     network = builder_func(logger)
     
-    # Set version metadata to prevent compatibility warnings
-    network.meta = {"pypsa_version": pypsa.__version__}
+    # Set version metadata to prevent compatibility warnings. Branch units are
+    # PyPSA-native for Reduced (converted) and trivially for Zonal (links only).
+    network.meta = {"pypsa_version": pypsa.__version__, BRANCH_UNITS_META_KEY: UNITS_PYPSA}
     
     return network
 

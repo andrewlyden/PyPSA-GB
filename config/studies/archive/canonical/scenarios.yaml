@@ -1,0 +1,662 @@
+# Single-period scenarios.
+
+Historical_2020_ETYS_market_WP5A_calibration:
+  inherits: [archive_canonical_historical_2020_etys_market_wp5a, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_window_hours__7_members, archive_canonical_embedded_wind_overlap_exclusion__4_members, archive_canonical_balancing_participation__etys_market]
+  solve_period:
+    enabled: true
+    start: 2020-01-06 00:00
+    end: 2020-01-12 23:30
+  description: 'WP5A calibration: 2020 ETYS, ELEXON prices and 1 MW BM participation threshold (6-12 January)'
+
+Historical_2020_ETYS_market_WP5A_holdout:
+  inherits: [archive_canonical_historical_2020_etys_market_wp5a, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_window_hours__7_members, archive_canonical_embedded_wind_overlap_exclusion__4_members, archive_canonical_balancing_participation__etys_market]
+  solve_period:
+    enabled: true
+    start: 2020-02-03 00:00
+    end: 2020-02-09 23:30
+  description: 'WP5A holdout: 2020 ETYS, ELEXON prices and 1 MW BM participation threshold (3-9 February)'
+
+Historical_2020_ETYS_market_interconnector_backtest:
+  inherits: [archive_canonical_wholesale_mode, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_market_wholesale_only__13_members, archive_canonical_pricing_source__etys_market]
+  solve_period:
+    enabled: true
+    start: 2020-01-06 00:00
+    end: 2020-01-12 23:00
+  description: Historical 2020 ETYS - one-week direct-Link interconnector back-test against ENTSO-E/ESPENI
+  interconnectors:
+    historical_flow_mode: market_coupled
+
+Historical_2019_reduced:
+  inherits: [archive_canonical_historical_2019, archive_canonical_network_model__38_members]
+  solve_period:
+    enabled: true
+    start: 2019-01-01 00:00
+    end: 2019-01-07 23:00
+  description: 2019 Historical - Reduced Network
+
+Historical_2019_zonal:
+  inherits: [archive_canonical_historical_2019, archive_canonical_network_model__zonal]
+  solve_period:
+    enabled: true
+    start: 2019-01-01 00:00
+    end: 2019-01-07 23:00
+  description: 2019 Historical - Zonal Network (17 zones)
+
+Historical_2019_ETYS:
+  inherits: [archive_canonical_historical_2019, archive_canonical_network_model__33_members]
+  solve_period:
+    enabled: true
+    start: 2019-12-07 00:00
+    end: 2019-12-13 23:00
+  description: 2019 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)
+
+Historical_2020_ETYS_6h:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__20_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 05:00
+  description: 2020 Historical - Full ETYS Network - 6 hour test
+
+Historical_2020_reduced_6h:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__20_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 05:00
+  description: 2020 Historical - Reduced Network - 6 hour test
+
+Historical_2017_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2017-01-01 00:00
+    end: 2017-01-07 23:00
+  description: 2017 Historical - Reduced Network
+  modelled_year: 2017
+  renewables_year: 2017
+  demand_year: 2017
+
+Historical_2010_reduced:
+  inherits: [archive_canonical_2010, archive_canonical_network_model__38_members]
+  solve_period:
+    enabled: true
+    start: 2010-01-01 00:00
+    end: 2010-01-07 23:00
+  description: 2010 Historical - Reduced Network
+  modelled_year: 2010
+
+Historical_2011_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2011-01-01 00:00
+    end: 2011-01-07 23:00
+  description: 2011 Historical - Reduced Network
+  modelled_year: 2011
+  renewables_year: 2011
+  demand_year: 2011
+
+Historical_2012_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2012-01-01 00:00
+    end: 2012-01-07 23:00
+  description: 2012 Historical - Reduced Network
+  modelled_year: 2012
+  renewables_year: 2012
+  demand_year: 2012
+
+Historical_2013_reduced:
+  inherits: [archive_canonical_renewables_year_4, archive_canonical_network_model__38_members]
+  solve_period:
+    enabled: true
+    start: 2013-01-01 00:00
+    end: 2013-01-07 23:00
+  description: 2013 Historical - Reduced Network
+  modelled_year: 2013
+
+Historical_2014_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2014-01-01 00:00
+    end: 2014-01-07 23:00
+  description: 2014 Historical - Reduced Network
+  modelled_year: 2014
+  renewables_year: 2014
+  demand_year: 2014
+
+Historical_2016_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2016-01-01 00:00
+    end: 2016-01-07 23:00
+  description: 2016 Historical - Reduced Network
+  modelled_year: 2016
+  renewables_year: 2016
+  demand_year: 2016
+
+Historical_2018_reduced:
+  inherits: archive_canonical_network_model__38_members
+  solve_period:
+    enabled: true
+    start: 2018-01-01 00:00
+    end: 2018-01-07 23:00
+  description: 2018 Historical - Reduced Network
+  modelled_year: 2018
+  renewables_year: 2018
+  demand_year: 2018
+
+Historical_2019_clustered:
+  inherits: [archive_canonical_historical_2019, archive_canonical_network_model__33_members]
+  description: 2019 Historical - ETYS Clustered to GSP Zones
+  network:
+    clustering:
+      enabled: true
+      method: spatial
+      config:
+        boundaries_path: data/network/GSP/GSP_regions_27700_20250109.geojson
+        cluster_column: GSPs
+        bus_crs: EPSG:27700
+        boundary_crs: EPSG:27700
+        fallback: nearest_centroid
+        convert_transformers_to_lines: true
+
+HT35_year:
+  inherits: [archive_canonical_renewables_year_4, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_clustering_method__ht35]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-12-31 23:00
+  description: FES 2024 Holistic Transition 2035 - Full ETYS (1 year)
+  network:
+    clustering:
+      n_clusters: 20
+  FES_year: 2025
+
+HT35_without_network_upgrades:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: FES 2024 Holistic Transition 2035 - Full ETYS with Network Upgrades
+  network:
+    upgrades:
+      enabled: false
+
+HT35_reduced_eload:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  description: FES 2024 HT 2035 - Reduced Network with eLOAD profile
+  demand:
+    timeseries: eload
+
+HT35_reduced_desstinee:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  description: FES 2024 HT 2035 - Reduced Network with DESSTINEE profile
+  demand:
+    timeseries: desstinee
+
+HT35_clustered_gsp:
+  inherits: [archive_canonical_clustered_gsp, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: FES 2024 Holistic Transition 2035 - ETYS  GSP Clusters
+
+HT35_clustered_kmeans:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  description: FES 2024 Holistic Transition 2035 - K-means 10 Clusters
+  network:
+    clustering: kmeans_10
+
+HT35_with_disaggregation:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  description: FES 2024 Holistic Transition 2035 - With Demand Disaggregation
+  demand:
+    disaggregation:
+      enabled: true
+      components: [heat_pumps]
+
+Test_Clustered_GSP:
+  inherits: [archive_canonical_clustered_gsp, archive_canonical_network_model__33_members, archive_canonical_modelled_year__20_members]
+  description: Test GSP clustering
+
+Test_Historical_2020_Reduced:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__20_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 05:00
+  description: Historical 2020 - Reduced network smoke test
+
+Test_Future_HT_2035_Reduced:
+  inherits: [archive_canonical_renewables_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: HT 2035 - Reduced network smoke test
+
+Test_Future_HT_2035_Zonal:
+  inherits: [archive_canonical_renewables_year, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_network_model__zonal]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: HT 2035 - Zonal network smoke test
+
+Test_Future_HT_2035_ETYS:
+  inherits: [archive_canonical_renewables_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: HT 2035 - ETYS network smoke test
+
+Test_Future_HE_2035_Reduced:
+  inherits: [archive_canonical_renewables_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: Hydrogen Evolution 2035 - Reduced network smoke test
+  FES_scenario: Hydrogen Evolution
+
+Test_HT_2035_1Week:
+  inherits: [archive_canonical_renewables_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: HT 2035 baseline (1-week realistic test)
+
+Test_Weather_2010:
+  inherits: [archive_canonical_2010, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: 2035 with 2010 weather (low wind year)
+
+Test_Weather_2015:
+  inherits: [archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: 2035 with 2015 weather (average year)
+  renewables_year: 2015
+  demand_year: 2015
+
+Test_Weather_2020:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  description: 2035 with 2020 weather (high wind year)
+
+Test_Agg_Historical:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 05:00
+  description: 2020 Historical Reduced - WITH renewable + component aggregation (test)
+
+Test_NoAgg_Historical:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__20_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 05:00
+  description: 2020 Historical Reduced - WITHOUT aggregation (baseline)
+
+Test_Agg_Future:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: HT 2035 Reduced - WITH renewable + component aggregation (test)
+
+Test_NoAgg_Future:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: HT 2035 Reduced - WITHOUT aggregation (baseline)
+
+HT35_ETYS_kmeans30_market_1week_interconnector_test:
+  inherits: [archive_canonical_balancing_mode, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_topology_adequacy_enabled__ht35_etys_market, archive_canonical_pricing_source__ht35_etys_market, archive_canonical_clustering_method__ht35, archive_canonical_clustering_n_clusters__ht35_etys_kmeans30_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-19 00:00
+    end: 2035-01-25 23:00
+  description: FES HT 2035 - 30-bus ETYS one-week interconnector market-coupling regression test
+  network:
+    topology_adequacy:
+      focus_clusters: [cluster_22, cluster_23, cluster_3, cluster_14]
+      paired_unclustered_scenario: HT35_ETYS_unclustered_market_1week_WP4_adequacy
+
+HT35_ETYS_kmeans30_market_2day_WP5B_empirical_bid_stack:
+  inherits: [archive_canonical_balancing_participation, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__etys_market, archive_canonical_balancing_window_hours__5_members, archive_canonical_balancing_participation__etys_market, archive_canonical_clustering_method__ht35, archive_canonical_clustering_n_clusters__ht35_etys_kmeans30_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-19 00:00
+    end: 2035-01-20 23:00
+  description: 'FES HT 2035: empirical ELEXON-residual bid/offer stack, two-day compatibility test'
+  market:
+    balancing:
+      participation:
+        storage_units:
+          min_p_nom_mw: 1.0
+      bid_offer_source: future_bid_stack
+      future_bid_stack:
+        calibration_scenarios: [Historical_2020_ETYS_market_WP5A_calibration, Historical_2020_ETYS_market_WP5A_holdout]
+  support:
+    revenue:
+      enabled: true
+    bm_bids:
+      enabled: true
+
+HT35_ETYS_unclustered_market_1week_WP4_adequacy:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_wp4, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-19 00:00
+    end: 2035-01-25 23:00
+  description: FES HT 2035 unclustered one-week WP4 topology sensitivity with BM interconnector re-trading
+
+HT35_ETYS_unclustered_market_1week_WP4_yorkshire_green_sensitivity:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_wp4_yorkshire_green_sensitivity, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-19 00:00
+    end: 2035-01-25 23:00
+  description: FES HT 2035 unclustered one-week Yorkshire GREEN MFSN topology sensitivity
+
+HT35_ETYS_unclustered_market_1day_WP4_yorkshire_green_sensitivity:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_wp4_yorkshire_green_sensitivity, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: FES HT 2035 unclustered one-day Yorkshire GREEN MFSN topology sensitivity
+
+HT35_ETYS_unclustered_market_1day_WP4_yorkshire_green_full_chain_sensitivity:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_1day_wp4, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: FES HT 2035 one-day complete Yorkshire GREEN topology sensitivity
+
+HT35_ETYS_unclustered_market_1day_WP4_adequacy_fixed_baseline:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_2, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__etys_market, archive_canonical_topology_adequacy_enabled__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: Controlled WP4 January baseline using fixed full-chain wholesale positions
+
+HT35_ETYS_unclustered_market_1day_WP4_adequacy_etys_yorkshire_remap:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_2, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__etys_market, archive_canonical_topology_adequacy_enabled__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: Controlled WP4 case with ETYS 2027 Yorkshire GREEN terminal reconciliation
+
+HT35_ETYS_unclustered_market_1day_WP4_adequacy_oracle_all_ac:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_3, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__etys_market, archive_canonical_topology_adequacy_enabled__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: 'Controlled WP4 adequacy oracle: all AC thermal limits relaxed'
+  network:
+    topology_adequacy:
+      relaxation:
+        mode: all_ac
+
+HT35_ETYS_unclustered_market_1day_WP4_adequacy_relax_knar_monf:
+  inherits: [archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_3, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_pricing_source__etys_market, archive_canonical_topology_adequacy_enabled__ht35_etys_market]
+  solve_period:
+    enabled: true
+    start: 2035-01-20 00:00
+    end: 2035-01-20 23:00
+  description: 'Controlled WP4 screening: relax KNAR21--MONF21 only'
+  network:
+    topology_adequacy:
+      relaxation:
+        mode: components
+        lines: [KNAR21_MONF21_0]
+
+Test_BM_Historical:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_modelled_year__20_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:00
+  description: BM test - 2020 Historical Reduced (24h full two-stage market)
+
+Test_BM_Future:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-07 00:00
+    end: 2035-01-07 23:00
+  description: BM test - HT 2035 Reduced (24h full two-stage market)
+
+Test_BM_Window_0p5h:
+  inherits: [archive_canonical_test, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_participation__7_members, archive_canonical_balancing_window_hours__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: BM window comparison - Jan 7 2020 with half-hour balancing windows
+
+Test_BM_Window_24h:
+  inherits: [archive_canonical_test, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_participation__7_members, archive_canonical_balancing_window_hours__5_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: BM window comparison - Jan 7 2020 with one 24-hour balancing optimisation
+
+Test_Rolling_Market_WindOnshoreUplift:
+  inherits: [archive_canonical_test_2, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_participation__7_members, archive_canonical_balancing_window_hours__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: Rolling market test - 24h Jan 2020 with onshore wind availability uplift
+  renewables:
+    performance_factors:
+      factors:
+        solar_pv: 0.893855
+
+Test_Rolling_Market_StrictBM:
+  inherits: [archive_canonical_test, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_window_hours__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: Rolling market test - 24h, 30-minute BM with non-mapped generators priced out
+
+Test_Rolling_Market_StrictBM_WestRelax:
+  inherits: [archive_canonical_balancing_elexon, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_window_hours__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: Rolling market test - strict BM participation with west-side clamp removed
+
+Test_Rolling_Market_StrictBM_WestRelax_Fixed:
+  inherits: [archive_canonical_balancing_elexon, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_timestep_minutes__8_members, archive_canonical_balancing_window_hours__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  description: Rolling market test - strict BM participation, west-side clamp removed, non-mapped generators fixed
+  market:
+    balancing:
+      participation:
+        generators:
+          behavior: fixed
+
+Test_SSHARN_Sparse_Gate:
+  inherits: [archive_canonical_test_2, archive_canonical_market_enabled__37_members, archive_canonical_network_model__33_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_modelled_year__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_balancing_participation__7_members]
+  solve_period:
+    enabled: true
+    start: 2020-01-13 00:00
+    end: 2020-01-13 23:00
+  description: Quick SSHARN sparse-gate solver test - Jan 13 2020 high-SSHARN day
+  renewables:
+    performance_factors:
+      factors:
+        solar_pv: 0.8612621
+
+Historical_2020_consumer_bill_replay:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__33_members, archive_canonical_modelled_year__20_members]
+  description: Historical 2020 - pinned Ofgem period/regional consumer-bill replay
+  consumer_bill:
+    price_cap:
+      enabled: true
+      input_mode: historical_backtest
+      data_bundle: data/market/ofgem_price_cap/2020_historical_annual
+      source_manifest: data/market/consumer_bill_sources/2020.yaml
+      historical_report_evidence:
+        model_signals_csv: resources/analysis/Validation_2020_pypsa_bill_signals.csv
+        procurement_bridge_csv: resources/analysis/Validation_2020_pypsa_spot_procurement_bridge.csv
+        comparison_register_csv: resources/analysis/Validation_2020_ofgem_benchmark_component_register.csv
+        recovery_candidates_csv: resources/analysis/Validation_2020_consumer_bill_recovery_bridges.csv
+        network_bridge_csv: resources/analysis/Validation_2020_network_cost_bridge.csv
+      historical_comparison:
+        support_recovery_method: modelled_system_demand_proxy
+      annual_consumption_kwh: [3100]
+      cost_stack:
+        enabled: true
+      mode: official
+      payment_methods: [direct_debit]
+      regions: [GB_average]
+
+Historical_2021_highdemand:
+  inherits: [archive_canonical_historical_2021, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2021-01-08 00:00
+    end: 2021-01-14 23:00
+  description: Historical 2021 - High demand cold snap (Jan 8-14), wholesale only
+
+Historical_2022_highdemand:
+  inherits: [archive_canonical_historical_2022, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2022-12-12 00:00
+    end: 2022-12-18 23:00
+  description: Historical 2022 - Energy crisis winter peak (Dec 12-18), wholesale only
+
+Historical_2023_highsolar:
+  inherits: [archive_canonical_historical_2023, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2023-05-15 00:00
+    end: 2023-05-21 23:00
+  description: Historical 2023 - High solar / low demand spring week (May 15-21), wholesale only
+
+Historical_2024_highwind:
+  inherits: [archive_canonical_historical_2024, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2024-01-21 00:00
+    end: 2024-01-27 23:00
+  description: Historical 2024 - Storm Isha/Jocelyn high-wind week (Jan 21-27), wholesale only
+
+Historical_2021_lowwind:
+  inherits: [archive_canonical_historical_2021, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2021-03-02 00:00
+    end: 2021-03-08 23:00
+  description: Historical 2021 - Low wind winter week (Mar 2-8), wholesale only
+
+Historical_2022_lowwind:
+  inherits: [archive_canonical_historical_2022, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2022-03-22 00:00
+    end: 2022-03-28 23:00
+  description: Historical 2022 - Low wind winter week (Mar 22-28), wholesale only
+
+Historical_2024_lowwind:
+  inherits: [archive_canonical_historical_2024, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2024-01-06 00:00
+    end: 2024-01-12 23:00
+  description: Historical 2024 - Low wind winter week (Jan 6-12), wholesale only
+
+Historical_2024_fullyear:
+  inherits: [archive_canonical_historical_2024, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2024-01-01 00:00
+    end: 2024-12-31 23:00
+  description: Historical 2024 - Full year (Jan-Dec 2024), Reduced network, wholesale market
+
+Historical_2023_lowwind:
+  inherits: [archive_canonical_historical_2023, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_empirical_calibration_enabled__22_members, archive_canonical_market_wholesale_only__13_members]
+  solve_period:
+    enabled: true
+    start: 2023-02-27 00:00
+    end: 2023-03-05 23:00
+  description: Historical 2023 - Low wind winter week (Feb 27 - Mar 5), wholesale only
+
+HT35_lowwind:
+  inherits: [archive_canonical_renewables_year_3, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_market_wholesale_only__13_members, archive_canonical_correction_factors_enabled__ht35, archive_canonical_correction_factors_renewable_empirical__ht35]
+  solve_period:
+    enabled: true
+    start: 2035-02-27 00:00
+    end: 2035-03-05 23:00
+  description: FES 2024 HT 2035 - Low wind week (2023 weather Feb 27 - Mar 5), wholesale only
+
+HT35_dunkelflaute:
+  inherits: [archive_canonical_renewables_year_2, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_market_wholesale_only__13_members, archive_canonical_correction_factors_enabled__ht35, archive_canonical_correction_factors_renewable_empirical__ht35]
+  solve_period:
+    enabled: true
+    start: 2035-12-16 00:00
+    end: 2035-12-22 23:00
+  description: FES 2024 HT 2035 - Dunkelflaute (2021 weather Dec 16-22), wholesale only
+
+HT35_wholesale_only:
+  inherits: [archive_canonical_demand_year, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_market_wholesale_only__13_members, archive_canonical_correction_factors_enabled__ht35]
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 23:00
+  description: HT 2035 Reduced - Wholesale market only (copperplate dispatch, 24h)
+
+HT35_two_step_dispatch_1day:
+  inherits: [archive_canonical_balancing_participation, archive_canonical_network_model__38_members, archive_canonical_market_enabled__37_members, archive_canonical_modelled_year__32_members, archive_canonical_FES_scenario__31_members, archive_canonical_FES_year__31_members, archive_canonical_component_aggregation_include_loads__28_members, archive_canonical_dispatch_costs_enabled__25_members, archive_canonical_component_aggregation_enabled__20_members, archive_canonical_aggregation_enabled__19_members, archive_canonical_balancing_participation__10_members, archive_canonical_balancing_participation__7_members, archive_canonical_balancing_window_hours__5_members]
+  solve_period:
+    enabled: true
+    start: 2035-01-07 00:00
+    end: 2035-01-07 23:00
+  description: HT 2035 Reduced - Two-step dispatch (wholesale + BM, 24h)
+  market:
+    balancing:
+      participation:
+        generators:
+          exclude_carriers: [load_shedding]
+      bid_offer_source: derived
+  marginal_costs:
+    carrier_correction_factors:
+      enabled: true

@@ -20,14 +20,17 @@ See Also:
 
 import re
 
-# Use scenarios and run_ids from main Snakefile (no config reloading)
+# Use scenarios and build_ids from main Snakefile (no config reloading).
+# finalize_network must also match network_from parents, which are in
+# build_ids but not run_ids; the solve targets themselves come from run_ids
+# in the Snakefile, so a parent is never solved on its own.
 _scenarios = scenarios
-_run_ids = run_ids
+_run_ids = build_ids
 _cfg = config
 
 def _get_solver_config(scenario_id=None):
     """
-    Get solver configuration from merged scenario config (includes defaults.yaml).
+    Get solver configuration from merged scenario config (includes config/defaults/).
     
     Args:
         scenario_id: Optional scenario ID to get scenario-specific solver config.
@@ -36,18 +39,18 @@ def _get_solver_config(scenario_id=None):
     Returns:
         Tuple of (solver_name, solver_options)
     """
-    # Get solver config from scenario (which inherits from defaults.yaml)
+    # Get solver config (solve.solver) from scenario (which inherits from config/defaults/)
     if scenario_id and scenario_id in _scenarios:
-        solver_config = _scenarios[scenario_id].get("solver", {})
+        solver_config = _scenarios[scenario_id].get("solve", {}).get("solver", {})
     elif _run_ids:
         # Fall back to first active scenario's config
         first_scenario = _run_ids[0]
-        solver_config = _scenarios.get(first_scenario, {}).get("solver", {})
+        solver_config = _scenarios.get(first_scenario, {}).get("solve", {}).get("solver", {})
     else:
         # Last resort: main config
-        solver_config = _cfg.get("solver", {})
+        solver_config = _cfg.get("solve", {}).get("solver", {})
     
-    # Get solver name (default to gurobi per defaults.yaml)
+    # Get solver name (default to gurobi per config/defaults/base/solve.yaml)
     solver_name = solver_config.get("name", "gurobi")
     
     # Build solver options based on solver type
@@ -56,13 +59,13 @@ def _get_solver_config(scenario_id=None):
             "threads": solver_config.get("threads", 4),
             "method": solver_config.get("method", 2),
             "crossover": solver_config.get("crossover", 0),
-            "BarHomogeneous": solver_config.get("BarHomogeneous", 1),
+            "BarHomogeneous": solver_config.get("BarHomogeneous", 0),
             "BarConvTol": solver_config.get("BarConvTol", 1.e-5),
             "FeasibilityTol": solver_config.get("FeasibilityTol", 1.e-5),
             "OptimalityTol": solver_config.get("OptimalityTol", 1.e-5),
-            "NumericFocus": solver_config.get("NumericFocus", 2),
-            "ScaleFlag": solver_config.get("ScaleFlag", 2),
-            "DualReductions": solver_config.get("DualReductions", 0),
+            "NumericFocus": solver_config.get("NumericFocus", 0),
+            "ScaleFlag": solver_config.get("ScaleFlag", -1),
+            "DualReductions": solver_config.get("DualReductions", 1),
             "BarIterLimit": solver_config.get("BarIterLimit", 200),  # More iterations
         }
     elif solver_name == "highs":
@@ -83,6 +86,9 @@ def _regex_from_list(items):
     return r"(?:%s)" % "|".join(map(re.escape, items))
 
 SCENARIO_REGEX = _regex_from_list(_run_ids)
+# A network_from child is solved (it is in run_ids) on its parent's network
+# (which is in build_ids), so the solve rule admits both.
+SOLVE_SCENARIO_REGEX = _regex_from_list(list(dict.fromkeys(build_ids + run_ids)))
 
 def _is_clustering_enabled(scenario_id):
     """
@@ -96,7 +102,7 @@ def _is_clustering_enabled(scenario_id):
     
     This logic is consistent with config_loader.py's resolve_clustering().
     """
-    clustering_config = _scenarios.get(scenario_id, {}).get('clustering', None)
+    clustering_config = _scenarios.get(scenario_id, {}).get('network', {}).get('clustering', None)
     if isinstance(clustering_config, str):
         return True  # String preset names are always enabled
     elif isinstance(clustering_config, dict):
@@ -161,7 +167,7 @@ rule finalize_network:
         scenario=SCENARIO_REGEX
     params:
         # Merge global config (config.yaml) with scenario-specific config
-        scenario_config=lambda wildcards: {**_cfg, **_scenarios.get(wildcards.scenario, {})}
+        scenario_config=lambda wildcards: model_scenario_param(_scenarios.get(wildcards.scenario, {}))
     script:
         "../scripts/solve/finalize_network.py"
 
@@ -226,7 +232,7 @@ rule solve_network:
       snakemake resources/network/Historical_2020_clustered_solved.nc --cores 1
     """
     input:
-        network=f"{resources_path}/network/{{scenario}}.nc"
+        network=lambda wildcards: f"{resources_path}/network/{_build_source(wildcards.scenario)}.nc"
     output:
         network=f"{resources_path}/network/{{scenario}}_solved.nc",
         summary=f"{resources_path}/network/{{scenario}}_optimization_summary.txt",
@@ -243,11 +249,11 @@ rule solve_network:
         "../envs/pypsa-gb.yaml"
     threads: 4
     wildcard_constraints:
-        scenario=SCENARIO_REGEX
+        scenario=SOLVE_SCENARIO_REGEX
     params:
-        # Merge global config (config.yaml) with scenario-specific config
-        # Scenario config takes precedence
-        scenario_config=lambda wildcards: {**_cfg, **_scenarios.get(wildcards.scenario, {})},
+        # The merged scenario (config/defaults/ + scenarios.yaml); not config.yaml,
+        # whose run_scenarios list would make every edit to it a params change.
+        scenario_config=lambda wildcards: model_scenario_param(_scenarios.get(wildcards.scenario, {})),
         solver=lambda wildcards: _get_solver_config(wildcards.scenario)[0],
         solver_options=lambda wildcards: _get_solver_config(wildcards.scenario)[1]
     script:

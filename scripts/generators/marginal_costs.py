@@ -18,7 +18,7 @@ USE CASES FOR THIS FILE:
   - External scripts requiring marginal cost functions
 
 For normal workflow usage, configure marginal costs in:
-  - config/defaults.yaml (project-wide defaults)
+  - config/defaults/ (project-wide defaults)
   - config/scenarios.yaml (scenario-specific overrides)
 
 CLI USAGE:

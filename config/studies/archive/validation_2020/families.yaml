@@ -1,0 +1,91 @@
+# Month families: one entry per family, expanded by the loader into one scenario per month.
+
+0p5hLegacy:
+  inherits: [archive_val20_performance_factors_factors, archive_val20_transmission_line_rating_overrides__7_members, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_balancing_window_hours__3_members]
+  months: [Jan]
+  month_overrides:
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+WindOnshoreUplift:
+  inherits: [archive_val20_performance_factors_factors, archive_val20_transmission_line_rating_overrides__7_members, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_balancing_window_hours__3_members]
+  months: [Jan]
+  month_overrides:
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+BM24h:
+  inherits: [archive_val20_performance_factors_factors, archive_val20_transmission_line_rating_overrides__7_members, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_balancing_window_hours__4_members]
+  months: [Jan]
+  month_overrides:
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+NoLineOverrides:
+  inherits: [archive_val20_nolineoverrides, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_transmission_outage_schedule__4_members, archive_val20_balancing_window_hours__4_members]
+  months: [Jan, Feb]
+  month_overrides:
+    Feb:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.623714
+            wind_onshore: 0.820575
+            solar_pv: 0.735329
+      solve_period:
+        start: 2020-02-01 00:00
+        end: 2020-02-29 23:30
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+NoLineOverrides_SSESPStrict:
+  inherits: [archive_val20_nolineoverrides, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_transmission_outage_schedule__4_members, archive_val20_balancing_window_hours__4_members, archive_val20_transmission_outage_schedule__nolineoverrides_ssespstrict]
+  months: [Jan, Feb]
+  month_overrides:
+    Feb:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.623714
+            wind_onshore: 0.820575
+            solar_pv: 0.735329
+      solve_period:
+        start: 2020-02-01 00:00
+        end: 2020-02-29 23:30
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+1hLegacy:
+  inherits: [archive_val20_performance_factors_factors, archive_val20_transmission_line_rating_overrides__7_members]
+  months: [Feb, Mar, Apr, May, Jul, Aug, Sep, Oct, Nov, Dec]
+  month_overrides:
+    Dec:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.6469
+            wind_onshore: 0.882
+            solar_pv: 0.8616
+
+NoSEIMP:
+  inherits: [archive_val20_performance_factors_factors_2, archive_val20_transmission_line_rating_overrides__7_members]
+  months: [Dec]
+  network:
+    transmission:
+      outage_schedule:
+        neso:
+          boundary_include: [SCOTEX, SSE-SP, 'SSHARN::SSHARN_SPARSE_GATE_FIT', ESTEX, SWALEX]
+
+SoftSEIMP:
+  inherits: [archive_val20_performance_factors_factors_2, archive_val20_transmission_line_rating_overrides__7_members, archive_val20_transmission_outage_schedule__4_members]
+  months: [Dec]

@@ -1,0 +1,41 @@
+"""Rebuild historical bill comparisons using saved model artifacts.
+
+snakemake -s Snakefile_consumer_bill --cores 1
+Only consumer-bill rules are loaded; this entry point cannot solve a network.
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path.cwd() / "config"))
+
+# Set GDAL_DATA / PROJ_DATA / PATH when run without `conda activate` (Windows).
+from scripts.utilities.conda_env import ensure_conda_env_vars
+ensure_conda_env_vars()
+
+from config_loader import load_config, scenario_files
+
+_full_config = load_config()
+scenarios = _full_config["scenarios"]
+SCENARIO_FILES = [p.relative_to(Path.cwd()).as_posix() for p in scenario_files(Path.cwd() / "config")]
+resources_path = "resources"
+data_path = "data"
+
+if config.get("scenario"):
+    run_ids = [config["scenario"]]
+elif config.get("run_scenarios"):
+    run_ids = config["run_scenarios"]
+else:
+    run_ids = [
+        name for name, scenario in scenarios.items()
+        if scenario.get("consumer_bill", scenario.get("market", {}).get("consumer_bill", {})).get("source_manifest")
+        and int(scenario.get("modelled_year", 9999)) <= 2024
+    ]
+if unknown := set(run_ids).difference(scenarios):
+    raise ValueError(f"Unknown consumer-bill scenarios: {sorted(unknown)}")
+
+rule all:
+    input:
+        lambda wc: consumer_bill_historical_report_targets
+
+include: "rules/consumer_bill.smk"

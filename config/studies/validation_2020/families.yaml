@@ -1,0 +1,406 @@
+# Month families: one entry per family, expanded by the loader into one scenario per month.
+
+# The 2020 market validation months, with each month's renewable performance factors.
+validation:
+  inherits: validation_2020
+  id: Validation_{Mon}{year}
+  solve_period:
+    enabled: true
+  market:
+    balancing:
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind]
+          hold_carriers: [embedded_solar, embedded_wind]   # not BM units in 2020: held at Stage 1
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+          behavior: fallback_priced
+      window_hours: 24
+      elexon:
+        price_ladders:
+          enabled: true
+  renewables:
+    embedded:
+      wind_overlap_exclusion:
+        enabled: true
+    performance_factors:
+      factors:
+        wind_offshore: 0.638858
+        wind_onshore: 0.840498
+        solar_pv: 0.678725
+    hydro:
+      large_hydro:
+        roc_hydro_supplement_file: data/market/ofgem_renewables_obligation/dukes_2020_roc_hydro_supplement.csv
+  network:
+    transmission:
+      outage_schedule:
+        neso:
+          # SSHARN on the ETYS B7a cut
+          boundary_include: [SCOTEX, SSE-SP, 'SSHARN::SSHARN_B7A', ESTEX, SEIMP, SWALEX]
+          boundary_mapping: data/network/neso_boundary_mapping_ssesp_strict.yaml
+          soft_boundaries:
+            SEIMP:
+              enabled: true
+              penalty_gbp_per_mwh: 1000.0
+              max_violation_mw: 2500.0
+      line_rating_overrides: null
+      declared_link_outages:
+      - link: FLIB41_HUCS4-_0          # Western HVDC link (Hunterston - Flintshire Bridge)
+        start: '2020-01-10'
+        end: '2020-02-08'
+        source: >-
+          cable trip 10 Jan 2020, back 8 Feb 2020 (Ofgem investigation into the Western HVDC link, 28 Jan 2020;
+          Cornwall Insight, Feb 2020: record GBP 30.9m of wind turn-down during the outage)
+  support:
+    labels:
+      dispatchable_support_overrides_file: data/market/support/generator_support_overrides_2020.csv
+      renewable_support_overrides_file: data/market/support/renewable_support_overrides_2020.csv
+      historical_station_unit_splits_file: data/market/ofgem_renewables_obligation/historical_station_unit_splits_2020.csv
+      historical_cfd_tranches:
+        enabled: true
+        mapping_file: data/market/lccc/cfd_pypsa_mapping_overrides_2020.csv
+        actuals_file: data/market/lccc/actual_cfd_generation_and_payments.csv
+      historical_roc_station_labels:
+        enabled: true
+        registry_file: data/market/ofgem_renewables_obligation/accredited_stations_ro_current.csv
+        station_overrides_file: data/market/ofgem_renewables_obligation/roc_pypsa_mapping_overrides_2020.csv
+        residual_representation_assumptions_file: data/market/ofgem_renewables_obligation/roc_residual_representation_assumptions_2020.csv
+        residual_output_calibration_file: data/market/ofgem_renewables_obligation/roc_residual_output_calibration_2020.csv
+      historical_roc_physical_overlay:
+        enabled: true
+        actions_file: data/market/ofgem_renewables_obligation/roc_historical_overlay_actions_2020.csv
+        permitted_actions: [split_existing_asset_roc_and_non_roc, add_missing_phase_and_link_existing_assets]
+  marginal_costs:
+    biofuel_subsidy:
+      require_support_label: true
+  thermal:
+    availability_factors:
+      generator_monthly_file: data/market/support/generator_monthly_availability_2020.csv
+    dispatch_anchors:
+      enabled: true
+      carriers: [coal]
+  timestep_minutes: 30
+  month_overrides:
+    Feb:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.623714
+            wind_onshore: 0.820575
+            solar_pv: 0.735329
+      solve_period:
+        start: 2020-02-01 00:00
+        end: 2020-02-29 23:30
+    Mar:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.658338
+            wind_onshore: 0.866127
+            solar_pv: 0.822086
+      solve_period:
+        start: 2020-03-01 00:00
+        end: 2020-03-31 23:30
+    Apr:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.684201
+            wind_onshore: 0.900153
+            solar_pv: 0.851715
+      solve_period:
+        start: 2020-04-01 00:00
+        end: 2020-04-30 23:30
+    May:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.656303
+            wind_onshore: 0.863449
+            solar_pv: 0.857504
+      solve_period:
+        start: 2020-05-01 00:00
+        end: 2020-05-31 23:30
+    Jun:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.646001
+            wind_onshore: 0.901397
+            solar_pv: 0.856666
+      solve_period:
+        start: 2020-06-01 00:00
+        end: 2020-06-30 23:30
+    Jul:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.626229
+            wind_onshore: 0.823884
+            solar_pv: 0.85872
+      solve_period:
+        start: 2020-07-01 00:00
+        end: 2020-07-31 23:30
+    Aug:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.642535
+            wind_onshore: 0.845336
+            solar_pv: 0.844764
+      solve_period:
+        start: 2020-08-01 00:00
+        end: 2020-08-31 23:30
+    Sep:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.635017
+            wind_onshore: 0.835444
+            solar_pv: 0.829794
+      solve_period:
+        start: 2020-09-01 00:00
+        end: 2020-09-30 23:30
+    Oct:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.642606
+            wind_onshore: 0.845429
+            solar_pv: 0.771413
+      solve_period:
+        start: 2020-10-01 00:00
+        end: 2020-10-31 23:30
+    Nov:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.598444
+            wind_onshore: 0.787329
+            solar_pv: 0.711392
+      solve_period:
+        start: 2020-11-01 00:00
+        end: 2020-11-30 23:30
+    Dec:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.648752
+            wind_onshore: 0.884525
+            solar_pv: 0.660398
+      solve_period:
+        start: 2020-12-01 00:00
+        end: 2020-12-31 23:30
+    Jan:
+      solve_period:
+        start: 2020-01-01 00:00
+        end: 2020-01-31 23:30
+
+# The 2020 consumer-bill months, the months of run group historical_2020.
+consumer_bill_fast:
+  id: ConsumerBill_{Mon}{year}_Fast
+  description: 'the 2020 consumer-bill months (hourly, detailed bid/offer ladders): run group historical_2020'
+  month_overrides:
+    Jan:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.638858
+            wind_onshore: 0.840498
+            solar_pv: 0.678725
+    Feb:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.623714
+            wind_onshore: 0.820575
+            solar_pv: 0.735329
+    Mar:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.658338
+            wind_onshore: 0.866127
+            solar_pv: 0.822086
+    Apr:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.684201
+            wind_onshore: 0.900153
+            solar_pv: 0.851715
+    May:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.656303
+            wind_onshore: 0.863449
+            solar_pv: 0.857504
+    Jun:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.646001
+            wind_onshore: 0.901397
+            solar_pv: 0.856666
+    Jul:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.626229
+            wind_onshore: 0.823884
+            solar_pv: 0.85872
+    Aug:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.642535
+            wind_onshore: 0.845336
+            solar_pv: 0.844764
+    Sep:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.635017
+            wind_onshore: 0.835444
+            solar_pv: 0.829794
+    Oct:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.642606
+            wind_onshore: 0.845429
+            solar_pv: 0.771413
+    Nov:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.598444
+            wind_onshore: 0.787329
+            solar_pv: 0.711392
+    Dec:
+      renewables:
+        performance_factors:
+          factors:
+            wind_offshore: 0.648752
+            wind_onshore: 0.884525
+            solar_pv: 0.660398
+  solve_period:
+    enabled: true
+  renewables_year: 2020
+  demand_year: 2020
+  renewables:
+    aggregation:
+      enabled: true
+      preserve_support_types:
+      - ROC
+      - CfD
+    embedded:
+      wind_overlap_exclusion:
+        enabled: true
+    hydro:
+      large_hydro:
+        roc_hydro_supplement_file: data/market/ofgem_renewables_obligation/dukes_2020_roc_hydro_supplement.csv
+    performance_factor_registry:
+      enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+    transmission:
+      outage_schedule:
+        enabled: true
+        neso:
+          boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+          boundary_mapping: data/network/neso_boundary_mapping_ssesp_strict.yaml
+          soft_boundaries:
+            SEIMP:
+              enabled: true
+              penalty_gbp_per_mwh: 1000.0
+              max_violation_mw: 2500.0
+      line_rating_overrides: null
+  support:
+    labels:
+      enabled: true
+      dispatchable_support_overrides_file: data/market/support/generator_support_overrides_2020.csv
+      renewable_support_overrides_file: data/market/support/renewable_support_overrides_2020.csv
+      historical_station_unit_splits_file: data/market/ofgem_renewables_obligation/historical_station_unit_splits_2020.csv
+      historical_cfd_tranches:
+        enabled: true
+        mapping_file: data/market/lccc/cfd_pypsa_mapping_overrides_2020.csv
+        actuals_file: data/market/lccc/actual_cfd_generation_and_payments.csv
+      historical_roc_station_labels:
+        enabled: true
+        registry_file: data/market/ofgem_renewables_obligation/accredited_stations_ro_current.csv
+        station_overrides_file: data/market/ofgem_renewables_obligation/roc_pypsa_mapping_overrides_2020.csv
+        residual_representation_assumptions_file: data/market/ofgem_renewables_obligation/roc_residual_representation_assumptions_2020.csv
+        residual_output_calibration_file: data/market/ofgem_renewables_obligation/roc_residual_output_calibration_2020.csv
+      historical_roc_physical_overlay:
+        enabled: true
+        actions_file: data/market/ofgem_renewables_obligation/roc_historical_overlay_actions_2020.csv
+        permitted_actions:
+        - split_existing_asset_roc_and_non_roc
+        - add_missing_phase_and_link_existing_assets
+    dispatch_costs:
+      enabled: true
+    audit:
+      enabled: true
+      annual_group: ConsumerBill_2020_MonthlyFast
+      calendar_year: 2020
+      consumer_bill_bridge:
+        enabled: true
+        cap_snapshot: 2020_annual
+        recovery_bridge_assumptions: data/market/consumer_bill_forecast/2020_recovery_bridge_assumptions.json
+        cfd_levy_recovery_file: data/market/consumer_bill_forecast/2020_cfd_reconciled_levy_recovery.csv
+        roc_scheme_parameters_file: data/market/consumer_bill_forecast/2020_ro_scheme_recovery_parameters.json
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+    balancing:
+      mode: rolling
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+          exclude_carriers:
+          - load_shedding
+          - embedded_solar
+          - embedded_wind
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+          behavior: fallback_priced
+      window_hours: 24
+      elexon:
+        price_ladders:
+          enabled: true
+  modelled_year: 2020
+  network_model: ETYS
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+      require_support_label: true
+  thermal:
+    availability_factors:
+      enabled: true
+      generator_monthly_file: data/market/support/generator_monthly_availability_2020.csv
+    dispatch_anchors:
+      enabled: true
+      carriers:
+      - coal
+  fleet:
+    commissioning:
+      profile_gate_within_solve_period: true
+      date_overrides_file: data/market/lccc/cfd_pypsa_source_candidates_2020.csv
+  solve:
+    solver:
+      threads: 8

@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from scripts.utilities.logging_config import setup_logging
-from scripts.archive.deep_network_validation import deep_validate_network
+from scripts.solve.deep_network_validation import deep_validate_network
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
@@ -23,6 +23,7 @@ from scripts.network_clustering.aggregate_components import (
     aggregate_identical_components,
     _aggregate_loads_by_bus,
 )
+from scripts.renewables.large_hydro_reservoir import prepare_large_hydro_reservoir
 
 # Suppress PyPSA warnings about unoptimized networks (expected at finalization stage)
 warnings.filterwarnings('ignore', message='The network has not been optimized yet')
@@ -141,7 +142,7 @@ def generate_network_summary(network, scenario_config, output_path):
     summary_lines.append(f"FES Year: {scenario_config.get('fes_year', 'N/A')}")
     summary_lines.append(f"Modelled Year: {scenario_config.get('modelled_year', 'N/A')}")
     summary_lines.append(f"Network Model: {scenario_config.get('network_model', 'Unknown')}")
-    summary_lines.append(f"Clustered: {'Yes' if scenario_config.get('clustering', {}).get('enabled', False) else 'No'}")
+    summary_lines.append(f"Clustered: {'Yes' if scenario_config.get('network', {}).get('clustering', {}).get('enabled', False) else 'No'}")
     summary_lines.append("")
     
     # Network topology
@@ -218,8 +219,17 @@ def generate_network_summary(network, scenario_config, output_path):
     summary_lines.append("INTERCONNECTORS")
     summary_lines.append("-" * 80)
     if len(network.links) > 0:
-        # Filter for interconnector links (those crossing borders)
-        interconnector_links = network.links[network.links.get('is_interconnector', pd.Series(False, index=network.links.index))]
+        # Interconnector links may not carry an explicit boolean flag in older
+        # builds. Prefer the flag when present, then fall back to the IC_ naming
+        # convention and DC links connected to external HVDC buses.
+        explicit = network.links.get('is_interconnector', pd.Series(False, index=network.links.index)).fillna(False).astype(bool)
+        by_name = network.links.index.astype(str).str.startswith('IC_')
+        by_carrier = network.links.get('carrier', pd.Series('', index=network.links.index)).astype(str).eq('DC')
+        external_bus = (
+            network.links.get('bus0', pd.Series('', index=network.links.index)).astype(str).str.contains('HVDC_External', case=False, na=False)
+            | network.links.get('bus1', pd.Series('', index=network.links.index)).astype(str).str.contains('HVDC_External', case=False, na=False)
+        )
+        interconnector_links = network.links[explicit | by_name | (by_carrier & external_bus)]
         if len(interconnector_links) > 0:
             summary_lines.append(f"  Interconnectors: {len(interconnector_links):,}")
             summary_lines.append(f"  Total capacity: {interconnector_links.p_nom.sum():,.0f} MW")
@@ -291,7 +301,7 @@ if __name__ == "__main__":
         logger.info("=" * 80)
         
         # COMPONENT AGGREGATION: merge identical generators/storage/loads
-        agg_config = scenario_config.get('component_aggregation', {})
+        agg_config = scenario_config.get('network', {}).get('component_aggregation', {})
         if isinstance(agg_config, dict) and agg_config.get('enabled', False):
             logger.info("=" * 80)
             logger.info("COMPONENT AGGREGATION")
@@ -374,7 +384,22 @@ if __name__ == "__main__":
                 logger.info(f"[OK] No small p_max_pu values (< {clipping_threshold}) found - network is clean")
         
         logger.info("=" * 80)
-        
+
+        # LARGE HYDRO (OW3, 3 Oct 2026): power ceiling apart from inflow and the
+        # annual reservoir path (renewables.hydro.large_hydro.power_ceiling / month_end:
+        # trajectory). Both are no-ops under the defaults. Here, on the finished
+        # network, so every large-hydro unit is covered whatever step added it.
+        large_hydro_summary = prepare_large_hydro_reservoir(
+            network, scenario_config.get('renewables', {}).get('hydro', {}) or {}, logger
+        )
+        if large_hydro_summary["ceiling"].get("units") or large_hydro_summary["trajectory"].get("trajectory"):
+            network.meta = dict(getattr(network, 'meta', {}) or {})
+            network.meta['large_hydro_reservoir'] = {
+                'power_ceiling': large_hydro_summary["ceiling"].get("power_ceiling"),
+                'availability_pu': large_hydro_summary["ceiling"].get("availability_pu"),
+                'trajectory': bool(large_hydro_summary["trajectory"].get("trajectory")),
+            }
+
         # DEEP VALIDATION: Comprehensive component-by-component checks
         # Validation output is now integrated into the summary report below
         validation_passed, errors, warnings = deep_validate_network(network, scenario_config, logger)
@@ -409,7 +434,7 @@ if __name__ == "__main__":
         })
         
         # Set network name
-        clustered = scenario_config.get('clustering', {}).get('enabled', False)
+        clustered = scenario_config.get('network', {}).get('clustering', {}).get('enabled', False)
         network.name = f"{scenario_id} {'(Clustered)' if clustered else '(Full)'}"
         
         # Save to clean scenario name

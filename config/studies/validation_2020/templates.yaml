@@ -1,0 +1,47 @@
+# Templates: named building blocks, composed by `inherits: [...]` (two may not set the same leaf).
+
+# The historical 2020 build and two-stage market (Stage 1 day-ahead, balancing mechanism) every scenario inherits.
+validation_2020:
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+      # Off for the validation year: the 2024 scarcity curve read 2020's fleet as tight and
+      # cleared a sixth of August's half-hours at about GBP 1,400/MWh against ELEXON MID's GBP 35.
+      scarcity_pricing:
+        enabled: false
+    balancing:
+      mode: rolling
+  renewables:
+    aggregation:
+      enabled: true
+      preserve_support_types: [ROC, CfD]
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+    transmission:
+      outage_schedule:
+        enabled: true
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  thermal:
+    availability_factors:
+      enabled: true
+  fleet:
+    commissioning:
+      profile_gate_within_solve_period: true
+      date_overrides_file: data/market/lccc/cfd_pypsa_source_candidates_2020.csv

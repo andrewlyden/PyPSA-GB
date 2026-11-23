@@ -1,0 +1,17 @@
+# Method overlay: gsp_block (method: gsp_block).
+#
+# Add a key here only when every gsp_block scenario needs it and it differs from the base (config/defaults/README.md).
+#
+# Regional profiles for the FES capacity blocks (scripts/generators/proxy_profiles.py; issue #51). An FES block has no
+# site of its own, so on the national basis every onshore wind or solar block in GB followed one profile. Here each
+# block takes the capacity-weighted average profile of every site of its carrier in its own area, the sites located
+# by their coordinates (proxy_profile_members: all_sites): onshore wind and solar by region (the eight regions of
+# data/network/ETYS/cp30_es5_region_by_gsp_group.csv), offshore by sea basin, then region. With
+# preserve_carrier_energy, one scalar per carrier keeps the carrier's energy on the national basis, so the
+# performance-factor calibration to FES still holds.
+renewables:
+  proxy_profile_basis: "regional"
+  proxy_profile_members: "all_sites"
+  proxy_profile_min_sites: 3
+  proxy_profile_min_mw: 300
+  proxy_profile_preserve_carrier_energy: true
