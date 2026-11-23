@@ -34,8 +34,8 @@ Scenarios.
 git clone --filter=blob:none https://github.com/andrewlyden/PyPSA-GB.git
 cd PyPSA-GB
 
-conda env create -f envs/pypsa-gb-stable.yaml
-conda activate pypsa-gb-stable
+conda env create -f envs/pypsa-gb.yaml
+conda activate pypsa-gb
 
 snakemake -n          # dry run: the default runs Test_Market, six hours of 2035 on the Reduced network
 snakemake --cores 4   # build and solve it (wholesale market, then balancing mechanism)

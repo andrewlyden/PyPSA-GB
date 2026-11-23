@@ -16,7 +16,8 @@ Common problems and what to do about them. When a rule fails, Snakemake prints t
 
 2. Clear the package cache and retry: `conda clean --all`.
 
-`envs/pypsa-gb-stable.yaml` is an alternative environment with pinned versions.
+`envs/pypsa-gb-stable.yaml` pins every package to an exact version. The pins were taken on Windows, and the file does
+not currently install on Linux or macOS; use `envs/pypsa-gb.yaml` there.
 
 ### Gurobi licence not found
 

@@ -24,8 +24,9 @@ jobs:
 
       - uses: mamba-org/setup-micromamba@v2
         with:
-          environment-file: envs/pypsa-gb-stable.yaml
-          environment-name: pypsa-gb-stable
+          # The pinned envs/pypsa-gb-stable.yaml was pinned on Windows and does not solve on Linux.
+          environment-file: envs/pypsa-gb.yaml
+          environment-name: pypsa-gb
           cache-environment: true
 
       - name: Lint (errors only)

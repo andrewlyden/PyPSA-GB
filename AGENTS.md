@@ -11,7 +11,7 @@ and which conventions to keep.
 | Language | Python 3.11+ |
 | Framework | PyPSA (networks and optimisation), linopy, Snakemake (workflow) |
 | Solver | Gurobi by default (`solve.solver.name`), HiGHS as the open-source alternative |
-| Environment | `envs/pypsa-gb-stable.yaml` (pinned; `conda activate pypsa-gb-stable`) |
+| Environment | `envs/pypsa-gb.yaml` (`conda activate pypsa-gb`); `envs/pypsa-gb-stable.yaml` is pinned on Windows and does not install on Linux |
 | What to run | `config/config.yaml` (`run_scenarios`, `studies`) |
 | Default run | `Test_Market`: six hours of 2035 on the Reduced network, wholesale market then balancing mechanism |
 

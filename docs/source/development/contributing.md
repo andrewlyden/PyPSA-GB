@@ -70,7 +70,7 @@ When adding tests:
 ## Continuous integration
 
 `.github/workflows/tests.yml` runs on pushes to `master` and `release/**` branches and on pull requests. On Ubuntu with
-the `envs/pypsa-gb-stable.yaml` environment it:
+the `envs/pypsa-gb.yaml` environment it:
 
 1. lints with `ruff check .`;
 2. runs `python -m pytest` (tests that need workflow outputs skip);

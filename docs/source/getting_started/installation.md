@@ -19,13 +19,15 @@ Two environment files are provided:
 
 | File | Environment name | Use |
 |---|---|---|
-| `envs/pypsa-gb-stable.yaml` | `pypsa-gb-stable` | **Recommended.** Every package pinned to the versions the model is tested with. |
-| `envs/pypsa-gb.yaml` | `pypsa-gb` | Version ranges rather than pins. It is also the environment the rules name if you run Snakemake with `--use-conda`. |
+| `envs/pypsa-gb.yaml` | `pypsa-gb` | **Recommended.** Version ranges that hold the model's key packages (pypsa, linopy) where the model is tested. The automated tests install it on Linux, and it is also the environment the rules name if you run Snakemake with `--use-conda`. |
+| `envs/pypsa-gb-stable.yaml` | `pypsa-gb-stable` | Every package pinned to an exact version. The pins were taken on Windows, and the file does not currently install on Linux or macOS. |
 
 ```bash
-mamba env create -f envs/pypsa-gb-stable.yaml     # or: conda env create -f envs/pypsa-gb-stable.yaml
-conda activate pypsa-gb-stable
+mamba env create -f envs/pypsa-gb.yaml     # or: conda env create -f envs/pypsa-gb.yaml
+conda activate pypsa-gb
 ```
+
+Solving the environment can take ten minutes or more; mamba is faster than conda.
 
 Check the installation:
 
