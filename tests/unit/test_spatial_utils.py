@@ -311,3 +311,200 @@ class TestCapacityPreservation:
         for idx, row in sites_wgs84.iterrows():
             mapped_row = result[result['site_name'] == row['site_name']]
             assert mapped_row['capacity_mw'].iloc[0] == row['capacity_mw']
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEST: Explicit onshore renewable connection points
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _clyde_network():
+    """Elvanfoot / North Lowther pocket with the Clyde collectors (ETYS names)."""
+    network = pypsa.Network()
+    for bus, v_nom in [("ELVA4-", 400), ("ELVA2R", 275), ("ELVA1-", 132),
+                       ("NLEI1-", 132), ("NLEI3A", 33), ("CLYN2Q", 275),
+                       ("DEVM3-", 33), ("DEVM1-", 132)]:
+        network.add("Bus", bus, v_nom=v_nom, x=300000, y=617000)
+    network.add("Transformer", "t1", bus0="NLEI1-", bus1="NLEI3A", s_nom=90, x=0.1)
+    network.add("Transformer", "t2", bus0="ELVA4-", bus1="ELVA2R", s_nom=500, x=0.1)
+    network.add("Transformer", "t3", bus0="DEVM1-", bus1="DEVM3-", s_nom=120, x=0.1)
+    network.add("Line", "l1", bus0="ELVA1-", bus1="NLEI1-", s_nom=226, x=0.1)
+    return network
+
+
+class TestExplicitOnshoreConnections:
+    """Documented connection points override nearest-bus placement."""
+
+    def _map(self, network, rows):
+        from spatial_utils import apply_etys_bmu_mapping
+        sites = pd.DataFrame(rows, columns=["site_name", "capacity_mw", "bus"])
+        sites["data_source"] = "REPD_named_fleet"
+        return apply_etys_bmu_mapping(sites, network, gb_network_path="missing.xlsx")
+
+    def test_clyde_moves_off_north_lowther(self):
+        result = self._map(_clyde_network(), [
+            ("Clyde Wind Farm", 350.0, "NLEI3A"),
+            ("Clyde Wind Farm Extension (Clyde 2)", 172.8, "NLEI3A"),
+        ])
+        assert result["bus"].tolist() == ["ELVA2R", "CLYN2Q"]
+
+    def test_whole_word_match_leaves_inverclyde_alone(self):
+        result = self._map(_clyde_network(), [("Inverclyde Wind Farm (Corlic Hill)", 24.0, "DEVM3-")])
+        assert result["bus"].tolist() == ["DEVM3-"]
+
+    def test_network_generator_names_with_underscores_match(self):
+        result = self._map(_clyde_network(), [("Clyde_Wind_Farm", 350.0, "NLEI3A")])
+        assert result["bus"].tolist() == ["ELVA2R"]
+
+    def test_absent_explicit_bus_falls_back_to_heuristics(self):
+        # No LEWI buses (Western Isles link not built): Stornoway stays put
+        result = self._map(_clyde_network(), [("Stornoway Wind Farm (second resubmission)", 196.0, "NLEI3A")])
+        assert result["bus"].tolist() == ["NLEI3A"]
+
+    def test_evidenced_cp30_allocation_is_not_overridden(self):
+        from spatial_utils import apply_etys_bmu_mapping
+        sites = pd.DataFrame({"site_name": ["Clyde Wind Farm"], "capacity_mw": [350.0],
+                              "bus": ["NLEI3A"], "data_source": ["CP30_connection_allocation"]})
+        result = apply_etys_bmu_mapping(sites, _clyde_network(), gb_network_path="missing.xlsx")
+        assert result["bus"].tolist() == ["NLEI3A"]
+
+    def test_explicit_targets_are_etys_buses_in_the_cp30_build(self):
+        """Every explicit target names an ETYS node (guards against typos)."""
+        from spatial_utils import ONSHORE_RENEWABLE_DIRECT_BUS
+        buses_file = Path(__file__).parent.parent.parent / "resources/network/ETYS_2024_buses.csv"
+        if not buses_file.exists():
+            pytest.skip("processed ETYS 2024 bus list not available")
+        nodes = set(pd.read_csv(buses_file, index_col=0).index.astype(str))
+        # Created by Appendix B upgrade rows rather than the base topology:
+        # STSO1B / STWO3- (Strathy South / Wood, 2025-26), LEWI1J (Lewis, 2032),
+        # HLND1- (Heathland) and ACHE1- (Achany), both present in the CP30 2030 build
+        # The 15 Oct 2026 pocket connections (Benbrack, Cloich, New Cumnock 132 kV B) are also
+        # Appendix B buses present in the CP30 2030 build.
+        upgrade_buses = {"STSO1B", "STWO3-", "LEWI1J", "HLND1-", "ACHE1-", "BENB1-", "CLOI1A", "NECU1B"}
+        missing = {bus for bus in ONSHORE_RENEWABLE_DIRECT_BUS.values() if bus not in nodes} - upgrade_buses
+        assert missing == set()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEST: Weak-bus relief
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _weak_bus_network():
+    """POGB3--like terminal busbar next to a strong same-site bus and a 132 kV bus 10 km away."""
+    network = pypsa.Network()
+    network.add("Bus", "POGB3-", v_nom=33, x=345000, y=665000)
+    network.add("Bus", "DUNE3-", v_nom=33, x=347000, y=665000)
+    network.add("Bus", "DUNE1-", v_nom=132, x=347000, y=665000)
+    network.add("Bus", "GALN1Q", v_nom=132, x=355000, y=665000)
+    network.add("Bus", "FAR01-", v_nom=132, x=545000, y=165000)
+    network.add("Line", "l1", bus0="POGB3-", bus1="DUNE3-", s_nom=57, x=0.1)
+    network.add("Transformer", "t1", bus0="DUNE1-", bus1="DUNE3-", s_nom=90, x=0.1)
+    network.add("Line", "l2", bus0="DUNE1-", bus1="GALN1Q", s_nom=482, x=0.1)
+    network.add("Line", "l3", bus0="GALN1Q", bus1="FAR01-", s_nom=2000, x=0.1)
+    return network
+
+
+class TestWeakBusRelief:
+    def _sites(self, rows):
+        return pd.DataFrame(rows, columns=["site_name", "technology", "capacity_mw", "bus",
+                                           "fleet_origin", "data_source"])
+
+    def test_proxy_moves_first_to_nearest_adequate_bus(self):
+        from spatial_utils import relieve_weak_bus_placements
+        sites = self._sites([
+            ("CP30_increment_wind_onshore_1", "wind_onshore", 300.0, "POGB3-", "increment", "CP30"),
+            ("Named farm", "wind_onshore", 40.0, "POGB3-", "named", "REPD_named_fleet"),
+        ])
+        result, moves = relieve_weak_bus_placements(sites, _weak_bus_network())
+        # DUNE1- is the nearest 132 kV bus with headroom (572 MVA of branches)
+        assert result["bus"].tolist() == ["DUNE1-", "POGB3-"]
+        assert moves["capacity_mw"].sum() == pytest.approx(300.0)
+        assert result["capacity_mw"].sum() == pytest.approx(340.0)
+
+    def test_same_substation_bus_is_preferred(self):
+        from spatial_utils import relieve_weak_bus_placements
+        network = _weak_bus_network()
+        network.add("Bus", "POGB1-", v_nom=132, x=345000, y=665000)
+        network.add("Line", "l4", bus0="POGB1-", bus1="GALN1Q", s_nom=400, x=0.1)
+        sites = self._sites([("CP30_increment_x", "wind_onshore", 300.0, "POGB3-", "increment", "CP30")])
+        result, moves = relieve_weak_bus_placements(sites, network)
+        assert result["bus"].tolist() == ["POGB1-"]
+        assert moves["method"].tolist() == ["same_substation"]
+
+    def test_protected_offshore_and_adequate_buses_are_untouched(self):
+        from spatial_utils import relieve_weak_bus_placements
+        sites = self._sites([
+            ("Evidenced", "wind_onshore", 300.0, "POGB3-", "named", "CP30_connection_allocation"),
+            ("Offshore", "wind_offshore", 900.0, "DUNE1-", "increment", "CP30"),
+            ("Fine", "solar_pv", 100.0, "GALN1Q", "increment", "CP30"),
+        ])
+        result, moves = relieve_weak_bus_placements(sites, _weak_bus_network())
+        assert result["bus"].tolist() == ["POGB3-", "DUNE1-", "GALN1Q"]
+        assert moves.empty
+
+    def test_no_target_within_radius_leaves_site_and_warns(self):
+        from spatial_utils import relieve_weak_bus_placements
+        sites = self._sites([("CP30_increment_x", "wind_onshore", 5000.0, "POGB3-", "increment", "CP30")])
+        result, moves = relieve_weak_bus_placements(sites, _weak_bus_network())
+        assert result["bus"].tolist() == ["POGB3-"]
+        assert moves.empty
+
+    def test_gsp_node_rows_move_only_within_their_substation(self):
+        # A distribution-size site on its GSP's node connects inside that GSP (16 Oct 2026):
+        # relief may take it to another busbar of the same substation, never to a nearby one.
+        from spatial_utils import relieve_weak_bus_placements
+        from scripts.utilities.gsp_nodes import GSP_NODE_SOURCES
+        sites = self._sites([("Small farm", "wind_onshore", 300.0, "POGB3-", "named", "CP30_distributed_gsp_node")])
+        result, moves = relieve_weak_bus_placements(sites, _weak_bus_network(), site_bound_sources=GSP_NODE_SOURCES)
+        assert result["bus"].tolist() == ["POGB3-"] and moves.empty      # DUNE1- is another substation
+        unbound, _ = relieve_weak_bus_placements(sites, _weak_bus_network())
+        assert unbound["bus"].tolist() == ["DUNE1-"]                      # the default is unchanged
+        network = _weak_bus_network()
+        network.add("Bus", "POGB1-", v_nom=132, x=345000, y=665000)
+        network.add("Line", "l4", bus0="POGB1-", bus1="GALN1Q", s_nom=400, x=0.1)
+        result, moves = relieve_weak_bus_placements(sites, network, site_bound_sources=GSP_NODE_SOURCES)
+        assert result["bus"].tolist() == ["POGB1-"] and moves["method"].tolist() == ["same_substation"]
+
+
+def test_gsp_node_rows_are_not_moved_off_an_excluded_bus():
+    # The renewables pass the GSP-node sources as protected to the placement exclusions
+    # (16 Oct 2026): LINM3- (Linnmill 33 kV, the LINM GSP's demand node) is a coordinate
+    # outlier, and moving its distributed farms by their coordinates scattered them over ten buses.
+    from spatial_utils import _PROTECTED_PLACEMENTS, reassign_excluded_placements
+    from scripts.utilities.gsp_nodes import GSP_NODE_SOURCES
+    network = _weak_bus_network()
+    sites = pd.DataFrame({"site_name": ["at node", "plain"], "technology": "wind_onshore",
+                          "capacity_mw": [10.0, 10.0], "bus": ["POGB3-", "POGB3-"],
+                          "data_source": ["CP30_distributed_gsp_node", "REPD_named_fleet"],
+                          "lon": np.nan, "lat": np.nan})
+    result, moves = reassign_excluded_placements(
+        sites, network, {"POGB3-"}, protected_sources=tuple(_PROTECTED_PLACEMENTS) + tuple(GSP_NODE_SOURCES))
+    assert result["bus"].tolist()[0] == "POGB3-"
+    assert result["bus"].tolist()[1] != "POGB3-" and moves["site_name"].tolist() == ["plain"]
+
+
+def test_renewables_integration_wires_the_gsp_node_protections():
+    import inspect
+    from scripts.generators import integrate_renewable_generators as irg
+    source = inspect.getsource(irg.main)
+    assert "protected_sources=tuple(_PROTECTED_PLACEMENTS) + tuple(GSP_NODE_SOURCES)" in source
+    assert "site_bound_sources=GSP_NODE_SOURCES" in source
+
+
+def test_new_explicit_connections_move_the_audited_sites():
+    from spatial_utils import apply_etys_bmu_mapping
+    network = pypsa.Network()
+    for bus, v in [("ECCF1J", 132), ("EWEH3-", 33), ("CRDY31", 33), ("TRLO3-", 33), ("MAHI3-", 33),
+                   ("KYPE3A", 33), ("KYPE3-", 33), ("ARMA1-", 132), ("STRW3-", 33), ("STSO1B", 132),
+                   ("STWO3-", 33)]:
+        network.add("Bus", bus, v_nom=v, x=300000, y=600000)
+    sites = pd.DataFrame({
+        "site_name": ["Ewe Hill (extension)", "Crossdykes", "Mark Hill", "Kype Muir Wind Farm",
+                      "Kype Muir Wind Farm Extension", "Strathy South", "Strathy North", "Strathy Wood",
+                      "Cairnview, Bettyhill"],
+        "capacity_mw": [36.8, 48.0, 56.0, 88.4, 67.2, 218.4, 67.7, 62.4, 48.0],
+        "bus": ["ECCF1J", "ECCF1J", "TRLO3-", "KYPE3A", "KYPE3A", "ARMA1-", "ARMA1-", "ARMA1-", "ARMA1-"],
+        "data_source": "REPD_named_fleet",
+    })
+    result = apply_etys_bmu_mapping(sites, network, gb_network_path="missing.xlsx")
+    assert result["bus"].tolist() == ["EWEH3-", "CRDY31", "MAHI3-", "KYPE3-", "KYPE3A",
+                                      "STSO1B", "STRW3-", "STWO3-", "ARMA1-"]

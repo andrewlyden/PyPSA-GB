@@ -1,0 +1,1896 @@
+{
+  "schema_version": 3,
+  "title": "2030 PyPSA-informed household-bill assumptions",
+  "benchmark": {
+    "annual_consumption_kwh": 3100,
+    "customer_scope": "GB-average single-rate electricity customer",
+    "period": "calendar 2030",
+    "price_basis": "GBP real 2025",
+    "vat_rate": 0.05,
+    "price_year": 2025,
+    "alternative_consumption_kwh": [
+      2500
+    ],
+    "alternative_consumption_note": "Ofgem's medium Typical Domestic Consumption Value for single-rate electricity is 2,500 kWh from 1 July 2026 (Ofgem, Review of typical domestic consumption values: decision, May 2026; was 2,700). The bill at this and the other archetype volumes is the standing charge plus the unit rate times consumption, on the declared charge_basis (item G6).",
+    "bill_calendar_year": 2030,
+    "period_alignment_note": "Calendar 2030, the year the model dispatches (user decision, 28 Sep 2026). Model lines are calendar 2030 by construction. Every sourced external declares period_basis: calendar_year (the Capacity Market takes half of each delivery year), calendar_blend (0.25 x FY2029/30 + 0.75 x FY2030/31, each fiscal year deflated at its own midpoint: TNUoS, FiT, WHD), period_average (remaining CCS, a 2028/29-2030/31 average) or held_flat_real (a sourced earlier value held flat in real terms, with its source_period). The RO counts each station for the share of calendar 2030 it is accredited. The projector refuses a line without a basis.",
+    "payment_method_scope": "A direct-debit household (Ofgem's 'other payment method' allowances), which pays Ofgem's levelisation between payment methods (Annex 9 v1.11: +3.48 a year in Oct-Dec 2026, GB mean), carried in supplier_costs_and_margin (user decision, 6 Oct 2026, F18). A standard-credit customer would pay about GBP81 more at 3,100 kWh."
+  },
+  "currency_rebasing": {
+    "from_price_year": 2024,
+    "to_price_year": 2025,
+    "index": "ONS CPIH annual average, all items, 2015=100",
+    "from_index": 132.9,
+    "to_index": 138.0,
+    "factor": 1.038374717833,
+    "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23"
+  },
+  "cfd_strike_indexation": {
+    "from_price_year": 2012,
+    "to_price_year": 2024,
+    "index": "ONS CPI annual average, all items, 2015=100 (CDID D7BT)",
+    "from_index": 96.1,
+    "to_index": 133.9,
+    "factor": 1.393340270551509,
+    "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23",
+    "validation": "DESNZ publishes AR7 offshore wind at GBP65.45 (2012 prices) and GBP91.20 (2024 prices), a ratio of 1.39343, and AR7a onshore at 51.85/72.24 = 1.39325 and solar at 46.82/65.23 = 1.39321. This CPI annual-average ratio of 1.393340 reproduces the department's own published conversion, so the indexation basis is not an assumption made here.",
+    "note": "CfD strikes are indexed annually under the contract terms using a CPI reference that need not equal the annual average used for a price-basis conversion. This factor is the published 2012-to-2024 price-basis conversion, which is what is needed to state strikes on the model's 2024 basis; it is not the contractual within-year indexation mechanic."
+  },
+  "model_linked_rules": {
+    "direct_fuel": {
+      "formula": "(Ofgem 70/30 baseload/peak blend of the PyPSA hourly clearing prices per quarter, weighted by household volume) x (1 + Ofgem shaping allowances) + Ofgem-named procurement allowances, x 3.1 MWh, rebased to GBP real 2025",
+      "domestic_shaping": {
+        "profile_file": "data/market/consumer_bill_forecast/domestic_demand_profile_2020.csv",
+        "profile_summary": "data/market/consumer_bill_forecast/domestic_demand_profile_2020_summary.json",
+        "method": "Weight the hourly PyPSA clearing price by relative domestic demand instead of total system load. The difference between the two weightings is reported as an explicit shaping_adjustment row so the reader can see what shaping is worth.",
+        "source": "Ofgem default tariff cap model Annex 2 base/peak demand allocation for the 2020 cap periods, pinned at data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv",
+        "profile_year": 2020,
+        "profile_year_note": "The CP30 monthly runs use renewables_year 2013 and demand_year 2013, not 2020 as an earlier version of this note stated. The 2020 cap periods are the vintage of Ofgem's base/peak allocation, which is the only structure this profile carries (weekday and local hour); it has no weather or calendar-year content, so the mismatch between 2013 model weather and the 2020 cap vintage has no effect on the shaping value. The profile is mapped onto 2030 snapshots by day-of-week and local hour."
+      },
+      "procurement_bridge": {
+        "method": "Ofgem-named procurement allowances applied to the PyPSA domestic-profile energy cost. Each allowance is an observed 2020 intensity relative to the delivery price, carried forward as an explicit assumption. Shaping is its own row (direct_fuel.shaping: the Ofgem cap rule), not one of these allowances. The supplier imbalance allowance is included (item D4(d), 26 Sep 2026): an earlier version excluded it as 'recovered through BSUoS', which is wrong, because BSUoS recovers NESO's balancing actions while a supplier's own imbalance is cash-out settled through Elexon and is priced into its tariff.",
+        "source": "data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv, delivery-day-weighted across the three 2020 cap periods (91 / 183 / 92 days)",
+        "price_year": 2020,
+        "price_year_note": "These are dimensionless intensities relative to the delivery price, not cash amounts, so they need no rebasing. Applying them to a rebased energy cost yields an allowance already on the report basis.",
+        "rate_composition": "ofgem_annex2_1b",
+        "rate_composition_note": "User decision, 6 Oct 2026 (F18): Ofgem's direct-fuel formula exactly. Annex 2 tab 1b adds the rates together on the index, index x (1 + shaping + transaction + day-ahead re-hedging + imbalance + additional risk), and applies losses after all of them; each bill line is its own share. The bill used to apply the four hedging rates to the shaped price (+0.19 GBP) and losses to energy plus shaping only (-0.43 GBP). For electricity Ofgem's 1% is 'additional risk'; there is no separate basis-risk allowance (the line keeps its id, procurement_additional_risk_and_basis).",
+        "allowances": {
+          "losses": {
+            "loss_multiplier_gb_average": 1.1313,
+            "formula": "index x (1 + sum of rates) x (loss_multiplier - 1)",
+            "source": "Ofgem default tariff cap, Annex 2 v1.30 (Oct-Dec 2026), tab '3c Electricity losses', row 'Single-Rate Metering Arrangement, Average' (GB average)",
+            "note": "User decision, 6 Oct 2026 (F18): the household's current single-rate loss factor, the one every GSP-rate line carries (household_loss_factor in the recovery file; the projector checks they are equal). It replaces the delivery-weighted 2020 GB-average multiplier (1.0919), which also stood in for the system's metered-supply factor."
+          },
+          "transaction_cost": {
+            "rate": 0.0039356792309218,
+            "formula": "rate * domestic energy cost",
+            "source_column": "transaction_cost_rate"
+          },
+          "day_ahead_rehedging": {
+            "rate": 0.0028689830426209,
+            "formula": "rate * domestic energy cost",
+            "source_column": "day_ahead_rehedging_rate"
+          },
+          "imbalance": {
+            "rate": 0.013104191358335954,
+            "formula": "rate * domestic energy cost",
+            "source_column": "imbalance_rate",
+            "source": "Ofgem default tariff cap, Annex 2 (wholesale) tab '3a Allowances', electricity 'Imbalance' uplift, 1.3104% in all three 2020 cap periods (data/market/ofgem_price_cap/2020_source/2020_10_to_2020_03_annex_2_wholesale_v1.6.xlsx; data/market/ofgem_price_cap/2020_annual/hedged_wholesale_inputs.csv, column imbalance_rate)",
+            "note": "Supplier cash-out exposure (item D4(d)). A dimensionless intensity on the delivery price, so no rebasing. It does not overlap BSUoS: NESO's energy-imbalance actions are in the BSUoS lines, the supplier's imbalance charges are paid to Elexon."
+          },
+          "additional_risk_and_basis": {
+            "rate": 0.01,
+            "formula": "rate * domestic energy cost",
+            "source_column": "additional_risk_rate"
+          }
+        },
+        "forward_premium": {
+          "rate": 0.0,
+          "formula": "rate * domestic energy cost",
+          "status": "zero_central_with_sensitivities",
+          "backwardation_reference": "Ofgem's backwardation allowance in the latest cap (Oct-Dec 2026): about 28 GBP a year at 3,100 kWh, GB average, Oct-Dec 2026 money (Annex 2 v1.30, tab 1a Wholesale allowance, rows 48-61, scaled from the 2,500 kWh typical value). Its transitional component changes sign from quarter to quarter (tab 8a(i): -8.2, +4.2, -0.1, -14.5 for Eastern over Q1 to Q4 2026). Shown for size only; the central case stays at zero (user decision, 6 Oct 2026) and the +5% and +10% sensitivities bracket it.",
+          "note": "No forward premium on modelled spot in the central case: Ofgem's cap carries only its named allowances (including the 1% additional risk allowance, here in additional_risk_and_basis) and treats its backwardation allowance as neutral in the long run (Ofgem backwardation deadband decision, 21 Nov 2025, para 1.5). The historical gap between the cap's forward index and outturn spot is forward prices overtaken by events, not a stable premium: measured against Elexon MID outturn it is +22.7 / +20.1 / -7.4 GBP/MWh for the 2020 cap periods and +55.0 / +23.7 / +6.7 / -7.6 for 2024, turning negative whenever prices rose; against the 12-month delivery periods the 2020 indices actually priced it averages about -4. GB forward premia reverse sign by day and season (Bunn and Chen, J. Empirical Finance 23, 2013); the CMA found no systematic bias in forward cost benchmarks (Energy Market Investigation final report, 2016, para 9.307); German baseload ex-post premia run about 3% month-ahead to 10% year-ahead (Bonaldo, Caporin and Fontini, 2021). No published 2030 GB bill projection adds a premium to modelled spot. The sensitivities span -3% to +5%, with +10% as a stress case.",
+          "sensitivities": {
+            "minus_3pct": -0.03,
+            "plus_5pct": 0.05,
+            "stress_plus_10pct": 0.1
+          },
+          "retired_calibration": {
+            "calibrated_2020_coefficient": 1.460952,
+            "reason": "Retired 28 Sep 2026. Fitted on 2020 cap periods compared against their own delivery quarters, but the 2020 caps used a 6-2-12 semi-annual index priced over 12-month delivery windows (Ofgem Default Tariff Cap, Appendix 6, May 2018, para 2.6), and the 2024 caps a 3-1.5-12 index averaging 12 months of observations. Both test years fell in falling markets, so the apparent 37% improvement on held-out 2024 is an artefact of the windows and the price trend, not evidence of a premium."
+          }
+        },
+        "reference_total_gbp_per_3100kwh": 52.0,
+        "reference_source": "Residual between the Electricity Bills 2030 direct-fuel allowance (GBP269 per 3.1 MWh) and the midpoint of its stated GBP60-80/MWh wholesale assumption. Retained only as a comparison for the decomposed allowances above."
+      },
+      "shaping": {
+        "method": "ofgem_cap_rule",
+        "method_options": [
+          "ofgem_cap_rule",
+          "model_profile"
+        ],
+        "base_share": 0.7,
+        "peak_share": 0.3,
+        "seasonal_to_monthly_rate": 0.00232182,
+        "monthly_to_hourly_rate": 0.04160818,
+        "quarter_weights": {
+          "weights": {
+            "q1": 0.2861952200637147,
+            "q2": 0.2201113806109269,
+            "q3": 0.21433774683312448,
+            "q4": 0.2793556524922004
+          },
+          "basis": "Ofgem PC1 (single-rate domestic) demand share per quarter",
+          "period": "October 2026 - December 2026 (2026-27 Winter), the latest cap period",
+          "source": "Ofgem default tariff cap, Annex 2 wholesale cost allowance methodology v1.30 (26 Aug 2026), tab 3b Demand, rows 29-32 'Elec PC1', column AD; Ofgem's analysis of Elexon data (its 'Demand and Losses' workbook), updated each cap period",
+          "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-2-wholesale-cost-allowance-methodology-v1.30_data_removed-2.xlsx",
+          "note": "User decision 6 Oct 2026: weight the quarterly base/peak blends as the cap does. The household profile has no seasonal shape, so weighting by its volume gave each quarter its share of hours (24.5% to 25.2%). On the 6 Oct run the change is -0.27 GBP/MWh on the blend, about -0.96 GBP a household with the uplifts, because this weather year's dearest quarters are Q1 and Q3 and its cheapest Q4."
+        },
+        "sensitivity_rates": {
+          "low_1pct": 0.01,
+          "high_7pct": 0.07
+        },
+        "source": "Ofgem default tariff cap, Annex 2 wholesale cost allowance methodology v1.30 (26 Aug 2026, Q4 2026): tab 3b Demand peak 0.3 / baseload 0.7; tab 3a Allowances single-rate electricity seasonal to monthly shaping 0.232182%, monthly peak/baseload to hourly shaping 4.160818%, identical in every period from January 2019 to Q4 2026 (and in the repository's 2020 workbooks). Ofgem, Energy price cap: technical approach to MHHS, call for input, 25 Mar 2026, A1.10: 'The current shaping allowances were set in 2018', derived by converting monthly base/peak contracts to hourly using seasonal-normal PC1 demand and historical day-ahead price ratios (Default Tariff Cap decision, Nov 2018, Appendix 4, Table A4.6). Ofgem plans to reset them from supplier smart-meter data (consultation autumn 2026, decision early 2027).",
+        "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-2-wholesale-cost-allowance-methodology-v1.30_data_removed-2.xlsx",
+        "rationale": "The bill's domestic profile is Ofgem's two-block 70/30 allocation (55.1% of volume in the 35.8% of peak-block hours), i.e. the shape of a 70/30 contract, so the model cannot see the monthly-to-hourly step the allowance prices; its own shaping is a month and weekday effect (+0.24% over the blend). Applying Ofgem's rates is the cap rule, labelled as such, not a modelled cost. Evidence on direction: solar is eroding the GB day-ahead peak premium (ICIS, 17 Aug 2026: peak/base 1.03 in 2025 to 0.98 in 2026 to date) while the domestic evening peak remains, so the cost of reshaping 70/30 blocks is more likely to rise than fall; Ofgem says it lacks robust evidence on this (MHHS call for input, 2.83).",
+        "sensitivities_note": "low_1pct approaches the model's own profile shaping; high_7pct allows for a peakier evening residual and a peak block that has lost its premium. model_profile_only is also reported."
+      }
+    },
+    "cfd": {
+      "formula": "annual PyPSA CfD payment on balancing dispatch / CfD eligible GSP volume * 3.1 MWh * household loss factor, rebased to GBP real 2025",
+      "strike_table": "data/market/lccc/cfd_strike_prices_by_round.csv",
+      "strike_basis": "Published allocation-round clearing prices in 2012 prices, indexed to the 2024 model basis by cfd_strike_indexation. Rounds with several delivery-year clearing prices are collapsed to a capacity-weighted mean because a PyPSA generator carries a round label but no delivery-year vintage.",
+      "negative_price_rule": "gb_contract_terms",
+      "negative_price_rule_options": [
+        "none",
+        "ar4_zero_payment_when_price_le_0",
+        "gb_contract_terms"
+      ],
+      "negative_price_rule_decision": "gb_contract_terms (26 Sep 2026): each round's own term, applied once the contract-aware wholesale order (scripts/market/curtailment_order.py) lets hours clear below zero. AR4 and later: no payment in any hour with a strictly negative reference price. AR2-AR3: no payment inside a run of six or more consecutive negative hours; AR1 carries no term (the rule applies to contracts offered from 1 January 2016, Explanatory Memorandum to SI 2015/1425, para 4.3; corrected 6 Oct 2026). Investment Contracts and Hinkley Point C: no negative pricing term. AR7/AR7a assumed to keep the AR4 rule. Sources: LCP 'New CfD rules - the case for further reform'; CMS 'AR4 update'; Frontier Economics 'Impact of negative pricing on renewable support'. The balancing bids apply the same rule (contract_value_bids.negative_price_rule) and record it in their audit, which the compensation reads.",
+      "negative_price_rule_note": "Under the contract-aware wholesale order (decision D1, 27 Sep 2026) AR4 and later CfDs bid 0 (ar4_plus_bid_gbp_per_mwh; the earlier -1 is kept as a sensitivity), merchant renewables +0.5 (merchant_variable_cost_gbp_per_mwh) and older contracts minus their strike, so the price clears negative only when AR1-AR3, Investment Contract or HPC plant is marginal, and each round's term applies: AR4+ unpaid in any hour below zero, AR2-AR3 unpaid inside runs of six or more negative hours, AR1, Investment Contracts and HPC paid throughout. The summary reports the hours that genuinely clear below zero (hours_price_below_minus_0_01_gbp_per_mwh) and the order the saved wholesale used (wholesale_curtailment_order). The balancing bids apply the same rule and record it in their audit; the projector refuses a bill whose rule differs from the audit's. On an as-built wholesale (every CfD unit at 0) no hour clears below zero, hours bunch at or just above zero, and the rule cannot bite.",
+      "reference_price_basis": {
+        "baseload_carriers": [
+          "nuclear",
+          "CCS Biomass",
+          "biomass"
+        ],
+        "baseload_reference": "seasonal_demand_weighted_mean",
+        "note": "Intermittent CfDs settle against the hourly day-ahead reference price. Baseload CfDs such as Hinkley Point C settle against a season-ahead baseload reference price. The model has no forward market, so the season-ahead price is proxied by the demand-weighted mean wholesale price of the season the snapshot falls in (Apr-Sep summer, Oct-Mar winter), computed over the full calendar year of hourly prices and system demand. Contracts on the listed carriers use that series; every other contract settles hourly. The per-season prices applied are reported in the summary under cfd_reference_price_basis. CCS Biomass is listed because the Power BECCS CfDe uses a baseload market reference price (DESNZ GGR and Power BECCS business model update, December 2023; item MR7). Biomass is listed for its two CfD units: Drax's bridging CfD settles against a season-ahead reference, and MGT Teesside's Investment Contract is a baseload biomass CfD (item MR5); merchant biomass is unaffected."
+      },
+      "economic_curtailment_rule": "none",
+      "economic_curtailment_rule_options": [
+        "none",
+        "pay_pre_ar4_at_strike"
+      ],
+      "pre_ar4_rounds": [
+        "AR1",
+        "AR2",
+        "AR3",
+        "Investment Contract",
+        "HPC"
+      ],
+      "zero_price_threshold_gbp_per_mwh": 1.0,
+      "economic_curtailment_rule_note": "The copperplate wholesale LP turns CfD generators down whenever the market clears at ~GBP0, and no difference payment is booked on that energy. Contracts allocated before AR4 (AR1-AR3, the FID-enabling Investment Contracts and the Hinkley Point C contract) carry no zero-payment term, so the real generator would generate through such hours and be paid strike minus reference. With pay_pre_ar4_at_strike the projector reads the wholesale networks, takes curtailed_h = max(p_nom x p_max_pu - p_wholesale, 0) for CfD generators whose cfd_round is in pre_ar4_rounds in hours where the wholesale price is at or below zero_price_threshold_gbp_per_mwh, and adds sum(curtailed_h x hours x max(strike - price_h, 0)) to the CfD line using the same indexed strike table. Hinkley Point C has no time-varying p_max_pu in the saved network, so its availability is PyPSA's static default of 1.0. With none the payment is recorded as zero. The amount, energy, rounds and threshold are reported in the summary diagnostics. Known simplification (moot while the rule is none): Hinkley Point C's curtailed energy is valued at strike minus the hourly price, while its settled output uses the seasonal baseload reference declared in reference_price_basis (1.31 TWh of HPC energy on the last as-built year).",
+      "coverage_note": "Includes CfD-tagged generators and modelled system wholesale reference prices only. It is not a forecast of the statutory supplier levy until coverage, losses and reconciliation are independently audited.",
+      "vintage_schedule": "data/market/CP30/cfd_vintage_schedule_2030.csv",
+      "vintage_schedule_note": "Allocation rounds are assigned to CP30 CfD capacity in proportion to the MW each round awarded for delivery by 2030-31. The CP30 fleet is synthetic, so this is a fleet-level vintage mix rather than site-level contract identity: a generator's round says which tranche its capacity represents, not which project it is. Takes effect only after the twelve monthly networks are rebuilt.",
+      "nuclear_exclusion": {
+        "status": "resolved_hpc_cfd_settled_in_bill",
+        "status_note": "The rebuilt monthly networks place nuclear by data/market/CP30/nuclear_station_schedule_2030.csv: Hinkley Point C is labelled as a CfD (round HPC) at HINP41 at 2,317 MW (unit 1, 1,630 MW, plus unit 2 pro-rated 5/12 for its 2030-07-31 TEC date) and Sizewell B (1,198 MW) at SIZE41 is merchant and unlabelled. The HPC difference payment is therefore inside the CfD line, settled at the published HPC strike indexed from 2012 prices against the baseload reference declared in reference_price_basis. The diagnostic below (hpc_strike x modelled nuclear energy against a flat sensitivity reference) is now a cross-check on the settled payment rather than an estimate of a missing line; the settled payment itself is reported as nuclear_cfd_settled_payment_gbp and nuclear_cfd_in_bill_gbp_per_3100kwh.",
+        "cp30_nuclear_capacity_mw": 3515.0,
+        "cp30_nuclear_generation_gwh": 25892.0,
+        "cp30_pathway": "Further Flex and Renewables",
+        "hpc_strike_gbp_per_mwh_2012": 89.5,
+        "hpc_strike_gbp_per_mwh_model_prices": 124.70395421436005,
+        "sensitivity_reference_price_gbp_per_mwh": 65.74358857145951,
+        "note": "CP30 publishes nuclear only as an unresolved national total for the pathway (3,515 MW and 25,892 GWh in 2030), with no station breakdown in ES1 or the N1/N2 reference sheet. The TEC register resolves it: Hinkley Point C unit 1 is effective 2029-03-31 and unit 2 2030-07-31, so 1,198 + 1,630 + 5/12 x 1,630 = 3,507 MW against CP30's 3,515 MW, and the AGR fleet is closed by 2030 (Heysham 2 and Torness, 2030-01-01). CP30 scenarios therefore place nuclear by data/market/CP30/nuclear_station_schedule_2030.csv rather than by spatial proxy: Sizewell B unsupported and Hinkley Point C on its CfD at round HPC. Sizewell B's own output stays unlabelled, which is correct - it is merchant. Nothing else in the bill covers an HPC difference payment: sizewell_c_rab is a Regulated Asset Base construction levy for a different station, and nuclear_contract_counterparty is the counterparty body's own operating cost. The diagnostic below prices an HPC-strike CfD on the modelled nuclear energy; while status is scheduled_hpc_cfd_pending_rebuild it measures the missing line, and after the rebuild it is a cross-check on the settled payment. A previous fes_cfd_fractions entry of nuclear: 1.0 justified as 'SZC' has been removed. The thermal path does apply those fractions (an earlier version of this note wrongly called the entry dead), so the removal is on principle: Sizewell C is RAB-financed rather than CfD-financed and its levy is already an explicit external line, and a fleet-wide fraction cannot express one CfD station beside one unsupported station. The station schedule does.",
+        "resolution": "Resolved by data/market/CP30/nuclear_station_schedule_2030.csv, applied in the thermal integration by scripts/CP30/nuclear_schedule.py and declared per scenario at spatial_proxy.nuclear_station_schedule. Amend that file if CP30's nuclear assumption is later restated, then rebuild the monthly networks so the labels reach the saved dispatch.",
+        "hpc_strike_note": "89.50 since Sizewell C's financial close (4 Nov 2025); the published 2016 value was 92.50. Carried in data/market/lccc/cfd_strike_prices_by_round.csv itself since the 2030 re-solve (OW12, 3 Oct 2026); from 29 Sep to 3 Oct 2026 it was a bill-only strike override"
+      },
+      "ccs_levy_carriers": [
+        "CCS Biomass"
+      ],
+      "ccs_levy_note": "Item MR7 (user decision 23 Sep 2026): CP30's 450 MW of CCS biomass is a converted Drax unit on a Power BECCS dual CfD. Its electricity leg (CfDe) is settled like any CfD, at the declared strike of 109.90 GBP/MWh in 2012 prices (round POWER_BECCS, equal to Drax's signed bridging CfD) against a baseload reference, and booked here instead of in the CfD line. The carbon-removal leg (CfDc) is not on the electricity bill. No Power BECCS contract has been signed; this reverses item F1's sourced nil, which rested only on that, as a CP30-consistent assumption.",
+      "volume_collars": {
+        "DRAX_BRIDGE": {
+          "annual_mwh": 4500000.0,
+          "source": "https://www.drax.com/press_release/low-carbon-dispatchable-cfd-contract-agreement/",
+          "note": "Item MR5. Drax's bridging CfD supports about 6 TWh a year across four units (a 27% load factor); CP30 converts one unit to BECCS by 2030, so the collar is prorated to three units, 4.5 TWh. Output above it is merchant. Applied pro rata to the hours each monthly settlement covers."
+        }
+      },
+      "economic_curtailment_rule_decision": "none (26 Sep 2026). The rule was built for the as-built wholesale, where every CfD unit bid 0 and pre-AR4 output was curtailed in a zero-price tie that real plant, paid through such hours, would not have accepted. The contract-aware order (market.wholesale.renewable_curtailment_order: contract_aware, scripts/market/curtailment_order.py) bids AR1-AR3, Investment Contract and Hinkley Point C units at minus their strike, so the wholesale curtails them only at a price at or below -strike, which is where the generator backs off itself; the premise no longer holds, and paying max(strike - price, 0) on that energy would pay about twice the strike for output no one would have generated. The projector reads each saved wholesale network's CfD marginal costs and refuses the rule on a contract-aware run (wholesale_curtailment_order in project_future_bill.py). pay_pre_ar4_at_strike stays available for as-built runs; on the last as-built year it added GBP 1,210M on 12.5 TWh.",
+      "strike_overrides": [],
+      "strike_overrides_note": "None since the 2030 re-solve (OW12, 3 Oct 2026): the HPC cut to 89.50 is in the strike table itself, which the solves and the bill both read, so the BM bids and the CfD line settle on one strike. The former override's evidence is kept below as hpc_strike_reduction.",
+      "hpc_strike_reduction": {
+        "cfd_round": "HPC",
+        "technology": "nuclear",
+        "strike_price_gbp_per_mwh_2012": 89.5,
+        "replaced": 92.5,
+        "price_basis": "2012 prices",
+        "effective": "2025-11-04 (Sizewell C financial close)",
+        "source": "HPC CfD (2016): the strike falls by GBP3/MWh to 89.50 (2012 prices) if Sizewell C reaches FID (NAO, Hinkley Point C, HC 40, June 2017, timeline Figure 1 note 1 and Figure 2 note 3, https://www.nao.org.uk/wp-content/uploads/2017/06/Hinkley-Point-C.pdf; World Nuclear News, Hinkley Point C contract terms, https://www.world-nuclear-news.org/Articles/Hinkley-Point-C-contract-terms). Sizewell C FID 22 Jul 2025 and financial close 4 Nov 2025; EDF URD 2025 (2 Apr 2026) p.76-77: 'following the completion of the financing of Sizewell C on 4 November 2025, the strike price for HPC was reduced from 92.5 to 89.50 2012/MWh'",
+        "sizewell_c_offset": {
+          "question_a_payment_inside_szc_rab": "Yes. Sizewell C paid HPC GBP1.6bn in November 2025 for confidential cost and progress information, know-how and lessons learned (NAO, Sizewell C, 20 May 2026, para 1.13). The payment is a Sizewell C construction cost: a sunk cost in category A (Figure 5 note 2) and inside the lower and higher regulatory thresholds, though outside the Company's 38.2bn project baseline (para 1.15, Figure 4 note 3). The RAB accrues from financial close and Ofgem's nuclear RAB allowance recovers its allowed revenue, so the payment's return is inside the bill's sizewell_c_rab line, which is that allowance (Annex 4 v1.25, nRAB).",
+          "question_b_owners_compensated_in_full": "Yes, on both parties' accounts. NAO para 1.14: 'The GBP1.6 billion payment was calculated to exactly offset the impact of the GBP3 per MWh reduction.' EDF URD 2025 p.76: the 2025 impairment is 'mainly due to a reduction in the contract for difference strike price of GBP3/MWh2012 ... this is fully offset by the payment to Hinkley Point C of GBP1.6 billion for the know-how and series effect that Sizewell C benefited from' (note 9.3: strike cut EUR1,783m of impairment against the EUR1,613m payment).",
+          "question_c_net_saving_to_bill_payers": "Less than GBP3/MWh. Bill payers save GBP3/MWh (2012) on HPC's settled output on the CfD line, but pay the return on the GBP1.6bn payment through Sizewell C's RAB (6.73% CPIH-real regulated cost of capital, NAO Appendix One para 17), and its depreciation once Sizewell C operates. The payment was sized to offset the cut at EDF's own discount rate, which is above the RAB's, so over the life the net saving is small, and in 2030 it is negative. No netting is applied to the Sizewell C line: that line is Ofgem's actual allowance, which already carries the payment, so the model had been charging the payment without the cut; applying 89.50 removes that double charge.",
+          "sizing_2030": {
+            "hpc_settled_twh_2030_modelled": 18.26722,
+            "hpc_modelled_capacity_note": "2,317 MW (unit 1 plus unit 2 pro-rated 5/12); EDF now expects only unit 1 in 2030 (URD 2025 note 9.7: unit 2 twelve months after unit 1)",
+            "cfd_line_saving_gbp_2024": 76357359.77107182,
+            "cfd_line_saving_unit_1_only_gbp_2024": 53717089.52388739,
+            "szc_rab_return_on_payment_gbp_2024": 103700521.73913042,
+            "note": "GBP 2024: the cut is 3.00 x 1.39334 = 4.18 GBP/MWh on the settled output; the RAB return is the payment rebased with CPIH (132.9/138.0) at 6.73% a year. About 0.85 GBP a household ex VAT off the CfD line (0.60 on unit 1 alone) against about 1.10 already in the Sizewell C line."
+          }
+        },
+        "solve_side": "From 29 Sep to 3 Oct 2026 this was a bill-only override and the market solves kept 92.50 (the table is a declared input of the solve rules, so editing it re-triggers every solve). For the 2030 re-solve (OW12) the table itself carries 89.50, so Stage 1 bids HPC at minus 89.50 indexed (about -125, 4.18 GBP/MWh above the old bid), which changes no dispatch that a near-zero-cost nuclear unit already runs through, and the balancing bids, the CfD curtailment compensation and the CfD line all read the same strike."
+      }
+    },
+    "bsuos_constraints": {
+      "formula": "(accepted offer cost + accepted bid cost - feasibility slack - non-participant penalty turn-down + interconnector re-trading, plus CfD curtailment compensation only under add_post_hoc) / GSP charging volume * 3.1 MWh * household loss factor, rebased to GBP real 2025",
+      "recovery_denominator": "gsp_charging_volume_mwh (item F18: BSUoS is charged on BM-unit metered volume x the transmission loss multiplier) from the case recovery-demand assumptions file, at the household loss factor",
+      "compensation_note": "CfD payments are recomputed on balancing dispatch, so constrained-off CfD wind lowers the CfD line and the generator is compensated for the foregone difference payment through its balancing bid. Under reconcile_against_lp_bid (the declared treatment) the balancing LP bids each CfD unit its contract value, so that compensation is already inside the accepted bid cost; it is recomputed only to reconcile against the LP's own CfD bid cost and is not added. Under add_post_hoc (a scalar-priced LP) it is added.",
+      "cfd_curtailment_compensation_treatment": "reconcile_against_lp_bid",
+      "cfd_curtailment_compensation_treatment_options": [
+        "add_post_hoc",
+        "reconcile_against_lp_bid"
+      ],
+      "cfd_curtailment_compensation_treatment_note": "add_post_hoc suits a run whose balancing LP priced CfD bids at a scalar: the compensation is genuinely absent from the accepted bid cost and is added. reconcile_against_lp_bid suits a run solved with market.balancing.renewable_support_pricing.contract_value_bids enabled, where each CfD unit bids max(strike - reference, 0) per snapshot and the settlement is already inside the accepted bid cost; the term is then recomputed only as a check against the LP's own CfD bid cost, and adding it would double count. The extraction reads each month's contract-value bid audit and refuses to run when the declaration and the solve disagree. Switch this to reconcile_against_lp_bid in the same change that adopts the contract-value re-solve.",
+      "cfd_compensation_reconciliation_tolerance": 0.01,
+      "cfd_compensation_reconciliation_tolerance_note": "Under reconcile_against_lp_bid the recomputed compensation and the balancing LP's own accepted CfD bid cost are the same quantity by construction, so the extraction refuses to write when they differ by more than this share of the recompute. The honest residual is the hours where a generator is turned both up and down and the LP's decrease variable is not exactly max(p_wholesale - p_balancing, 0); that measured -0.010 per cent on the one-week reinforced run (GBP -430 on GBP 4,424,648). A breach means the LP and the bill are not pricing the same contracts, which is what the old untraced GBP 4.49bn against GBP 3.96bn discrepancy would have looked like had it been checked.",
+      "excludes": "Feasibility slack (unserved load priced at VOLL) and turn-down of balancing non-participants priced at the LP's penalty bid: both sit inside the accepted offer and bid costs and are subtracted (item B8). Voltage and stability constraints are a separate NESO-outturn line.",
+      "include_interconnector_retrading": true,
+      "include_interconnector_retrading_note": "NESO's constraint-management costs include the trades it makes on interconnectors to relieve constraints. The balancing model changes the interconnector schedule relative to the wholesale position and values that change at the CP30 FFR bid/ask trade prices (resources/CP30/CP30_interconnector_prices.csv). When true the amount is inside constraint_cost_gbp; it is reported separately as interconnector_retrading_cost_gbp so it can be excluded from the comparison with NESO's outturn if a narrower definition is wanted.",
+      "cp30_pathway_curtailment_twh": {
+        "wind_offshore": 10.8,
+        "wind_onshore": 12.4,
+        "solar_pv": 5.0,
+        "source": "resources/CP30/CP30_ES1.csv Further Flex and Renewables 2030 Curtailment (TWh)"
+      },
+      "neso_outturn_comparator": {
+        "regulatory_year": "2024-25",
+        "constraint_gbp_per_mwh_final_demand": 6.917684730531872,
+        "total_bsuos_gbp_per_mwh_final_demand": 12.021042526910351,
+        "price_year": 2024,
+        "source_file": "data/market/neso_balancing_costs/bsuos_constraint_split_2024_25.json",
+        "note": "NESO published constraint spend of GBP1,903,409,179 and total actual BSUoS cost of GBP3,307,604,145 over a chargeable volume of 275,151,189 MWh in regulatory year 2024-25. This is the only pinned figure the modelled constraint cost is directly comparable to; the 91.0 reference is a third-party forecast of total 2030 BSUoS, not a constraint outturn. The modelled 2030 figure is compared with this 2024/25 outturn in the summary diagnostics. In the current run it is above the outturn, because network curtailment of CfD wind in the balancing solve, and the compensation restored on it, exceeds the CP30 pathway curtailment assumption recorded in cp30_pathway_curtailment_twh. The comparison is indicative only: NESO's category covers all constraint actions, 2024-25 precedes the CP30 reinforcements, and the modelled figures are reported in the summary rather than asserted here."
+      },
+      "reference_total_gbp_per_3100kwh": 91.0,
+      "reference_source": "The Electricity Bills 2030 single BSUoS allowance, retained for comparison. It is a forecast of total BSUoS, so it is compared against bsuos_constraints plus bsuos_other_services, not against either alone."
+    },
+    "renewables_obligation": {
+      "formula": "UK ROC-eligible capacity from the Ofgem register (GB and NIRO stations) x PyPSA balancing-stage load factor of the carrier's ROC-labelled units (carrier average where the model holds too few) x ROC banding x GB share of the UK obligation x notional ROC value / GB obligation-eligible supply x 3.1 MWh, then x (1 - exchequer_relief_share).",
+      "method_label": "pypsa_informed_fleet_register",
+      "scheme_parameters": "data/market/consumer_bill_forecast/2030_ro_scheme_parameters.json",
+      "recovery_denominator": "ro_obligation_eligible_supply_mwh from the case recovery-demand assumptions file",
+      "fleet_note": "The accredited fleet is the Ofgem RO register filtered to stations whose 20-year accreditation still runs in obligation year 2030/31 (and, for fuelled stations, that still issue certificates). The brownfield 2030 networks carry the named REPD operating fleet with ROC-labelled units (offshore 4,147 MW, onshore 6,903 MW, solar 8,065 MW), but REPD has no accreditation dates, so the register still decides which capacity earns ROCs. The load factor is taken from the ROC-labelled units' own balancing dispatch where they hold at least 25% of the register capacity (scripts/consumer_bill/build_ro_eligible_fleet.py, load_factor_basis), because ROC units bid minus their certificate value and are rarely curtailed: on the as-built year their load factors were 0.454 offshore and 0.289 onshore against carrier averages of 0.376 and 0.175, and the carrier averages undercounted ROCs by about a fifth (62.5m against 78.2m, gross GBP 48.36 against 60.47 per household). Biomass, hydro and marine have no ROC-labelled units and keep the carrier average (biomass its declared override).",
+      "relief_note": "Government guidance ends the 75% Exchequer relief on domestic electricity supply in March 2029, so calendar 2030 would be the first full year of gross recovery. The case must declare ro_relief_case; there is no default, because the two bookends differ by more than the external allowance this line replaces.",
+      "reference_total_gbp_per_3100kwh": 17.0,
+      "reference_source": "The Electricity Bills 2030 RO allowance, retained for comparison. At 17 GBP it is consistent with the relief continuing.",
+      "niro_note": "NIROCs trade in the UK-wide ROC market and are presented against GB obligations (Ofgem RO Guidance for Suppliers, v8, 27 March 2025), and DESNZ sets one UK obligation from the ROCs expected to be issued to every UK station, NI included, splitting it into a GB and a lower NI level per MWh (Calculating the level of the RO for 2026 to 2027: 120.1m ROCs; NI 7.5 TWh x 0.184). So NI stations stay in the certificate volume (flagged jurisdiction NI in build_ro_eligible_fleet, eligibility unchanged) and the GB bill carries the GB share, 98.85%; see 2030_ro_scheme_parameters.json uk_obligation_split (27 Sep 2026)."
+    },
+    "interconnector_cap_and_floor": {
+      "enabled": true,
+      "formula": "Per cable, GB-regulated revenue = gb_share_of_rent x whole-cable Stage 1 congestion rent; credit = max(revenue - cap, 0) - max(floor - revenue, 0) for cap-and-floor cables (levels RPI-indexed to the model price year), tariff_share_of_gb_revenue x revenue for IFA, nil for exempt and non-GB cables; summed, rebased to GBP real 2025, and spread through the TNUoS demand residual (domestic residual / demand residual revenue, from sourced_externals.tnuos.derivation).",
+      "rent_source": "market summary interconnectors.by_cable.estimated_congestion_rent_GBP (scripts/market/analyze_market.py): GB wholesale price x the Stage 1 day-ahead schedule less the foreign trade cost the LP charged, per cable, summed over the twelve months, in model prices (GBP 2024)",
+      "regime_mechanism": "Ofgem OFG1164 (Interconnector Cap and Floor Regime Handbook, 10 Dec 2024) section 4.6: 'The cap level represents the maximum amount of annual revenue that the interconnector is allowed to retain; the licensee must transfer revenue above this level to consumers via the process of TNUoS charges. The floor level represents the minimum amount of annual revenue that the licensee is guaranteed to earn (provided it meets the 80% minimum availability requirement); consumers top-up revenue below this level ... also ... via the TNUoS charges process.' Section 4.4: revenue above the cap is returned via TNUoS in the regulating countries involved.",
+      "default_gb_share_of_rent": 0.5,
+      "index": {
+        "name": "ONS RPI All Items (CHAW), financial-year averages of the monthly index for the levels' price years, calendar 2024 annual average for the model price year",
+        "to_price_year": 2024,
+        "to_index": 386.7,
+        "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23",
+        "note": "OFG1164 (Interconnector Cap and Floor Regime Handbook, 10 Dec 2024) section 4.2 converts the real cap and floor to nominal for assessment. RPI is assumed as the licence index for the pilot, Window 1 and Window 2 projects (not checked licence by licence); levels are held flat in real RPI terms to 2030, like the RO buy-out. CPIH would give lower levels and a larger credit."
+      },
+      "cables": {
+        "Nemo Link": {
+          "regime": "cap_and_floor",
+          "operational": 2019,
+          "owners": "National Grid Nemo Link / Elia (50:50)",
+          "levels_apply_to": "whole_link",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 77.0,
+          "floor_gbp_m": 43.9,
+          "levels_price_year": "2013/14",
+          "index_from": 251.73,
+          "source": "Ofgem OFG1164 Interconnector Cap and Floor Regime Handbook (10 Dec 2024) section 1.1: final cap and floor GBP77.0m and GBP43.9m (2013/14 prices); the regime applies to the whole link (jointly with CREG) and excess is split equally between GB and Belgian consumers (section 4.3)"
+        },
+        "IFA2": {
+          "regime": "cap_and_floor",
+          "operational": 2021,
+          "owners": "National Grid IFA2 / RTE (50:50)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 60.4,
+          "floor_gbp_m": 37.8,
+          "levels_price_year": "2016/17",
+          "index_from": 264.99,
+          "source": "Ofgem, Decision on the Post Construction Review of the IFA2 interconnector to France (July 2022): final cap GBP60.4m, floor GBP37.8m (2016/17 prices), applying to NGIFA2's 50% share"
+        },
+        "NS Link": {
+          "regime": "cap_and_floor",
+          "operational": 2021,
+          "owners": "National Grid NSL / Statnett (50:50)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 93.3,
+          "floor_gbp_m": 59.3,
+          "levels_price_year": "2015/16",
+          "index_from": 259.43,
+          "source": "Ofgem, Decision on the Post Construction Review of the NSL Interconnector to Norway (29 Sep 2023) Table 3: final cap GBP93.3m, floor GBP59.3m (2015-16 prices), NGNSL's 50% share; Statnett's share is regulated by NVE"
+        },
+        "Viking": {
+          "regime": "cap_and_floor",
+          "operational": 2023,
+          "owners": "National Grid Viking Link / Energinet (50:50)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 121.13,
+          "floor_gbp_m": 76.08,
+          "levels_price_year": "2019/20",
+          "index_from": 290.64,
+          "source": "Ofgem, Post Construction Review of the Viking Link Interconnector to Denmark: decision: final cap GBP121.13m, floor GBP76.08m (2019/20 prices), National Grid's 50% share"
+        },
+        "Greenlink": {
+          "regime": "cap_and_floor",
+          "operational": 2025,
+          "owners": "Greenlink Interconnector Ltd (GB side Ofgem, Irish side CRU)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 31.24,
+          "floor_gbp_m": 18.6,
+          "levels_price_year": "2020/21",
+          "index_from": 294.17,
+          "levels_status": "preliminary (post construction review pending); floor is the Preliminary Actual Floor under Approach 2",
+          "source": "Ofgem, Update to the provisional cap and floor level for the Greenlink Interconnector (Aug 2022): Preliminary Cap GBP31.24m, Preliminary Actual Floor GBP18.60m (2020/21 prices), GB 50% share; project-finance variation assessed annually"
+        },
+        "NeuConnect Interconnector": {
+          "regime": "cap_and_floor",
+          "operational": 2028,
+          "owners": "NeuConnect Britain Ltd (GB side Ofgem, German side BNetzA)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 121.56,
+          "floor_gbp_m": 83.95,
+          "levels_price_year": "2020/21",
+          "index_from": 294.17,
+          "levels_status": "preliminary (under construction); floor is the Preliminary Actual Floor under Approach 2",
+          "source": "Ofgem, NeuConnect Provisional Cap and Floor Level update letter (July 2023): Preliminary Cap GBP121.56m, Preliminary Actual Floor GBP83.95m (2020/21 prices), GB 50% share. Counterparty Germany (Fedderwarden, ENTSO-E zone DE_LU) since 26 Sep 2026; it was mislabelled Netherlands and priced on the Dutch zone before"
+        },
+        "IFA": {
+          "regime": "use_of_revenues_share",
+          "operational": 1986,
+          "owners": "National Grid Interconnectors / RTE (50:50)",
+          "gb_share_of_rent": 0.5,
+          "tariff_share_of_gb_revenue": 0.3955,
+          "source": "Pre-dates the cap and floor regime (OFG1164 Interconnector Cap and Floor Regime Handbook, 10 Dec 2024, Introduction: developed on a merchant basis), but NGIC refers part of IFA's revenue to network tariffs under its Use of Revenues framework (Article 19(3), retained Regulation 2019/943; NESO five-year view p.89). Ofgem Use of Revenues reports: 2023 GBP171.0m of GBP364.7m, 2024 GBP68.9m of GBP241.8m; the revenue-weighted share 239.9/606.5 = 0.3955 is a declared assumption, since the framework's own formula is not published here"
+        },
+        "ElecLink": {
+          "regime": "exempt_merchant",
+          "source": "Exemption granted by the GB and French regulators (Ofgem, CRE); not under cap and floor, congestion revenue retained as income with returns uncapped (ECRB, Merchant transmission lines: ElecLink, 2017)"
+        },
+        "Britned": {
+          "regime": "exempt_merchant",
+          "source": "Exemption under the EU Second Package (National Grid / TenneT); merchant, predates the cap and floor regime (OFG1164 Interconnector Cap and Floor Regime Handbook, 10 Dec 2024, Introduction), no GB consumer pass-through"
+        },
+        "East West Interconnector": {
+          "regime": "other_jurisdiction",
+          "source": "Owned by EirGrid and regulated by CRU; its revenue is used for availability (Ofgem Use of Revenues 2023 and 2024: all under Article 19(2a)) and Irish tariffs, not GB TNUoS"
+        },
+        "Moyle": {
+          "regime": "other_jurisdiction",
+          "source": "Owned by Mutual Energy, regulated by the Utility Regulator (Northern Ireland); revenue flows to Northern Ireland consumers"
+        },
+        "Auchencrosh (interconnector CCT)": {
+          "regime": "other_jurisdiction",
+          "source": "Auchencrosh is Moyle's Scottish converter station; treated as Moyle"
+        },
+        "Isle of Man Interconnector": {
+          "regime": "other_jurisdiction",
+          "source": "Owned by Manx Utilities; outside GB regulation",
+          "cp30_2030_build": "not built since 15 Oct 2026: outside CP30's interconnector count (data/interconnectors/cp30_interconnector_composition.csv, action exclude), so a CP30 2030 month carries no rent for it; kept for builds that still carry the cable (historical and FES 2050)"
+        },
+        "MaresConnect": {
+          "regime": "cap_and_floor",
+          "operational": 2030,
+          "owners": "MaresConnect Limited (GB side Ofgem; Irish side CRU, whose own assessment was pending at Ofgem's IPA)",
+          "levels_apply_to": "gb_share",
+          "gb_share_of_rent": 0.5,
+          "cap_gbp_m": 46.86,
+          "floor_gbp_m": 27.9,
+          "levels_price_year": "2020/21",
+          "index_from": 294.17,
+          "levels_status": "derived, not published: Window 3 levels are set at the Final Project Assessment from the developer's cost submission (OFG1164 Window 3 IPA decision, 12 Nov 2024, paragraphs 1.7 and 12.1), which has not happened; replace these with Ofgem's provisional levels when published",
+          "levels_derivation": "Greenlink's preliminary levels per MW of cable, scaled to MaresConnect's 750 MW: cap 31.24 x 750 / 500 = 46.86, floor 18.60 x 750 / 500 = 27.90 (GBP m, 2020/21 prices, GB 50% share; RPI-indexed to the model price year like Greenlink: cap 61.60, floor 36.68 GBP m in 2024 prices). Greenlink is the closest regulated analogue: a 500 MW HVDC cable from Wales to the Republic of Ireland across the Irish Sea, GB half regulated by Ofgem and Irish half by CRU, levels quoted for the GB 50% share. MaresConnect is 750 MW over about 245 km from Bodelwyddan to the Dublin area. NeuConnect's levels per MW (a 725 km North Sea cable to Germany) would give cap 65.12 and floor 44.97, a sensitivity. Per-MW scaling carries Greenlink's 2020/21 cost base, so it does not reflect HVDC cost inflation since; Ofgem's own IPA modelling shows the GB revenue falling below the floor in the first years (OFG1164 Window 3 IPA decision, 12 Nov 2024, Appendix, MaresConnect Figure 5.4, p.120)",
+          "public_ownership_treatment": "new_build_at_cost",
+          "public_ownership_note": "Commissioned in 2030 (CP30's 2030 interconnector step), so under the acquisition tariff its GB half is new build bought at cost on completion, not a legacy acquisition priced at the present value of its rent: the price is the present value of its floor level at the public rate over the regime's 25 years (scripts/public_ownership/nationalised_tariff.interconnector_lines, new_build_floor_gbp)",
+          "source": "Ofgem OFG1164, Decision on the Initial Project Assessment of the Third Cap and Floor Window for Electricity Interconnectors (12 Nov 2024; Ofgem printed the same reference OFG1164 on its Interconnector Cap and Floor Regime Handbook of 10 Dec 2024): cap and floor regime granted in principle to MaresConnect (0.75 GW, Bodelwyddan, North Wales, to the Republic of Ireland), the IPA modelling the GB portion of revenue on a 50:50 split; NESO interconnector register PRO-000978 (MARES, 750 MW). CP30 does not name its 2030 cable; data/interconnectors/cp30_interconnector_composition.csv identifies it as MaresConnect (judgement)"
+        }
+      },
+      "note": "Not double counted: interconnector re-trading (inside bsuos_constraints) is NESO's balancing trade on the cables valued against the day-ahead schedule, a different cash flow from the owners' capacity-allocation income; Capacity Market income that interconnectors earn is not added to the revenue tested against the cap (the cap test counts it, so the credit is if anything understated) and the capacity_market line is unchanged. Assumptions: the modelled year is assessed on its own (the default regime assesses five-year periods, with within-period adjustments); congestion income is split 50:50 between the two owners of each cable; the 2030 rent rests on the IC1 foreign supply curves (ENTSO-E 2024 hourly shape conditioned on 2013 GB wind, volume tranches on three coupled markets; item IC1), not the flat CP30 trade prices of earlier vintages; the tranche cost is the area under the stepped curve (what the LP charges), not a uniform clearing price on the whole flow (methodology note, item B9). Exports are valued at the GB-side flow (efficiency x p0), item B9.",
+      "sources": [
+        "https://www.ofgem.gov.uk/sites/default/files/2024-12/Interconnector_Cap_and_Floor_Regime_Handbook_Updated_Version.pdf",
+        "https://www.ofgem.gov.uk/sites/default/files/2023-09/Decision%20on%20the%20Post%20Construction%20Review%20of%20the%20NSL%20Interconnector%20to%20Norway.pdf",
+        "https://ofgem.gov.uk/sites/default/files/2022-07/Decision%20on%20the%20Post%20Construction%20Review%20of%20the%20IFA2%20interconnector%20to%20France.pdf",
+        "https://www.ofgem.gov.uk/decision/post-construction-review-viking-link-interconnector-denmark-decision",
+        "https://www.ofgem.gov.uk/sites/default/files/2022-08/Greenlink%20provisional%20cap%20and%20floor%20level%20-%20Update%20letter.pdf",
+        "https://www.ofgem.gov.uk/sites/default/files/2023-07/NeuConnect%20Provisional%20Cap%20and%20Floor%20Level%20-%20Update%20Letter.pdf",
+        "https://www.ofgem.gov.uk/sites/default/files/2024-02/Use%20of%20Revenues%20report%20for%202023.pdf",
+        "https://www.ofgem.gov.uk/sites/default/files/2025-02/Use%20of%20Revenues%20report%20for%202024.pdf",
+        "https://www.ofgem.gov.uk/decision/initial-project-assessment-window-3-interconnectors-decision",
+        "https://www.ofgem.gov.uk/sites/default/files/2024-11/Window_3_IPA_Decision.pdf"
+      ],
+      "access_date": "2026-09-26"
+    },
+    "ldes_cap_and_floor": {
+      "enabled": true,
+      "formula": "LDES floor top-up = sum over long-duration storage (carriers in public_ownership.consumer_bill.ldes_cap_and_floor.carriers) of max(0, floor - market revenue), floor = required revenue with the capital charge at a debt-like real rate; x currency rebasing / GSP charging volume x 3.1 MWh x household loss factor (item F18).",
+      "source": "cases.private.ldes_floor_topup_gbp of the run group's public account (resources/public_ownership/{run_group}_public_account_summary.json, scripts/public_ownership/public_account.py), built from the finance register, whose LDES market revenue is the model's",
+      "recovery_denominator": "gsp_charging_volume_mwh",
+      "note": "Item D4(c) (26 Sep 2026): one private headline. The line is part of the forecast bill; the ownership projector no longer adds it and passes each case's own top-up to the same line instead. Recovered over final demand like a network charge (Ofgem's LDES cap and floor passes through TNUoS); the cap is not modelled."
+    }
+  },
+  "sourced_externals": {
+    "bsuos_other_services": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2024,
+      "rebasing": {
+        "from_price_year": 2024,
+        "to_price_year": 2025,
+        "index": "ONS CPIH annual average, all items, 2015=100",
+        "from_index": 132.9,
+        "to_index": 138.0,
+        "factor": 1.038374717833,
+        "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23"
+      },
+      "stack_group": "system_balancing",
+      "label": "BSUoS non-constraint services (CP30-driven 2030 ancillary services paid to providers, plus NESO internal cost and trade categories)",
+      "source_file": "data/public_ownership/financing/ancillary_services_2030.csv",
+      "source_url": "https://api.neso.energy/dataset/d13d78fc-60d9-4f4d-87b6-e25a20f669c0/resource/527a5f40-942b-416b-99df-81a51c30d041/download/q1_cost_fy2425.csv",
+      "source_title": "NESO Daily BSUoS Cost Data and Historic SF BSUoS Data, regulatory year 2024-25",
+      "access_date": "2026-10-06",
+      "source_table": "data/public_ownership/financing/ancillary_services_2030.csv (in_bill_line bsuos_other_services and balancing_categories); data/market/neso_balancing_costs/bsuos_constraint_split_2024_25.json",
+      "derivation": {
+        "cost_gbp": 1334965046.0,
+        "recovery_denominator": "gsp_charging_volume_mwh",
+        "demand_scaled_gbp_per_mwh": 2.527534531394483,
+        "demand_scaled_volume": "gsp_charging_volume_mwh",
+        "ancillary_case": "central",
+        "ancillary_file": "data/public_ownership/financing/ancillary_services_2030.csv",
+        "fy2024_25": {
+          "non_constraint_gbp": 1404194965.8211267,
+          "non_constraint_gbp_per_mwh": 5.10335779637848,
+          "internal_and_incentive_gbp": 595600000.0,
+          "internal_source": "NESO, Monthly BSUoS forecasts (Apr-24 and Aug-24 editions), 'Estimated Internal BSUoS & ESO Incentive', FY2024/25",
+          "internal_source_url": "https://www.neso.energy/document/304841/download | https://www.neso.energy/document/321376/download",
+          "trade_categories_gbp": 175984131.67812657,
+          "reserve_trades_in_ancillary_table_gbp": 76130000.00000001,
+          "chargeable_volume_mwh": 275151189.05,
+          "services_outturn_gbp": 720800000.0000002
+        },
+        "sensitivity_cost_gbp": {
+          "ancillary_low": 925840463.9999999,
+          "ancillary_high": 1842428392.0
+        },
+        "cp30_projection": {
+          "decision": "user decision, 6 Oct 2026: the network-related lines follow the system CP30 assumes",
+          "projection_file": "data/public_ownership/financing/ancillary_services_2030.csv",
+          "projection_script": "scripts/public_ownership/ancillary_services_2030.py",
+          "services_gbp": {
+            "central": 1334965046.0,
+            "low": 925840463.9999999,
+            "high": 1842428392.0
+          },
+          "services_fy2024_25_outturn_gbp": 720800000.0000002,
+          "gbp_per_household_2025_prices": {
+            "central": 22.337882901864738,
+            "low": 17.985466017648662,
+            "high": 27.736463511355428
+          },
+          "cp21_additional_scl_mva": {
+            "low": 23106.0,
+            "central": 37053.0,
+            "high": 51000.0
+          },
+          "cp21_additional_reactive_mvar": {
+            "central": 6255.5,
+            "low": 4611.0,
+            "high": 7900.0
+          },
+          "scl_gbp_per_mva_year": 8006.906758756783,
+          "reactive_gbp_per_mvar_year": 12848.29721362229,
+          "response_ratio_2030_over_2025": 1.1428571428571428,
+          "positive_reserve_ratio": 1.4545454545454546,
+          "negative_reserve_ratio": 2.166666666666667,
+          "reserve_ratio_both_directions": 1.7058823529411764,
+          "previous_value": {
+            "services_gbp": 720800000.0000002,
+            "gbp_per_household_2025_prices": 15.804170596340787,
+            "basis": "every service at FY2024/25 outturn (user decision, 3 Oct 2026)"
+          }
+        },
+        "household_losses": "household_loss_factor"
+      },
+      "method": "User decision, 6 Oct 2026 (the bill's network-related lines follow the system Clean Power 2030 assumes), on the OW16 follow-up structure (3 Oct 2026, as FES 2050 decision 65). The line holds three things: NESO's internal cost and incentive, the daily trade categories and contracted ancillary services. The services, with the reserve trades the categories held, are the ancillary table's 2030 spend (GBP 1335.0 m centrally against the FY2024/25 outturn of GBP 720.8 m), the money scripts/public_ownership/support_lines_2050.py credits to the providers, in the register and outside it, so the bill and the register carry the same money. Each service is its FY2024/25 outturn carried to 2030 by a CP30 driver (scripts/public_ownership/ancillary_services_2030.py; per-row basis in the table): stability = the contracted pathfinder and mid-term book live in 2030 plus CP.21's additional short-circuit level (37,053 MVA at band midpoints) at the Phase 2 and 3 cost (GBP 8,007/MVA a year); commercial reactive = today's book plus CP.21's additional absorption and injection (6,256 Mvar) at the Voltage 2026 tender's GBP 12,848/Mvar a year; response x1.143 (4.8 / 4.2 GW) and reserve x1.455 positive, x2.167 negative (CP30 Annex 3 s.2.3.2 against NESO's 2025 need, Operability Strategy Report March 2025), at FY2024/25 prices; restoration x1.5 (ESRS); ORPS and the bilateral pumped-storage reserve held; closed services zero. The internal cost and the categories less the reserve trades stay held flat per MWh of NESO's chargeable volume, GBP 2.5275/MWh, on the 2030 GSP charging volume: CP30 gives no basis for them. Item F18 (user, 6 Oct 2026): BSUoS is a GSP-rate line, charged since April 2023 on final demand's BM-unit metered volume x the transmission loss multiplier (NESO's FY2024/25 chargeable volume, 275.15 TWh, is that volume, not metered supply), so the line is spread over the GSP charging volume and charged on the household's 3.1 MWh x the household loss factor. Covers response, reserve, reactive, restoration, stability, energy imbalance and NESO internal and contracted costs; excludes constraints, which PyPSA supplies. Low and high (the CP.21 band ends, response and reserve price and volume factors) are a named bill sensitivity (sensitivity_cost_gbp).",
+      "limitations": [
+        "The services are a declared projection on CP30's drivers; NESO publishes no 2030 ancillary-services cost forecast.",
+        "Stability is priced at the Phase 2 and 3 pathfinder cost per MVA (synchronous condensers and grid-forming batteries, inertia included); the Long-term 2029 tender (stability, reactive and restoration from 2029) has not reported. At Phase 3's cost alone the stability spend would be about GBP 256 m higher; at Phase 2's about GBP 193 m lower.",
+        "CP.21 gives West Midlands and West England no values although CP30 Annex 3 names both as voltage-support areas; they count as zero, so the reactive requirement is a floor.",
+        "Contract totals are taken as 2024 money over their terms (not indexed); FY2024/25 outturn is nominal treated as 2024 money.",
+        "NESO's internal cost is held flat per MWh; its Oct-2026 forecast runs higher (about GBP 66.5 m a month).",
+        "Constraints are subtracted in full (thermal, voltage and inertia); the voltage and inertia part is carried by its own line, bsuos_voltage_and_stability_constraints, and the thermal part by the modelled redispatch.",
+        "Low and high are a named bill sensitivity; the register's support line stays on the central case."
+      ],
+      "period_basis": "extrapolated_declared",
+      "source_period": "FY2024/25 NESO BSUoS outturn, projected to 2030 on CP30 drivers",
+      "neso_forecast_cross_check": {
+        "source": "NESO, BSUoS Forecast for Oct-2026 (published September 2026), balancing cost breakdown Sep 2026-Feb 2027",
+        "source_url": "https://www.neso.energy/document/387366/download",
+        "non_constraint_balancing_gbp_m_per_month": 82.5,
+        "internal_bsuos_and_incentive_gbp_m_per_month": 66.5,
+        "implied_gbp_per_mwh_2026": 6.2,
+        "note": "Kept as a cross-check, not the central value: the forecast is built on a GBP123/MWh wholesale forward curve, and response, reserve and energy-imbalance costs scale with the price level; the FY2024/25 outturn (wholesale about GBP75/MWh) is closer to the 2030 model's prices. At 6.2 GBP/MWh the line would be about GBP3.5 a household higher.",
+        "source_file": "data/market/ofgem_price_cap/2026_Q4/neso_bsuos_forecast_oct_2026.pdf"
+      },
+      "extrapolation": {
+        "from_period": "FY2024/25 NESO BSUoS and ancillary-services outturn",
+        "rule": "services: CP30-driven 2030 projection (ancillary_services_2030.csv, central); internal cost and trade categories: FY2024/25 rate per MWh of final demand"
+      }
+    },
+    "bsuos_voltage_and_stability_constraints": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2024,
+      "rebasing": {
+        "from_price_year": 2024,
+        "to_price_year": 2025,
+        "index": "ONS CPIH annual average, all items, 2015=100",
+        "from_index": 132.9,
+        "to_index": 138.0,
+        "factor": 1.038374717833,
+        "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23"
+      },
+      "stack_group": "system_balancing",
+      "label": "BSUoS voltage and stability actions (paid to providers; CP30 holds them at NESO's 2024 level)",
+      "source_file": "data/market/neso_balancing_costs/neso_constraint_breakdown_2024_25.csv",
+      "source_title": "NESO, Constraint Breakdown Costs and Volume, 2024-2025 (daily thermal, voltage, inertia and largest-loss constraint costs); NESO Daily BSUoS Cost Data, regulatory year 2024-25 (constraints category)",
+      "source_url": "https://api.neso.energy/dataset/fb56b46e-cef3-4eb8-9294-0ca19769b7eb/resource/748557ef-2bb3-41c0-8181-5f1a148c1ff4/download/constraint-breakdown-2024-2025.csv",
+      "access_date": "2026-10-06",
+      "source_table": "data/public_ownership/financing/ancillary_services_2030.csv (in_bill_line bsuos_voltage_and_stability_constraints)",
+      "derivation": {
+        "cost_gbp": 194620000.0,
+        "recovery_denominator": "gsp_charging_volume_mwh",
+        "ancillary_case": "central",
+        "ancillary_file": "data/public_ownership/financing/ancillary_services_2030.csv",
+        "fy2024_25": {
+          "constraints_category_gbp_2024_25": 1903409179.0788734,
+          "thermal_constraints_gbp_2024_25": 1710004055.0,
+          "non_thermal_constraints_gbp_2024_25": 193405124.0788734,
+          "cross_check_breakdown_gbp_2024_25": {
+            "voltage": 153851930.0,
+            "increasing_system_inertia": 40773768.0,
+            "reducing_largest_loss": 0.0,
+            "sum": 194625698.0
+          },
+          "chargeable_final_demand_mwh_2024_25": 275151189.05,
+          "arithmetic": "(GBP1,903,409,179 constraints category - GBP1,710,004,055 thermal) / 275,151,189 MWh = GBP0.7029/MWh (2024 prices)",
+          "sensitivity_2025_26": {
+            "source_file": "data/market/neso_balancing_costs/neso_constraint_breakdown_2025_26.csv",
+            "voltage_gbp": 212363735.0,
+            "increasing_system_inertia_gbp": 41406751.0,
+            "note": "GBP253.8m (nominal) in 2025-26, 30% above 2024-25; at the 2024-25 chargeable volume about GBP0.92/MWh, roughly GBP0.7 more a household"
+          },
+          "sha256_2024_25": "7efb8117899ec88ccd1d30343d5958b924e2c81516f05632ef177730ad9b3b2c",
+          "sha256_2025_26": "5e8f80621c79237f0f370485294dfb3f2f0a794f73ff01a0b0d1667bbe621992"
+        },
+        "sensitivity_cost_gbp": {
+          "ancillary_low": 97310000.0,
+          "ancillary_high": 307491100.0
+        },
+        "cp30_projection": {
+          "decision": "user decision, 6 Oct 2026",
+          "projection_file": "data/public_ownership/financing/ancillary_services_2030.csv",
+          "services_gbp": {
+            "central": 194620000.0,
+            "low": 97310000.0,
+            "high": 307491100.0
+          },
+          "gbp_per_household_2025_prices": {
+            "central": 2.070438715428086,
+            "low": 1.035219357714043,
+            "high": 3.271202744268672
+          },
+          "cp30_basis": "CP30 Annex 4 s.2.1.5: voltage and stability balancing costs 'are provided with a single projection over all pathways, based on NESO's balancing cost annual report 2024'; EC2: constraint costs (voltage and stability), source NESO, pathway variable No",
+          "previous_value": {
+            "services_gbp": 194620000.0,
+            "basis": "FY2024/25 outturn (3 Oct 2026)"
+          }
+        },
+        "household_losses": "household_loss_factor"
+      },
+      "method": "User decision, 6 Oct 2026, on the OW16 follow-up structure (3 Oct 2026, as FES 2050 decision 65): the voltage and inertia actions NESO takes in the BM, the ancillary table's 2030 spend (GBP 194.6 m centrally), the money scripts/public_ownership/support_lines_2050.py credits to the providers, so the bill and the register carry the same money. Centrally CP30's own assumption: Annex 4 s.2.1.5 costs voltage and stability balancing as one projection over all pathways based on NESO's 2024 balancing cost report (EC2: not a pathway variable), so the FY2024/25 outturn (NESO's constraint breakdown: voltage 153.9 m plus inertia 40.8 m) is held. CP.21's additional SCL and reactive requirements are met by new contracted assets (bsuos_other_services). Low: x0.5 for both (the new assets and the inertia floor of 102 GVA.s displace BM actions). High: voltage x1.38 (FY2025/26 outturn), inertia x35/15 (CP30's 2030 peak residual inertia need over the 2026/27 mid-term requirement, half met in the BM). The modelled redispatch (bsuos_constraints) is thermal only: a DC power flow has no voltage or inertia constraint, so this cost has no other home in the bill (item D4(d)). Spread over the 2030 GSP charging volume and charged on the household's 3.1 MWh x the household loss factor, as BSUoS is (item F18).",
+      "scaling_2030": "Held at the FY2024/25 outturn in real terms centrally, as CP30 itself holds it (Annex 4 s.2.1.5); low and high are a named bill sensitivity.",
+      "limitations": [
+        "CP30's single projection is NESO's 2024 report level, not a 2030 forecast of voltage and stability BM cost.",
+        "Low and high are a named bill sensitivity; the register's support line stays on the central case."
+      ],
+      "period_basis": "extrapolated_declared",
+      "source_period": "FY2024/25 NESO constraint outturn",
+      "extrapolation": {
+        "from_period": "FY2024/25 NESO constraint outturn (voltage and inertia)",
+        "rule": "held at outturn as CP30 Annex 4 s.2.1.5 holds it; low x0.5, high per row (ancillary_services_2030.csv)"
+      }
+    },
+    "supplier_costs_and_margin": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "supplier_operating",
+      "source_class": "external_primary_source",
+      "value": 201.8492,
+      "price_year": 2026,
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+        "from_index": 141.795132154,
+        "to_index": 138.0,
+        "factor": 0.973235102669969
+      },
+      "label": "Supplier costs and margin (Ofgem cap allowances, direct debit, Oct-Dec 2026)",
+      "reference_gbp_per_3100kwh_ex_vat": 147.0,
+      "source_file": "data/market/ofgem_price_cap/2026_Q4/cap_17a_electricity_single_rate_components.csv",
+      "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Default-tariff-cap-level-v1.31.xlsx",
+      "access_date": "2026-09-28",
+      "method": "Sum of Ofgem's post-July-2025 supplier allowances for a single-rate, direct-debit ('other payment method') customer, GB average of the 14 regions, at 3,100 kWh from the nil and 2,500 kWh benchmark values (standing plus unit): cost to serve 110.43; debt related costs 31.58; industry charges 21.51 (Oct-Dec 2026 money), held flat in real terms to 2030, plus Ofgem's direct-debit levelisation (3.48 a year, Annex 9). EBIT and headroom are not held at the cap period's cash (27.38 and 10.95) but recomputed at Ofgem's percentages of this bill's own 2030 costs (user decision, 6 Oct 2026, F18). Smart metering is its own line.",
+      "derivation": {
+        "components_gbp_per_3100kwh_2026": {
+          "cost_to_serve": 110.42624,
+          "debt_related_costs": 31.58012,
+          "industry_charges": 21.51388,
+          "ebit": 27.37852,
+          "headroom": 10.95044
+        },
+        "nil_and_2500kwh_gbp_2026": {
+          "cost_to_serve": {
+            "nil": 48.208,
+            "at_2500_kwh": 98.384
+          },
+          "debt_related_costs": {
+            "nil": 6.268,
+            "at_2500_kwh": 26.681
+          },
+          "industry_charges": {
+            "nil": 9.75,
+            "at_2500_kwh": 19.237
+          },
+          "ebit": {
+            "nil": 5.34,
+            "at_2500_kwh": 23.113
+          },
+          "headroom": {
+            "nil": 1.054,
+            "at_2500_kwh": 9.035
+          }
+        },
+        "previous_value": {
+          "value": 161.915863,
+          "basis": "Supplier costs and margin (Ofgem cap allowances)",
+          "note": "calendar-2025 average straddling Ofgem's July 2025 restructuring"
+        },
+        "direct_debit_levelisation": {
+          "gbp_per_customer": 3.4819013671345997,
+          "price_year": 2026,
+          "period": "Ofgem cap period 17a, October-December 2026",
+          "source": "Ofgem default tariff cap, Annex 9 levelisation allowance methodology v1.11, tab '2d Nil levelisation allowance', column AP (October 2026 - December 2026), rows 12-25 ('Other Payment Method'), mean of the 14 regions",
+          "note": "User decision, 6 Oct 2026 (F18): the bill is a direct-debit household, which pays Ofgem's levelisation (the standing-charge differential between payment methods spread across customers): +3.48 a year in Oct-Dec 2026 money, about 3.39 in 2025 money, per customer whatever the consumption, held flat in real terms. A named component of this line, not a line of its own. It sits outside Ofgem's EBIT and headroom bases."
+        },
+        "ebit_and_headroom": {
+          "method": "ofgem_percentages_on_bill_costs",
+          "ebit_variable_share": 0.014446,
+          "ebit_fixed_gbp_per_customer": 11.23055,
+          "ebit_fixed_price_year": 2026,
+          "headroom_share": 0.014641,
+          "network_group": {
+            "view": "ofgem",
+            "group": "Network costs"
+          },
+          "cost_base": "EBIT = variable share x costs + the fixed amount; costs = every line of this bill ex VAT except EBIT, headroom and levelisation (Ofgem: the cap less EBIT, headroom and VAT; levelisation is outside the benchmark). Headroom = its share x (costs less network costs + EBIT), network costs being the network_group lines (bill_groupings.csv).",
+          "source": "Ofgem default tariff cap level model v1.31 (26 Aug 2026): tab '3k EBIT', column AL (October 2026 - December 2026): EBIT fixed 22.4611 GBP per dual-fuel customer (halved per fuel, as the ElecSingle_Other_Benchmark row 27 formula divides it by two), EBIT variable 1.4446%; tab '3l HAP': headroom 1.4641%; ElecSingle_Other_Benchmark rows 27-28 (EBIT = SUM(costs) x variable + fixed / 2; headroom = SUM(costs excluding network costs, plus EBIT) x HAP)",
+          "decision": "User decision, 6 Oct 2026 (F18): apply Ofgem's percentages to the bill's own 2030 costs.",
+          "ownership_cases": "F27 item 10 (user, 20 Oct 2026; supersedes G5): every ownership case's EBIT and headroom are Ofgem's percentages of its own costs, as the cap would set them, in the market projector and the P3 tariff; the move against private is the suppliers' (private investors) in the three-party ledger."
+        }
+      },
+      "limitations": [
+        "EBIT and headroom are Ofgem's percentages of this bill's own 2030 costs, with Ofgem's Oct-Dec 2026 fixed EBIT amount held flat in real terms; Ofgem resets the percentages annually.",
+        "Debt-related costs are elevated after the 2022-23 crisis; the Debt Relief Scheme may lower them. Held flat."
+      ],
+      "period_basis": "held_flat_real",
+      "source_period": "Ofgem cap period 17a, October-December 2026",
+      "source_table": "Ofgem default tariff cap level model v1.31 (26 Aug 2026), tabs ElecSingle_Other_Benchmark and ElecSingle_Other_Nil, column October 2026 - December 2026",
+      "source_metadata": "data/market/ofgem_price_cap/2026_Q4/metadata.json"
+    },
+    "tnuos": {
+      "value": 141.200576,
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2030,
+      "stack_group": "network",
+      "label": "TNUoS (NESO five-year view 2027/28-2031/32, calendar 2030 blend of 2029/30 and 2030/31)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 105.0,
+      "source_file": "data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1.pdf",
+      "source_tables_file": "data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1_tables.xlsx",
+      "source_title": "NESO, Five-Year View of TNUoS Tariffs for 2027/28-2031/32, Version 1.0, 9 October 2026, Table 15 (non-locational demand residual charges), Table 14 (average locational NHH tariff), Tables 23, 24, 38 and 39 (revenue); tables workbook document 388501",
+      "source_url": "https://www.neso.energy/document/388496/download",
+      "source_tables_url": "https://www.neso.energy/document/388501/download",
+      "access_date": "2026-10-14",
+      "superseded_source": "NESO Five-Year View of TNUoS Tariffs 2026/27 to 2030/31, Version 3.0, 18 September 2025 (data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2026_27_to_2030_31_v3.pdf): 2029/30 0.318200 GBP/site/day and 0.69 p/kWh, 2030/31 0.327714 and 0.68; line GBP111.18 (2025)",
+      "derivation": {
+        "domestic_residual_gbp_per_site_day_2030_31": 0.376877,
+        "domestic_residual_gbp_per_year": 137.560105,
+        "locational_nhh_average_p_per_kwh_2030_31": 0.577171,
+        "consumption_16_00_to_19_00_kwh_at_3100": 630.744,
+        "consumption_16_00_to_19_00_derivation": "The NESO 2027/28 average household TNUoS of GBP103.24 (FYV 2027/28-2031/32 p.8) less the 2027/28 domestic residual (0.275932 x 365 = GBP100.72) leaves GBP2.52 of locational charge at 0.459595 p/kWh (Table 14), i.e. 549.4 kWh in the 16:00-19:00 window at the NESO household basis, taken as the Ofgem 2,700 kWh typical consumption and scaled to 3,100 kWh. The v3.0 figures gave 587.541 kWh; holding that moves the line by -GBP0.21.",
+        "locational_gbp_per_year": 3.640471,
+        "total_nominal_2030_31_gbp_per_year": 141.200576,
+        "demand_residual_revenue_gbp_m_2030_31": 11276.27,
+        "total_tnuos_to_collect_gbp_m_2030_31": 13203.61,
+        "domestic_residual_gbp_per_site_day_2029_30": 0.356025,
+        "locational_nhh_average_p_per_kwh_2029_30": 0.462346,
+        "demand_residual_revenue_gbp_m_2029_30": 10580.0,
+        "total_tnuos_to_collect_gbp_m_2029_30": 12325.46,
+        "domestic_share_of_demand_residual_2030_31": 0.3723,
+        "domestic_share_note": "NESO allocates the residual to bands by forecast band consumption (Table B: domestic 98,481 GWh of 264,548 GWh in 2030/31, 37.2%, over 30.52m sites). v3.0's 2030/31 domestic tariff implies about 31% on the same site count, so the domestic tariff rises 15% although the demand residual revenue falls 4%.",
+        "calendar_blend": {
+          "domestic_residual_gbp_per_year": 135.65736,
+          "demand_residual_revenue_gbp_m": 11102.2025,
+          "note": "Calendar-2030 blend of the domestic residual and the demand residual revenue, the ratio the interconnector credit is spread on"
+        },
+        "interconnector_cap_and_floor_in_neso_forecast": "Nil for calendar 2030. FYV 2027/28-2031/32 Table 38 combines OFTO revenue and the interconnector cap-and-floor adjustment (TICFt) in one line, 1,522.16 (2029/30) and 1,652.93 (2030/31) GBPm; Table 39 itemises the Offshore Transmission Pass-Through (B7) as 1,522.16 and 1,652.93, so TICFt is zero in both years (it is -203.29 GBPm in 2027/28 only, forecast from the interconnectors' January 2026 submissions). The only other interconnector item, ICPt (CACM cost recovery, -48.98 in 2029/30, -61.93 in 2030/31), is not cap-and-floor. No NESO term is removed; the modelled interconnector_cap_and_floor_pass_through is not double counted. Checked 14 Oct 2026."
+      },
+      "rebasing": {
+        "from_price_year": 2030,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0, 2015=100) projected at 2% a year (Bank of England target) for 5.25 years to the FY 2030/31 midpoint; NESO tariffs are nominal money of the day",
+        "from_index": 153.119319,
+        "to_index": 138.0,
+        "factor": 0.901257928401,
+        "note": "NESO states its forecasts in nominal money of the day, with CPIH indexation of the expansion constant and RIIO allowed revenues; the 2% a year CPIH path is a declared assumption. NESO's own blended RPI-CPIH index for the onshore TOs' revenue (FYV 2027/28-2031/32 Table C, PIt) rises 2.1% a year from 2027/28 to 2030/31, so the assumption is close to NESO's. Each 0.5 point of annual inflation moves the real 2025 value by about 2.5%."
+      },
+      "method": "Domestic band transmission demand residual tariff for 2030/31 (GBP per site per day x 365) plus the average locational non-half-hourly tariff (p/kWh) on the household 16:00-19:00 consumption, then deflated from FY 2030/31 money of the day to GBP real 2025.",
+      "cross_check": {
+        "riio3_final_determinations": "Ofgem RIIO-3 Final Determinations (4 December 2025, 2023/24 prices) expect household network charges across ET, GT and GD to rise about GBP108 by 2031 for a dual-fuel household, of which GBP30 is additional electricity transmission investment.",
+        "source_file": "data/market/network_cost_sources/price_controls/ofgem_riio3_final_determinations_overview_2025_12.pdf",
+        "neso_revenue_sensitivity_feb_2026_pcfm": "NESO Sensitivity 2 (Ofgem's February 2026 Price Control Financial Model): total to collect 12,254.00 (2029/30) and 13,437.83 (2030/31) GBPm against the base 12,325.46 and 13,203.61. With the difference on the demand residual (generation revenue is capped), the calendar-2030 line would be about GBP127.71 (2025) against GBP125.98; NESO's +/-10% revenue cases move the residual by about +/-12%."
+      },
+      "limitations": [
+        "The base case uses the onshore TOs' January 2026 revenue forecasts, updated by NESO for inflation and a 2026/27 under-recovery; Ofgem's February 2026 PCFM (Sensitivity 2) is about GBP1.7 a household higher in calendar 2030. Draft and Final 2027/28 tariffs (November 2026, January 2027) will update the TOs' revenue.",
+        "The locational charge (about 3% of the line) rests on the 16:00-19:00 consumption share implied by the NESO household figure; the residual charge is a published tariff.",
+        "NESO recovers interconnector cap-and-floor adjustments through demand tariffs (TICFt, inside Table 38's OFTO line). Its forecast carries none in 2029/30 or 2030/31 (Table 38 less Table 39 B7 is zero), so the bill's interconnector_cap_and_floor_pass_through stays additional with no overlap.",
+        "NESO's timetable promised a projection of additional years beyond 2031/32 with this publication; the 9 October 2026 release covers 2027/28 to 2031/32 only. Calendar 2030 needs only 2029/30 and 2030/31."
+      ],
+      "period_basis": "calendar_blend",
+      "period_blend": [
+        {
+          "period": "FY2029/30",
+          "value": 132.865345,
+          "price_year": 2029,
+          "rebasing": {
+            "from_price_year": 2029,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0, 2015=100) projected at 2% a year for 4.25 years to the financial-year midpoint",
+            "from_index": 150.11697915,
+            "to_index": 138.0,
+            "factor": 0.9192830869725106
+          },
+          "derivation": "0.356025 GBP/site/day x 365 + 0.462346 p/kWh x 630.744 kWh (NESO FYV 2027/28-2031/32 v1.0 Table 15 p.27, Table 14 p.26)"
+        },
+        {
+          "period": "FY2030/31",
+          "value": 141.200576,
+          "price_year": 2030,
+          "rebasing": {
+            "from_price_year": 2030,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0, 2015=100) projected at 2% a year (Bank of England target) for 5.25 years to the FY 2030/31 midpoint; NESO tariffs are nominal money of the day",
+            "from_index": 153.119319,
+            "to_index": 138.0,
+            "factor": 0.901257928401,
+            "note": "NESO states its forecasts in nominal money of the day, with CPIH indexation of the expansion constant and RIIO allowed revenues; the 2% a year CPIH path is a declared assumption. NESO's own blended RPI-CPIH index for the onshore TOs' revenue (FYV 2027/28-2031/32 Table C, PIt) rises 2.1% a year from 2027/28 to 2030/31, so the assumption is close to NESO's. Each 0.5 point of annual inflation moves the real 2025 value by about 2.5%."
+          },
+          "derivation": "0.376877 GBP/site/day x 365 + 0.577171 p/kWh on the 16:00-19:00 consumption (as above)"
+        }
+      ]
+    },
+    "duos": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "network",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 146.0,
+      "value": 126.73433,
+      "price_year": 2026,
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+        "from_index": 141.795132154,
+        "to_index": 138.0,
+        "factor": 0.973235102669969
+      },
+      "period_basis": "calendar_blend",
+      "period_blend": [
+        {
+          "period": "FY2029/30",
+          "value": 126.904789,
+          "price_year": 2026,
+          "rebasing": {
+            "from_price_year": 2026,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+            "from_index": 141.795132154,
+            "to_index": 138.0,
+            "factor": 0.973235102669969
+          },
+          "derivation": "GBP126.4094 (Ofgem cap 17a) x allowed revenue FY2029/30 / 2026/27 1.024291 (RIIO-ED2 FD to 2027/28, then ED3 building blocks on CP30's distribution capex) x charging base 0.955172 (the unit part spread over CP30's demand growth) + ED3 allowed-return uplift 3.2291 (RAV x (4.35% - 3.93%) as allowed revenue, the same ratio and base; 2026 prices)",
+          "value_at_ed2_return": 123.6756627
+        },
+        {
+          "period": "FY2030/31",
+          "value": 126.67751,
+          "price_year": 2026,
+          "rebasing": {
+            "from_price_year": 2026,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+            "from_index": 141.795132154,
+            "to_index": 138.0,
+            "factor": 0.973235102669969
+          },
+          "derivation": "GBP126.4094 (Ofgem cap 17a) x allowed revenue FY2030/31 / 2026/27 1.041155 (RIIO-ED2 FD to 2027/28, then ED3 building blocks on CP30's distribution capex) x charging base 0.937970 (the unit part spread over CP30's demand growth) + ED3 allowed-return uplift 3.2296 (RAV x (4.35% - 3.93%) as allowed revenue, the same ratio and base; 2026 prices)",
+          "value_at_ed2_return": 123.4479104
+        }
+      ],
+      "source_period": "Ofgem cap period 17a, October-December 2026 (base; charging year 2026/27), rolled forward to calendar 2030 on RIIO-ED2 and CP30's ED3 investment",
+      "label": "DUoS (Ofgem cap 17a base on the RIIO-ED2 path, ED3 growth from CP30's distribution capex, unit rate spread over CP30's demand growth, calendar 2030)",
+      "source_file": "data/market/ofgem_price_cap/2026_Q4/cap_17a_electricity_single_rate_components.csv",
+      "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-3-network-cost-allowance-methodology-electricity-v1.25.xlsx",
+      "access_date": "2026-09-29",
+      "method": "Base: the GB average of the 14 regions in Ofgem cap 17a (Oct-Dec 2026, DNO charging year 2026/27): nil-consumption charge GBP42.387 a year and 2,500 kWh charge GBP110.147, so a unit charge of GBP27.104/MWh and GBP126.41 at 3,100 kWh (Oct-Dec 2026 money), a clean base (zero Supplier of Last Resort and bad-debt adders). The charge moves with the DNOs' allowed revenue against 2026/27 (CPIH-real, no WACC in the ratio). To 2027/28: the RIIO-ED2 Final Determinations (Finance Annex Appendix 8, 14 DNOs): x 0.984871. ED3 (user decision, 6 Oct 2026: the network lines follow CP30): the RAV adds CP30's distribution capex, CP.13 GBP 3.386 bn a year (2025-2030 average, real 2024 prices; GBP 2.781 bn in 2020/21 prices) and depreciates at ED2's final-year rate; allowed revenue changes by the ED2 return and tax allowance on the average RAV, the depreciation, and fast money with CP30's peak demand (ED1), pass-through flat (scripts/consumer_bill/duos_cp30_growth.py). Revenue over 2026/27: FY2029/30 x1.0243, FY2030/31 x1.0412 (about 1.9% a year real in ED3, against 3.1% under the ED2 RAV growth used before). Charging base (user decision, 6 Oct 2026): the unit part of the charge (27.104/MWh x 3.1 MWh, 66.5% of the base) is spread over CP30's demand growth (ED1 row 17, GB Total System Demand minus electrolysis, by DNO charging year), so the charge per unit of revenue is x0.9552 in FY2029/30 and x0.9380 in FY2030/31; the fixed per-site part moves with revenue alone. Calendar 2030 takes 3/12 FY2029/30 and 9/12 FY2030/31. ED3 years at the ED3 allowed return: RAV x (4.35% - 3.93%) on this path's RAV, added to allowed revenue and charged through the same ratio and base, 3.14 a household in calendar 2030 (2025 prices; derivation.ed3_allowed_return_uplift). The values stay in Oct-Dec 2026 money until the rebasing to 2025 prices.",
+      "derivation": {
+        "base_gbp_per_year_2026": 126.4094,
+        "fixed_gbp_per_year_2026": 42.387,
+        "unit_gbp_per_mwh_2026": 27.104,
+        "at_2500_kwh_gbp_2026": 110.147,
+        "ed2_growth_source_file": "data/market/network_cost_sources/price_controls/ofgem_riio_ed2_final_determinations_finance_annex_2022_11.pdf",
+        "ed2_growth_source_table": "RIIO-ED2 Final Determinations Finance Annex (Nov 2022), Appendix 8 (REVISED financial values), 14 DNOs summed; extracted by scripts/consumer_bill/extract_network_price_control_building_blocks.py (extract_ed2_appendix8)",
+        "ed2_calculated_revenue_gbp_m_2020_21": {
+          "2026/27": 5578.8,
+          "2027/28": 5494.4
+        },
+        "ed2_revenue_ratio_2027_28_over_2026_27": 0.9848712984871297,
+        "ed2_closing_rav_gbp_m_2020_21": {
+          "closing_2026_27": 33430.8,
+          "closing_2027_28": 34464.9
+        },
+        "calendar_2030_weights": {
+          "FY2029/30": 0.25,
+          "FY2030/31": 0.75
+        },
+        "central_gbp_2025_prices": 123.3423,
+        "sensitivity_gbp_per_household_year": {
+          "low": {
+            "value": 117.1779,
+            "price_year": 2025,
+            "rule": "No real growth in ED3: RIIO-ED2 to 2027/28, then allowed revenue and RAV held at 2027/28, the unit rate spread over CP30's demand growth as in the central case, + the ED3 allowed-return uplift on the 31 March 2028 RAV 3.0079",
+            "value_at_ed2_return": 114.1701
+          },
+          "high": {
+            "value": 124.8081,
+            "price_year": 2025,
+            "rule": "ED2's 2027/28 RAV additions (GBP 3,033.1 m, 2020/21 prices) continued in ED3, indexed to CP30's peak demand (CP30's own extrapolation rule; the reading in which CP.13 is only the capex part of totex while Ofgem capitalises at its ED2 rate), with the same building blocks and charging base + the ED3 uplift 3.2075",
+            "value_at_ed2_return": 121.6006
+          },
+          "charging_base_held": {
+            "value": 130.9063,
+            "price_year": 2025,
+            "rule": "The central revenue path with the charging base held at 2026/27 (the whole charge moves with allowed revenue, as before 6 Oct 2026): CP30's demand growth is taken to add no DUoS-paying volume",
+            "value_at_ed2_return": 127.5705
+          }
+        },
+        "sensitivity_note": "Reported by the projector as changes to the ex-VAT bill (diagnostics levy_and_cm_sensitivities: duos_low, duos_high, duos_charging_base_held); not in the headline.",
+        "previous_value": {
+          "value": 136.0134,
+          "price_year": 2025,
+          "low": 125.3675,
+          "high": 144.7278,
+          "basis": "ED2 path then the ED2 closing-RAV growth g = 1.031015 a year in ED3 (29 Sep 2026), ED2 inputs summed over Appendix 5 and Appendix 8, uplift on the network account's RAV; before that 123.03 (cap 17a held flat, 28 Sep 2026)",
+          "walk_to_new_central_gbp_2025": {
+            "previous": 136.0134,
+            "ed2_inputs_from_appendix_8_alone": -0.24402529274135532,
+            "ed3_growth_from_cp30_capex": -4.193679204581201,
+            "uplift_on_the_cp30_path_rav": -2.045787806340684,
+            "uplift_charged_through_the_revenue_ratio": 1.3764211523760252,
+            "charging_base_spread_over_cp30_demand": -7.564030473751046,
+            "new": 123.34229837496173
+          }
+        },
+        "note_on_2024_25": "The 2024/25 cap DUoS (GBP144.59 nominal) is not used. It is above both 2023/24 and 2026/27, and the DNO charging statements show why (checked 29 Sep 2026). It carries LRSP recovery of only GBP0.78 (2025 prices), plus eligible bad debt of 1.90 and a correction factor of about 19.7 for the 2023/24 inflation under-recovery. See ed2_path_candidate_not_applied.lrsp_check and correction_factor_finding.",
+        "central_at_ed2_return_gbp_2025_prices": 120.1993,
+        "ed3_allowed_return_uplift": {
+          "status": "applied (user decision, 29 Sep 2026): the ED3 years carry the ED3 allowed return",
+          "ed2_vanilla_wacc_cpih_real": 0.0393,
+          "ed3_wacc_cpih_real": 0.0435,
+          "ed3_wacc_source": "Ofgem ED3 Sector Specific Methodology Decision Finance Annex (21 May 2026), Table 18 p.67, SSMD baseline WACC allowance (real) 4.35%, an early view to be updated at Draft and Final Determinations",
+          "ed2_wacc_source": "Ofgem, RIIO-ED2 Final Determinations Finance Annex and Overview, 30 November 2022, Table 5 and Appendix 5",
+          "rule": "uplift revenue_t = average RAV_t x (ED3 WACC - ED2 WACC) (GBP m, 2020/21 prices), added to allowed revenue: uplift_t = 126.4094 x uplift revenue_t / revenue_2026/27 x charging base_t (2026 money), with RAV_t the average RAV of the fiscal year on the CP30 path (duos_cp30_growth.py). Until 6 Oct 2026 it was RAV x the WACC gap over 2030 final demand x 3.1 MWh, the average per-MWh share rather than the household's share of DUoS",
+          "by_period": {
+            "FY2029/30": {
+              "rav_gbp_2024": 43253064376.29262,
+              "uplift_revenue_gbp_m_2020_21": 149.19866291966747,
+              "gbp_per_household_2025_prices": 3.1426995453140196,
+              "gbp_per_household_2026_prices": 3.22912679237766
+            },
+            "FY2030/31": {
+              "rav_gbp_2024": 44052749041.86347,
+              "uplift_revenue_gbp_m_2020_21": 151.95712372657223,
+              "gbp_per_household_2025_prices": 3.143159505695585,
+              "gbp_per_household_2026_prices": 3.229599402110194
+            }
+          },
+          "calendar_2030_gbp_per_household_2025_prices": 3.143044515600194,
+          "limitation": "ED3 is an early view (SSMD, May 2026), to be updated at Draft and Final Determinations; the 2026/27 base carries ED2's trailing cost of debt of that year rather than the period average",
+          "network_account_rav_comparison": {
+            "finding": "The network account's distribution RAV came from resources/analysis/network_price_control_building_blocks.json, which summed the ED2 Finance Annex's Appendix 5 and its revision, Appendix 8: every DNO twice, so its levels were about double the 14 DNOs'. Fixed 6 Oct 2026 (user decision): the extractor reads Appendix 8 alone (extract_ed2_appendix8); the account follows at the next run of extract_network_price_control_building_blocks.",
+            "network_account_distribution_rav_2030_gbp_2024_pre_fix": 90366825240.49472
+          }
+        },
+        "ed3_cp30_growth": {
+          "status": "applied (user decision, 6 Oct 2026): ED3 allowed revenue on CP30's distribution investment",
+          "cp30_input": {
+            "sheet": "CP.13",
+            "cell": "L9",
+            "pathway": "Further Flex and Renewables",
+            "label": "Distribution network CAPEX, average annual investment 2025-2030",
+            "value_gbp_bn_per_year": 3.386267287018254,
+            "price_basis": "real 2024 (CPI rebased)",
+            "price_basis_source": "CP30 Annex 4 s.2: 'All costs have been rebased to 2024 prices'; s.2.1.4: distribution spend from the RIIO-ED2 Final Determinations, 2028-2030 extrapolated by NESO's capacity deployment and peak demand (Baringa)",
+            "source_url": "https://www.neso.energy/document/346806/download",
+            "file": "data/CP30/Clean Power 2030 Data Workbook_V003.xlsx",
+            "converted_gbp_m_2020_21": 2781.121703371275,
+            "cpih_2020_21_to_2024": 1.21759047182776
+          },
+          "peak_demand_gw": {
+            "source": "CP30 workbook ED1 row 21, GBFES Peak Customer Demand (Further Flex and Renewables)",
+            "2026": 58.198,
+            "2027": 59.09,
+            "2028": 59.968,
+            "2029": 61.194,
+            "2030": 62.357
+          },
+          "ed2_revised_2027_28_gbp_m_2020_21": {
+            "calculated_revenue": {
+              "2026/27": 5578.8,
+              "2027/28": 5494.4
+            },
+            "closing_rav": {
+              "2026/27": 33430.8,
+              "2027/28": 34464.9
+            },
+            "opening_rav_2027_28": 33430.8,
+            "net_additions_2027_28": 3033.1,
+            "depreciation_2027_28": 1999.2,
+            "return_2027_28": 1287.0,
+            "tax_allowance_2027_28": 294.7,
+            "fast_pot_2027_28": 1168.3
+          },
+          "rule": "RAV_t = RAV_(t-1) + CP13 capex - d x RAV_(t-1), d = ED2 2027/28 depreciation / opening RAV; revenue_t = revenue_2027/28 + (return + tax allowance) x (avg RAV_t / avg RAV_2027/28 - 1) + (depreciation_t - depreciation_2027/28) + fast money x (peak_t / peak_2027 - 1); FY t/t+1 takes calendar t's peak; DUoS_t = 126.4094 x revenue_t / revenue_2026/27 x charging base_t (derivation.charging_base)",
+          "by_fiscal_year": {
+            "FY2028/29": {
+              "rav_additions_gbp_m_2020_21": 2781.121703371275,
+              "depreciation_gbp_m_2020_21": 2061.0403603862305,
+              "opening_rav_gbp_m_2020_21": 34464.9,
+              "closing_rav_gbp_m_2020_21": 35184.98134298505,
+              "average_rav_gbp_2024": 42402515943.57634,
+              "allowed_revenue_gbp_m_2020_21": 5614.465222438397,
+              "revenue_over_2026_27": 1.0063929917613819,
+              "uplift_revenue_gbp_m_2020_21": 146.26475082026846,
+              "charging_demand_gwh": 301109.7661928217,
+              "charging_base_factor": 0.9705032608121628,
+              "value_at_ed2_return_gbp_2026": 123.46503182478777,
+              "uplift_gbp_2025": 3.1303508566405647,
+              "uplift_gbp_2026": 3.2164385029401155,
+              "value_gbp_2026": 126.6814703277279
+            },
+            "FY2029/30": {
+              "rav_additions_gbp_m_2020_21": 2781.121703371275,
+              "depreciation_gbp_m_2020_21": 2104.1020466424884,
+              "opening_rav_gbp_m_2020_21": 35184.98134298505,
+              "closing_rav_gbp_m_2020_21": 35862.00099971383,
+              "average_rav_gbp_2024": 43253064376.29262,
+              "allowed_revenue_gbp_m_2020_21": 5714.31371190783,
+              "revenue_over_2026_27": 1.024290835288562,
+              "uplift_revenue_gbp_m_2020_21": 149.19866291966747,
+              "charging_demand_gwh": 308557.27436579287,
+              "charging_base_factor": 0.9551720135230023,
+              "value_at_ed2_return_gbp_2026": 123.67566267740476,
+              "uplift_gbp_2025": 3.1426995453140196,
+              "uplift_gbp_2026": 3.22912679237766,
+              "value_gbp_2026": 126.90478946978241
+            },
+            "FY2030/31": {
+              "rav_additions_gbp_m_2020_21": 2781.121703371275,
+              "depreciation_gbp_m_2020_21": 2144.5885949073277,
+              "opening_rav_gbp_m_2020_21": 35862.00099971383,
+              "closing_rav_gbp_m_2020_21": 36498.53410817778,
+              "average_rav_gbp_2024": 44052749041.86347,
+              "allowed_revenue_gbp_m_2020_21": 5808.395114831301,
+              "revenue_over_2026_27": 1.0411549284490036,
+              "uplift_revenue_gbp_m_2020_21": 151.95712372657223,
+              "charging_demand_gwh": 317364.5748767554,
+              "charging_base_factor": 0.9379701416323002,
+              "value_at_ed2_return_gbp_2026": 123.44791037130334,
+              "uplift_gbp_2025": 3.143159505695585,
+              "uplift_gbp_2026": 3.229599402110194,
+              "value_gbp_2026": 126.67750977341353
+            }
+          },
+          "comparison_gbp_bn_per_year_2024_prices": {
+            "cp30_distribution_capex_2025_2030": 3.386267287018254,
+            "ed2_ex_ante_totex": 5.411946129180027,
+            "ed2_rav_additions_2027_28": 3.693073660100779,
+            "ed2_load_and_non_load_capex": 2.2700756756756757,
+            "cp30_over_ed2_rav_additions": 0.9169238414069021,
+            "cp30_over_ed2_totex": 0.6257023270723712
+          },
+          "comparison_note": "CP30's distribution capex (GBP 3.39 bn a year) is 92% of ED2's own RAV additions in 2027/28 (GBP 3.69 bn) and 63% of ED2's ex ante totex (GBP 5.41 bn a year), above its load and non-load related capex alone (GBP 2.27 bn). CP30 built it from ED2 and indexed 2028-2030 to peak demand (Annex 4 s.2.1.4), so CP30 implies no ED3 step-up: the RAV grows about 2% a year, not the 3.1% of ED2's last year."
+        },
+        "charging_base": {
+          "status": "applied (user decision, 6 Oct 2026): DUoS's unit rate is spread over CP30's demand growth",
+          "unit_gbp_per_mwh_2026": 27.104,
+          "unit_share_of_household_charge": 0.6646847465457474,
+          "demand_source": "CP30 data workbook V003, ED1 row 17, 'GB Total System Demand - Minus electrolysis' (GWh), Further Flex and Renewables; a DNO charging year is 3/4 of its first calendar year and 1/4 of the next; 2031 extrapolated at 2029-2030's growth",
+          "demand_gwh_by_calendar_year": {
+            "2026": 286411.857089409,
+            "2027": 291754.0572916392,
+            "2028": 299361.2051777449,
+            "2029": 306355.4492380522,
+            "2030": 315162.7497490148
+          },
+          "charging_year_demand_gwh": {
+            "2026/27": 287747.40713996656,
+            "FY2028/29": 301109.7661928217,
+            "FY2029/30": 308557.27436579287,
+            "FY2030/31": 317364.5748767554
+          },
+          "factor_by_fiscal_year": {
+            "FY2028/29": 0.9705032608121628,
+            "FY2029/30": 0.9551720135230023,
+            "FY2030/31": 0.9379701416323002
+          },
+          "rule": "charge per unit of revenue = (1 - u) + u x D_2026/27 / D_t, u the unit share; fixed per-site part held per site",
+          "limitation": "Row 17 includes transmission-connected demand and network losses, which pay no DUoS; only its growth is used. Site numbers are held, so the per-site part is not spread. Holding the whole base is the sensitivity charging_base_held."
+        }
+      },
+      "limitations": [
+        "RIIO-ED3 (from April 2028) has no determinations; the ED3 path is CP30's distribution capex (CP.13, a 2025-2030 average built from ED2 and extrapolated with peak demand), not a forecast of Ofgem's ED3 allowances, and the ED3 return is Ofgem's SSMD early view (4.35%).",
+        "CP.13 is read as the ED3 RAV additions; CP30 does not publish its annual profile or its capex/totex split, so the capitalisation reading is the high case. Depreciation is held at ED2's final-year rate.",
+        "The charge moves with allowed revenue; the charging base (customers and distributed demand, which CP30 raises with electrification) is held, as before.",
+        "The cap's DUoS moves with each year's DNO tariffs, including K-factor and correction terms; the 2026/27 base is assumed to be free of them, as its SoLR and bad-debt adders are.",
+        "Price-cap DUoS is the GB mean of 14 regions, not weighted by customers."
+      ],
+      "ed2_path_candidate_not_applied": {
+        "status": "Not applied (user decision, 29 Sep 2026). The 2024/25 base carries a one-off correction factor of about GBP19.7 for the DNOs' 2023/24 under-recovery, plus LRSP recovery of GBP0.78 and eligible bad debt of GBP1.90, none of which is in the ED2 FD calculated revenue it is rolled forward on. So every path built on it, including the LRSP-stripped values, is about GBP22 too high. The applied line is the same method on the clean 2026/27 base (clean_base_path, now the line value).",
+        "base": "Ofgem cap Annex 3 (2024 Q4), sheet 2b DUoS, GB mean of 14 regions, 2024/25 single-rate 3,100 kWh: GBP144.59 nominal = GBP148.71 in 2025 prices (CPIH 138.0 / FY2024/25 134.175)",
+        "ed2_path": "RIIO-ED2 FD calculated revenue, 14 DNOs (resources/analysis/network_price_control_building_blocks.csv): 11,459.5 (2024/25) to 10,999.9 (2027/28), 2020/21 prices, x0.9599",
+        "method": "low = base x ED2 FD calculated revenue 2027/28 / 2024/25 (0.959894; both in 2020/21 prices, so a CPIH-real ratio). central = low x (0.25 g^2 + 0.75 g^3), where g = 1.031015 is the ED2 closing-RAV growth in 2027/28 (69,027.0 / 66,950.5). The weights give calendar 2030 as 3/12 FY2029/30 + 9/12 FY2030/31. high = base x (0.25 x 1.05^2 + 0.75 x 1.05^3) = base x 1.143844: 5% real a year in ED3, without the ED2 decline, as first recorded. No WACC enters: every ratio is a real revenue or RAV ratio.",
+        "period_note": "calendar 2030 = 3/12 FY2029/30 + 9/12 FY2030/31, both reached from FY2027/28 at g a year",
+        "gbp_per_3100kwh_2025_prices": {
+          "low_ed2_then_flat": 142.7,
+          "central_ed3_at_ed2_rav_growth_3_1pct": 155.2,
+          "high_plus_5pct_real_a_year_in_ed3": 170.1,
+          "note": "as first recorded (29 Sep recomputation: 142.74 / 155.27 / 170.10; the central was truncated, not rounded)"
+        },
+        "lrsp_check": {
+          "result": "not clean: LRSP recovery is inside the 2024/25 base, GBP0.78 a household (2025 prices, ex VAT)",
+          "source_file": "data/market/network_cost_sources/duos_lrsp/dno_supplier_failure_fixed_adders.csv",
+          "source_title": "DNO LC14 Use of System Charging Statements, Annex 7 'Supplier of Last Resort and Eligible Bad Debt Pass-Through Costs' (SSEN SEPD/SHEPD, NGED x4, Northern Powergrid x2, ENWL), charging years 2022/23 to 2026/27",
+          "source_url": "https://www.ssen.co.uk/globalassets/library/charging-statements-sepd/202425/sepd-duos-charges-2024-25_v1.3.pdf",
+          "access_date": "2026-09-29",
+          "source_period": "DNO charging year 2024/25 (1 April 2024 to 31 March 2025)",
+          "mechanism": "SLC 38B: a DNO's charges recover the Last Resort Supply Payments it made in regulatory year t-2. Where a claim breaches the materiality threshold, it adds an Excess Supplier of Last Resort fixed adder to charges already published. Both are recovered through the domestic fixed (residual) charge only. Annex 7 lists the adders, which are 'already included in the final Annex 1 charges'. Ofgem's Annex 3 tab 3f takes those Annex 1 fixed charges: for each of the nine regions retrieved, the 2024/25 domestic fixed charge equals the tab 3f value to the penny. So the cap DUoS includes the adders.",
+          "derivation": {
+            "regions_retrieved_2024_25": [
+              "SSES",
+              "SSEH",
+              "EMID",
+              "WMID",
+              "SWALES",
+              "SWEST",
+              "NPgN",
+              "NPgY",
+              "ENWL"
+            ],
+            "regions_not_retrieved_2024_25": [
+              "EPN",
+              "LPN",
+              "SPN",
+              "SPD",
+              "SPMW"
+            ],
+            "missing_regions_assumption": "The GB mean is taken as the mean of the nine regions retrieved. Their SoLR adders range from 0.19 to 0.24 p/day and every Excess SoLR adder is 0.00. The UKPN and SPEN statements returned HTTP 404/403.",
+            "solr_plus_excess_adder_gb_mean_p_per_mpan_day": 0.207778,
+            "lrsp_gbp_per_year_nominal_2024_25": 0.758389,
+            "lrsp_gbp_2025_prices": 0.780009,
+            "rebasing": {
+              "from_price_year": 2024,
+              "to_price_year": 2025,
+              "index": "ONS CPIH annual averages (2015=100): financial year 2024/25 approximated as 0.75 x 2024 (132.9) + 0.25 x 2025 (138.0), as for the base",
+              "from_index": 134.175,
+              "to_index": 138.0,
+              "factor": 1.028507546115
+            },
+            "eligible_bad_debt_adder_gb_mean_p_per_mpan_day": 0.505556,
+            "eligible_bad_debt_gbp_2025_prices": 1.897882,
+            "eligible_bad_debt_note": "Eligible Bad Debt is a separate pass-through: DUoS left unpaid by failed suppliers (CRC2B para 39, SLC 38C). It is not LRSP and is not stripped in the headline correction; the values with it stripped as well are given below.",
+            "sepd_solr_plus_excess_gbp_per_year_nominal": {
+              "2022/23": 34.2,
+              "2023/24": 9.56,
+              "2024/25": 0.84,
+              "2025/26": 0.0,
+              "2026/27": 0.0
+            },
+            "held_base_is_clean": "All six 2026/27 statements retrieved (SEPD, SHEPD and the four NGED areas) show SoLR and bad-debt adders of 0.00, so the held GBP123.03 carries no LRSP. The 2025/26 statements show 0.00 SoLR as well."
+          }
+        },
+        "lrsp_stripped_gbp_per_3100kwh_2025_prices": {
+          "status": "not applied: the 2024/25 base still carries the ~GBP19.7 correction factor",
+          "base": 147.93,
+          "low_ed2_then_flat": 142.0,
+          "central_ed3_at_ed2_rav_growth_3_1pct": 154.45,
+          "high_plus_5pct_real_a_year_in_ed3": 169.21
+        },
+        "lrsp_and_bad_debt_stripped_gbp_per_3100kwh_2025_prices": {
+          "status": "not applied: the 2024/25 base still carries the ~GBP19.7 correction factor",
+          "base": 146.03,
+          "low_ed2_then_flat": 140.17,
+          "central_ed3_at_ed2_rav_growth_3_1pct": 152.47,
+          "high_plus_5pct_real_a_year_in_ed3": 167.04
+        },
+        "correction_factor_finding": {
+          "finding": "The 2024/25 spike is not LRSP. DNOs set 2023/24 tariffs 15 months ahead at 4.8% forecast inflation and under-recovered, so 2024/25 tariffs carry a correction factor. Neither this factor nor LRSP is in the ED2 FD calculated revenue. The 2024/25 cap DUoS per GBPbn of FD calculated revenue is 12.98, against 11.01 (2025/26) and 11.03 (2026/27), whose SoLR adders are zero. At the clean ratio, 2024/25 would be GBP126.33, so the base is GBP22.38 high: LRSP 0.78, eligible bad debt 1.90 and about 19.71 of correction factor.",
+          "derivation": {
+            "cap_duos_gbp_2025_prices": {
+              "2023/24": 125.99,
+              "2024/25": 148.71,
+              "2025/26": 124.25,
+              "2026/27": 123.03
+            },
+            "ed2_fd_calculated_revenue_gbp_m_2020_21": {
+              "2023/24": 11448.0,
+              "2024/25": 11459.5,
+              "2025/26": 11280.5,
+              "2026/27": 11150.7
+            },
+            "gbp_per_household_per_gbp_bn_revenue": {
+              "2023/24": 11.005,
+              "2024/25": 12.977,
+              "2025/26": 11.014,
+              "2026/27": 11.033
+            },
+            "note_2023_24": "2023/24 carries the Excess SoLR adder (about GBP9.6 nominal at SEPD) and the under-recovery, which offset each other"
+          },
+          "source_url": "https://www.ofgem.gov.uk/sites/default/files/2025-09/Default%20Tariff%20Cap%20Letter%20-%201%20April%202024%20.pdf",
+          "source_note": "Ofgem's April 2024 cap letter: network costs fell by GBP13, 'driven primarily by a reduction in Supplier of Last Resort (SoLR) costs (-GBP17 per year)', offset by 'increases in network standing charges, particularly for electricity distribution costs'. The correction factor is described by EIC (https://eic.co.uk/prepare-for-increase-to-fixed-duos-charges-in-april-2024/) and Drax (https://energy.drax.com/insights/2025-duos-charges/)."
+        },
+        "clean_base_path_gbp_per_3100kwh_2025_prices": {
+          "status": "superseded 6 Oct 2026 (applied 29 Sep 2026 as the line value and its range): the ED3 years now grow on CP30's distribution capex (derivation.ed3_cp30_growth); kept as the record of the ED2-RAV-growth path",
+          "base": "the held value, Ofgem cap 17a (Oct-Dec 2026, charging year 2026/27, zero LRSP adders): GBP123.03 in 2025 prices",
+          "method": "as above with the ED2 ratio 2027/28 / 2026/27 = 10,999.9 / 11,150.7 = 0.986476; the same g and the same high rule",
+          "low_ed2_then_flat": 121.36,
+          "central_ed3_at_ed2_rav_growth_3_1pct": 132.01,
+          "high_plus_5pct_real_a_year_in_ed3": 140.72,
+          "cross_check_2025_26_base": "the 2025/26 cap (GBP124.25 in 2025 prices, ratio 0.975125) gives 121.16 / 131.78 / 142.12",
+          "at_ed3_return": {
+            "low": 125.3675,
+            "central": 136.0134,
+            "high": 144.7278
+          }
+        },
+        "previous_held_value_gbp_2025_prices": 123.03
+      },
+      "source_table": "Ofgem Annex 3 network cost allowance methodology (electricity) v1.25, tab 2b DUoS, October 2026 - December 2026",
+      "source_metadata": "data/market/ofgem_price_cap/2026_Q4/metadata.json"
+    },
+    "capacity_market": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2025,
+      "stack_group": "system_balancing",
+      "label": "Capacity Market (contract book and modelled auctions, calendar 2030)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 45.0,
+      "source_file": "data/market/capacity_market/cm_register_cmu_20260923.csv",
+      "source_title": "NESO Capacity Market Register (CMU file, 23 September 2026), NESO auction static data, DESNZ auction parameters letter (July 2026), ONS CPI D7BT; item MR4",
+      "source_url": "https://www.neso.energy/data-portal/capacity-market-register",
+      "access_date": "2026-09-23",
+      "derivation": {
+        "agreement_cost_gbp": 2579981237.3,
+        "recovery_denominator": "gsp_charging_volume_mwh",
+        "builder": "scripts/market/build_capacity_market.py",
+        "builder_output": "resources/market/capacity_market/cm_calendar_2030_summary.json",
+        "delivery_year_2029_30_gbp": {
+          "contract_book_gbp": 1893536847.6,
+          "t1_gbp": 27777374.6,
+          "total_gbp": 1921314222.2
+        },
+        "delivery_year_2030_31_gbp": {
+          "contract_book_gbp": 858740841.4,
+          "t4_modelled_gbp": 2322437411.0,
+          "t1_gbp": 57470000.0,
+          "total_gbp": 3238648252.4
+        },
+        "calendar_2030_weights": {
+          "2029/2030": 0.5,
+          "2030/2031": 0.5
+        },
+        "t4_2030_31_central_price_gbp_per_kw_year": 57.47,
+        "t4_2030_31_central_awarded_mw": 40411.3,
+        "t4_2030_31_supply_basis": "User decision (6 Oct 2026): the modelled 2030/31 T-4 clears against the CP30 2030 fleet the model builds (cp30_2030_cp30_network register asset inputs, the CP30 cables, CP30 ES1 build years): units without a live CfD, RO, DPA or RAB, net of capacity already holding 2030/31 agreements, at NESO's 2030/31 T-4 de-rating factors, plus the register's DSR. Central supply 42.08 GW de-rated (existing 15.60, refurbishing 11.78, interconnectors 7.67, new LDES on cap and floor as a price-taker 4.01, DSR 2.99, new build 0.01). Re-pinned 19 Oct 2026 on the batch-2 rebuilt fleet: 0.83 GW de-rated less eligible supply (existing -0.39, refurbishing -0.36, new LDES -0.10) moved the central price from 49.06 to 57.41 GBP/kW and calendar 2030 from GBP 2,417.7 m to GBP 2,578.8 m. Interconnectors since 15 Oct 2026: CP30's cable set (data/interconnectors/cp30_interconnector_composition.csv) at CP30's nominal ratings with no pro-rata uplift, MaresConnect (750 MW, new build, Greenlink's Republic of Ireland factor 0.61) added and the Isle of Man cable out; that moved interconnectors from 7.63 to 7.67 GW de-rated and the central price from 49.54 to 49.06 GBP/kW. It replaces the projection from the 2029/30 entrants (central 56.14 GBP/kW, 2.55 bn).",
+        "t4_2030_31_price_by_case_gbp_per_kw_year": {
+          "central": 57.47,
+          "storage_efc_low": 71.82,
+          "ldes_excluded": 75.0,
+          "dsr_low": 65.47,
+          "dsr_high": 50.26
+        },
+        "calendar_2030_cost_by_t4_case_gbp": {
+          "central": 2579981237.3,
+          "storage_efc_low": 2847388198.8,
+          "ldes_excluded": 2869552531.8,
+          "dsr_low": 2730509414.3,
+          "dsr_high": 2441142554.8
+        },
+        "note": "2025 prices, spread over the GSP charging volume read from 2030_recovery_demand_assumptions.json at projection time (items F4, F18). The supplier charge is levied on 16:00-19:00 weekday demand in November to February, so calendar 2030 pays half of each delivery year and a household pays more than a pro-rata energy share: household_allocation_factor (MR4.4). That factor was measured against ESPENI transmission-level demand and so already carries losses; the line therefore divides by the GSP charging volume with no further loss factor.",
+        "household_allocation_factor": 1.348308,
+        "household_allocation_basis": {
+          "method": "Ofgem's calendar-2024 CM allowance per 3,100 kWh benchmark household over a flat energy share of the same year's CM cost (register contract book for 2023/24 and 2024/25 in 2024 money, over ESPENI GB demand, the bill's final-demand basis). The supplier charge falls on 16:00-19:00 weekday demand in November to February, where household demand is concentrated.",
+          "year": 2024,
+          "ofgem_allowance_gbp_per_3100kwh_nominal": 20.77,
+          "flat_share_gbp_per_3100kwh_nominal": 15.41,
+          "cm_cost_gbp_nominal": 1343743973.7,
+          "espeni_demand_mwh": 270353091.0,
+          "cross_check_2020": "1.42 on the same method, raised by the 2018-19 standstill back-payments made in 2020",
+          "item": "MR4.4 (23 Sep 2026); the 2024 factor is held for 2030, although heat pumps and EVs could raise the household peak share"
+        },
+        "sensitivity_cost_gbp": {
+          "t4_2030_31_at_2029_30_clearing_27_10": 1966335646.8,
+          "t4_case_storage_efc_low": 2847388198.8,
+          "t4_case_ldes_excluded": 2869552531.8,
+          "t4_case_dsr_low": 2730509414.3,
+          "t4_case_dsr_high": 2441142554.8
+        },
+        "sensitivity_note": "t4_2030_31_at_2029_30_clearing_27_10 prices the modelled T-4 2030/31 volume at the 2029/30 T-4 clearing price (GBP27.10/kW, March 2026) instead of the modelled GBP57.41; calendar 2030 takes half of that delivery year. The t4_case_ sensitivities re-clear the 2030/31 T-4 on the CP30 fleet with one supply input moved (user decision, 6 Oct 2026): storage_efc_low scales every storage de-rating factor by 0.6898 (NESO's 2027/28 T-4 2 h factor, 0.1539, over its 2030/31 one, 0.2231); ldes_excluded keeps the 4.1 GW de-rated of new LDES on Ofgem's cap and floor out of the auction, which then clears short at the 75 GBP/kW cap; dsr_low is the 2028/29 T-4's DSR entrants (1.89 GW de-rated) and dsr_high FES 2025 Holistic Transition I&C plus residential DSR at peak in 2030 (3.82 GW de-rated) against the central 2.99 GW.",
+        "household_losses": "in_household_allocation_factor"
+      },
+      "method": "Contract book: every live agreement in the NESO Capacity Market Register for each delivery year, at its auction's clearing price carried from the auction's base financial year to 2025 with ONS CPI (D7BT). Delivery year 2029/30 adds the 1.0 GW T-1 at the T-4 price; 2030/31 adds the modelled T-4 and a 1.0 GW T-1 at that price. The modelled T-4 clears the fitted bid distributions on the DESNZ 2030/31 demand curve against the CP30 2030 fleet the model builds (user decision, 6 Oct 2026): units without a live low-carbon contract, net of capacity already holding 2030/31 agreements, at NESO's 2030/31 T-4 de-rating factors, plus DSR from the register. Calendar 2030 takes half of each delivery year, because the supplier charge is levied on November-to-February weekday peak demand.",
+      "previous_basis": {
+        "label": "Capacity Market (T-4 auction, 2029/30 delivery)",
+        "clearing_price_gbp_per_kw_year": 27.1,
+        "capacity_agreements_mw": 40108.608,
+        "agreement_cost_gbp": 1086943276.8,
+        "rebasing_factor_used": 0.910225889863,
+        "superseded": "23 Sep 2026 (item MR4): it counted only the 2029/30 T-4, left out 16.3 GW of earlier multi-year agreements for 2029/30, the T-1 and the 2030/31 delivery year, and deflated 27.10 as if it were 2029 money when CM prices are in the auction's base-period money and CPI-indexed up to the delivery year.",
+        "source_file": "data/market/consumer_bill_sources/ws9/capacity_market_t4_2029_30_auction_monitor_report_2026_03.pdf",
+        "source_url": "https://assets.publishing.service.gov.uk/media/69b44fd2cf4af9cad362b41c/t-4-2025-delivery-year-2029-2030-auction-monitor-report.pdf"
+      },
+      "limitations": [
+        "The 2030/31 T-4 (March 2027) is modelled on the CP30 2030 fleet because the 2030/31 prequalification is not yet published; the calendar-2030 cost runs from 2.13 bn (FES DSR at peak) to 2.88 bn (new LDES on cap and floor kept out, when the CP30 fleet falls short of the DESNZ curve's minimum and the auction clears at the cap).",
+        "CP30's 2030 fleet is not the fleet DESNZ set the 2030/31 target for: CP30 retires about 9 GW of gas between 2026 and 2030, so without the 4.1 GW de-rated of new cap-and-floor LDES the eligible fleet (38.8 GW de-rated) cannot meet the 39.4 GW the curve buys at the cap.",
+        "The register dates few 2030 rows, so build years come from the CP30 ES1 capacity path; merchant wind and solar and biogas are kept out of the auction, and DSR, which the model does not carry, is taken from the register.",
+        "T-1 auctions are priced at the same delivery year's T-4 price; secondary trading is excluded.",
+        "The household peak factor is Ofgem's 2024 ratio held for 2030; electrified heat and EV charging could raise it."
+      ],
+      "period_basis": "calendar_year"
+    },
+    "sizewell_c_rab": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "policy",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 19.0,
+      "value": 14.3657,
+      "price_year": 2026,
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+        "from_index": 141.795132154,
+        "to_index": 138.0,
+        "factor": 0.973235102669969
+      },
+      "label": "Sizewell C RAB (Ofgem nuclear RAB allowance, Oct-Dec 2026)",
+      "source_file": "data/market/ofgem_price_cap/2026_Q4/Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "access_date": "2026-09-28",
+      "method": "4.6341 GBP/MWh supplied x 3.1 MWh = GBP14.37 (Oct-Dec 2026 money), held flat in real terms (the rate was 5.33 in Jan-Mar 2026 and has fallen each quarter since). The NAO (20 May 2026) expects the charge to rise to GBP17-19 a household by opening (2039) as the RAB grows, so 2030 may be higher: an upside risk, not applied.",
+      "previous_value": {
+        "value": 12.0,
+        "basis": "DESNZ FID statement, GBP1 a month"
+      },
+      "period_basis": "held_flat_real",
+      "source_period": "Ofgem cap period 17a, October-December 2026",
+      "source_table": "Ofgem Annex 4 policy cost allowance methodology v1.25, tab 1a, nRAB (GB average), October 2026 - December 2026",
+      "source_metadata": "data/market/ofgem_price_cap/2026_Q4/metadata.json"
+    },
+    "bics_levy": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "policy",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 5.0,
+      "value": 3.235217,
+      "price_year": 2026,
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+        "from_index": 141.795132154,
+        "to_index": 138.0,
+        "factor": 0.973235102669969
+      },
+      "label": "Network Charging Compensation levy (Ofgem, Oct-Dec 2026)",
+      "source_file": "data/market/ofgem_price_cap/2026_Q4/Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "access_date": "2026-09-28",
+      "method": "1.0436 GBP/MWh supplied x 3.1 MWh = GBP3.24 (Oct-Dec 2026 money), held flat in real terms. The Network Charging Compensation scheme (the British Industry Supercharger's network element) is on bills since April 2025; the British Industrial Competitiveness Scheme (BICS, from 2027) is a different measure, an exemption from RO, FiT and CM costs, handled by levy_exemptions, not this line.",
+      "previous_value": {
+        "value": 5.0,
+        "price_year": 2023,
+        "basis": "DESNZ 2023 range top, labelled BICS"
+      },
+      "period_basis": "held_flat_real",
+      "source_period": "Ofgem cap period 17a, October-December 2026",
+      "source_table": "Ofgem Annex 4 policy cost allowance methodology v1.25, tab 1a, NCC (GB average), October 2026 - December 2026",
+      "source_metadata": "data/market/ofgem_price_cap/2026_Q4/metadata.json"
+    },
+    "nuclear_contract_counterparty": {
+      "value": 0.734815,
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2028,
+      "stack_group": "policy",
+      "label": "LCCC and ESC operational cost levies (DESNZ)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 7.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/desnz_lccc_esc_operational_costs_consultation_2025_11.pdf",
+      "source_title": "DESNZ, Low Carbon Contracts Company and Electricity Settlements Company operational costs 2026/27, 2027/28 and 2028/29, consultation, November 2025, Tables 5 and 8 and ESC costs",
+      "source_url": "https://assets.publishing.service.gov.uk/media/69243d7f90a8c154e90261e2/lccc-and-esc-operational-costs-consultation-2026-27-2027-28-2029-30.pdf",
+      "access_date": "2026-09-11",
+      "derivation": {
+        "lccc_cfd_levy_gbp_per_mwh_2028_29": 0.1867,
+        "lccc_rab_levy_gbp_per_mwh_2028_29": 0.0072,
+        "esc_levy_gbp_per_mwh_2028_29": 0.043137,
+        "esc_costs_gbp_2028_29": 11474000.0,
+        "forecast_demand_twh": 265.99,
+        "total_gbp_per_mwh": 0.237037,
+        "desnz_household_statement": "around 50p a year (nominal) over 2026/27 to 2028/29 at average dual-fuel consumption"
+      },
+      "rebasing": {
+        "from_price_year": 2028,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 3.75 years to the FY 2028/29 midpoint; the consultation quotes nominal GBP",
+        "from_index": 148.637958,
+        "to_index": 138.0,
+        "factor": 0.92843040766
+      },
+      "method": "Sum of the 2028/29 operational cost levy rates for the CfD counterparty, the nuclear RAB revenue collection counterparty and the Capacity Market settlement body (GBP/MWh) x 3.1 MWh, held flat in real terms to 2030.",
+      "limitations": [
+        "The placeholder it replaces (GBP7) was an order of magnitude above the counterparty bodies' own operating costs; if it stood for a different instrument, that instrument has no line here.",
+        "2028/29 is the last consulted year; 2030 is held flat in real terms.",
+        "The levy rates are per MWh of supplier demand at the GSP, so the household's 3.1 MWh is uplifted by the loss factor (item D1)."
+      ],
+      "loss_uplift": true,
+      "period_basis": "held_flat_real",
+      "source_period": "DESNZ LCCC/ESC operational cost levies, FY2028/29"
+    },
+    "smart_meter_net_cost_change": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "supplier_operating",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 20.0,
+      "value": -1.54404,
+      "value_basis": "signed",
+      "price_year": 2026,
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.37 years to the Oct-Dec 2026 cap-period midpoint",
+        "from_index": 141.795132154,
+        "to_index": 138.0,
+        "factor": 0.973235102669969
+      },
+      "label": "Smart-meter net cost change (Ofgem, Oct-Dec 2026)",
+      "source_file": "data/market/ofgem_price_cap/2026_Q4/cap_17a_electricity_single_rate_components.csv",
+      "source_url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Default-tariff-cap-level-v1.31.xlsx",
+      "access_date": "2026-09-28",
+      "method": "GB average SMNCC at 3,100 kWh from nil (-0.991) and 2,500 kWh (-1.437) values = GBP-1.54. Negative since Ofgem's July 2025 restructuring moved smart-metering costs into cost to serve and industry charges; the previous 9.57 was the calendar-2025 average across the change.",
+      "previous_value": 9.574715,
+      "period_basis": "held_flat_real",
+      "source_period": "Ofgem cap period 17a, October-December 2026",
+      "source_table": "Ofgem default tariff cap level model v1.31, SMNCC rows, October 2026 - December 2026",
+      "source_metadata": "data/market/ofgem_price_cap/2026_Q4/metadata.json"
+    },
+    "aahedc": {
+      "value": 1.370231,
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2026,
+      "stack_group": "policy",
+      "label": "AAHEDC (NESO 2026/27 tariff)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 1.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/neso_aahedc_forecast_tariff_2026_27.pdf",
+      "source_title": "NESO, Assistance for Areas with High Electricity Distribution Costs forecast tariff 2026/27, 27 March 2026: Total Scheme tariff 0.044201 p/kWh (Shetland 0.012766, AAHEDC excluding Shetland 0.031435)",
+      "source_url": "https://www.neso.energy/document/379616/download",
+      "access_date": "2026-09-11",
+      "rebasing": {
+        "from_price_year": 2026,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 1.75 years to the FY 2026/27 midpoint",
+        "from_index": 142.866165,
+        "to_index": 138.0,
+        "factor": 0.96593899613
+      },
+      "method": "Total Scheme tariff (p/kWh) x 3,100 kWh, deflated to 2025 prices and held flat in real terms to 2030.",
+      "limitations": [
+        "A one-year tariff carried forward; the scheme amount is reset annually.",
+        "The tariff is levied on supplier volumes at the GSP, so the household's 3.1 MWh is uplifted by the loss factor (item D1)."
+      ],
+      "loss_uplift": true,
+      "period_basis": "held_flat_real",
+      "source_period": "NESO FY2026/27 AAHEDC tariff"
+    },
+    "feed_in_tariffs": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2024,
+      "stack_group": "policy",
+      "label": "Feed-in Tariffs levelisation (DESNZ CPI-indexation projection, calendar 2030 blend)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 26.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/desnz_fit_indexation_final_analytical_annex_2026_01.pdf",
+      "source_title": "DESNZ, Feed-In Tariffs Final Consultation Analytical Annex: Impact of indexation options (January 2026), Table 1, Option 1 CPI (the option the government response of 28 January 2026 adopted from April 2026)",
+      "source_url": "https://assets.publishing.service.gov.uk/media/697a43e8005d288bf850df19/fit-indexation-analytical-annex.pdf",
+      "access_date": "2026-09-22",
+      "derivation": {
+        "scheme_cost_gbp_2030_31_2024_25_prices": 1700000000.0,
+        "scheme_cost_gbp_2030_31_nominal": 2000000000.0,
+        "scheme_cost_gbp_2029_30_2024_25_prices": 1800000000.0,
+        "recovery_denominator": "ro_eligible_metered_supply_mwh",
+        "arithmetic": "1.7e9 / RO and FiT eligible supply (metered supply less the EII exemption, read from 2030_recovery_demand_assumptions.json at projection time, items F4 and F18) x 3.1 MWh, then x 1.028508 to 2025 prices.",
+        "cross_check_nominal_route_gbp_2025": 18.35,
+        "cross_check_ofgem_cap_oct_dec_2026": "Annex 4 v1.25 tab 3i: inflated levelisation fund GBP1,941.4m / (253.97 TWh supplied - 12.80 TWh EII exempt) = GBP8.05/MWh, GBP24.96 at 3.1 MWh (nominal 2026/27) on today's smaller supply base",
+        "scheme_outturn_sy16_2025_26": "Ofgem Annex 4 tab 3i quarterly invoices: levelisation fund GBP1,877.6m, total supply 253.97 TWh, EII exempt 12.80 TWh",
+        "note": "FiT is levelised across all licensed electricity supply (domestic and non-domestic) per MWh, less the EII exempt volume, so the model's CfD/RO eligible supply is the matching base",
+        "cost_gbp": 1700000000.0,
+        "period_blend": [
+          {
+            "period": "FY2029/30",
+            "cost_gbp": 1800000000.0
+          },
+          {
+            "period": "FY2030/31",
+            "cost_gbp": 1700000000.0
+          }
+        ]
+      },
+      "rebasing": {
+        "from_price_year": 2024,
+        "to_price_year": 2025,
+        "index": "ONS CPIH annual averages (2015=100): financial year 2024/25 approximated as 0.75 x 2024 (132.9) + 0.25 x 2025 (138.0); DESNZ states its real series in 2024/25 prices",
+        "from_index": 134.175,
+        "to_index": 138.0,
+        "factor": 1.028507546115
+      },
+      "method": "DESNZ projection of total FiT scheme cost under CPI indexation for financial year 2030/31 (GBP1.7bn in 2024/25 prices), spread over eligible metered supplier sales (FiT levelisation base: total supply less EII exemption), x 3.1 MWh, rebased to 2025 prices. The scheme closed to new entrants in March 2019; DESNZ holds cost flat in real terms to 2029 and lets it fall from 2030 as 20-25 year contracts expire.",
+      "limitations": [
+        "DESNZ Table 1 is rounded to GBP0.1bn (about GBP1 a household either way); the real and nominal routes differ by about 3%.",
+        "2030/31 is the first year of decline in the DESNZ profile; 2029/30 (GBP1.8bn) is about 6% higher.",
+        "The deflator DESNZ used for 2024/25 prices is not stated; CPIH is assumed.",
+        "The value moves inversely with the eligible-supply base; on today's metered base (241 TWh) the same cost would be about GBP22.5.",
+        "The British Industrial Competitiveness Scheme (BICS, from 2027) widens levy exemptions for eligible manufacturers; any reallocation of FiT cost onto other consumers is not modelled here. The bill line keyed bics_levy is a different scheme (the British Industry Supercharger's Network Charging Compensation), so it does not carry BICS reallocation."
+      ],
+      "period_basis": "calendar_blend"
+    },
+    "warm_home_discount": {
+      "value": 15.42,
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2030,
+      "stack_group": "policy",
+      "label": "Warm Home Discount, electricity half (OBR, calendar 2030 blend)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 20.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/obr_efo_march_2026_detailed_forecast_tables_receipts.xlsx",
+      "source_title": "OBR, Economic and fiscal outlook March 2026, detailed forecast tables (receipts), Table 3.20 Environmental levies, Warm home discount 2030-31; split and volumes from Ofgem Annex 4 policy cost allowance methodology v1.25 (tab 3f WHD) and Ofgem decision 'Amending the price cap methodology to reflect the change in WHD cost recovery' (25 February 2026)",
+      "source_url": "https://obr.uk/download/march-2026-economic-and-fiscal-outlook-detailed-forecast-tables-receipts/",
+      "access_date": "2026-09-22",
+      "derivation": {
+        "scheme_cost_gbp_2030_31_nominal": 970000000.0,
+        "electricity_share": 0.5,
+        "electricity_share_source": "Ofgem Annex 4 v1.25 tab 3f: 2026/27 projected cost GBP976m gives GBP5.006/MWh on 97.48 TWh electricity and GBP1.814/MWh on 269.1 TWh gas, i.e. an equal GBP488m per fuel; DESNZ decided not to shift a greater share onto gas",
+        "domestic_electricity_supply_mwh": 97480000.0,
+        "domestic_supply_source": "Ofgem Annex 4 v1.25 tab 3f, supply volumes of WHD-obligated suppliers (electricity) as at 31 December 2025",
+        "arithmetic": "0.970e9 x 0.5 / 97.48e6 MWh = GBP4.975/MWh; x 3.1 = 15.42 GBP nominal 2030-31; x 0.901258 = 13.90 GBP (2025 prices)",
+        "cross_check_ofgem_cap_2026_27": "GBP5.006/MWh x 3.1 = 15.52 GBP (nominal 2026/27) plus a GBP3.41 standing-charge residual of the 2025/26 expansion that ends 31 March 2027",
+        "cross_check_obr_2026_27": "OBR 2026-27 GBP1.175bn = Ofgem 2026/27 GBP976m plus the 2025/26 expansion recovered in 2026/27 (GBP3.41 x 51.3m accounts = about GBP175m)",
+        "recovery_basis": "domestic_electricity_supply_mwh (fixed at the Ofgem volume; the model has no domestic-demand denominator)",
+        "scheme_cost_gbp_2029_30_nominal": 969000000.0,
+        "scheme_cost_2029_30_source": "OBR EFO March 2026 detailed forecast tables (receipts), Table 3.20: Warm home discount 0.969bn 2029-30, 0.970bn 2030-31 (data/market/consumer_bill_sources/ws9/obr_efo_march_2026_detailed_forecast_tables_receipts.xlsx)"
+      },
+      "rebasing": {
+        "from_price_year": 2030,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 5.25 years to the 2030-31 financial-year midpoint; the GBP150 rebate is fixed in nominal terms",
+        "from_index": 153.119318734,
+        "to_index": 138.0,
+        "factor": 0.901257928401
+      },
+      "method": "OBR forecast of WHD levy receipts for 2030-31 (the last year of the 2026/27-2030/31 scheme period confirmed in the January 2026 government response), half assigned to electricity as in the Ofgem cap methodology, recovered per MWh of domestic electricity supplied from 1 April 2026, x 3.1 MWh, rebased to 2025 prices.",
+      "limitations": [
+        "Domestic volume is held at the 2025 Ofgem figure; if domestic electricity grew in line with the model's metered supply (295.8 / 253.97 = 1.16x) the line would fall to about GBP12.0 in 2025 prices.",
+        "The 50:50 fuel split is the price-cap convention for 2026/27; the reconciliation regulations settle obligations per fuel volume and could change the split.",
+        "WHD is charged to domestic customers only, so the model's all-sector denominators do not apply.",
+        "The scheme period ends 31 March 2031; 2030-31 is its final year."
+      ],
+      "period_basis": "calendar_blend",
+      "period_blend": [
+        {
+          "period": "FY2029/30",
+          "value": 15.407776,
+          "price_year": 2029,
+          "rebasing": {
+            "from_price_year": 2029,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0, 2015=100) projected at 2% a year for 4.25 years to the financial-year midpoint",
+            "from_index": 150.11697915,
+            "to_index": 138.0,
+            "factor": 0.9192830869725106
+          },
+          "derivation": "0.969e9 x 0.5 / 97.48e6 MWh x 3.1"
+        },
+        {
+          "period": "FY2030/31",
+          "value": 15.42,
+          "price_year": 2030,
+          "rebasing": {
+            "from_price_year": 2030,
+            "to_price_year": 2025,
+            "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 5.25 years to the 2030-31 financial-year midpoint; the GBP150 rebate is fixed in nominal terms",
+            "from_index": 153.119318734,
+            "to_index": 138.0,
+            "factor": 0.901257928401
+          },
+          "derivation": "0.970e9 x 0.5 / 97.48e6 MWh x 3.1"
+        }
+      ]
+    },
+    "eco": {
+      "value": 0.0,
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2025,
+      "stack_group": "policy",
+      "label": "Energy Company Obligation (no longer levied on bills from April 2026)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 0.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/ofgem_price_cap_summary_of_changes_apr_jun_2026.pdf",
+      "source_title": "DESNZ, Energy bill reductions: statement to energy suppliers (17 December 2025): 'From April 2026, the Energy Company Obligation (ECO) will no longer be levied on energy bills'; Ofgem, Summary of changes to energy price cap 1 April to 30 June 2026: ECO and GBIS allowance no longer funded from energy bills from 1 April 2026",
+      "source_url": "https://www.gov.uk/government/publications/energy-bill-reductions-statement-to-energy-suppliers/energy-bill-reductions-statement-to-energy-suppliers",
+      "access_date": "2026-09-22",
+      "derivation": {
+        "ofgem_annex4_eco_allowance": "Annex 4 v1.25 tab 2a: ECO GBP8.905/MWh electricity to March 2026, '-' (nil) from April 2026 onward",
+        "successor": "Home energy efficiency moves to the Exchequer-funded Warm Homes Plan; no successor supplier obligation on electricity bills has been announced"
+      },
+      "method": "ECO is removed from bills from 1 April 2026 by the Budget 2025 measure; Ofgem's price-cap methodology carries no ECO allowance from that date, so the 2030 line is nil.",
+      "limitations": [
+        "A policy decision, not a statute; a future government could reintroduce a supplier obligation, though none is proposed."
+      ],
+      "value_basis": "nil",
+      "period_basis": "calendar_year"
+    },
+    "remaining_ccs": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "price_year": 2029,
+      "stack_group": "policy",
+      "label": "Remaining CCS levy: Net Zero Teesside Power DPA (upper bound from the ECC full business case)",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": 3.0,
+      "source_file": "data/market/consumer_bill_sources/ws9/desnz_east_coast_cluster_ccus_full_business_case_2025_06.pdf",
+      "source_title": "DESNZ, Full Business Case for East Coast Cluster (ECC) Carbon Capture, Usage and Storage, June 2025, Table 12 'Budget requirements during operational phase (nominal)' and section 5.4/5.6.1",
+      "source_url": "https://assets.publishing.service.gov.uk/media/685bbc5c89ba18761d9760a1/ecc-full-business-case.pdf",
+      "access_date": "2026-09-22",
+      "derivation": {
+        "ecc_operational_budget_gbp_2028_29_to_2030_31_nominal": 1366000000.0,
+        "annual_average_gbp_nominal": 455333333.3,
+        "what_the_total_covers": "all ECC operational-phase budget cover: LCCC payments to NZT Power under the 15-year DPA (levy-funded through the CfD Electricity Supplier Obligation, section 5.6.1) and LCCC revenue-support payments to NEP, the T&S company (Exchequer-funded); row detail is redacted, so the DPA share cannot be separated",
+        "recovery_denominator": "cfd_eligible_gsp_volume_mwh",
+        "arithmetic": "1.366e9 / 3 = 455.3m a year (nominal, 2028/29-2030/31) / CfD eligible GSP volume (the GSP charging volume less the EII exemption, read at projection time, items F4 and F18) x 3.1 MWh x the household loss factor, then x 0.919283 to 2025 prices: the DPA is funded through the CfD supplier levy, a GSP rate on the household's loss-uplifted volume.",
+        "value_basis": "upper_bound",
+        "no_official_point_estimate": "The March 2024 Electricity Supplier Obligation impact assessment (paras 12 and 22) declines to estimate the DPA bill impact because it would reveal the government's expected payment value",
+        "cost_gbp": 455333333.3,
+        "other_ccus_streams_nil": {
+          "industrial_capture_and_t_and_s": "para 42: industrial carbon capture revenue support contracts and T&S revenue support agreements 'will be funded by DESNZ for their duration, including associated LCCC operational costs'",
+          "hydrogen": "para 41: the Low Carbon Hydrogen Agreement is funded by government initially, with a Gas Shipper Obligation (a gas-side levy) intended later; not an electricity-bill charge",
+          "further_power_ccus": "para 83: one DPA signed (East Coast Cluster, December 2024); further DPAs anticipated in 2026-29, but a newly contracted plant would not be operating by 2030 (NZT took about 3.5 years from FID to operation)",
+          "power_beccs": "para 91: no decisions on large-scale power BECCS have been made"
+        },
+        "household_losses": "household_loss_factor"
+      },
+      "rebasing": {
+        "from_price_year": 2029,
+        "to_price_year": 2025,
+        "index": "ONS CPIH 2025 annual average (138.0) projected at 2% a year for 4.25 years to the 2029/30 financial-year midpoint (midpoint of the 2028/29-2030/31 block)",
+        "from_index": 150.11697915,
+        "to_index": 138.0,
+        "factor": 0.919283086969
+      },
+      "method": "The only CCS contract charged to electricity bills by 2030 is the Net Zero Teesside Power DPA (742 MW gas CCS, signed December 2024, LCCC payments from 2028/29) through the CfD supplier levy. The plant is dispatched in the model as a committed overlay (support label DPA, outside the CfD line), but the DPA payment is not settled from model dispatch, so the payment stays an external line. No official 2030 figure exists; the ECC full business case's operating budget, which also covers Exchequer-funded T&S support, is spread over eligible supply as an upper bound. Industrial capture, T&S and hydrogen support are Exchequer- or gas-funded and add nothing.",
+      "limitations": [
+        "Upper bound: Table 12 includes NEP T&S revenue support, which is Exchequer-funded, and its row split is redacted.",
+        "DPA variable payments and the clawback move with power and carbon prices; the table is DESNZ's pre-FID planning figure.",
+        "Treating the EII exemption as applying to DPA costs as to CfD costs is an assumption.",
+        "Policy can change: DESNZ could move industrial or T&S support onto an electricity levy under Energy Act 2023 powers.",
+        "'Further DPA plants will not be operating by 2030' is an inference from build times, not a published statement."
+      ],
+      "model_link": "Since 23 Sep 2026 the model dispatches Net Zero Teesside Power (742 MW gas CCS at Tod Point 275 kV) as a committed overlay on CP30 (data/market/CP30/committed_overlay_2030.csv), dispatched ahead of unabated gas under its DPA, so the plant these payments fund is in the fleet. The payment itself stays the ECC budget upper bound: the DPA is not settled from model dispatch.",
+      "period_basis": "period_average",
+      "period_span": {
+        "first_fiscal_year_start": 2028,
+        "last_fiscal_year_start": 2030,
+        "note": "ECC operational budget 2028/29-2030/31, averaged; calendar 2030 lies inside it"
+      }
+    },
+    "battery_revenue_top_up": {
+      "unit": "gbp_per_household_year",
+      "consumption_basis_kwh": 3100,
+      "stack_group": "policy",
+      "source_class": "external_primary_source",
+      "reference_gbp_per_3100kwh_ex_vat": null,
+      "price_year": 2024,
+      "rebasing": {
+        "from_price_year": 2024,
+        "to_price_year": 2025,
+        "index": "ONS CPIH annual average, all items, 2015=100",
+        "from_index": 132.9,
+        "to_index": 138.0,
+        "factor": 1.038374717833,
+        "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23"
+      },
+      "label": "Battery revenue top-up (batteries short of their required revenue after ancillary services)",
+      "source_file": "scripts/public_ownership/support_lines_2050.py",
+      "source_url": "resources/public_ownership/cp30_2030_cp30_network_public_account_summary.json",
+      "access_date": "2026-10-03",
+      "source_table": "cp30_2030_cp30_network register: battery_revenue_top_up_gbp on the private case",
+      "method": "User decision (3 Oct 2026), the FES 2050 decisions 58, 63 and 67 applied to 2030: batteries (carrier Battery) are merchant and stay short of their required revenue (capital at the private rate, O&M, generator TNUoS and insurance) after their market, Capacity Market, ancillary-service (NESO FY24/25 outturn) and declared sub-hourly revenue (+20% of wholesale plus balancing revenue), so the bill tops each battery row up to break even. Sized in the cp30_2030_cp30_network register on the private case after every other income (scripts/public_ownership/support_lines_2050.py) and read here from the run group's public account (cases.private.battery_revenue_top_up_gbp), spread over metered supply (item F18). The same payment goes to the row's owner in every market case: a state-held battery needs less at the public rate, and the difference is the state's surplus, returned to bills under the base incidence. The acquisition tariff replaces it. Long-duration storage (LAES) is on the LDES cap and floor instead.",
+      "derivation": {
+        "cost_from": {
+          "public_account": "resources/public_ownership/cp30_2030_cp30_network_public_account_summary.json",
+          "case": "private",
+          "key": "battery_revenue_top_up_gbp"
+        },
+        "recovery_denominator": "metered_supply_mwh",
+        "sensitivity_cost_from_keys": {
+          "subhourly_high": "battery_revenue_top_up_subhourly_high_gbp"
+        }
+      },
+      "limitations": [
+        "A declared support line: no such scheme exists; it keeps the FES battery fleet whole.",
+        "Sized on the solved year's dispatch and the private case's revenue; a state owner is paid the same amount."
+      ],
+      "period_basis": "calendar_year"
+    }
+  },
+  "sensitivities": {
+    "interconnector_trade_prices": {
+      "note": "Since item IC1 (22 Sep 2026) the foreign prices are supply curves: the ENTSO-E 2024 hourly shape conditioned on 2013 GB offshore wind, with volume tranches on three coupled markets (continent, Norway, SEM), replacing the flat CP30 FFR trade prices (89.43 import, 40.09 export) that set the wholesale price in a large share of hours in earlier vintages. The wholesale and CfD lines remain sensitive to those curves in the hours interconnectors are marginal.",
+      "source": "resources/CP30/CP30_interconnector_prices.csv; rule build_interconnector_price_shape (item IC1)"
+    }
+  },
+  "external_assumptions_gbp_per_3100kwh_ex_vat": {},
+  "source": {
+    "title": "Electricity Bills: 2030 electricity bill forecast and methodology workbook",
+    "page_url": "https://www.electricitybills.uk/2030",
+    "methodology_url": "https://docs.google.com/spreadsheets/d/1SHuFAtxxKUf3Q2b7usoTl8rwngv9YyFkunNVrwqqbAo/edit",
+    "snapshot_date": "2026-07-28",
+    "use": "Component assumptions and reconciliation design only; the source total and direct-fuel/CfD values are not used as the PyPSA-informed result.",
+    "source_quality": {
+      "tnuos_and_bsuos": "NESO forecast-derived inputs",
+      "price_cap_structure": "Ofgem methodology-derived structure",
+      "duos_and_supplier_costs": "Analyst estimates in the source workbook; retain as assumptions and test in sensitivity analysis"
+    },
+    "price_year": 2025,
+    "price_year_basis_note": "The published allowances and the derived retail procurement reference are treated as already on the GBP real 2025 report basis. This is an assumption about the source, not a verified statement: if the workbook is later confirmed to quote another year, set source.price_year accordingly and add a source_currency_rebasing block.",
+    "bsuos_reference_removed_note": "The single external bsuos_reference allowance of 91.0 has been replaced by a decomposition: bsuos_constraints from PyPSA redispatch (accepted offers and bids, interconnector re-trading, less feasibility slack and non-participant penalty turn-down; the CfD curtailment compensation is inside the contract-value bids and only reconciled), bsuos_voltage_and_stability_constraints and bsuos_other_services from NESO 2024-25 outturn. The 91.0 is retained as model_linked_rules.bsuos_constraints.reference_total_gbp_per_3100kwh so the report can show the delta, and it is no longer summed into the bill.",
+    "renewables_obligation_removed_note": "The external RO allowance of 17.0 has been replaced by model_linked_rules.renewables_obligation, which values the ROC-eligible fleet from the Ofgem register at PyPSA load factors under a declared Exchequer-relief case. It is retained as that rule's reference_total_gbp_per_3100kwh so the report can show the delta, and is no longer summed into the bill.",
+    "ws9_primary_source_note": "WS9 (plan section 4) and item F1: every line that was a placeholder copied from this site is now a primary-source line under sourced_externals or a model-linked rule, each keeping the replaced value as reference_gbp_per_3100kwh_ex_vat. No external_assumptions placeholders remain.",
+    "obr_cross_check": {
+      "source_title": "OBR, Economic and fiscal outlook, March 2026, paragraph 3.38 and the receipts table: environmental levies GBP14.0bn in 2025-26 rising to GBP18.5bn in 2030-31 (capacity market, CfD, RO, FiT, warm home discount, Sizewell C RAB)",
+      "source_url": "https://assets.publishing.service.gov.uk/media/69a6d7b62e1f4fbda4252208/economic-and-fiscal-outlook-march-2026-web-accessible.pdf",
+      "source_file": "data/market/consumer_bill_sources/ws9/obr_economic_and_fiscal_outlook_2026_03.pdf",
+      "access_date": "2026-09-11",
+      "environmental_levies_gbp_bn": {
+        "2025-26": 14.0,
+        "2026-27": 15.9,
+        "2027-28": 15.4,
+        "2028-29": 16.0,
+        "2029-30": 16.7,
+        "2030-31": 18.5
+      },
+      "use": "Cross-check only (WS9 item 5): the sum of the bill's CfD, RO, FiT, Capacity Market, Warm Home Discount and Sizewell C RAB lines, grossed up over supplier sales, should sit near the 2030-31 total. The OBR PDF publishes no scheme-level breakdown; it is in the supplementary fiscal tables.",
+      "notes": [
+        "The Government partially funds the Renewables Obligation from 2026 to 2029 (about GBP2.3bn) and indexes RO payments by CPI instead of RPI from the November 2025 Budget; the RO line's relief case remains a declared decision."
+      ]
+    },
+    "ws9_placeholders_remaining": [],
+    "ws9_source_attempts": {
+      "allocated_ccs_and_remaining_ccs": "The GBP4 per household by 2030 figure for allocated CCUS projects is quoted in parliamentary material but the DESNZ written answer could not be retrieved (HTTP 403 on parliament.uk); kept as placeholders.",
+      "feed_in_tariffs_warm_home_discount_eco": "No scheme-level 2030 forecast in the OBR PDF (supplementary tables only); Ofgem cap allowances for WHD are per customer and not pinned in this repository; ECO4 ended in March 2026 with no successor levy on electricity bills declared here; kept as placeholders.",
+      "status": "Historical record: both attempts below were superseded by item F1 (allocated CCS since model-linked, item MR7)."
+    }
+  },
+  "household_archetypes": {
+    "purpose": "Item G6 (decisions 11 and 12): bills for Ofgem's low, medium and high TDCVs and for heat-pump and EV households, as points. A single-rate tariff charges every archetype the same unit rate.",
+    "benchmark_kwh": 3100,
+    "headline_archetype": "heat_pump_ev_2030",
+    "report_composition": true,
+    "archetypes": [
+      {
+        "id": "ofgem_low",
+        "kwh": 1600,
+        "source": "Ofgem TDCV decision, May 2026, profile class 1 low, from 1 July 2026",
+        "source_file": "data/market/consumer_bill_sources/archetypes/ofgem_tdcv_review_decision_2026_05.pdf"
+      },
+      {
+        "id": "ofgem_medium",
+        "kwh": 2500,
+        "source": "Ofgem TDCV decision, May 2026, profile class 1 medium; DESNZ subnational statistics 2024 give a median of 2,471 kWh per meter"
+      },
+      {
+        "id": "ofgem_high",
+        "kwh": 3800,
+        "source": "Ofgem TDCV decision, May 2026, profile class 1 high"
+      },
+      {
+        "id": "heat_pump",
+        "base": "ofgem_medium",
+        "added": {
+          "gas_kwh": 9500,
+          "boiler_efficiency": 0.85,
+          "seasonal_performance_factor": 2.8
+        },
+        "source": "gas_kwh: Ofgem medium gas TDCV from 1 July 2026; seasonal_performance_factor: median SPF of air-source heat pumps in the Electrification of Heat Demonstration (Energy Systems Catapult for DESNZ, 2023-24); boiler_efficiency: declared in-use condensing-boiler efficiency (assumption)"
+      },
+      {
+        "id": "electric_vehicle",
+        "base": "ofgem_medium",
+        "added": {
+          "miles": 9400,
+          "kwh_per_mile": 0.3
+        },
+        "source": "miles: DfT National Travel Survey table NTS0901a, 2025, battery electric cars; kwh_per_mile: declared wall-plug consumption (assumption; the DESNZ 2025 GHG conversion-factor methodology notes type-approval figures include charging losses and applies a real-world uplift); all charging at home, an upper bound"
+      },
+      {
+        "id": "heat_pump_ev_2030",
+        "base": "ofgem_medium",
+        "added": [
+          {
+            "part": "heat_pump",
+            "inputs": {
+              "gas_kwh": 9500,
+              "boiler_efficiency": 0.85,
+              "seasonal_performance_factor": 2.8
+            }
+          },
+          {
+            "part": "electric_vehicle",
+            "inputs": {
+              "miles": 9400,
+              "kwh_per_mile": 0.3
+            }
+          }
+        ],
+        "source": "User, 13 Nov 2026: the electrified household reported beside the 3,100 kWh benchmark in the public-ownership results, composed as the heat_pump and electric_vehicle archetypes above on one Ofgem medium base (2,500 + 2,884 + 2,820 = 8,204 kWh). The 2040 and 2050 headline households sit on FES's appliance-and-lighting base (about 1,500-1,640 kWh) with FES's efficiency gains, so they use less (6,818 and 6,398 kWh)"
+      }
+    ],
+    "domestic_customer_accounts": {
+      "value": 29300000.0,
+      "source": "DESNZ, Subnational electricity and gas consumption statistics 2024 (19 December 2025): 29.3 million consuming domestic electricity meters in GB; mean 3,323 kWh, median 2,471 kWh, about 96.8 TWh",
+      "source_url": "https://www.gov.uk/government/statistics/subnational-electricity-and-gas-consumption-summary-report-2024/subnational-electricity-and-gas-consumption-summary-report-2024--2",
+      "use": "a cross-check of the implied domestic standing-charge revenue only; never a recovery denominator (house rule 8)"
+    }
+  },
+  "charge_basis": {
+    "purpose": "Item G6: which part of each line is a standing charge. Undeclared lines are unit-rate lines (share 0).",
+    "from_derivation": {
+      "tnuos": {
+        "numerator": "domestic_residual_gbp_per_year",
+        "denominator": "total_nominal_2030_31_gbp_per_year",
+        "note": "the domestic residual is a per-site-per-day charge since the Targeted Charging Review; the locational part is per kWh"
+      }
+    },
+    "mixed_lines": [
+      "supplier_costs_and_margin",
+      "duos",
+      "smart_meter_net_cost_change"
+    ],
+    "calibration": {
+      "method": "The historical path's rule (build_household_bill_component_register.py): known fixed items stay fixed and the mixed lines are split pro rata so the stack reproduces Ofgem's published nil-consumption charge. DUoS is mixed because the Targeted Charging Review made its residual a fixed per-site charge, so the 2020 fixed share no longer describes it.",
+      "nil_source_file": "data/market/ofgem_price_cap/2026_Q3/electricity_single_rate.csv",
+      "payment_method": "direct_debit",
+      "known_fixed": {
+        "tnuos_domestic_residual_2026_27": {
+          "gbp_per_site_day": 0.222566,
+          "source": "NESO Final TNUoS Tariffs for 2026/27 (tables, https://www.neso.energy/document/376341/download, Table 10 and Table B), Domestic band residual 2026/27; the v3.0 five-year view had forecast 0.250081"
+        },
+        "whd_standing_residual_2026_27": {
+          "gbp": 3.4102172359204843,
+          "source": "Ofgem Annex 4 policy cost allowance v1.25, tab 1a: the WHD GBP per customer for April 2026 onwards, which Ofgem uses as the policy allowance at nil consumption"
+        }
+      },
+      "mixed_lines_uplift_to_2026": 1.02,
+      "uplift_note": "the mixed lines are 2025-price values; one year of the 2% CPIH projection puts them on the 2026 Q3 cap's nominal basis (assumption)"
+    },
+    "inherit": {
+      "tnuos_public_financing_adjustment": "tnuos",
+      "duos_public_financing_adjustment": "duos",
+      "interconnector_cap_and_floor_pass_through": "tnuos"
+    }
+  },
+  "retired_sourced_externals": {
+    "allocated_ccs": {
+      "retired": "23 Sep 2026, item MR7: the line is now model-linked (model_linked_rules.cfd.ccs_levy_carriers)",
+      "previous_block": {
+        "value": 0.0,
+        "value_basis": "nil",
+        "unit": "gbp_per_household_year",
+        "consumption_basis_kwh": 3100,
+        "price_year": 2025,
+        "stack_group": "policy",
+        "label": "Allocated CCS levy: the model's CCS plant (BECCS) holds no power CCS contract",
+        "source_class": "external_primary_source",
+        "reference_gbp_per_3100kwh_ex_vat": 4.0,
+        "source_file": "data/market/consumer_bill_sources/ws9/desnz_lccc_esc_operational_costs_consultation_2025_11.pdf",
+        "source_title": "DESNZ, Low Carbon Contracts Company and Electricity Settlements Company Operational Costs 2026/27, 2027/28 and 2028/29: Consultation on the Operational Cost Levies, November 2025, paragraphs 41-42, 83 and 91",
+        "source_url": "https://assets.publishing.service.gov.uk/media/69243d7f90a8c154e90261e2/lccc-and-esc-operational-costs-consultation-2026-27-2027-28-2029-30.pdf",
+        "access_date": "2026-09-22",
+        "derivation": {
+          "model_ccs_fleet": "447 MW of BECCS (carrier CCS Biomass) in the CP30 2030 network; no gas CCS",
+          "power_beccs": "para 91: no decisions on large-scale power BECCS have been made",
+          "drax": "Drax's 2027-31 agreement is an unabated-biomass low-carbon dispatchable CfD, counted by OBR in its CfD forecast (Table 3.21), not a CCS levy",
+          "decision": "user decision 22 September 2026: allocated (the model's own CCS plant) is a sourced nil; the power CCS contract that does exist, Net Zero Teesside's DPA, is carried as remaining_ccs"
+        },
+        "method": "The allocated line is the CCS levy attributable to CCS plant in the model. The model's only CCS is BECCS, and no power BECCS contract exists or has been decided, so the line is nil and the ownership layer's BECCS booking against it saves nothing.",
+        "limitations": [
+          "If a power BECCS contract is awarded for operation by 2030 the line would need its terms; none is proposed."
+        ]
+      }
+    }
+  },
+  "levy_exemptions": {
+    "electrolysers_exempt": false,
+    "additional_exempt_share": 0.0,
+    "additional_exemption_covers_capacity_market": false,
+    "note": "Who pays the levies (review 28 Sep 2026). Defaults: electrolysers pay every levy on their draw (decision D1) and the EII exemption is the 2024-25 LCCC outturn share in the recovery file. electrolysers_exempt removes their draw from the CfD/RO/FiT/CCS and Capacity Market bases; additional_exempt_share removes a further share of the eligible base (e.g. the British Industrial Competitiveness Scheme from 2027). Exempted costs fall on everyone else.",
+    "sensitivities": {
+      "bics_2027": {
+        "additional_exempt_share": 0.055,
+        "additional_exemption_covers_capacity_market": true,
+        "note": "British Industrial Competitiveness Scheme from April 2027: exempt manufacturers leave the RO, FiT and CM bases; support up to about GBP600m a year at GBP35-40/MWh implies about 15-17 TWh, 5.5% of the eligible base. The government says the redistribution is offset (CPI indexation, CPS removal, Exchequer funding); impact assessment due autumn 2026. Sensitivity only."
+      }
+    }
+  }
+}

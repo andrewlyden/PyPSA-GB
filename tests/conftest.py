@@ -37,13 +37,22 @@ for _sub in SCRIPTS_DIR.iterdir():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def pytest_configure(config):
-    """Register custom markers."""
+    """Register custom markers.
+
+    Also load every live study whatever config.yaml lists (config_loader.STUDIES_ENV): the tests check the studies'
+    scenarios, and the public config.yaml loads none. A value already set in the environment wins.
+    """
+    os.environ.setdefault("PYPSA_GB_STUDIES", "all")
     config.addinivalue_line("markers", "smoke: Quick sanity check tests (<5s each)")
     config.addinivalue_line("markers", "unit: Unit tests for individual functions")
     config.addinivalue_line("markers", "integration: Integration tests requiring multiple components")
     config.addinivalue_line("markers", "slow: Slow tests that may be skipped in quick runs")
     config.addinivalue_line("markers", "requires_data: Tests requiring specific data files")
     config.addinivalue_line("markers", "requires_solver: Tests requiring optimization solver")
+    config.addinivalue_line(
+        "markers",
+        "requires_outputs: Tests reading workflow outputs under resources/ (skip on a fresh clone)",
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -213,8 +222,8 @@ def historical_scenario_config():
         'demand_year': 2020,
         'network_model': 'Reduced',
         'timestep_minutes': 60,
-        'voll': 6000.0,
-        'demand_timeseries': 'ESPENI',
+        'solve': {'voll': 6000.0},
+        'demand': {'timeseries': 'ESPENI'},
     }
 
 
@@ -228,7 +237,7 @@ def future_scenario_config():
         'demand_year': 2035,
         'network_model': 'ETYS',
         'timestep_minutes': 60,
-        'voll': 6000.0,
+        'solve': {'voll': 6000.0},
         'FES_year': 2024,
         'FES_scenario': 'Holistic Transition',
     }

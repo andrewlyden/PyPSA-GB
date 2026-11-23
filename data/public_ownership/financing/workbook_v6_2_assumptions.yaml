@@ -1,0 +1,4022 @@
+schema_version: 5
+source_workbook: data/public_ownership/GB_Power_Model_v6.2.xlsx
+workbook_sha256: 5f2d8af0a765873371d492e786f3d191da05fa860cb15a1407b6849a61a4e408
+variants_file: data/public_ownership/financing/workbook_v6_2_variants.csv
+variants_checked_cells: 781
+extracted_on: '2026-10-30'
+rate_basis: real_CPI
+price_year: 2024
+switches:
+  gearing_basis: RIIO-3 notional 55%
+  risk_free_vintage: Current market (08-Oct-2026)
+  inflation_vintage: OBR March 2026
+  erp_convention: Fixed ERP
+  risk_free_term_method: Direct 15-year gilt (2041 linker)
+  debt_beta_basis: Direct input
+  cost_of_debt_basis: iBoxx promised yield (CEPA)
+  asset_beta_case: Mid
+  credit_rating_case: Mid
+  cfd_term_deduction: 1
+  merchant_uplift: 1
+  tax_shield: Yes - at the operative gearing
+  sc2_debt_mechanism: Rating notch uplift
+  sc2_equity_treatment: Arrow-Lind blended return
+  public_lending_margin_basis: NLF (+11bp)
+  systematic_premium_basis: Social premium (P)
+  operating_asset_beta: One band down
+  socialised_risk_holder: Taxpayers (Exchequer)
+  social_premium_beta_basis: Flat premium (no beta)
+  fiscal_path_scenario: 'Sc4: new build + nationalisation'
+  under_construction_capital: Exclude (sunk, uncompensated)
+  legacy_valuation_basis: A2 Market value (post-tax DCF)
+  legacy_gas_valuation_basis: Asset register (Lyden)
+  gilt_debt_channel: Include
+  gilt_contingent_exposure_channel: Include
+  gilt_yield_response_basis: Gross debt
+assumptions:
+  public_borrowing_real:
+    value: 0.0275787647058824
+    source_cell: Sc4 Operative!F11
+    formula: =rf_cpi+pub_margin
+  public_lending_margin:
+    value: 0.0011
+    source_cell: Sc4 Operative!B11
+    formula: =IF(sw_pub_margin="NLF (+11bp)",0.0011,IF(sw_pub_margin="PWLB HRA (+40bp)",0.004,IF(sw_pub_margin="PWLB
+      certainty (+80bp)",0.008,IF(sw_pub_margin="PWLB standard (+100bp)",0.01,0))))
+  social_premium:
+    value: 0.019
+    source_cell: Sc4 Operative!J11
+    formula: =IF(sw_prem3="Social premium (P)",prem_social,IF(sw_prem3="Market ERP
+      (operative)",erp,0))
+  risk_free_real:
+    value: 0.0264787647058824
+    source_cell: Assumptions!D63
+    formula: =IF(AND(sw_rf_term="Direct 15-year gilt (2041 linker)",sw_rf="Current
+      market (08-Oct-2026)"),(1+D62)/(1+D60)-1,AVERAGE(B63:C63))
+  risk_free_nominal:
+    value: 0.0470083400000001
+    source_cell: Assumptions!D62
+    formula: =IF(AND(sw_rf_term="Direct 15-year gilt (2041 linker)",sw_rf="Current
+      market (08-Oct-2026)"),(1+D61)*(1+D59)-1,AVERAGE(B62:C62))
+  expected_cpi:
+    value: 0.02
+    source_cell: Assumptions!D60
+    formula: =IF(sw_infl="OBR March 2024 (CEPA)",infl24_cpi_15,infl26_cpi_15)
+  equity_risk_premium:
+    value: 0.0522
+    source_cell: Assumptions!B64
+    formula: =IF(sw_erp="Fixed TMR (CEPA / UKRN)",tmr-rf_cpi,erp_cepa)
+  total_market_return:
+    value: 0.0683
+    source_cell: Assumptions!B43
+    formula: 0.0683
+  corporation_tax_rate:
+    value: 0.25
+    source_cell: Assumptions!B45
+    formula: 0.25
+  debt_transaction_costs:
+    value: 0.0015
+    source_cell: Assumptions!B46
+    formula: 0.0015
+  public_coordination_state_equity_share:
+    value: 0.3
+    source_cell: Assumptions!B22
+    formula: 0.3
+  public_coordination_notches:
+    value: 2
+    source_cell: Assumptions!B20
+    formula: 2
+  public_coordination_retained_premium:
+    value: 0
+    source_cell: Assumptions!B23
+    formula: 0
+  public_coordination_guarantee_floor:
+    value: 0.0045
+    source_cell: Assumptions!B25
+    formula: 0.0045
+  public_coordination_guarantee_cover:
+    value: 0.2
+    source_cell: Build-Out!C181
+    formula: 0.2
+  optimism_bias_capex_uplift:
+    value: 0
+    source_cell: Build-Out!C180
+    formula: 0
+  yield_response_bp_per_pp:
+    value: 2
+    source_cell: Build-Out!C19
+    formula: 2
+  gas_fuel_cost_gbp_per_mwh:
+    value: 75
+    source_cell: Legacy Fleet!D89
+    formula: 75
+  legacy_owner_rate_calibrated:
+    value: 0.061
+    source_cell: Legacy Fleet!F21
+    formula: 0.061
+  legacy_owner_rate_pivot:
+    value: 0.0932413964052288
+    source_cell: Legacy Fleet!D63
+    formula: =INDEX(op_vanilla,MATCH("Offshore wind",tech_list,0))
+  legacy_capital_allowance_rate:
+    value: 0.18
+    source_cell: Legacy Fleet!D93
+    formula: 0.18
+  legacy_reference_price_gbp_per_mwh:
+    value: 52
+    source_cell: Legacy Fleet!D80
+    formula: 52
+  legacy_acquisition_year:
+    value: 2026
+    source_cell: Legacy Fleet!C7
+    formula: 2026
+  legacy_gas_register_value_gbp_bn:
+    value: 6.5
+    source_cell: Legacy Fleet!D99
+    formula: 6.5
+  gdp_2024_gbp_bn:
+    value: 2905
+    source_cell: Build-Out!C17
+    formula: 2905
+  real_gdp_growth:
+    value: 0.015
+    source_cell: Build-Out!C18
+    formula: 0.015
+  gilt_stress_case_loss_share:
+    value: 0.25
+    source_cell: Build-Out!C174
+    formula: 0.25
+  gilt_counterfactual_offset_share:
+    value: 0
+    source_cell: Build-Out!C177
+    formula: 0
+  gilt_marketable_stock_2024_gbp_bn:
+    value: 2452
+    source_cell: Build-Out!C178
+    formula: 2452
+  gilt_average_maturity_years:
+    value: 14
+    source_cell: Build-Out!C179
+    formula: 14
+public_rate_by_lending_margin:
+  nlf:
+    value: 0.027578764705882396
+    margin: 0.0011
+    source: Sc4 Operative!F11 (variant base)
+  pwlb_hra:
+    value: 0.030478764705882396
+    margin: 0.004
+    source: Sc4 Operative!F11 (variant margin_pwlb_hra)
+  pwlb_certainty:
+    value: 0.034478764705882396
+    margin: 0.008
+    source: Sc4 Operative!F11 (variant margin_pwlb_certainty)
+  pwlb_standard:
+    value: 0.0364787647058824
+    margin: 0.01
+    source: Sc4 Operative!F11 (variant margin_pwlb_standard)
+  gilt_flat:
+    value: 0.026478764705882396
+    margin: 0.0
+    source: Sc4 Operative!F11 (variant margin_gilt_flat)
+cost_of_debt_by_rating:
+  A:
+    value: 0.0485375882352941
+    source_cell: Assumptions!G120
+    formula: =(1+F120)/(1+i_cpi_15)-1
+  A-:
+    value: 0.0499428169934641
+    source_cell: Assumptions!G121
+    formula: =(1+F121)/(1+i_cpi_15)-1
+  BBB+:
+    value: 0.0513480457516342
+    source_cell: Assumptions!G122
+    formula: =(1+F122)/(1+i_cpi_15)-1
+  BBB:
+    value: 0.0527532745098038
+    source_cell: Assumptions!G123
+    formula: =(1+F123)/(1+i_cpi_15)-1
+  BBB-:
+    value: 0.0572303986928107
+    source_cell: Assumptions!G124
+    formula: =(1+F124)/(1+i_cpi_15)-1
+  BB+:
+    value: 0.061707522875817
+    source_cell: Assumptions!G125
+    formula: =(1+F125)/(1+i_cpi_15)-1
+  BB:
+    value: 0.0661846470588237
+    source_cell: Assumptions!G126
+    formula: =(1+F126)/(1+i_cpi_15)-1
+  BB-:
+    value: 0.0699428169934642
+    source_cell: Assumptions!G127
+    formula: =(1+F127)/(1+i_cpi_15)-1
+  B+:
+    value: 0.0737009869281047
+    source_cell: Assumptions!G128
+    formula: =(1+F128)/(1+i_cpi_15)-1
+technologies:
+- technology: Solar PV
+  workbook_technology: Solar PV
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0589719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: 0.005
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D15
+    formula: ='Gearing Options'!F7
+  wacc:
+    private: 0.0724267982843138
+    public_coordination: 0.0586207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D7
+    public_coordination: WACC Scenarios!F7
+    public_ownership_new_build: WACC Scenarios!H7
+    public_ownership_legacy: WACC Scenarios!H7
+    public_ownership_economic: WACC Scenarios!I7
+    public_ownership_operating_economic: WACC Scenarios!J7
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0724267982843138
+      public_coordination: 0.0586207276960786
+    fixed_tmr_shielded:
+      private: 0.06488489593137262
+      public_coordination: 0.05334139604901972
+    vanilla:
+      private: 0.0802959781045753
+      public_coordination: 0.0656810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D7
+      public_coordination: WACC Scenarios!F7
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D7 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F7 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E7
+      public_coordination: WACC Scenarios!G7
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.06684116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H15
+    public_coordination: (1 - Sc1 Operative!D15) x (Sc2 Operative!O14 - Sc2 Operative!N14)
+      - Sc2 Operative!U14
+  sc1_vanilla_hurdle: 0.0802959781045753
+  legacy_owner_rate: 0.048054581699346496
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q15),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A7:J7
+    sc1: Sc1 Operative!A15:T15
+    sc2: Sc2 Operative!A14:V14
+    sc4: Sc4 Operative!A15:H15
+- technology: Onshore wind
+  workbook_technology: Onshore wind
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0599719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: 0.004
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D16
+    formula: ='Gearing Options'!F8
+  wacc:
+    private: 0.0734267982843138
+    public_coordination: 0.0596207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D8
+    public_coordination: WACC Scenarios!F8
+    public_ownership_new_build: WACC Scenarios!H8
+    public_ownership_legacy: WACC Scenarios!H8
+    public_ownership_economic: WACC Scenarios!I8
+    public_ownership_operating_economic: WACC Scenarios!J8
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0734267982843138
+      public_coordination: 0.0596207276960786
+    fixed_tmr_shielded:
+      private: 0.06588489593137262
+      public_coordination: 0.05434139604901971
+    vanilla:
+      private: 0.0812959781045753
+      public_coordination: 0.0666810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D8
+      public_coordination: WACC Scenarios!F8
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D8 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F8 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E8
+      public_coordination: WACC Scenarios!G8
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.06784116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H16
+    public_coordination: (1 - Sc1 Operative!D16) x (Sc2 Operative!O15 - Sc2 Operative!N15)
+      - Sc2 Operative!U15
+  sc1_vanilla_hurdle: 0.0812959781045753
+  legacy_owner_rate: 0.0490545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q16),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A8:J8
+    sc1: Sc1 Operative!A16:T16
+    sc2: Sc2 Operative!A15:V15
+    sc4: Sc4 Operative!A16:H16
+- technology: Offshore wind
+  workbook_technology: Offshore wind
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0689310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: 0.004
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D17
+    formula: ='Gearing Options'!F9
+  wacc:
+    private: 0.084756612009804
+    public_coordination: 0.0668384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D9
+    public_coordination: WACC Scenarios!F9
+    public_ownership_new_build: WACC Scenarios!H9
+    public_ownership_legacy: WACC Scenarios!H9
+    public_ownership_economic: WACC Scenarios!I9
+    public_ownership_operating_economic: WACC Scenarios!J9
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.084756612009804
+      public_coordination: 0.0668384845588235
+    fixed_tmr_shielded:
+      private: 0.07532923406862746
+      public_coordination: 0.06023931999999996
+    vanilla:
+      private: 0.0932413964052288
+      public_coordination: 0.0740920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D9
+      public_coordination: WACC Scenarios!F9
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D9 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F9 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E9
+      public_coordination: WACC Scenarios!G9
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07741583169934647
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H17
+    public_coordination: (1 - Sc1 Operative!D17) x (Sc2 Operative!O16 - Sc2 Operative!N16)
+      - Sc2 Operative!U16
+  sc1_vanilla_hurdle: 0.0932413964052288
+  legacy_owner_rate: 0.061
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q17),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A9:J9
+    sc1: Sc1 Operative!A17:T17
+    sc2: Sc2 Operative!A16:V16
+    sc4: Sc4 Operative!A17:H17
+- technology: Remote island wind
+  workbook_technology: Remote island wind
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D18
+    formula: ='Gearing Options'!F10
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D10
+    public_coordination: WACC Scenarios!F10
+    public_ownership_new_build: WACC Scenarios!H10
+    public_ownership_legacy: WACC Scenarios!H10
+    public_ownership_economic: WACC Scenarios!I10
+    public_ownership_operating_economic: WACC Scenarios!J10
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D10
+      public_coordination: WACC Scenarios!F10
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D10 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F10 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E10
+      public_coordination: WACC Scenarios!G10
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H18
+    public_coordination: (1 - Sc1 Operative!D18) x (Sc2 Operative!O17 - Sc2 Operative!N17)
+      - Sc2 Operative!U17
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q18),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A10:J10
+    sc1: Sc1 Operative!A18:T18
+    sc2: Sc2 Operative!A17:V17
+    sc4: Sc4 Operative!A18:H18
+- technology: Floating offshore wind
+  workbook_technology: Floating offshore wind
+  risk_rating: H
+  asset_beta: 1.05
+  equity_beta: 2.11944444444444
+  debt_beta: 0.175
+  credit_rating: BB-
+  credit_rating_public_coordination: BB+
+  cost_of_debt_real: 0.0699428169934642
+  cost_of_debt_real_public_coordination: 0.061707522875817
+  cost_of_equity_post_tax: 0.137113764705882
+  cost_of_equity_pre_tax: 0.182818352941177
+  post_tax_wacc: 0.0855526061274511
+  merchant_uplift: 0.0
+  cfd_term_deduction: 0.005
+  interest_tax_shield: 0.00961713733660132
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D19
+    formula: ='Gearing Options'!F11
+  wacc:
+    private: 0.106119670833333
+    public_coordination: 0.082808312009804
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D11
+    public_coordination: WACC Scenarios!F11
+    public_ownership_new_build: WACC Scenarios!H11
+    public_ownership_legacy: WACC Scenarios!H11
+    public_ownership_economic: WACC Scenarios!I11
+    public_ownership_operating_economic: WACC Scenarios!J11
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.106119670833333
+      public_coordination: 0.082808312009804
+    fixed_tmr_shielded:
+      private: 0.09292134171568628
+      public_coordination: 0.07356948162745099
+    vanilla:
+      private: 0.115736808169935
+      public_coordination: 0.0912930964052288
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D11
+      public_coordination: WACC Scenarios!F11
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D11 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F11 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E11
+      public_coordination: WACC Scenarios!G11
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0485787647058824
+    market_erp: 0.0823887647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09516974346405199
+  corporation_tax_wedge:
+    private: 0.010949927369281
+    public_coordination: 0.007103705310457904
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H19
+    public_coordination: (1 - Sc1 Operative!D19) x (Sc2 Operative!O18 - Sc2 Operative!N18)
+      - Sc2 Operative!U18
+  sc1_vanilla_hurdle: 0.115736808169935
+  legacy_owner_rate: 0.08349541176470619
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q19),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A11:J11
+    sc1: Sc1 Operative!A19:T19
+    sc2: Sc2 Operative!A18:V18
+    sc4: Sc4 Operative!A19:H19
+- technology: Hydropower
+  workbook_technology: Hydropower
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D20
+    formula: ='Gearing Options'!F12
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D12
+    public_coordination: WACC Scenarios!F12
+    public_ownership_new_build: WACC Scenarios!H12
+    public_ownership_legacy: WACC Scenarios!H12
+    public_ownership_economic: WACC Scenarios!I12
+    public_ownership_operating_economic: WACC Scenarios!J12
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D12
+      public_coordination: WACC Scenarios!F12
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D12 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F12 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E12
+      public_coordination: WACC Scenarios!G12
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H20
+    public_coordination: (1 - Sc1 Operative!D20) x (Sc2 Operative!O19 - Sc2 Operative!N19)
+      - Sc2 Operative!U19
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q20),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A12:J12
+    sc1: Sc1 Operative!A20:T20
+    sc2: Sc2 Operative!A19:V19
+    sc4: Sc4 Operative!A20:H20
+- technology: Advanced conversion technologies (ACT)
+  workbook_technology: Advanced conversion technologies (ACT)
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D21
+    formula: ='Gearing Options'!F13
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D13
+    public_coordination: WACC Scenarios!F13
+    public_ownership_new_build: WACC Scenarios!H13
+    public_ownership_legacy: WACC Scenarios!H13
+    public_ownership_economic: WACC Scenarios!I13
+    public_ownership_operating_economic: WACC Scenarios!J13
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D13
+      public_coordination: WACC Scenarios!F13
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D13 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F13 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E13
+      public_coordination: WACC Scenarios!G13
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H21
+    public_coordination: (1 - Sc1 Operative!D21) x (Sc2 Operative!O20 - Sc2 Operative!N20)
+      - Sc2 Operative!U20
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q21),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A13:J13
+    sc1: Sc1 Operative!A21:T21
+    sc2: Sc2 Operative!A20:V20
+    sc4: Sc4 Operative!A21:H21
+- technology: Anaerobic digestion (AD)
+  workbook_technology: Anaerobic digestion (AD)
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0639719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D22
+    formula: ='Gearing Options'!F14
+  wacc:
+    private: 0.0774267982843138
+    public_coordination: 0.0636207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D14
+    public_coordination: WACC Scenarios!F14
+    public_ownership_new_build: WACC Scenarios!H14
+    public_ownership_legacy: WACC Scenarios!H14
+    public_ownership_economic: WACC Scenarios!I14
+    public_ownership_operating_economic: WACC Scenarios!J14
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0774267982843138
+      public_coordination: 0.0636207276960786
+    fixed_tmr_shielded:
+      private: 0.06988489593137262
+      public_coordination: 0.058341396049019716
+    vanilla:
+      private: 0.0852959781045753
+      public_coordination: 0.0706810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D14
+      public_coordination: WACC Scenarios!F14
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D14 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F14 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E14
+      public_coordination: WACC Scenarios!G14
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07184116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H22
+    public_coordination: (1 - Sc1 Operative!D22) x (Sc2 Operative!O21 - Sc2 Operative!N21)
+      - Sc2 Operative!U21
+  sc1_vanilla_hurdle: 0.0852959781045753
+  legacy_owner_rate: 0.0530545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q22),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A14:J14
+    sc1: Sc1 Operative!A22:T22
+    sc2: Sc2 Operative!A21:V21
+    sc4: Sc4 Operative!A22:H22
+- technology: Sewage gas
+  workbook_technology: Sewage gas
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0639719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D23
+    formula: ='Gearing Options'!F15
+  wacc:
+    private: 0.0774267982843138
+    public_coordination: 0.0636207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D15
+    public_coordination: WACC Scenarios!F15
+    public_ownership_new_build: WACC Scenarios!H15
+    public_ownership_legacy: WACC Scenarios!H15
+    public_ownership_economic: WACC Scenarios!I15
+    public_ownership_operating_economic: WACC Scenarios!J15
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0774267982843138
+      public_coordination: 0.0636207276960786
+    fixed_tmr_shielded:
+      private: 0.06988489593137262
+      public_coordination: 0.058341396049019716
+    vanilla:
+      private: 0.0852959781045753
+      public_coordination: 0.0706810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D15
+      public_coordination: WACC Scenarios!F15
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D15 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F15 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E15
+      public_coordination: WACC Scenarios!G15
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07184116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H23
+    public_coordination: (1 - Sc1 Operative!D23) x (Sc2 Operative!O22 - Sc2 Operative!N22)
+      - Sc2 Operative!U22
+  sc1_vanilla_hurdle: 0.0852959781045753
+  legacy_owner_rate: 0.0530545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q23),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A15:J15
+    sc1: Sc1 Operative!A23:T23
+    sc2: Sc2 Operative!A22:V22
+    sc4: Sc4 Operative!A23:H23
+- technology: Landfill gas
+  workbook_technology: Landfill gas
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0639719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D24
+    formula: ='Gearing Options'!F16
+  wacc:
+    private: 0.0774267982843138
+    public_coordination: 0.0636207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D16
+    public_coordination: WACC Scenarios!F16
+    public_ownership_new_build: WACC Scenarios!H16
+    public_ownership_legacy: WACC Scenarios!H16
+    public_ownership_economic: WACC Scenarios!I16
+    public_ownership_operating_economic: WACC Scenarios!J16
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0774267982843138
+      public_coordination: 0.0636207276960786
+    fixed_tmr_shielded:
+      private: 0.06988489593137262
+      public_coordination: 0.058341396049019716
+    vanilla:
+      private: 0.0852959781045753
+      public_coordination: 0.0706810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D16
+      public_coordination: WACC Scenarios!F16
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D16 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F16 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E16
+      public_coordination: WACC Scenarios!G16
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07184116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H24
+    public_coordination: (1 - Sc1 Operative!D24) x (Sc2 Operative!O23 - Sc2 Operative!N23)
+      - Sc2 Operative!U23
+  sc1_vanilla_hurdle: 0.0852959781045753
+  legacy_owner_rate: 0.0530545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q24),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A16:J16
+    sc1: Sc1 Operative!A24:T24
+    sc2: Sc2 Operative!A23:V23
+    sc4: Sc4 Operative!A24:H24
+- technology: Energy from waste
+  workbook_technology: Energy from waste
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D25
+    formula: ='Gearing Options'!F17
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D17
+    public_coordination: WACC Scenarios!F17
+    public_ownership_new_build: WACC Scenarios!H17
+    public_ownership_legacy: WACC Scenarios!H17
+    public_ownership_economic: WACC Scenarios!I17
+    public_ownership_operating_economic: WACC Scenarios!J17
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D17
+      public_coordination: WACC Scenarios!F17
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D17 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F17 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E17
+      public_coordination: WACC Scenarios!G17
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H25
+    public_coordination: (1 - Sc1 Operative!D25) x (Sc2 Operative!O24 - Sc2 Operative!N24)
+      - Sc2 Operative!U24
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q25),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A17:J17
+    sc1: Sc1 Operative!A25:T25
+    sc2: Sc2 Operative!A24:V24
+    sc4: Sc4 Operative!A25:H25
+- technology: Biomass - unabated
+  workbook_technology: Biomass - unabated
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D26
+    formula: ='Gearing Options'!F18
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D18
+    public_coordination: WACC Scenarios!F18
+    public_ownership_new_build: WACC Scenarios!H18
+    public_ownership_legacy: WACC Scenarios!H18
+    public_ownership_economic: WACC Scenarios!I18
+    public_ownership_operating_economic: WACC Scenarios!J18
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D18
+      public_coordination: WACC Scenarios!F18
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D18 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F18 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E18
+      public_coordination: WACC Scenarios!G18
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H26
+    public_coordination: (1 - Sc1 Operative!D26) x (Sc2 Operative!O25 - Sc2 Operative!N25)
+      - Sc2 Operative!U25
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q26),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A18:J18
+    sc1: Sc1 Operative!A26:T26
+    sc2: Sc2 Operative!A25:V25
+    sc4: Sc4 Operative!A26:H26
+- technology: Deep geothermal
+  workbook_technology: Deep geothermal
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D27
+    formula: ='Gearing Options'!F19
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D19
+    public_coordination: WACC Scenarios!F19
+    public_ownership_new_build: WACC Scenarios!H19
+    public_ownership_legacy: WACC Scenarios!H19
+    public_ownership_economic: WACC Scenarios!I19
+    public_ownership_operating_economic: WACC Scenarios!J19
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D19
+      public_coordination: WACC Scenarios!F19
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D19 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F19 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E19
+      public_coordination: WACC Scenarios!G19
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H27
+    public_coordination: (1 - Sc1 Operative!D27) x (Sc2 Operative!O26 - Sc2 Operative!N26)
+      - Sc2 Operative!U26
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q27),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A19:J19
+    sc1: Sc1 Operative!A27:T27
+    sc2: Sc2 Operative!A26:V26
+    sc4: Sc4 Operative!A27:H27
+- technology: Wave
+  workbook_technology: Wave
+  risk_rating: H
+  asset_beta: 1.05
+  equity_beta: 2.11944444444444
+  debt_beta: 0.175
+  credit_rating: BB-
+  credit_rating_public_coordination: BB+
+  cost_of_debt_real: 0.0699428169934642
+  cost_of_debt_real_public_coordination: 0.061707522875817
+  cost_of_equity_post_tax: 0.137113764705882
+  cost_of_equity_pre_tax: 0.182818352941177
+  post_tax_wacc: 0.0905526061274511
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00961713733660132
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D28
+    formula: ='Gearing Options'!F20
+  wacc:
+    private: 0.111119670833333
+    public_coordination: 0.087808312009804
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D20
+    public_coordination: WACC Scenarios!F20
+    public_ownership_new_build: WACC Scenarios!H20
+    public_ownership_legacy: WACC Scenarios!H20
+    public_ownership_economic: WACC Scenarios!I20
+    public_ownership_operating_economic: WACC Scenarios!J20
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.111119670833333
+      public_coordination: 0.087808312009804
+    fixed_tmr_shielded:
+      private: 0.09792134171568628
+      public_coordination: 0.07856948162745099
+    vanilla:
+      private: 0.120736808169935
+      public_coordination: 0.0962930964052288
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D20
+      public_coordination: WACC Scenarios!F20
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D20 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F20 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E20
+      public_coordination: WACC Scenarios!G20
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0485787647058824
+    market_erp: 0.0823887647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.100169743464052
+  corporation_tax_wedge:
+    private: 0.010949927369281
+    public_coordination: 0.007103705310457904
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H28
+    public_coordination: (1 - Sc1 Operative!D28) x (Sc2 Operative!O27 - Sc2 Operative!N27)
+      - Sc2 Operative!U27
+  sc1_vanilla_hurdle: 0.120736808169935
+  legacy_owner_rate: 0.0884954117647062
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q28),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A20:J20
+    sc1: Sc1 Operative!A28:T28
+    sc2: Sc2 Operative!A27:V27
+    sc4: Sc4 Operative!A28:H28
+- technology: Tidal stream
+  workbook_technology: Tidal stream
+  risk_rating: H
+  asset_beta: 1.05
+  equity_beta: 2.11944444444444
+  debt_beta: 0.175
+  credit_rating: BB-
+  credit_rating_public_coordination: BB+
+  cost_of_debt_real: 0.0699428169934642
+  cost_of_debt_real_public_coordination: 0.061707522875817
+  cost_of_equity_post_tax: 0.137113764705882
+  cost_of_equity_pre_tax: 0.182818352941177
+  post_tax_wacc: 0.0905526061274511
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00961713733660132
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D29
+    formula: ='Gearing Options'!F21
+  wacc:
+    private: 0.111119670833333
+    public_coordination: 0.087808312009804
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D21
+    public_coordination: WACC Scenarios!F21
+    public_ownership_new_build: WACC Scenarios!H21
+    public_ownership_legacy: WACC Scenarios!H21
+    public_ownership_economic: WACC Scenarios!I21
+    public_ownership_operating_economic: WACC Scenarios!J21
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.111119670833333
+      public_coordination: 0.087808312009804
+    fixed_tmr_shielded:
+      private: 0.09792134171568628
+      public_coordination: 0.07856948162745099
+    vanilla:
+      private: 0.120736808169935
+      public_coordination: 0.0962930964052288
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D21
+      public_coordination: WACC Scenarios!F21
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D21 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F21 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E21
+      public_coordination: WACC Scenarios!G21
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0485787647058824
+    market_erp: 0.0823887647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.100169743464052
+  corporation_tax_wedge:
+    private: 0.010949927369281
+    public_coordination: 0.007103705310457904
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H29
+    public_coordination: (1 - Sc1 Operative!D29) x (Sc2 Operative!O28 - Sc2 Operative!N28)
+      - Sc2 Operative!U28
+  sc1_vanilla_hurdle: 0.120736808169935
+  legacy_owner_rate: 0.0884954117647062
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q29),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A21:J21
+    sc1: Sc1 Operative!A29:T29
+    sc2: Sc2 Operative!A28:V28
+    sc4: Sc4 Operative!A29:H29
+- technology: Tidal range
+  workbook_technology: Tidal range
+  risk_rating: H
+  asset_beta: 1.05
+  equity_beta: 2.11944444444444
+  debt_beta: 0.175
+  credit_rating: BB-
+  credit_rating_public_coordination: BB+
+  cost_of_debt_real: 0.0699428169934642
+  cost_of_debt_real_public_coordination: 0.061707522875817
+  cost_of_equity_post_tax: 0.137113764705882
+  cost_of_equity_pre_tax: 0.182818352941177
+  post_tax_wacc: 0.105552606127451
+  merchant_uplift: 0.015
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00961713733660132
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D30
+    formula: ='Gearing Options'!F22
+  wacc:
+    private: 0.126119670833333
+    public_coordination: 0.102808312009804
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D22
+    public_coordination: WACC Scenarios!F22
+    public_ownership_new_build: WACC Scenarios!H22
+    public_ownership_legacy: WACC Scenarios!H22
+    public_ownership_economic: WACC Scenarios!I22
+    public_ownership_operating_economic: WACC Scenarios!J22
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.126119670833333
+      public_coordination: 0.102808312009804
+    fixed_tmr_shielded:
+      private: 0.11292134171568628
+      public_coordination: 0.09356948162745099
+    vanilla:
+      private: 0.135736808169935
+      public_coordination: 0.111293096405229
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D22
+      public_coordination: WACC Scenarios!F22
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D22 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F22 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E22
+      public_coordination: WACC Scenarios!G22
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0485787647058824
+    market_erp: 0.0823887647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.11516974346405201
+  corporation_tax_wedge:
+    private: 0.010949927369281
+    public_coordination: 0.007103705310457904
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H30
+    public_coordination: (1 - Sc1 Operative!D30) x (Sc2 Operative!O29 - Sc2 Operative!N29)
+      - Sc2 Operative!U29
+  sc1_vanilla_hurdle: 0.135736808169935
+  legacy_owner_rate: 0.1034954117647062
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q30),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A22:J22
+    sc1: Sc1 Operative!A30:T30
+    sc2: Sc2 Operative!A29:V29
+    sc4: Sc4 Operative!A30:H30
+- technology: Biomass - with CCUS - mature
+  workbook_technology: Biomass - with CCUS - mature
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D31
+    formula: ='Gearing Options'!F23
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D23
+    public_coordination: WACC Scenarios!F23
+    public_ownership_new_build: WACC Scenarios!H23
+    public_ownership_legacy: WACC Scenarios!H23
+    public_ownership_economic: WACC Scenarios!I23
+    public_ownership_operating_economic: WACC Scenarios!J23
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D23
+      public_coordination: WACC Scenarios!F23
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D23 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F23 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E23
+      public_coordination: WACC Scenarios!G23
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H31
+    public_coordination: (1 - Sc1 Operative!D31) x (Sc2 Operative!O30 - Sc2 Operative!N30)
+      - Sc2 Operative!U30
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q31),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A23:J23
+    sc1: Sc1 Operative!A31:T31
+    sc2: Sc2 Operative!A30:V30
+    sc4: Sc4 Operative!A31:H31
+- technology: Biomass - with CCUS - maturing
+  workbook_technology: Biomass - with CCUS - maturing
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D32
+    formula: ='Gearing Options'!F24
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D24
+    public_coordination: WACC Scenarios!F24
+    public_ownership_new_build: WACC Scenarios!H24
+    public_ownership_legacy: WACC Scenarios!H24
+    public_ownership_economic: WACC Scenarios!I24
+    public_ownership_operating_economic: WACC Scenarios!J24
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D24
+      public_coordination: WACC Scenarios!F24
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D24 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F24 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E24
+      public_coordination: WACC Scenarios!G24
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H32
+    public_coordination: (1 - Sc1 Operative!D32) x (Sc2 Operative!O31 - Sc2 Operative!N31)
+      - Sc2 Operative!U31
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q32),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A24:J24
+    sc1: Sc1 Operative!A32:T32
+    sc2: Sc2 Operative!A31:V31
+    sc4: Sc4 Operative!A32:H32
+- technology: Large-scale nuclear
+  workbook_technology: Large-scale nuclear
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0639719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D33
+    formula: ='Gearing Options'!F25
+  wacc:
+    private: 0.0774267982843138
+    public_coordination: 0.0636207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D25
+    public_coordination: WACC Scenarios!F25
+    public_ownership_new_build: WACC Scenarios!H25
+    public_ownership_legacy: WACC Scenarios!H25
+    public_ownership_economic: WACC Scenarios!I25
+    public_ownership_operating_economic: WACC Scenarios!J25
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0774267982843138
+      public_coordination: 0.0636207276960786
+    fixed_tmr_shielded:
+      private: 0.06988489593137262
+      public_coordination: 0.058341396049019716
+    vanilla:
+      private: 0.0852959781045753
+      public_coordination: 0.0706810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D25
+      public_coordination: WACC Scenarios!F25
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D25 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F25 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E25
+      public_coordination: WACC Scenarios!G25
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07184116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H33
+    public_coordination: (1 - Sc1 Operative!D33) x (Sc2 Operative!O32 - Sc2 Operative!N32)
+      - Sc2 Operative!U32
+  sc1_vanilla_hurdle: 0.0852959781045753
+  legacy_owner_rate: 0.0530545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q33),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A25:J25
+    sc1: Sc1 Operative!A33:T33
+    sc2: Sc2 Operative!A32:V32
+    sc4: Sc4 Operative!A33:H33
+- technology: Small modular reactors (SMRs)
+  workbook_technology: Small modular reactors (SMRs)
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D34
+    formula: ='Gearing Options'!F26
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D26
+    public_coordination: WACC Scenarios!F26
+    public_ownership_new_build: WACC Scenarios!H26
+    public_ownership_legacy: WACC Scenarios!H26
+    public_ownership_economic: WACC Scenarios!I26
+    public_ownership_operating_economic: WACC Scenarios!J26
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D26
+      public_coordination: WACC Scenarios!F26
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D26 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F26 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E26
+      public_coordination: WACC Scenarios!G26
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H34
+    public_coordination: (1 - Sc1 Operative!D34) x (Sc2 Operative!O33 - Sc2 Operative!N33)
+      - Sc2 Operative!U33
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q34),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A26:J26
+    sc1: Sc1 Operative!A34:T34
+    sc2: Sc2 Operative!A33:V33
+    sc4: Sc4 Operative!A34:H34
+- technology: Advanced modular reactors (AMRs)
+  workbook_technology: Advanced modular reactors (AMRs)
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D35
+    formula: ='Gearing Options'!F27
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D27
+    public_coordination: WACC Scenarios!F27
+    public_ownership_new_build: WACC Scenarios!H27
+    public_ownership_legacy: WACC Scenarios!H27
+    public_ownership_economic: WACC Scenarios!I27
+    public_ownership_operating_economic: WACC Scenarios!J27
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D27
+      public_coordination: WACC Scenarios!F27
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D27 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F27 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E27
+      public_coordination: WACC Scenarios!G27
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H35
+    public_coordination: (1 - Sc1 Operative!D35) x (Sc2 Operative!O34 - Sc2 Operative!N34)
+      - Sc2 Operative!U34
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q35),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A27:J27
+    sc1: Sc1 Operative!A35:T35
+    sc2: Sc2 Operative!A34:V34
+    sc4: Sc4 Operative!A35:H35
+- technology: Pumped hydro energy storage (PHES)
+  workbook_technology: Pumped hydro energy storage (PHES)
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D36
+    formula: ='Gearing Options'!F28
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D28
+    public_coordination: WACC Scenarios!F28
+    public_ownership_new_build: WACC Scenarios!H28
+    public_ownership_legacy: WACC Scenarios!H28
+    public_ownership_economic: WACC Scenarios!I28
+    public_ownership_operating_economic: WACC Scenarios!J28
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D28
+      public_coordination: WACC Scenarios!F28
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D28 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F28 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E28
+      public_coordination: WACC Scenarios!G28
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H36
+    public_coordination: (1 - Sc1 Operative!D36) x (Sc2 Operative!O35 - Sc2 Operative!N35)
+      - Sc2 Operative!U35
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q36),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A28:J28
+    sc1: Sc1 Operative!A36:T36
+    sc2: Sc2 Operative!A35:V35
+    sc4: Sc4 Operative!A36:H36
+- technology: Novel long duration energy storage (LDES)
+  workbook_technology: Novel long duration energy storage (LDES)
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D37
+    formula: ='Gearing Options'!F29
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D29
+    public_coordination: WACC Scenarios!F29
+    public_ownership_new_build: WACC Scenarios!H29
+    public_ownership_legacy: WACC Scenarios!H29
+    public_ownership_economic: WACC Scenarios!I29
+    public_ownership_operating_economic: WACC Scenarios!J29
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D29
+      public_coordination: WACC Scenarios!F29
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D29 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F29 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E29
+      public_coordination: WACC Scenarios!G29
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H37
+    public_coordination: (1 - Sc1 Operative!D37) x (Sc2 Operative!O36 - Sc2 Operative!N36)
+      - Sc2 Operative!U36
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q37),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A29:J29
+    sc1: Sc1 Operative!A37:T37
+    sc2: Sc2 Operative!A36:V36
+    sc4: Sc4 Operative!A37:H37
+- technology: Lithium batteries
+  workbook_technology: Lithium batteries
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D38
+    formula: ='Gearing Options'!F30
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D30
+    public_coordination: WACC Scenarios!F30
+    public_ownership_new_build: WACC Scenarios!H30
+    public_ownership_legacy: WACC Scenarios!H30
+    public_ownership_economic: WACC Scenarios!I30
+    public_ownership_operating_economic: WACC Scenarios!J30
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D30
+      public_coordination: WACC Scenarios!F30
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D30 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F30 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E30
+      public_coordination: WACC Scenarios!G30
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H38
+    public_coordination: (1 - Sc1 Operative!D38) x (Sc2 Operative!O37 - Sc2 Operative!N37)
+      - Sc2 Operative!U37
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q38),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A30:J30
+    sc1: Sc1 Operative!A38:T38
+    sc2: Sc2 Operative!A37:V37
+    sc4: Sc4 Operative!A38:H38
+- technology: New compound batteries
+  workbook_technology: New compound batteries
+  risk_rating: H
+  asset_beta: 1.05
+  equity_beta: 2.11944444444444
+  debt_beta: 0.175
+  credit_rating: BB-
+  credit_rating_public_coordination: BB+
+  cost_of_debt_real: 0.0699428169934642
+  cost_of_debt_real_public_coordination: 0.061707522875817
+  cost_of_equity_post_tax: 0.137113764705882
+  cost_of_equity_pre_tax: 0.182818352941177
+  post_tax_wacc: 0.105552606127451
+  merchant_uplift: 0.015
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00961713733660132
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D39
+    formula: ='Gearing Options'!F31
+  wacc:
+    private: 0.126119670833333
+    public_coordination: 0.102808312009804
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D31
+    public_coordination: WACC Scenarios!F31
+    public_ownership_new_build: WACC Scenarios!H31
+    public_ownership_legacy: WACC Scenarios!H31
+    public_ownership_economic: WACC Scenarios!I31
+    public_ownership_operating_economic: WACC Scenarios!J31
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.126119670833333
+      public_coordination: 0.102808312009804
+    fixed_tmr_shielded:
+      private: 0.11292134171568628
+      public_coordination: 0.09356948162745099
+    vanilla:
+      private: 0.135736808169935
+      public_coordination: 0.111293096405229
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D31
+      public_coordination: WACC Scenarios!F31
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D31 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F31 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E31
+      public_coordination: WACC Scenarios!G31
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0485787647058824
+    market_erp: 0.0823887647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.11516974346405201
+  corporation_tax_wedge:
+    private: 0.010949927369281
+    public_coordination: 0.007103705310457904
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H39
+    public_coordination: (1 - Sc1 Operative!D39) x (Sc2 Operative!O38 - Sc2 Operative!N38)
+      - Sc2 Operative!U38
+  sc1_vanilla_hurdle: 0.135736808169935
+  legacy_owner_rate: 0.1034954117647062
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q39),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A31:J31
+    sc1: Sc1 Operative!A39:T39
+    sc2: Sc2 Operative!A38:V38
+    sc4: Sc4 Operative!A39:H39
+- technology: Demand response aggregators
+  workbook_technology: Demand response aggregators
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D40
+    formula: ='Gearing Options'!F32
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D32
+    public_coordination: WACC Scenarios!F32
+    public_ownership_new_build: WACC Scenarios!H32
+    public_ownership_legacy: WACC Scenarios!H32
+    public_ownership_economic: WACC Scenarios!I32
+    public_ownership_operating_economic: WACC Scenarios!J32
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D32
+      public_coordination: WACC Scenarios!F32
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D32 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F32 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E32
+      public_coordination: WACC Scenarios!G32
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H40
+    public_coordination: (1 - Sc1 Operative!D40) x (Sc2 Operative!O39 - Sc2 Operative!N39)
+      - Sc2 Operative!U39
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q40),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A32:J32
+    sc1: Sc1 Operative!A40:T40
+    sc2: Sc2 Operative!A39:V39
+    sc4: Sc4 Operative!A40:H40
+- technology: Gas generation - unabated
+  workbook_technology: Gas generation - unabated
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D41
+    formula: ='Gearing Options'!F33
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D33
+    public_coordination: WACC Scenarios!F33
+    public_ownership_new_build: WACC Scenarios!H33
+    public_ownership_legacy: WACC Scenarios!H33
+    public_ownership_economic: WACC Scenarios!I33
+    public_ownership_operating_economic: WACC Scenarios!J33
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D33
+      public_coordination: WACC Scenarios!F33
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D33 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F33 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E33
+      public_coordination: WACC Scenarios!G33
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H41
+    public_coordination: (1 - Sc1 Operative!D41) x (Sc2 Operative!O40 - Sc2 Operative!N40)
+      - Sc2 Operative!U40
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q41),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A33:J33
+    sc1: Sc1 Operative!A41:T41
+    sc2: Sc2 Operative!A40:V40
+    sc4: Sc4 Operative!A41:H41
+- technology: Gas generation - CCUS - mature
+  workbook_technology: Gas generation - with CCUS - mature
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D42
+    formula: ='Gearing Options'!F34
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D34
+    public_coordination: WACC Scenarios!F34
+    public_ownership_new_build: WACC Scenarios!H34
+    public_ownership_legacy: WACC Scenarios!H34
+    public_ownership_economic: WACC Scenarios!I34
+    public_ownership_operating_economic: WACC Scenarios!J34
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D34
+      public_coordination: WACC Scenarios!F34
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D34 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F34 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E34
+      public_coordination: WACC Scenarios!G34
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H42
+    public_coordination: (1 - Sc1 Operative!D42) x (Sc2 Operative!O41 - Sc2 Operative!N41)
+      - Sc2 Operative!U41
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q42),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A34:J34
+    sc1: Sc1 Operative!A42:T42
+    sc2: Sc2 Operative!A41:V41
+    sc4: Sc4 Operative!A42:H42
+- technology: Gas generation - CCUS - maturing
+  workbook_technology: Gas generation - with CCUS - maturing
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D43
+    formula: ='Gearing Options'!F35
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D35
+    public_coordination: WACC Scenarios!F35
+    public_ownership_new_build: WACC Scenarios!H35
+    public_ownership_legacy: WACC Scenarios!H35
+    public_ownership_economic: WACC Scenarios!I35
+    public_ownership_operating_economic: WACC Scenarios!J35
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D35
+      public_coordination: WACC Scenarios!F35
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D35 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F35 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E35
+      public_coordination: WACC Scenarios!G35
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H43
+    public_coordination: (1 - Sc1 Operative!D43) x (Sc2 Operative!O42 - Sc2 Operative!N42)
+      - Sc2 Operative!U42
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q43),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A35:J35
+    sc1: Sc1 Operative!A43:T43
+    sc2: Sc2 Operative!A42:V42
+    sc4: Sc4 Operative!A43:H43
+- technology: Hydrogen CCHT/OCHT - mature
+  workbook_technology: Hydrogen CCHT / OCHT - mature
+  risk_rating: M
+  asset_beta: 0.75
+  equity_beta: 1.51388888888889
+  debt_beta: 0.125
+  credit_rating: BB+
+  credit_rating_public_coordination: BBB
+  cost_of_debt_real: 0.061707522875817
+  cost_of_debt_real_public_coordination: 0.0527532745098038
+  cost_of_equity_post_tax: 0.105503764705882
+  cost_of_equity_pre_tax: 0.14067168627451
+  post_tax_wacc: 0.0729310473039216
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00848478439542484
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D44
+    formula: ='Gearing Options'!F36
+  wacc:
+    private: 0.088756612009804
+    public_coordination: 0.0708384845588235
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D36
+    public_coordination: WACC Scenarios!F36
+    public_ownership_new_build: WACC Scenarios!H36
+    public_ownership_legacy: WACC Scenarios!H36
+    public_ownership_economic: WACC Scenarios!I36
+    public_ownership_operating_economic: WACC Scenarios!J36
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.088756612009804
+      public_coordination: 0.0708384845588235
+    fixed_tmr_shielded:
+      private: 0.07932923406862746
+      public_coordination: 0.06423931999999996
+    vanilla:
+      private: 0.0972413964052288
+      public_coordination: 0.0780920598039215
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D36
+      public_coordination: WACC Scenarios!F36
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D36 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F36 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E36
+      public_coordination: WACC Scenarios!G36
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.08141583169934648
+  corporation_tax_wedge:
+    private: 0.00734078031045752
+    public_coordination: 0.00501586446078439
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H44
+    public_coordination: (1 - Sc1 Operative!D44) x (Sc2 Operative!O43 - Sc2 Operative!N43)
+      - Sc2 Operative!U43
+  sc1_vanilla_hurdle: 0.0972413964052288
+  legacy_owner_rate: 0.065
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q44),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A36:J36
+    sc1: Sc1 Operative!A44:T44
+    sc2: Sc2 Operative!A43:V43
+    sc4: Sc4 Operative!A44:H44
+- technology: Hydrogen CCHT/OCHT - emerging
+  workbook_technology: Hydrogen CCHT / OCHT - emerging
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D45
+    formula: ='Gearing Options'!F37
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D37
+    public_coordination: WACC Scenarios!F37
+    public_ownership_new_build: WACC Scenarios!H37
+    public_ownership_legacy: WACC Scenarios!H37
+    public_ownership_economic: WACC Scenarios!I37
+    public_ownership_operating_economic: WACC Scenarios!J37
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D37
+      public_coordination: WACC Scenarios!F37
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D37 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F37 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E37
+      public_coordination: WACC Scenarios!G37
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H45
+    public_coordination: (1 - Sc1 Operative!D45) x (Sc2 Operative!O44 - Sc2 Operative!N44)
+      - Sc2 Operative!U44
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q45),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A37:J37
+    sc1: Sc1 Operative!A45:T45
+    sc2: Sc2 Operative!A44:V44
+    sc4: Sc4 Operative!A45:H45
+- technology: Hydrogen electrolyser
+  workbook_technology: Hydrogen electrolyser
+  risk_rating: M-H
+  asset_beta: 0.9
+  equity_beta: 1.81666666666667
+  debt_beta: 0.15
+  credit_rating: BB
+  credit_rating_public_coordination: BBB-
+  cost_of_debt_real: 0.0661846470588237
+  cost_of_debt_real_public_coordination: 0.0572303986928107
+  cost_of_equity_post_tax: 0.121308764705882
+  cost_of_equity_pre_tax: 0.161745019607843
+  post_tax_wacc: 0.0818901110294118
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00910038897058825
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D46
+    formula: ='Gearing Options'!F38
+  wacc:
+    private: 0.100086425735294
+    public_coordination: 0.0793233982843138
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D38
+    public_coordination: WACC Scenarios!F38
+    public_ownership_new_build: WACC Scenarios!H38
+    public_ownership_legacy: WACC Scenarios!H38
+    public_ownership_economic: WACC Scenarios!I38
+    public_ownership_operating_economic: WACC Scenarios!J38
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.100086425735294
+      public_coordination: 0.0793233982843138
+    fixed_tmr_shielded:
+      private: 0.08877357220588239
+      public_coordination: 0.07140440081372557
+    vanilla:
+      private: 0.109186814705882
+      public_coordination: 0.0871925781045753
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D38
+      public_coordination: WACC Scenarios!F38
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D38 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F38 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E38
+      public_coordination: WACC Scenarios!G38
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0455787647058824
+    market_erp: 0.0745587647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0425787647058824
+    market_erp: 0.0667287647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.09099049999999989
+  corporation_tax_wedge:
+    private: 0.00909592573529411
+    public_coordination: 0.006059784885620794
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H46
+    public_coordination: (1 - Sc1 Operative!D46) x (Sc2 Operative!O45 - Sc2 Operative!N45)
+      - Sc2 Operative!U45
+  sc1_vanilla_hurdle: 0.109186814705882
+  legacy_owner_rate: 0.0769454183006532
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q46),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A38:J38
+    sc1: Sc1 Operative!A46:T46
+    sc2: Sc2 Operative!A45:V45
+    sc4: Sc4 Operative!A46:H46
+- technology: Interconnectors
+  workbook_technology: Interconnectors
+  risk_rating: L-M
+  asset_beta: 0.6
+  equity_beta: 1.21111111111111
+  debt_beta: 0.1
+  credit_rating: BBB-
+  credit_rating_public_coordination: BBB+
+  cost_of_debt_real: 0.0572303986928107
+  cost_of_debt_real_public_coordination: 0.0513480457516342
+  cost_of_equity_post_tax: 0.0896987647058824
+  cost_of_equity_pre_tax: 0.119598352941177
+  post_tax_wacc: 0.0639719835784315
+  merchant_uplift: 0.0
+  cfd_term_deduction: -0.0
+  interest_tax_shield: 0.00786917982026147
+  gearing:
+    value: 0.55
+    source_cell: Sc1 Operative!D47
+    formula: ='Gearing Options'!F39
+  wacc:
+    private: 0.0774267982843138
+    public_coordination: 0.0636207276960786
+    public_ownership_new_build: 0.0275787647058824
+    public_ownership_legacy: 0.0275787647058824
+    public_ownership_economic: 0.0465787647058824
+    public_ownership_operating_economic: 0.0465787647058824
+  wacc_source_cells:
+    private: WACC Scenarios!D39
+    public_coordination: WACC Scenarios!F39
+    public_ownership_new_build: WACC Scenarios!H39
+    public_ownership_legacy: WACC Scenarios!H39
+    public_ownership_economic: WACC Scenarios!I39
+    public_ownership_operating_economic: WACC Scenarios!J39
+  wacc_by_basis:
+    notional_gearing_shielded:
+      private: 0.0774267982843138
+      public_coordination: 0.0636207276960786
+    fixed_tmr_shielded:
+      private: 0.06988489593137262
+      public_coordination: 0.058341396049019716
+    vanilla:
+      private: 0.0852959781045753
+      public_coordination: 0.0706810839869283
+  wacc_by_basis_source_cells:
+    notional_gearing_shielded:
+      private: WACC Scenarios!D39
+      public_coordination: WACC Scenarios!F39
+    fixed_tmr_shielded:
+      private: WACC Scenarios!D39 (variant erp_fixed_tmr)
+      public_coordination: WACC Scenarios!F39 (variant erp_fixed_tmr)
+    vanilla:
+      private: WACC Scenarios!E39
+      public_coordination: WACC Scenarios!G39
+  economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.0395787647058824
+    market_erp: 0.0588987647058824
+  operating_economic_rate_by_premium:
+    social_flat_19: 0.046578764705882396
+    none: 0.027578764705882396
+    social_flat_10: 0.037578764705882395
+    social_beta_20: 0.037578764705882395
+    market_erp: 0.0536787647058824
+  systematic_premium: 0.019
+  resource_rate_private: 0.07184116339869291
+  corporation_tax_wedge:
+    private: 0.00558563488562089
+    public_coordination: 0.0035495584150326874
+  corporation_tax_wedge_source:
+    private: Sc4 Operative!H47
+    public_coordination: (1 - Sc1 Operative!D47) x (Sc2 Operative!O46 - Sc2 Operative!N46)
+      - Sc2 Operative!U46
+  sc1_vanilla_hurdle: 0.0852959781045753
+  legacy_owner_rate: 0.0530545816993465
+  legacy_owner_rate_source: Legacy Fleet!F21 - (Legacy Fleet!D63 - Sc1 Operative!Q47),
+    the Legacy Fleet!AF formula applied to this technology
+  source_rows:
+    wacc: WACC Scenarios!A39:J39
+    sc1: Sc1 Operative!A47:T47
+    sc2: Sc2 Operative!A46:V46
+    sc4: Sc4 Operative!A47:H47
+legacy_cohorts:
+- cohort: Offshore wind — RO (2 ROC/MWh vintages)
+  technology: Offshore wind
+  support_regime: RO
+  capacity_mw: 6570
+  cod_year: 2013
+  design_life_years: 30
+  closure_override_year: 2038
+  end_of_life_year: 2038
+  load_factor: 0.38
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: 1.95
+  capture_factor: 0.85
+  owner_rate: 0.061
+  policy_cost_class: RO_A
+  historic_capex_gbp_per_kw: 2900
+  accounting_life_years: 25
+  net_book_value_gbp_m: 9145.44
+  debt_assumed_gbp_m: 5029.992
+  market_value_gbp_m: 16769.2048721087
+  market_value_pre_tax_gbp_m: 20082.0668004326
+  no_support_value_gbp_m: 3644.71111863015
+  ro_pass_through_value_gbp_m: 3644.71111863015
+  capital_allowance_pv_factor: 0.746887966804979
+  source_rows:
+    cohort: Legacy Fleet!A24:AK24
+    book_value: Legacy A1 Book Value!A5:W5
+    market_value: Legacy A2 Market DCF!A5:AP5
+- cohort: Offshore wind — CfD FIDeR / AR1
+  technology: Offshore wind
+  support_regime: CfD
+  capacity_mw: 3150
+  cod_year: 2020
+  design_life_years: 30
+  closure_override_year: null
+  end_of_life_year: 2050
+  load_factor: 0.42
+  cfd_strike_2012_gbp_per_mwh: 138.5
+  roc_band: null
+  capture_factor: 0.85
+  owner_rate: 0.061
+  policy_cost_class: CfD_A
+  historic_capex_gbp_per_kw: 2700
+  accounting_life_years: 25
+  net_book_value_gbp_m: 6463.8
+  debt_assumed_gbp_m: 3555.09
+  market_value_gbp_m: 12187.3083721057
+  market_value_pre_tax_gbp_m: 14640.499682863
+  no_support_value_gbp_m: 3456.80481938417
+  ro_pass_through_value_gbp_m: 12187.3083721057
+  capital_allowance_pv_factor: 0.746887966804979
+  source_rows:
+    cohort: Legacy Fleet!A25:AK25
+    book_value: Legacy A1 Book Value!A6:W6
+    market_value: Legacy A2 Market DCF!A6:AP6
+- cohort: Offshore wind — CfD AR2
+  technology: Offshore wind
+  support_regime: CfD
+  capacity_mw: 3190
+  cod_year: 2022
+  design_life_years: 30
+  closure_override_year: null
+  end_of_life_year: 2052
+  load_factor: 0.45
+  cfd_strike_2012_gbp_per_mwh: 62.3
+  roc_band: null
+  capture_factor: 0.85
+  owner_rate: 0.061
+  policy_cost_class: CfD_A
+  historic_capex_gbp_per_kw: 2300
+  accounting_life_years: 25
+  net_book_value_gbp_m: 6163.08
+  debt_assumed_gbp_m: 3389.694
+  market_value_gbp_m: 6981.34623531898
+  market_value_pre_tax_gbp_m: 7774.08488360649
+  no_support_value_gbp_m: 3843.7980973847
+  ro_pass_through_value_gbp_m: 6981.34623531898
+  capital_allowance_pv_factor: 0.746887966804979
+  source_rows:
+    cohort: Legacy Fleet!A26:AK26
+    book_value: Legacy A1 Book Value!A7:W7
+    market_value: Legacy A2 Market DCF!A7:AP7
+- cohort: Offshore wind — CfD AR3 / AR4 (operational by end-2025)
+  technology: Offshore wind
+  support_regime: CfD
+  capacity_mw: 1730
+  cod_year: 2020
+  design_life_years: 30
+  closure_override_year: null
+  end_of_life_year: 2050
+  load_factor: 0.47
+  cfd_strike_2012_gbp_per_mwh: 40.5
+  roc_band: null
+  capture_factor: 0.85
+  owner_rate: 0.061
+  policy_cost_class: CfD_A
+  historic_capex_gbp_per_kw: 2500
+  accounting_life_years: 25
+  net_book_value_gbp_m: 3287
+  debt_assumed_gbp_m: 1807.85
+  market_value_gbp_m: 2613.86609215524
+  market_value_pre_tax_gbp_m: 2666.81454057766
+  no_support_value_gbp_m: 2140.55888837531
+  ro_pass_through_value_gbp_m: 2613.86609215524
+  capital_allowance_pv_factor: 0.746887966804979
+  source_rows:
+    cohort: Legacy Fleet!A27:AK27
+    book_value: Legacy A1 Book Value!A8:W8
+    market_value: Legacy A2 Market DCF!A8:AP8
+- cohort: Offshore wind — merchant / PPA
+  technology: Offshore wind
+  support_regime: Merchant
+  capacity_mw: 1429
+  cod_year: 2024
+  design_life_years: 30
+  closure_override_year: null
+  end_of_life_year: 2054
+  load_factor: 0.45
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 0.85
+  owner_rate: 0.061
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 2600
+  accounting_life_years: 25
+  net_book_value_gbp_m: 3418.168
+  debt_assumed_gbp_m: 1879.9924
+  market_value_gbp_m: 1881.40458953645
+  market_value_pre_tax_gbp_m: 1657.54327014265
+  no_support_value_gbp_m: 1881.40458953645
+  ro_pass_through_value_gbp_m: 1881.40458953645
+  capital_allowance_pv_factor: 0.746887966804979
+  source_rows:
+    cohort: Legacy Fleet!A28:AK28
+    book_value: Legacy A1 Book Value!A9:W9
+    market_value: Legacy A2 Market DCF!A9:AP9
+- cohort: Onshore wind — RO
+  technology: Onshore wind
+  support_regime: RO
+  capacity_mw: 11020
+  cod_year: 2012
+  design_life_years: 25
+  closure_override_year: null
+  end_of_life_year: 2037
+  load_factor: 0.26
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: 0.95
+  capture_factor: 0.85
+  owner_rate: 0.0490545816993465
+  policy_cost_class: RO_A
+  historic_capex_gbp_per_kw: 1300
+  accounting_life_years: 25
+  net_book_value_gbp_m: 6303.44
+  debt_assumed_gbp_m: 3466.892
+  market_value_gbp_m: 12101.9500506374
+  market_value_pre_tax_gbp_m: 14484.7706203715
+  no_support_value_gbp_m: 5385.96703234251
+  ro_pass_through_value_gbp_m: 5385.96703234251
+  capital_allowance_pv_factor: 0.785838897718559
+  source_rows:
+    cohort: Legacy Fleet!A29:AK29
+    book_value: Legacy A1 Book Value!A10:W10
+    market_value: Legacy A2 Market DCF!A10:AP10
+- cohort: Onshore wind — post-RO (merchant / PPA / CfD AR4–AR6)
+  technology: Onshore wind
+  support_regime: Merchant
+  capacity_mw: 2500
+  cod_year: 2022
+  design_life_years: 25
+  closure_override_year: null
+  end_of_life_year: 2047
+  load_factor: 0.3
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 0.85
+  owner_rate: 0.0490545816993465
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 1400
+  accounting_life_years: 25
+  net_book_value_gbp_m: 2940
+  debt_assumed_gbp_m: 1617
+  market_value_gbp_m: 3012.92539455234
+  market_value_pre_tax_gbp_m: 3247.11173963893
+  no_support_value_gbp_m: 2538.72461411949
+  ro_pass_through_value_gbp_m: 3012.92539455234
+  capital_allowance_pv_factor: 0.785838897718559
+  source_rows:
+    cohort: Legacy Fleet!A30:AK30
+    book_value: Legacy A1 Book Value!A11:W11
+    market_value: Legacy A2 Market DCF!A11:AP11
+- cohort: Solar PV — RO (utility-scale ≥5 MW)
+  technology: Solar PV
+  support_regime: RO
+  capacity_mw: 5640
+  cod_year: 2015
+  design_life_years: 35
+  closure_override_year: 2045
+  end_of_life_year: 2045
+  load_factor: 0.105
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: 1.3
+  capture_factor: 0.75
+  owner_rate: 0.0480545816993465
+  policy_cost_class: RO_A
+  historic_capex_gbp_per_kw: 1000
+  accounting_life_years: 25
+  net_book_value_gbp_m: 3158.4
+  debt_assumed_gbp_m: 1737.12
+  market_value_gbp_m: 4413.61456392898
+  market_value_pre_tax_gbp_m: 5053.860449943
+  no_support_value_gbp_m: 1738.51048496339
+  ro_pass_through_value_gbp_m: 1738.51048496339
+  capital_allowance_pv_factor: 0.789284734639979
+  source_rows:
+    cohort: Legacy Fleet!A31:AK31
+    book_value: Legacy A1 Book Value!A12:W12
+    market_value: Legacy A2 Market DCF!A12:AP12
+- cohort: Solar PV — post-RO (merchant / PPA / CfD)
+  technology: Solar PV
+  support_regime: Merchant
+  capacity_mw: 4000
+  cod_year: 2022
+  design_life_years: 35
+  closure_override_year: null
+  end_of_life_year: 2057
+  load_factor: 0.11
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 0.75
+  owner_rate: 0.0480545816993465
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 650
+  accounting_life_years: 25
+  net_book_value_gbp_m: 2184
+  debt_assumed_gbp_m: 1201.2
+  market_value_gbp_m: 1637.26849083812
+  market_value_pre_tax_gbp_m: 1608.42536763292
+  no_support_value_gbp_m: 1637.26849083812
+  ro_pass_through_value_gbp_m: 1637.26849083812
+  capital_allowance_pv_factor: 0.789284734639979
+  source_rows:
+    cohort: Legacy Fleet!A32:AK32
+    book_value: Legacy A1 Book Value!A13:W13
+    market_value: Legacy A2 Market DCF!A13:AP13
+- cohort: Nuclear — AGR fleet (Hartlepool, Heysham 1 & 2, Torness)
+  technology: Nuclear
+  support_regime: Merchant
+  capacity_mw: 4600
+  cod_year: 1985
+  design_life_years: 45
+  closure_override_year: 2029
+  end_of_life_year: 2029
+  load_factor: 0.65
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1
+  owner_rate: 0.0530545816993465
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 0
+  accounting_life_years: 40
+  net_book_value_gbp_m: 0
+  debt_assumed_gbp_m: 0
+  market_value_gbp_m: 0
+  market_value_pre_tax_gbp_m: -391.902502099987
+  no_support_value_gbp_m: 0
+  ro_pass_through_value_gbp_m: 0
+  capital_allowance_pv_factor: 0.772351260754059
+  source_rows:
+    cohort: Legacy Fleet!A33:AK33
+    book_value: Legacy A1 Book Value!A14:W14
+    market_value: Legacy A2 Market DCF!A14:AP14
+- cohort: Nuclear — Sizewell B (PWR; extension to 2055)
+  technology: Nuclear
+  support_regime: Merchant→CfD
+  capacity_mw: 1198
+  cod_year: 1995
+  design_life_years: 60
+  closure_override_year: 2055
+  end_of_life_year: 2055
+  load_factor: 0.9
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1
+  owner_rate: 0.0530545816993465
+  policy_cost_class: CfD_B
+  historic_capex_gbp_per_kw: 1700
+  accounting_life_years: 40
+  net_book_value_gbp_m: 458.235
+  debt_assumed_gbp_m: 229.1175
+  market_value_gbp_m: 3349.01173323201
+  market_value_pre_tax_gbp_m: 4347.3761843188
+  no_support_value_gbp_m: 2475.17149996651
+  ro_pass_through_value_gbp_m: 3349.01173323201
+  capital_allowance_pv_factor: 0.772351260754059
+  source_rows:
+    cohort: Legacy Fleet!A34:AK34
+    book_value: Legacy A1 Book Value!A15:W15
+    market_value: Legacy A2 Market DCF!A15:AP15
+- cohort: Gas CCGT (incl. OCGT/peakers)
+  technology: Gas CCGT
+  support_regime: Merchant
+  capacity_mw: 30000
+  cod_year: 2004
+  design_life_years: 40
+  closure_override_year: 2038
+  end_of_life_year: 2038
+  load_factor: 0.107
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1.2
+  owner_rate: 0.065
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 500
+  accounting_life_years: 30
+  net_book_value_gbp_m: 4000
+  debt_assumed_gbp_m: 2200
+  market_value_gbp_m: 6500
+  market_value_pre_tax_gbp_m: 2004.54202567749
+  no_support_value_gbp_m: 2238.10039680914
+  ro_pass_through_value_gbp_m: 6500
+  capital_allowance_pv_factor: 0.73469387755102
+  source_rows:
+    cohort: Legacy Fleet!A35:AK35
+    book_value: Legacy A1 Book Value!A16:W16
+    market_value: Legacy A2 Market DCF!A16:AP16
+- cohort: Biomass — Drax (4 units; RO + CfD → bridging CfD)
+  technology: Biomass
+  support_regime: RO+CfD→CfD
+  capacity_mw: 2580
+  cod_year: 2013
+  design_life_years: 25
+  closure_override_year: 2031
+  end_of_life_year: 2031
+  load_factor: 0.64
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1
+  owner_rate: 0.065
+  policy_cost_class: CfD_AB
+  historic_capex_gbp_per_kw: 300
+  accounting_life_years: 15
+  net_book_value_gbp_m: 103.2
+  debt_assumed_gbp_m: 51.6
+  market_value_gbp_m: 971.37326034996
+  market_value_pre_tax_gbp_m: 1269.89087774552
+  no_support_value_gbp_m: 0
+  ro_pass_through_value_gbp_m: 971.37326034996
+  capital_allowance_pv_factor: 0.73469387755102
+  source_rows:
+    cohort: Legacy Fleet!A36:AK36
+    book_value: Legacy A1 Book Value!A17:W17
+    market_value: Legacy A2 Market DCF!A17:AP17
+- cohort: Hydro — large-scale (run-of-river & storage)
+  technology: Hydro
+  support_regime: Merchant
+  capacity_mw: 1400
+  cod_year: 1960
+  design_life_years: 100
+  closure_override_year: 2066
+  end_of_life_year: 2060
+  load_factor: 0.35
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1.05
+  owner_rate: 0.065
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 200
+  accounting_life_years: 20
+  net_book_value_gbp_m: 0
+  debt_assumed_gbp_m: 0
+  market_value_gbp_m: 1678.35038923441
+  market_value_pre_tax_gbp_m: 2237.80051897922
+  no_support_value_gbp_m: 1678.35038923441
+  ro_pass_through_value_gbp_m: 1678.35038923441
+  capital_allowance_pv_factor: 0.73469387755102
+  source_rows:
+    cohort: Legacy Fleet!A37:AK37
+    book_value: Legacy A1 Book Value!A18:W18
+    market_value: Legacy A2 Market DCF!A18:AP18
+- cohort: Pumped storage (Dinorwig, Cruachan, Ffestiniog, Foyers)
+  technology: Pumped storage
+  support_regime: Merchant
+  capacity_mw: 2830
+  cod_year: 1977
+  design_life_years: 60
+  closure_override_year: 2056
+  end_of_life_year: 2037
+  load_factor: 0.1
+  cfd_strike_2012_gbp_per_mwh: null
+  roc_band: null
+  capture_factor: 1.5
+  owner_rate: 0.065
+  policy_cost_class: none
+  historic_capex_gbp_per_kw: 300
+  accounting_life_years: 25
+  net_book_value_gbp_m: 0
+  debt_assumed_gbp_m: 0
+  market_value_gbp_m: 1144.81484280245
+  market_value_pre_tax_gbp_m: 1526.41979040326
+  no_support_value_gbp_m: 1144.81484280245
+  ro_pass_through_value_gbp_m: 1144.81484280245
+  capital_allowance_pv_factor: 0.73469387755102
+  source_rows:
+    cohort: Legacy Fleet!A38:AK38
+    book_value: Legacy A1 Book Value!A19:W19
+    market_value: Legacy A2 Market DCF!A19:AP19
+legacy_acquisition_by_basis:
+  book_value:
+    total_gbp_bn:
+      value: 47.624763
+      source_cell: Legacy A2 Market DCF!E53
+      formula: ='Legacy A1 Book Value'!K20/1000
+    equity_gbp_bn:
+      value: 21.4592151
+      source_cell: Legacy A2 Market DCF!C53
+      formula: ='Legacy A1 Book Value'!N20/1000
+    debt_gbp_bn:
+      value: 26.1655479
+      source_cell: Legacy A2 Market DCF!D53
+      formula: ='Legacy A1 Book Value'!O20/1000
+  market_value:
+    total_gbp_bn:
+      value: 75.2424388868007
+      source_cell: Legacy A2 Market DCF!E54
+      formula: =V20/1000
+    equity_gbp_bn:
+      value: 49.0768909868007
+      source_cell: Legacy A2 Market DCF!C54
+      formula: =V20/1000-'Legacy A1 Book Value'!O20/1000
+    debt_gbp_bn:
+      value: 26.1655479
+      source_cell: Legacy A2 Market DCF!D54
+      formula: ='Legacy A1 Book Value'!O20/1000
+  no_support:
+    total_gbp_bn:
+      value: 33.8041852643868
+      source_cell: Legacy A2 Market DCF!E55
+      formula: =Z20/1000
+    equity_gbp_bn:
+      value: 7.63863736438679
+      source_cell: Legacy A2 Market DCF!C55
+      formula: =Z20/1000-'Legacy A1 Book Value'!O20/1000
+    debt_gbp_bn:
+      value: 26.1655479
+      source_cell: Legacy A2 Market DCF!D55
+      formula: ='Legacy A1 Book Value'!O20/1000
+  ro_pass_through:
+    total_gbp_bn:
+      value: 52.7268580360617
+      source_cell: Legacy A2 Market DCF!E56
+      formula: =AM20/1000
+    equity_gbp_bn:
+      value: 26.5613101360617
+      source_cell: Legacy A2 Market DCF!C56
+      formula: =AM20/1000-'Legacy A1 Book Value'!O20/1000
+    debt_gbp_bn:
+      value: 26.1655479
+      source_cell: Legacy A2 Market DCF!D56
+      formula: ='Legacy A1 Book Value'!O20/1000
+variants:
+  base:
+    description: the workbook as saved (parity check against its cached values)
+    switches: []
+  erp_fixed_tmr:
+    description: private rates at Fixed TMR (CEPA / UKRN), the workbook's co-equal
+      ERP case
+    switches:
+    - sheet: Assumptions
+      cell: B10
+      value: Fixed TMR (CEPA / UKRN)
+  margin_pwlb_hra:
+    description: state cash rate at the PWLB HRA margin (+40 bp)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B5
+      value: PWLB HRA (+40bp)
+  margin_pwlb_certainty:
+    description: state cash rate at the PWLB certainty margin (+80 bp)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B5
+      value: PWLB certainty (+80bp)
+  margin_pwlb_standard:
+    description: state cash rate at the PWLB standard margin (+100 bp)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B5
+      value: PWLB standard (+100bp)
+  margin_gilt_flat:
+    description: state cash rate at the gilt yield (no margin)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B5
+      value: Gilt flat (0bp)
+  premium_none:
+    description: economic rate without a systematic-risk premium (pure Arrow-Lind,
+      Green Book)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B6
+      value: None (pure Arrow-Lind)
+  premium_flat_10:
+    description: economic rate at a flat 1% (the Green Book Discount Rate Review's
+      recommendation, para 55)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B7
+      value: 0.01
+  premium_beta_20:
+    description: economic rate at 2% per unit of CEPA asset beta (France, Quinet 2013;
+      v5's central)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B7
+      value: 0.02
+    - sheet: Sc4 Operative
+      cell: B10
+      value: CEPA asset beta
+  premium_market_erp_beta:
+    description: economic rate at the market ERP per unit of CEPA asset beta (the
+      Market Economy Investor Principle bound)
+    switches:
+    - sheet: Sc4 Operative
+      cell: B6
+      value: Market ERP (operative)
+    - sheet: Sc4 Operative
+      cell: B10
+      value: CEPA asset beta
+  fiscal_sc3:
+    description: fiscal paths for Scenario 3 (public new build, existing fleet private)
+    switches:
+    - sheet: Build-Out
+      cell: C216
+      value: 'Sc3: new build only'
+sovereign_yield_shift_2025:
+  Sc2:
+    B:
+      value: 0.0
+      source_cell: Gilt-Adjusted WACCs!D7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0
+      source_cell: 'Gilt-Adjusted WACCs!D8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0
+      source_cell: Gilt-Adjusted WACCs!D8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2026:
+  Sc2:
+    B:
+      value: 5.6131020345445504e-05
+      source_cell: Gilt-Adjusted WACCs!E7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0003575224225824556
+      source_cell: 'Gilt-Adjusted WACCs!E8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.000986050454444225
+      source_cell: Gilt-Adjusted WACCs!E8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2027:
+  Sc2:
+    B:
+      value: 0.000113307902238336
+      source_cell: Gilt-Adjusted WACCs!F7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.00072170638368367
+      source_cell: 'Gilt-Adjusted WACCs!F8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00130705628790489
+      source_cell: Gilt-Adjusted WACCs!F8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2028:
+  Sc2:
+    B:
+      value: 0.000167762404707598
+      source_cell: Gilt-Adjusted WACCs!G7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0010685503484560354
+      source_cell: 'Gilt-Adjusted WACCs!G8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00161094023677543
+      source_cell: Gilt-Adjusted WACCs!G8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2029:
+  Sc2:
+    B:
+      value: 0.000214019682773328
+      source_cell: Gilt-Adjusted WACCs!H7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.001363182692823743
+      source_cell: 'Gilt-Adjusted WACCs!H8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00186282224878818
+      source_cell: Gilt-Adjusted WACCs!H8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2030:
+  Sc2:
+    B:
+      value: 0.000251735647270442
+      source_cell: Gilt-Adjusted WACCs!I7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0016034117660537678
+      source_cell: 'Gilt-Adjusted WACCs!I8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0020605023050696003
+      source_cell: Gilt-Adjusted WACCs!I8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2031:
+  Sc2:
+    B:
+      value: 0.000284514748188182
+      source_cell: Gilt-Adjusted WACCs!J7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0018121958483323687
+      source_cell: 'Gilt-Adjusted WACCs!J8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00222693037602988
+      source_cell: Gilt-Adjusted WACCs!J8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2032:
+  Sc2:
+    B:
+      value: 0.000315683006844473
+      source_cell: Gilt-Adjusted WACCs!K7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0020107197888183013
+      source_cell: 'Gilt-Adjusted WACCs!K8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0023832830577444303
+      source_cell: Gilt-Adjusted WACCs!K8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2033:
+  Sc2:
+    B:
+      value: 0.000350910295540277
+      source_cell: Gilt-Adjusted WACCs!L7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0022350974238234222
+      source_cell: 'Gilt-Adjusted WACCs!L8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0025656659884772497
+      source_cell: Gilt-Adjusted WACCs!L8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2034:
+  Sc2:
+    B:
+      value: 0.000384239366529414
+      source_cell: Gilt-Adjusted WACCs!M7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0024473845001873494
+      source_cell: 'Gilt-Adjusted WACCs!M8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00273612677041287
+      source_cell: Gilt-Adjusted WACCs!M8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2035:
+  Sc2:
+    B:
+      value: 0.000426105995768757
+      source_cell: Gilt-Adjusted WACCs!N7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0027140509284634224
+      source_cell: 'Gilt-Adjusted WACCs!N8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00296112722121344
+      source_cell: Gilt-Adjusted WACCs!N8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2036:
+  Sc2:
+    B:
+      value: 0.00046210525964390304
+      source_cell: Gilt-Adjusted WACCs!O7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.002943345602827406
+      source_cell: 'Gilt-Adjusted WACCs!O8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0031489081923123303
+      source_cell: Gilt-Adjusted WACCs!O8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2037:
+  Sc2:
+    B:
+      value: 0.000482185018815432
+      source_cell: Gilt-Adjusted WACCs!P7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003071242158060079
+      source_cell: 'Gilt-Adjusted WACCs!P8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0032354353242949104
+      source_cell: Gilt-Adjusted WACCs!P8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2038:
+  Sc2:
+    B:
+      value: 0.0004918473882786799
+      source_cell: Gilt-Adjusted WACCs!Q7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.00313278591260306
+      source_cell: 'Gilt-Adjusted WACCs!Q8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0032557459883655604
+      source_cell: Gilt-Adjusted WACCs!Q8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2039:
+  Sc2:
+    B:
+      value: 0.00049620940801529
+      source_cell: Gilt-Adjusted WACCs!R7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003160569477804399
+      source_cell: 'Gilt-Adjusted WACCs!R8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00324242489401715
+      source_cell: Gilt-Adjusted WACCs!R8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2040:
+  Sc2:
+    B:
+      value: 0.000497922441433397
+      source_cell: Gilt-Adjusted WACCs!S7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0031714805186840622
+      source_cell: 'Gilt-Adjusted WACCs!S8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0032123518482327497
+      source_cell: Gilt-Adjusted WACCs!S8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2041:
+  Sc2:
+    B:
+      value: 0.000497776744019669
+      source_cell: Gilt-Adjusted WACCs!T7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003170552509679426
+      source_cell: 'Gilt-Adjusted WACCs!T8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0031705525096794203
+      source_cell: Gilt-Adjusted WACCs!T8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2042:
+  Sc2:
+    B:
+      value: 0.000496081806028026
+      source_cell: Gilt-Adjusted WACCs!U7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003159756726293163
+      source_cell: 'Gilt-Adjusted WACCs!U8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0031597567262931603
+      source_cell: Gilt-Adjusted WACCs!U8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2043:
+  Sc2:
+    B:
+      value: 0.000492897773003902
+      source_cell: Gilt-Adjusted WACCs!V7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003139476261171356
+      source_cell: 'Gilt-Adjusted WACCs!V8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00313947626117135
+      source_cell: Gilt-Adjusted WACCs!V8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2044:
+  Sc2:
+    B:
+      value: 0.000492626514634234
+      source_cell: Gilt-Adjusted WACCs!W7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.003137748500854994
+      source_cell: 'Gilt-Adjusted WACCs!W8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00313774850085499
+      source_cell: Gilt-Adjusted WACCs!W8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2045:
+  Sc2:
+    B:
+      value: 0.00048972224860871
+      source_cell: Gilt-Adjusted WACCs!X7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0031192499911382823
+      source_cell: 'Gilt-Adjusted WACCs!X8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00311924999113828
+      source_cell: Gilt-Adjusted WACCs!X8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2046:
+  Sc2:
+    B:
+      value: 0.000484547131196855
+      source_cell: Gilt-Adjusted WACCs!Y7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0030862874598525823
+      source_cell: 'Gilt-Adjusted WACCs!Y8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00308628745985258
+      source_cell: Gilt-Adjusted WACCs!Y8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2047:
+  Sc2:
+    B:
+      value: 0.00047498346797298003
+      source_cell: Gilt-Adjusted WACCs!Z7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0030253724074712153
+      source_cell: 'Gilt-Adjusted WACCs!Z8 (variant fiscal_sc3: Build-Out!C216 = Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00302537240747121
+      source_cell: Gilt-Adjusted WACCs!Z8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2048:
+  Sc2:
+    B:
+      value: 0.000462845242109759
+      source_cell: Gilt-Adjusted WACCs!AA7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.002948058866941142
+      source_cell: 'Gilt-Adjusted WACCs!AA8 (variant fiscal_sc3: Build-Out!C216 =
+        Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.00294805886694114
+      source_cell: Gilt-Adjusted WACCs!AA8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2049:
+  Sc2:
+    B:
+      value: 0.00044790665487008495
+      source_cell: Gilt-Adjusted WACCs!AB7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.0028529086297457685
+      source_cell: 'Gilt-Adjusted WACCs!AB8 (variant fiscal_sc3: Build-Out!C216 =
+        Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0028529086297457698
+      source_cell: Gilt-Adjusted WACCs!AB8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+sovereign_yield_shift_2050:
+  Sc2:
+    B:
+      value: 0.000425463840784054
+      source_cell: Gilt-Adjusted WACCs!AC7
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc3:
+    B:
+      value: 0.002709960769325186
+      source_cell: 'Gilt-Adjusted WACCs!AC8 (variant fiscal_sc3: Build-Out!C216 =
+        Sc3)'
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life
+  Sc4:
+    B:
+      value: 0.0027099607693251804
+      source_cell: Gilt-Adjusted WACCs!AC8
+      note: gilt-yield shift in the investment year (bp / 10,000); applied additively,
+        locked in for the asset's life

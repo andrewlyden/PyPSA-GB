@@ -1,0 +1,64 @@
+{
+  "purpose": "Gate-fee revenue of energy-from-waste (model carrier waste_to_energy), expressed per MWh of electricity exported, for the 2045 public-ownership finance layer. The gate fee is paid by waste producers (mainly local authorities), not by electricity consumers.",
+  "gate_fee_gbp_per_tonne": {
+    "central": 121,
+    "low": 69,
+    "high": 158,
+    "basis": "UK median and range for residual waste excluding bulky waste containing POPs sent to EfW, 29 local-authority responses after outlier removal. The other residual category (mixed with bulky waste containing POPs, 40 responses) has the same median, 121, mean 126, range 69 to 208."
+  },
+  "gate_fee_price_year": "2024/25 nominal (WRAP survey fieldwork December 2024 to January 2025, fees in force in 2024/25); treated as 2024 money",
+  "gate_fee_source": {
+    "title": "WRAP, Gate Fees Report 2024/25 (v2)",
+    "url": "https://www.wrap.ngo/sites/default/files/2025-09/WRAP-Gate-Fees-Report-2024-25-v2.pdf",
+    "landing_page": "https://www.wrap.ngo/resources/report/uk-gate-fees-report-2024-25",
+    "access_date": "2026-10-03",
+    "table": "Table 23: UK EfW gate fees according to material reprocessed (GBP/tonne); survey dates in section 2.0"
+  },
+  "gate_fee_cross_check_latest_edition": {
+    "title": "WRAP, Gate Fees Report 2025/26 (v1.0, July 2026)",
+    "url": "https://www.wrap.ngo/sites/default/files/2026-07/Gate-Fees-Report-2025-26-V1.0.pdf",
+    "access_date": "2026-10-03",
+    "table": "Table 23",
+    "residual_excluding_bulky_pops_median_gbp_per_tonne": 129,
+    "residual_excluding_bulky_pops_range_gbp_per_tonne": [
+      65,
+      175
+    ],
+    "residual_mixed_with_bulky_pops_median_gbp_per_tonne": 125,
+    "price_year": "2025/26 nominal (fieldwork September to December 2025)",
+    "note": "Not used as the central value because it is in 2025/26 money; the 2024/25 edition needs no rebasing to 2024."
+  },
+  "mwh_exported_per_tonne": {
+    "central": 0.6,
+    "low": 0.553,
+    "high": 0.62,
+    "source": "Tolvik Consulting, UK Energy from Waste Statistics 2024 (April 2025), section 3 Energy, Figure 5: average power export 600 kWh per tonne of input in 2024 (10,040 GWh exported from 16.82 Mt processed); 2020 to 2024 series 553, 591, 620, 605, 600 kWh/t gives the range. https://static1.squarespace.com/static/5eabdfbe067c0b62fc7b58b7/t/6800cd36c2408b1f7ad8f645/1744883006223/uk-energy-from-waste-statistics-2024-4812.pdf (accessed 2026-10-03)",
+    "net_calorific_value_mj_per_kg": 9.62,
+    "implied_net_export_efficiency": 0.225,
+    "implied_gross_generation_mwh_per_tonne": 0.706,
+    "efficiency_derivation": "9.62 MJ/kg = 2.672 MWh(th)/t; 0.600 / 2.672 = 22.5% net export efficiency; gross generation 11,870 GWh / 16.82 Mt = 0.706 MWh/t (26.4%). Parasitic load 15.4% excluding imports (Tolvik Figure 5).",
+    "electricity_only_caveat": "Tolvik's fleet average includes CHP plants (1,949 GWh(th) of heat exported in 2024 beside 10,040 GWh of power, about 16% of exported energy); electricity-only plants export slightly more per tonne, so the central value is mildly conservative for gate fee per MWh."
+  },
+  "gate_fee_gbp_per_mwh_2024": {
+    "central": 201.7,
+    "low": 115.0,
+    "high": 263.3,
+    "arithmetic": "gate fee per tonne / 0.600 MWh exported per tonne: 121/0.600 = 201.7; 69/0.600 = 115.0; 158/0.600 = 263.3",
+    "wider_band_if_export_rate_also_varies": "69/0.620 = 111.3 to 158/0.553 = 285.7 GBP/MWh"
+  },
+  "cpi_to_2024_factor": 1.0,
+  "cpi_to_2024_factor_source": "No rebasing: WRAP 2024/25 gate fees were collected December 2024 to January 2025 (WRAP Gate Fees Report 2024/25, section 2.0). The bill layer treats FY2024/25 nominal values as 2024 money (data/market/neso_balancing_costs/bsuos_constraint_split_2024_25.json, price_basis_note); the same convention is applied here.",
+  "projection_2045": {
+    "central_gbp_per_tonne_2024": 121,
+    "central_gbp_per_mwh_2024": 201.7,
+    "rule": "Held flat in real terms (2024 money). No source found giving a real-terms gate-fee projection to 2045.",
+    "fes_context": "FES 2025 Holistic Transition 2045: waste_to_energy 3,134 MW, 10,549 GWh (resources/FES/fes2025_holistic_transition_2045_targets.csv, ES1). At 0.600 MWh/t that is about 17.6 Mt of waste a year; at 121 GBP/t about GBP 2.13 bn of gate-fee revenue in 2045.",
+    "upside_risk": "Gate fees rose 6.6% nominal between the 2024/25 and 2025/26 editions (121 to 129 for residual waste excluding bulky POPs). WRAP 2025/26 interviewees cite the potential inclusion of EfW plants in the UK Emissions Trading Scheme as a source of future cost uncertainty; Tolvik reports about 1.00 t CO2 per tonne of residual waste input (biogenic plus fossil). A carbon cost passed through to gate fees would raise the per-MWh figure; not included in the central value."
+  },
+  "notes": [
+    "Gate fee is revenue to the EfW operator for waste disposal, separate from electricity market revenue; it should reduce the electricity price the asset needs, not be added to any consumer electricity bill line.",
+    "Medians are of local-authority-reported contract fees; merchant commercial and industrial waste fees can differ.",
+    "Units: GBP per tonne of waste input; GBP per MWh of net electricity exported."
+  ],
+  "derived_from": "data/public_ownership/financing/efw_gate_fees_2050.json (2026-11-11, scripts/sources/fes_year_inputs.py): every value year-neutral (2024 money), only the FES context moved to 2045"
+}

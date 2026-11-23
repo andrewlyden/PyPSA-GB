@@ -34,7 +34,7 @@ def _center(lon, lat):
 def create_pypsa_folium_map(
     nc_path,
     *,
-    map_tiles="CartoDB positron",
+    map_tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     initial_zoom=6,
     output_html=None,
     renewable_sites=None,
@@ -206,7 +206,7 @@ def create_pypsa_folium_map(
     map_center = _center(buses.lon, buses.lat)
     logger.info(f"Map centered at: {map_center}")
     m = folium.Map(location=map_center,
-                   tiles=map_tiles, zoom_start=initial_zoom)
+                   tiles=map_tiles, attr="Tiles &copy; Esri", zoom_start=initial_zoom)
 
     # Move the embedded demand plot down by ~1 inch (CSS pixels).
     # 1 inch ≈ 96 CSS pixels on most displays. Adjust this value if needed.
@@ -460,7 +460,7 @@ def plot_assets_folium(network, out_html, use_real_location=True):
     center_lat = sum(lats) / len(lats)
     center_lon = sum(lons) / len(lons)
     
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=6, tiles='CartoDB positron')
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=6, tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', attr='Tiles &copy; Esri')
     
     # Define colors for different carriers
     carrier_colors = {

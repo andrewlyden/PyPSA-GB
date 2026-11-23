@@ -1,3090 +1,526 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# PyPSA-GB Scenario Definitions
-# ══════════════════════════════════════════════════════════════════════════════
-# Each scenario inherits from defaults.yaml - only specify what's DIFFERENT.
+# PyPSA-GB scenarios: the canonical set.
 #
-# USAGE:
-#   1. Copy a template from the bottom of this file
-#   2. Modify only the values you need to change
-#   3. Add scenario ID to run_scenarios in config.yaml
-#   4. Validate: python scripts/validate_scenarios.py
-# ══════════════════════════════════════════════════════════════════════════════
+# Each scenario is merged over the defaults (config/defaults/: the base, then the overlays its targets,
+# method and dispatch select) and lists only what differs. Studies (config/studies/<name>/) hold the
+# larger month-by-month studies; config.yaml says which studies to load and which scenarios to run.
+# Scenarios retired from this file are in config/studies/archive/canonical/ (ids unchanged).
+#
+# Each scenario writes targets: {source, edition, pathway} (where the numbers come from) and method
+# (brownfield | gsp_block | historical: how the fleet is built), so any entry can be copied under a new id;
+# the loader fills FES_year and FES_scenario from targets. Only the ids in
+# data/scenario_sources/legacy_scenario_ids.txt may leave both out.
 
-# ╔════════════════════════════════════════════════════════════════════════════╗
-# ║ HISTORICAL SCENARIOS (modelled_year ≤ 2024)                                ║
-# ║ Uses: DUKES (thermal) + REPD (renewables) + ESPENI (demand)                ║
-# ║                                                                            ║
-# ║ SUPPORTED YEARS: 2010-2024 (all DUKES years now supported)              ║
-# ║    Weather cutouts available: 2010, 2013, 2015, 2017, 2019, 2020           ║
-# ║    Years without cutouts need cutout generation via Snakefile_cutouts     ║
-# ╚════════════════════════════════════════════════════════════════════════════╝
-
-Historical_2020_reduced:
-  description: "2020 Historical - Reduced Network (32 buses)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-07 23:00"
-
-Historical_2020_zonal:
-  description: "2020 Historical - Zonal Network (17 zones)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Zonal"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-07 23:00"
-
-Historical_2020_ETYS:
-  description: "2020 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2020-12-07 00:00"
-    end: "2020-12-13 23:00"
-
-Historical_2020_ETYS_market:
-  description: "2020 Historical - Full ETYS Network - Two-stage market dispatch (wholesale + BM)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 23:00"
-  market:
-    enabled: true
-
-Historical_2019_reduced:
-  description: "2019 Historical - Reduced Network (32 buses)"
-  modelled_year: 2019
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2019-01-01 00:00"
-    end: "2019-01-07 23:00"
-
-Historical_2019_zonal:
-  description: "2019 Historical - Zonal Network (17 zones)"
-  modelled_year: 2019
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Zonal"
-  solve_period:
-    enabled: true
-    start: "2019-01-01 00:00"
-    end: "2019-01-07 23:00"
-
-Historical_2019_ETYS:
-  description: "2019 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)"
-  modelled_year: 2019
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2019-12-07 00:00"
-    end: "2019-12-13 23:00"
-
-Historical_2023_etys:
-  description: "2023 Historical - Full ETYS Network (high renewables week)"
-  modelled_year: 2023
-  renewables_year: 2023
-  demand_year: 2023
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2023-05-15 00:00"
-    # end: "2023-05-21 23:00"
-    end: "2023-05-17 01:00"  # Shorter period for testing (3 days)
-
-Historical_2020_ETYS_6h:
-  description: "2020 Historical - Full ETYS Network - 6 hour test"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 05:00"
-
-Historical_2020_reduced_6h:
-  description: "2020 Historical - Reduced Network - 6 hour test"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 05:00"
-
-Historical_2019_reduced:
-  description: "2019 Historical - Reduced Network"
-  modelled_year: 2019
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2019-01-01 00:00"
-    end: "2019-01-07 23:00"
-
-Historical_2017_reduced:
-  description: "2017 Historical - Reduced Network"
-  modelled_year: 2017
-  renewables_year: 2017
-  demand_year: 2017
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2017-01-01 00:00"
-    end: "2017-01-07 23:00"
+# ── Historical: network types and years (2015-2024) ─────────────────────────────────────────────────────────
 
 Historical_2015_reduced:
-  description: "2015 Historical - Reduced Network"
+  description: 2015 Historical - Reduced Network
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
   modelled_year: 2015
   renewables_year: 2015
   demand_year: 2015
-  network_model: "Reduced"
+  network_model: Reduced
   solve_period:
     enabled: true
-    start: "2015-01-01 00:00"
-    end: "2015-01-07 23:00"
+    start: 2015-01-01 00:00
+    end: 2015-01-07 23:00
 
-Historical_2010_reduced:
-  description: "2010 Historical - Reduced Network"
-  modelled_year: 2010
-  renewables_year: 2010
-  demand_year: 2010
-  network_model: "Reduced"
+Historical_2020_reduced:
+  description: 2020 Historical - Reduced Network (32 buses)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
   solve_period:
     enabled: true
-    start: "2010-01-01 00:00"
-    end: "2010-01-07 23:00"
+    start: 2020-01-01 00:00
+    end: 2020-01-07 23:00
 
-Historical_2011_reduced:
-  description: "2011 Historical - Reduced Network"
-  modelled_year: 2011
-  renewables_year: 2011
-  demand_year: 2011
-  network_model: "Reduced"
+Historical_2020_zonal:
+  description: 2020 Historical - Zonal Network (17 zones)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Zonal
   solve_period:
     enabled: true
-    start: "2011-01-01 00:00"
-    end: "2011-01-07 23:00"
+    start: 2020-01-01 00:00
+    end: 2020-01-07 23:00
 
-Historical_2012_reduced:
-  description: "2012 Historical - Reduced Network"
-  modelled_year: 2012
-  renewables_year: 2012
-  demand_year: 2012
-  network_model: "Reduced"
+Historical_2020_ETYS:
+  description: 2020 Historical - Full ETYS Network - Peak Demand Week (Dec 7-13)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
   solve_period:
     enabled: true
-    start: "2012-01-01 00:00"
-    end: "2012-01-07 23:00"
-
-Historical_2013_reduced:
-  description: "2013 Historical - Reduced Network"
-  modelled_year: 2013
-  renewables_year: 2013
-  demand_year: 2013
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2013-01-01 00:00"
-    end: "2013-01-07 23:00"
-
-Historical_2014_reduced:
-  description: "2014 Historical - Reduced Network"
-  modelled_year: 2014
-  renewables_year: 2014
-  demand_year: 2014
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2014-01-01 00:00"
-    end: "2014-01-07 23:00"
-
-Historical_2016_reduced:
-  description: "2016 Historical - Reduced Network"
-  modelled_year: 2016
-  renewables_year: 2016
-  demand_year: 2016
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2016-01-01 00:00"
-    end: "2016-01-07 23:00"
-
-Historical_2018_reduced:
-  description: "2018 Historical - Reduced Network"
-  modelled_year: 2018
-  renewables_year: 2018
-  demand_year: 2018
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2018-01-01 00:00"
-    end: "2018-01-07 23:00"
+    start: 2020-12-07 00:00
+    end: 2020-12-13 23:00
 
 Historical_2020_clustered:
-  description: "2020 Historical - ETYS Clustered to GSP Zones"
+  description: 2020 Historical - ETYS Clustered to GSP Zones
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
   modelled_year: 2020
   renewables_year: 2020
   demand_year: 2020
-  network_model: "ETYS"
-  clustering:
-    enabled: true
-    method: spatial
-    config:
-      boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
-      cluster_column: "GSPs"
-      bus_crs: "EPSG:27700"     # ETYS buses use OSGB36 (British National Grid), not WGS84
-      boundary_crs: "EPSG:27700"
-      fallback: "nearest_centroid"
-      convert_transformers_to_lines: true
+  network_model: ETYS
+  network:
+    clustering:
+      enabled: true
+      method: spatial
+      config:
+        boundaries_path: data/network/GSP/GSP_regions_27700_20250109.geojson
+        cluster_column: GSPs
+        bus_crs: EPSG:27700
+        boundary_crs: EPSG:27700
+        fallback: nearest_centroid
+        convert_transformers_to_lines: true
 
-Historical_2019_clustered:
-  description: "2019 Historical - ETYS Clustered to GSP Zones"
-  modelled_year: 2019
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "ETYS"
-  clustering:
+Historical_2023_etys:
+  description: 2023 Historical - Full ETYS Network (high renewables week)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2023
+  renewables_year: 2023
+  demand_year: 2023
+  network_model: ETYS
+  solve_period:
     enabled: true
-    method: spatial
-    config:
-      boundaries_path: "data/network/GSP/GSP_regions_27700_20250109.geojson"
-      cluster_column: "GSPs"
-      bus_crs: "EPSG:27700"     # ETYS buses use OSGB36 (British National Grid), not WGS84
-      boundary_crs: "EPSG:27700"
-      fallback: "nearest_centroid"
-      convert_transformers_to_lines: true
+    start: 2023-05-15 00:00
+    end: 2023-05-17 01:00
 
-# ╔════════════════════════════════════════════════════════════════════════════╗
-# ║ FUTURE SCENARIOS (modelled_year > 2024)                                    ║
-# ║ Uses: FES (Future Energy Scenarios) projections                            ║
-# ║ FES_year + FES_scenario are REQUIRED for future scenarios                  ║
-# ╚════════════════════════════════════════════════════════════════════════════╝
+# ── Historical: two-stage market (wholesale + balancing mechanism) ──────────────────────────────────────────
+
+Historical_2020_ETYS_market:
+  description: 2020 Historical - Full ETYS Network - Two-stage market dispatch (wholesale + BM)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-01-01 23:00
+  market:
+    enabled: true
+    wholesale:
+      scarcity_pricing:
+        enabled: false   # the curve is calibrated on 2024 and overshoots in 2020 (as the validation_2020 study)
+
+Historical_2024_market:
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2024
+  renewables_year: 2024
+  demand_year: 2024
+  renewables:
+    aggregation:
+      enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+  solve_period:
+    enabled: true
+    start: 2024-01-01 00:00
+    end: 2024-12-31 23:00
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+    balancing:
+      mode: rolling
+  description: Historical 2024 - Rolling day-ahead + per-timestep BM, Reduced network
+  network_model: Reduced
+
+# The 2024 baseline of the public-ownership run groups (historical_2024).
+Historical_2024_ETYS_14zone_market:
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  modelled_year: 2024
+  renewables_year: 2024
+  demand_year: 2024
+  renewables:
+    aggregation:
+      enabled: true
+      preserve_support_types:
+      - ROC
+      - CfD
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+    clustering:
+      method: custom
+      function_path: scripts/network_clustering/consumer_bill_14_zone.py
+      function_name: cluster_buses
+      convert_transformers_to_lines: true
+  solve_period:
+    enabled: true
+    start: 2024-01-01 00:00
+    end: 2024-12-31 23:00
+  support:
+    labels:
+      enabled: true
+      historical_cfd_tranches:
+        enabled: true
+        mapping_file: data/market/lccc/cfd_pypsa_mapping_overrides.csv
+        actuals_file: data/market/lccc/actual_cfd_generation_and_payments.csv
+    dispatch_costs:
+      enabled: true
+    revenue:
+      enabled: true
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+    balancing:
+      mode: rolling
+      window_hours: 24
+  description: Historical 2024 - full-year 14-zone ETYS, rolling day-ahead + balancing
+  network_model: ETYS
+  fleet:
+    commissioning:
+      profile_gate_within_solve_period: true
+  consumer_bill:
+    price_cap:
+      enabled: true
+      input_mode: historical_backtest
+      data_bundle: data/market/ofgem_price_cap/2024_annual
+      source_manifest: data/market/consumer_bill_sources/2024.yaml
+      historical_report_evidence:
+        model_signals_csv: resources/analysis/Historical_2024_ETYS_14zone_market_pypsa_bill_signals.csv
+        cfd_reconciliation_json: resources/analysis/Historical_2024_ETYS_14zone_market_lccc_cfd_model_dispatch_reconciliation_summary.json
+        cfd_mapping_json: resources/analysis/Historical_2024_ETYS_14zone_market_lccc_cfd_contract_mapping_summary.json
+        procurement_bridge_csv: resources/analysis/Historical_2024_ETYS_14zone_market_pypsa_spot_procurement_bridge.csv
+        comparison_register_csv: resources/analysis/Historical_2024_ETYS_14zone_market_ofgem_benchmark_component_register.csv
+      historical_comparison:
+        support_recovery_method: modelled_system_demand_proxy
+      annual_consumption_kwh:
+      - 3100
+      cost_stack:
+        enabled: true
+      forward_procurement:
+        method: pypsa_spot_to_procurement_raw_backtest
+        spot_multiplier: 1.0
+        spot_intercept_gbp_per_mwh: 0.0
+      historical_support_outturn:
+        enabled: true
+        detailed_cfd_contract_reconciliation: true
+      backtest:
+        enabled: true
+
+# ── Future: FES pathways ────────────────────────────────────────────────────────────────────────────────────
 
 HT35:
-  description: "FES 2024 Holistic Transition 2035 - Full ETYS"
+  description: FES 2024 Holistic Transition 2035 - Full ETYS
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020           # Weather proxy year
-  demand_year: 2020               # Demand baseline (scaled to 2035)
-  network_model: "ETYS"
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
   solve_period:
     enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 01:00"
-
-HT35_flex:
-  description: "FES 2024 Holistic Transition 2035 - Full ETYS with EV flexibility"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020           # Weather proxy year
-  demand_year: 2020               # Demand baseline (scaled to 2035)
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2035-04-25 00:00"
-    end: "2035-05-08 23:00"
-  demand_disaggregation:
-    enabled: true
-    components:
-      - name: "electric_vehicles"
-        allocation_method: "fes_gsp"
-        use_fes_fraction: true
-  demand_flexibility:
-    enabled: true
-    heat_pumps:
-      enabled: false
-    electric_vehicles:
-      enabled: false
-    event_response:
-      enabled: true
-      event_window: ["17:00", "19:00"]  # Realistic 2-hour evening peak window
-      marginal_cost: 40.0               # Competitive with storage+interconnectors
-  clustering: 
-    preset: gsp_spatial
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-
-HT30_event_response:
-  description: "FES 2025 Holistic Transition 2030 - clustered ETYS with event response flexibility"
-  modelled_year: 2030
-  FES_year: 2025
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2013           # Weather proxy year
-  demand_year: 2013               # Demand baseline (scaled to 2030)
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2030-02-21 00:00"
-    end: "2030-03-07 23:00"
-  demand_disaggregation:
-    enabled: false
-    components:
-      - name: "electric_vehicles"
-        allocation_method: "fes_gsp"
-        use_fes_fraction: true
-  demand_flexibility:
-    enabled: true
-    heat_pumps:
-      enabled: false
-    electric_vehicles:
-      enabled: false
-    event_response:
-      enabled: true
-      event_window: ["17:00", "19:00"]  # Realistic 2-hour evening peak window
-      marginal_cost: 40.0               # Competitive with storage+interconnectors
-  clustering: 
-    preset: kmeans_10
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-
-HT35_year:
-  description: "FES 2024 Holistic Transition 2035 - Full ETYS (1 year)"
-  modelled_year: 2035
-  FES_year: 2025
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2013           # Weather proxy year
-  demand_year: 2013               # Demand baseline (scaled to 2035)
-  network_model: "ETYS"
-  clustering:
-    method: kmeans
-    n_clusters: 20
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-12-31 23:00"
-
-HT35_without_network_upgrades:
-  description: "FES 2024 Holistic Transition 2035 - Full ETYS with Network Upgrades"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020           # Weather proxy year
-  demand_year: 2020               # Demand baseline (scaled to 2035)
-  network_model: "ETYS"
-  etys_upgrades:
-    enabled: false                 # Apply ETYS network upgrades
-    upgrade_year: null            # null = use modelled_year (2035)
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
+    start: 2035-01-01 00:00
+    end: 2035-01-01 01:00
 
 HT35_reduced:
-  description: "FES 2024 Holistic Transition 2035 - Reduced Network"
+  description: FES 2024 Holistic Transition 2035 - Reduced Network
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
   renewables_year: 2020
   demand_year: 2010
-  network_model: "Reduced"
-
-HT35_reduced_eload:
-  description: "FES 2024 HT 2035 - Reduced Network with eLOAD profile"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  demand_timeseries: "eload"      # Uses eLOAD model hourly profile
-  # profile_year: 2010            # Optional: 2010 or 2050 (auto-selects 2010 for 2035)
-
-HT35_reduced_desstinee:
-  description: "FES 2024 HT 2035 - Reduced Network with DESSTINEE profile"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  demand_timeseries: "desstinee"  # Uses DESSTINEE model hourly profile
-  # profile_year: 2010            # Optional: 2010 or 2050 (auto-selects 2010 for 2035)
-
-HT50_reduced_eload_2050:
-  description: "FES 2024 HT 2050 - Reduced with eLOAD 2050 profile"
-  modelled_year: 2050
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  demand_timeseries: "eload"
-  profile_year: 2050              # Explicit: use 2050 profile (higher EV/HP load)
+  network_model: Reduced
 
 HT35_zonal:
-  description: "FES 2024 Holistic Transition 2035 - Zonal Network"
+  description: FES 2024 Holistic Transition 2035 - Zonal Network
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
   renewables_year: 2020
   demand_year: 2015
-  network_model: "Zonal"
-
-HT35_clustered_gsp:
-  description: "FES 2024 Holistic Transition 2035 - ETYS → GSP Clusters"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  clustering: gsp_spatial
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
+  network_model: Zonal
 
 HT35_clustered:
-  description: "FES 2024 Holistic Transition 2035 - ETYS clustered to GSP regions"
+  description: FES 2024 Holistic Transition 2035 - ETYS clustered to GSP regions
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
   renewables_year: 2019
   demand_year: 2020
-  network_model: "ETYS"
-  clustering: gsp_spatial
-  etys_upgrades:
-    enabled: true
+  network_model: ETYS
+  network:
+    clustering: gsp_spatial
   solve_period:
     enabled: true
-    start: "2035-01-15 00:00"
-    end: "2035-01-21 23:00"
+    start: 2035-01-15 00:00
+    end: 2035-01-21 23:00
 
-HT50_clustered_gsp:
-  description: "FES 2024 Holistic Transition 2050 - ETYS to GSP Clusters (1 month)"
-  modelled_year: 2050
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2022
-  demand_year: 2022
-  network_model: "ETYS"
-  clustering: gsp_spatial
-  solve_period:
-    enabled: true
-    start: "2050-01-01 00:00"
-    end: "2050-01-31 23:00"
-
-EE50_clustered:
-  description: "FES 2025 Electric Engagement 2050 - ETYS clustered (kmeans, n=100) - stress test week"
-  modelled_year: 2050
-  FES_year: 2025
-  FES_scenario: "Electric Engagement"
-  renewables_year: 2018
-  demand_year: 2018
-  network_model: "ETYS"
-  clustering:
-    method: kmeans
-    n_clusters: 100
-  etys_upgrades:
-    enabled: true
-  solve_period:
-    enabled: true
-    start: "2050-02-01 00:00"
-    end: "2050-02-07 23:00"
-
-HT35_clustered_kmeans:
-  description: "FES 2024 Holistic Transition 2035 - K-means 10 Clusters"
+HT35_flex:
+  description: FES 2024 Holistic Transition 2035 - Full ETYS with EV flexibility
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
   renewables_year: 2020
   demand_year: 2020
-  network_model: "ETYS"
-  clustering: kmeans_10
-
-HT35_with_disaggregation:
-  description: "FES 2024 Holistic Transition 2035 - With Demand Disaggregation"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020              # Year for ESPENI temporal profile shape
-  network_model: "ETYS"
-  demand_timeseries: "ESPENI"    # "ESPENI" (recommended) or "eload" (synthetic)
-  demand_disaggregation:
+  network_model: ETYS
+  solve_period:
     enabled: true
-    components: ["heat_pumps"]
+    start: 2035-04-25 00:00
+    end: 2035-05-08 23:00
+  demand:
+    disaggregation:
+      enabled: true
+      components:
+      - name: electric_vehicles
+        allocation_method: fes_gsp
+        use_fes_fraction: true
+    flexibility:
+      enabled: true
+      event_response:
+        enabled: true
+        event_window:
+        - '17:00'
+        - '19:00'
+        marginal_cost: 40.0
+  network:
+    clustering:
+      preset: gsp_spatial
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
 
-# ╔════════════════════════════════════════════════════════════════════════════╗
-# ║ TEST SCENARIOS (for CI/CD and quick validation)                            ║
-# ╚════════════════════════════════════════════════════════════════════════════╝
+HT30_event_response:
+  description: FES 2025 Holistic Transition 2030 - clustered ETYS with event response flexibility
+  targets: {source: FES, edition: 2025, pathway: HT}
+  method: gsp_block
+  modelled_year: 2030
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  solve_period:
+    enabled: true
+    start: 2030-02-21 00:00
+    end: 2030-03-07 23:00
+  demand:
+    disaggregation:
+      components:
+      - name: electric_vehicles
+        allocation_method: fes_gsp
+        use_fes_fraction: true
+    flexibility:
+      enabled: true
+      event_response:
+        enabled: true
+        event_window:
+        - '17:00'
+        - '19:00'
+        marginal_cost: 40.0
+  network:
+    clustering:
+      preset: kmeans_10
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+
+EE50_clustered:
+  description: FES 2025 Electric Engagement 2050 - ETYS clustered (kmeans, n=100) - stress test week
+  targets: {source: FES, edition: 2025, pathway: EE}
+  method: gsp_block
+  modelled_year: 2050
+  renewables_year: 2018
+  demand_year: 2018
+  network_model: ETYS
+  network:
+    clustering:
+      method: kmeans
+      n_clusters: 100
+  solve_period:
+    enabled: true
+    start: 2050-02-01 00:00
+    end: 2050-02-07 23:00
+
+# ── Future: two-stage market ────────────────────────────────────────────────────────────────────────────────
+
+HT35_market:
+  description: HT 2035 ETYS - Two-stage market dispatch (wholesale + BM) with ELEXON-calibrated MCs
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
+  modelled_year: 2035
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-07 23:00
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+    revenue:
+      enabled: true
+  marginal_costs:
+    carrier_correction_factors:
+      enabled: true
+  market:
+    enabled: true
+
+# ── Quick tests ─────────────────────────────────────────────────────────────────────────────────────────────
+
+# The default run in config.yaml: six hours of 2035 on the Reduced network, both market stages.
+Test_Market:
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
+  modelled_year: 2035
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+  renewables:
+    aggregation:
+      enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: Market test - Reduced network, 6 hours (fast smoke test)
+  market:
+    enabled: true
+
+Test_Rolling_Market:
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
+  renewables_year: 2020
+  demand_year: 2020
+  renewables:
+    aggregation:
+      enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+    transmission:
+      outage_schedule:
+        enabled: true
+        neso:
+          boundary_include:
+          - SCOTEX
+          - SSE-SP
+          - SSHARN::SSHARN_SPARSE_GATE_FIT
+          - ESTEX
+          - SEIMP
+          - SWALEX
+      line_rating_overrides:
+        CLUN1T_ERRO1J_0: 180
+        ERRO1T_KIIN1-_0: 180
+        INVR1C_KIIN1-_0: 120
+        INVR1A_INVR1C_0: 120
+        INVR1-_INVR1A_0: 120
+        INVR1-_SLOY1K_0: 120
+        GARB1T_SLOY1K_1: 120
+        GARB1T_GARE1T_0: 120
+        GARE1T_WIYH1-_0: 120
+        BIHI1R_COUA1R_0: 180
+        BIHI1R_TEAL1-_0: 120
+  solve_period:
+    enabled: true
+    start: 2020-01-07 00:00
+    end: 2020-01-07 23:30
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+      scarcity_pricing:
+        enabled: false   # the curve is calibrated on 2024 and overshoots in 2020 (as the validation_2020 study)
+    balancing:
+      mode: rolling
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+          exclude_carriers:
+          - load_shedding
+          - embedded_solar
+          - embedded_wind
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+          behavior: fallback_priced
+      elexon:
+        price_ladders:
+          enabled: true
+      window_hours: 0.5
+  modelled_year: 2020
+  network_model: ETYS
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  thermal:
+    availability_factors:
+      enabled: true
+  timestep_minutes: 30
+  description: Rolling market test - 24h, day-ahead wholesale + per-timestep BM at 30-minute resolution
 
 Test_Historical_2015:
-  description: "Minimal historical test (2015)"
+  description: Minimal historical test (2015)
+  targets: {source: historical, edition: null, pathway: null}
+  method: historical
   modelled_year: 2015
   renewables_year: 2015
   demand_year: 2015
-  network_model: "Reduced"
+  network_model: Reduced
 
+# with FES 2024, which has no LW).
 Test_Future_2030:
-  description: "Minimal future test (2030)"
+  description: Minimal future test (2030), FES 2023 Leading the Way, one week
+  targets: {source: FES, edition: 2023, pathway: LW}
+  method: gsp_block
   modelled_year: 2030
-  FES_year: 2024
-  FES_scenario: "Leading the Way"
   renewables_year: 2020
   demand_year: 2020
-  network_model: "Reduced"
-
-Test_Clustered_GSP:
-  description: "Test GSP clustering"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  clustering: gsp_spatial
-
-# ============================================
-# ESSENTIAL TEST SCENARIOS (run_tests.py)
-# ============================================
-
-# Fast smoke tests (6-hour) - test all network models
-Test_Historical_2020_Reduced:
-  description: "Historical 2020 - Reduced network smoke test"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
+  network_model: Reduced
   solve_period:
     enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 05:00"
-
-Test_Future_HT_2035_Reduced:
-  description: "HT 2035 - Reduced network smoke test"
-  modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-Test_Future_HT_2035_Zonal:
-  description: "HT 2035 - Zonal network smoke test"
-  modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Zonal"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-Test_Future_HT_2035_ETYS:
-  description: "HT 2035 - ETYS network smoke test"
-  modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "ETYS"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-Test_Future_HE_2035_Reduced:
-  description: "Hydrogen Evolution 2035 - Reduced network smoke test"
-  modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Hydrogen Evolution"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-# Realistic baseline (1-week)
-Test_HT_2035_1Week:
-  description: "HT 2035 baseline (1-week realistic test)"
-  modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2019
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
-
-# Weather year validation (HIGH PRIORITY)
-Test_Weather_2010:
-  description: "2035 with 2010 weather (low wind year)"
-  modelled_year: 2035
-  renewables_year: 2010
-  demand_year: 2010
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
-
-Test_Weather_2015:
-  description: "2035 with 2015 weather (average year)"
-  modelled_year: 2035
-  renewables_year: 2015
-  demand_year: 2015
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
-
-Test_Weather_2020:
-  description: "2035 with 2020 weather (high wind year)"
-  modelled_year: 2035
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# RENEWABLE AGGREGATION TEST SCENARIOS
-# Run these two side-by-side to verify aggregation correctness:
-#   snakemake -j 2 --use-conda --latency-wait 60
-# Then compare generator counts in the logs / resources/generators/ CSVs.
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Historical path — BOTH aggregations ON (renewable + component)
-Test_Agg_Historical:
-  description: "2020 Historical Reduced - WITH renewable + component aggregation (test)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 05:00"
-
-# Historical path — BOTH aggregations OFF (baseline)
-Test_NoAgg_Historical:
-  description: "2020 Historical Reduced - WITHOUT aggregation (baseline)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-01 05:00"
-
-# Future path — BOTH aggregations ON (renewable + component)
-Test_Agg_Future:
-  description: "HT 2035 Reduced - WITH renewable + component aggregation (test)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-# Future path — BOTH aggregations OFF (baseline)
-Test_NoAgg_Future:
-  description: "HT 2035 Reduced - WITHOUT aggregation (baseline)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-
-# ╔════════════════════════════════════════════════════════════════════════════╗
-# ║ MARKET SIMULATION SCENARIOS                                                ║
-# ║ Two-stage dispatch: wholesale (copperplate) + balancing mechanism          ║
-# ║ Requires: finalized network from main workflow ({scenario}.nc exists)      ║
-# ║ Run: snakemake -s Snakefile_market --cores 4                               ║
-# ╚════════════════════════════════════════════════════════════════════════════╝
-
-# Full ETYS 2035 with market simulation
-HT35_market:
-  description: "HT 2035 ETYS - Two-stage market dispatch (wholesale + BM) with ELEXON-calibrated MCs"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
-  subsidy_tracking:
-    enabled: true
-  marginal_costs:
-    carrier_correction_factors:
-      enabled: true
-      file: "data/market/historical_carrier_correction_factors.csv"
-      source_year: "closest"
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    revenue_tracking:
-      enabled: true
-
-# ── BM test: historical path ─────────────────────────────────────────────────
-# 2020 Reduced network, 24-hour full two-stage market (wholesale + BM).
-# Uses derived bid/offer prices (default: ±10% on MC).
-Test_BM_Historical:
-  description: "BM test - 2020 Historical Reduced (24h full two-stage market)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  solve_period:
-    enabled: true
-    start: "2020-01-07 00:00"
-    end: "2020-01-07 23:00"      # Jan 7 — high demand, mixed wind
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-
-# ── BM test: future path ──────────────────────────────────────────────────────
-# HT 2035 Reduced network, 24-hour full two-stage market (wholesale + BM).
-Test_BM_Future:
-  description: "BM test - HT 2035 Reduced (24h full two-stage market)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  solve_period:
-    enabled: true
-    start: "2035-01-07 00:00"
-    end: "2035-01-07 23:00"      # Same weather day as historical test
-  market:
-    enabled: true
-
-# Quick test scenario for market simulation (Reduced network, short period)
-Test_Market:
-  description: "Market test - Reduced network, 6 hours (fast smoke test)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 05:00"
-  market:
-    enabled: true
-
-# Quick test: rolling day-ahead wholesale + per-timestep BM (48h, ETYS)
-# Purpose: fast validation of rolling market dispatch modes
-Test_Rolling_Market: &test_rolling_market_base
-  description: "Rolling market test - 24h, day-ahead wholesale + per-timestep BM at 30-minute resolution"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  timestep_minutes: 30
-  network_model: "ETYS"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-07 00:00"
-    end: "2020-01-07 23:30"       # 24 hours = 48 half-hour timesteps
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5           # Per-timestep at 30-minute resolution
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-  thermal_availability_factors:
-    enabled: true                 # Constrain biomass/biofuel to historical capacity factors
-  transmission:
-    # Keep the default 132 kV relaxation for the broader ETYS model, but
-    # reintroduce realistic limits on the specific west-side SSE-SP bypass
-    # segments that were otherwise behaving like an unconstrained shadow route.
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-
-Test_BM_Window_0p5h:
-  <<: *test_rolling_market_base
-  description: "BM window comparison - Jan 7 2020 with half-hour balancing windows"
-
-Test_BM_Window_24h:
-  <<: *test_rolling_market_base
-  description: "BM window comparison - Jan 7 2020 with one 24-hour balancing optimisation"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 24
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-
-Test_Rolling_Market_WindOnshoreUplift:
-  <<: *test_rolling_market_base
-  description: "Rolling market test - 24h Jan 2020 with onshore wind availability uplift"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      # Flat factors replace the stacked defaults, so keep offshore/solar at
-      # their current default products and uplift only onshore wind.
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8938550
-
-Test_Rolling_Market_StrictBM:
-  <<: *test_rolling_market_base
-  description: "Rolling market test - 24h, 30-minute BM with non-mapped generators priced out"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "priced_out"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-
-Test_Rolling_Market_StrictBM_WestRelax:
-  <<: *test_rolling_market_base
-  description: "Rolling market test - strict BM participation with west-side clamp removed"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "priced_out"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  transmission:
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-
-Test_Rolling_Market_StrictBM_WestRelax_Fixed:
-  <<: *test_rolling_market_base
-  description: "Rolling market test - strict BM participation, west-side clamp removed, non-mapped generators fixed"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fixed"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  transmission:
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-
-Test_SSHARN_Sparse_Gate:
-  description: "Quick SSHARN sparse-gate solver test - Jan 13 2020 high-SSHARN day"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-13 00:00"
-    end: "2020-01-13 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 1
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MONTH-LONG VALIDATION (January 2020)
-# Full month with rolling day-ahead wholesale + per-timestep BM.
-# Use for systematic comparison against ESPENI generation and ELEXON BM data.
-# ══════════════════════════════════════════════════════════════════════════════
-Validation_Jan2020_0p5hLegacy: &validation_jan_2020_base
-  description: "January 2020 full month - rolling market validation against ESPENI/ELEXON"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  timestep_minutes: 30
-  network_model: "ETYS"
-  embedded_generation:
-    enabled: true
-    solar: true
-    wind: true
-    wind_overlap_exclusion:
-      enabled: true
-      max_capacity_mw: 10.0
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-31 23:30"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-
-Validation_Jan2020_WindOnshoreUplift:
-  <<: *validation_jan_2020_base
-  description: "January 2020 full month - onshore wind availability uplift sensitivity"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-
-Validation_Jan2020_BM24h:
-  <<: *validation_jan_2020_base
-  description: "January 2020 full month - sensitivity with one 24-hour BM optimisation per day"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 24
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-
-Validation_Jan2020: &validation_2020_bm24_softseimp_base
-  <<: *validation_jan_2020_base
-  description: "January 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 24
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6388580
-      wind_onshore: 0.8404980
-      solar_pv: 0.6787250
-
-Validation_Feb2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "February 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-02-01 00:00"
-    end: "2020-02-29 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6237140
-      wind_onshore: 0.8205750
-      solar_pv: 0.7353290
-
-Validation_Jan2020_NoLineOverrides:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "January 2020 full month - 24-hour BM + NESO aggregate boundaries, no static line-rating overrides"
-  transmission:
-    line_rating_overrides: {}
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-
-Validation_Feb2020_NoLineOverrides:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "February 2020 full month - 24-hour BM + NESO aggregate boundaries, no static line-rating overrides"
-  solve_period:
-    enabled: true
-    start: "2020-02-01 00:00"
-    end: "2020-02-29 23:30"
-  transmission:
-    line_rating_overrides: {}
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6237140
-      wind_onshore: 0.8205750
-      solar_pv: 0.7353290
-
-Validation_Jan2020_NoLineOverrides_SSESPStrict:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "January 2020 no line-rating overrides + strict SSE-SP bus-area cut"
-  transmission:
-    line_rating_overrides: {}
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-
-Validation_Feb2020_NoLineOverrides_SSESPStrict: &validation_feb_2020_no_line_overrides_ssesp_strict
-  <<: *validation_2020_bm24_softseimp_base
-  description: "February 2020 no line-rating overrides + strict SSE-SP bus-area cut"
-  solve_period:
-    enabled: true
-    start: "2020-02-01 00:00"
-    end: "2020-02-29 23:30"
-  transmission:
-    line_rating_overrides: {}
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6237140
-      wind_onshore: 0.8205750
-      solar_pv: 0.7353290
-
-Validation_Feb23_2020_NoLineOverrides_SSESPStrict:
-  <<: *validation_feb_2020_no_line_overrides_ssesp_strict
-  description: "Quick one-day SSE-SP strict-cut smoke test - 23 February 2020"
-  solve_period:
-    enabled: true
-    start: "2020-02-23 00:00"
-    end: "2020-02-23 23:30"
-
-Validation_Mar2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "March 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-03-01 00:00"
-    end: "2020-03-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6583380
-      wind_onshore: 0.8661270
-      solar_pv: 0.8220860
-
-Validation_Apr2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "April 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-04-01 00:00"
-    end: "2020-04-30 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6842010
-      wind_onshore: 0.9001530
-      solar_pv: 0.8517150
-
-Validation_May2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "May 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-05-01 00:00"
-    end: "2020-05-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6563030
-      wind_onshore: 0.8634490
-      solar_pv: 0.8575040
-
-Validation_Jun2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "June 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-06-01 00:00"
-    end: "2020-06-30 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460010
-      wind_onshore: 0.9013970
-      solar_pv: 0.8566660
-
-Validation_Jul2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "July 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-07-01 00:00"
-    end: "2020-07-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6262290
-      wind_onshore: 0.8238840
-      solar_pv: 0.8587200
-
-Validation_Aug2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "August 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-08-01 00:00"
-    end: "2020-08-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6425350
-      wind_onshore: 0.8453360
-      solar_pv: 0.8447640
-
-Validation_Sep2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "September 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-09-01 00:00"
-    end: "2020-09-30 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6350170
-      wind_onshore: 0.8354440
-      solar_pv: 0.8297940
-
-Validation_Oct2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "October 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-10-01 00:00"
-    end: "2020-10-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6426060
-      wind_onshore: 0.8454290
-      solar_pv: 0.7714130
-
-Validation_Nov2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "November 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-11-01 00:00"
-    end: "2020-11-30 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.5984440
-      wind_onshore: 0.7873290
-      solar_pv: 0.7113920
-
-Validation_Dec2020:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "December 2020 full month - 24-hour BM with soft SEIMP aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-12-01 00:00"
-    end: "2020-12-31 23:30"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6487520
-      wind_onshore: 0.8845250
-      solar_pv: 0.6603980
-
-Validation_Jan2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "January 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-01-31 23:30"
-  transmission: &uniform_network_baseline_transmission
-    min_bm_constraint_voltage_kv: 220
-    line_rating_overrides:
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_mapping: "data/network/neso_boundary_mapping_ssesp_strict.yaml"
-        constraint_mode: "aggregate_boundary"
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6388580
-      wind_onshore: 0.8404980
-      solar_pv: 0.6787250
-
-Validation_Feb2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "February 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-02-01 00:00"
-    end: "2020-02-29 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6237140
-      wind_onshore: 0.8205750
-      solar_pv: 0.7353290
-
-Validation_Mar2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "March 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-03-01 00:00"
-    end: "2020-03-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6583380
-      wind_onshore: 0.8661270
-      solar_pv: 0.8220860
-
-Validation_Apr2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "April 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-04-01 00:00"
-    end: "2020-04-30 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6842010
-      wind_onshore: 0.9001530
-      solar_pv: 0.8517150
-
-Validation_May2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "May 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-05-01 00:00"
-    end: "2020-05-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6563030
-      wind_onshore: 0.8634490
-      solar_pv: 0.8575040
-
-Validation_Jun2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "June 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-06-01 00:00"
-    end: "2020-06-30 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460010
-      wind_onshore: 0.9013970
-      solar_pv: 0.8566660
-
-Validation_Jul2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "July 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-07-01 00:00"
-    end: "2020-07-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6262290
-      wind_onshore: 0.8238840
-      solar_pv: 0.8587200
-
-Validation_Aug2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "August 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-08-01 00:00"
-    end: "2020-08-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6425350
-      wind_onshore: 0.8453360
-      solar_pv: 0.8447640
-
-Validation_Sep2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "September 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-09-01 00:00"
-    end: "2020-09-30 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6350170
-      wind_onshore: 0.8354440
-      solar_pv: 0.8297940
-
-Validation_Oct2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "October 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-10-01 00:00"
-    end: "2020-10-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6426060
-      wind_onshore: 0.8454290
-      solar_pv: 0.7714130
-
-Validation_Nov2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "November 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-11-01 00:00"
-    end: "2020-11-30 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.5984440
-      wind_onshore: 0.7873290
-      solar_pv: 0.7113920
-
-Validation_Dec2020_UniformNetworkBaseline:
-  <<: *validation_2020_bm24_softseimp_base
-  description: "December 2020 uniform network baseline - strict SSE-SP, no static line overrides, soft SEIMP"
-  solve_period:
-    enabled: true
-    start: "2020-12-01 00:00"
-    end: "2020-12-31 23:30"
-  transmission: *uniform_network_baseline_transmission
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6487520
-      wind_onshore: 0.8845250
-      solar_pv: 0.6603980
-
-Validation_Feb2020_1hLegacy: &validation_2020_month_base
-  description: "February 2020 full month - winter rolling market validation"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  embedded_generation:
-    enabled: true
-    solar: true
-    wind: true
-    wind_overlap_exclusion:
-      enabled: true
-      max_capacity_mw: 10.0
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-02-01 00:00"
-    end: "2020-02-29 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 1
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-
-Validation_Mar2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "March 2020 full month - spring transition rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-03-01 00:00"
-    end: "2020-03-31 23:00"
-
-Validation_Apr2020_1hLegacy:
-  description: "April 2020 full month - spring/COVID low-demand rolling market validation"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  embedded_generation:
-    enabled: true
-    solar: true
-    wind: true
-    wind_overlap_exclusion:
-      enabled: true
-      max_capacity_mw: 10.0
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-04-01 00:00"
-    end: "2020-04-30 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 1
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-
-Validation_May2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "May 2020 full month - spring rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-05-01 00:00"
-    end: "2020-05-31 23:00"
-
-Validation_Jun2020_0p5hLegacy:
-  description: "June 2020 full month - rolling market validation against ESPENI/ELEXON"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  timestep_minutes: 30
-  network_model: "ETYS"
-  embedded_generation:
-    enabled: true
-    solar: true
-    wind: true
-    wind_overlap_exclusion:
-      enabled: true
-      max_capacity_mw: 10.0
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-06-01 00:00"
-    end: "2020-06-30 23:30"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 0.5
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6579000
-      wind_onshore: 0.9180000
-      solar_pv: 0.8617000
-  thermal_availability_factors:
-    enabled: true
-
-Validation_Jul2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "July 2020 full month - summer rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-07-01 00:00"
-    end: "2020-07-31 23:00"
-
-Validation_Aug2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "August 2020 full month - summer rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-08-01 00:00"
-    end: "2020-08-31 23:00"
-
-Validation_Sep2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "September 2020 full month - autumn transition rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-09-01 00:00"
-    end: "2020-09-30 23:00"
-
-Validation_Oct2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "October 2020 full month - autumn rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-10-01 00:00"
-    end: "2020-10-31 23:00"
-
-Validation_Nov2020_1hLegacy:
-  description: "November 2020 full month - late-autumn/winter rolling market validation"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  embedded_generation:
-    enabled: true
-    solar: true
-    wind: true
-    wind_overlap_exclusion:
-      enabled: true
-      max_capacity_mw: 10.0
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-11-01 00:00"
-    end: "2020-11-30 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 1
-      elexon:
-        fallback: "carrier_average"
-        price_ladders:
-          enabled: true
-      participation:
-        generators:
-          mode: "elexon_mapped"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-            - "embedded_solar"
-            - "embedded_wind"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-
-Validation_Dec2020_1hLegacy:
-  <<: *validation_2020_month_base
-  description: "December 2020 full month - winter rolling market validation"
-  solve_period:
-    enabled: true
-    start: "2020-12-01 00:00"
-    end: "2020-12-31 23:00"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6469000
-      wind_onshore: 0.8820000
-      solar_pv: 0.8616000
-
-Validation_Dec2020_NoSEIMP:
-  <<: *validation_2020_month_base
-  description: "December 2020 full month - sensitivity with SEIMP aggregate boundary excluded"
-  solve_period:
-    enabled: true
-    start: "2020-12-01 00:00"
-    end: "2020-12-31 23:00"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6469000
-      wind_onshore: 0.8820000
-      solar_pv: 0.8616000
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SWALEX
-
-Validation_Dec2020_SoftSEIMP:
-  <<: *validation_2020_month_base
-  description: "December 2020 full month - SEIMP represented as a soft aggregate boundary"
-  solve_period:
-    enabled: true
-    start: "2020-12-01 00:00"
-    end: "2020-12-31 23:00"
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6469000
-      wind_onshore: 0.8820000
-      solar_pv: 0.8616000
-  transmission:
-    line_rating_overrides:
-      CLUN1T_ERRO1J_0: 180
-      ERRO1T_KIIN1-_0: 180
-      INVR1C_KIIN1-_0: 120
-      INVR1A_INVR1C_0: 120
-      INVR1-_INVR1A_0: 120
-      INVR1-_SLOY1K_0: 120
-      GARB1T_SLOY1K_1: 120
-      GARB1T_GARE1T_0: 120
-      GARE1T_WIYH1-_0: 120
-      BIHI1R_COUA1R_0: 180
-      BIHI1R_TEAL1-_0: 120
-    outage_schedule:
-      enabled: true
-      source: "neso"
-      neso:
-        boundary_include:
-          - SCOTEX
-          - SSE-SP
-          - SSHARN::SSHARN_SPARSE_GATE_FIT
-          - ESTEX
-          - SEIMP
-          - SWALEX
-        soft_boundaries:
-          SEIMP:
-            enabled: true
-            penalty_gbp_per_mwh: 1000.0
-            max_violation_mw: 2500.0
-
-Validation_2020:
-  description: "Full year 2020 - rolling market validation against ESPENI/ELEXON (8784h)"
-  modelled_year: 2020
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "ETYS"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2020-01-01 00:00"
-    end: "2020-12-31 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-    biofuel_subsidy:
-      enabled: true
-  transmission:
-    outage_schedule:
-      enabled: true
-      source: "neso"
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 1
-  renewable_performance_factors:
-    enabled: true
-    factors:
-      wind_offshore: 0.6460803
-      wind_onshore: 0.8500000
-      solar_pv: 0.8612621
-  thermal_availability_factors:
-    enabled: true
-
-# CONTRASTING SYSTEM CONDITIONS (complement to lowwind scenarios)
-# Four distinct stress/surplus events, one per year — same wholesale-only setup
-# ══════════════════════════════════════════════════════════════════════════════
-
-# 2021 — High demand cold snap (Jan 8-14, 2021)
-# UK cold spell: temperatures ~0-3°C, peak electricity demand, minimal solar,
-# high thermal dispatch. Contrasts with the low-wind Mar 2-8 baseline.
-Historical_2021_highdemand:
-  description: "Historical 2021 - High demand cold snap (Jan 8-14), wholesale only"
-  modelled_year: 2021
-  renewables_year: 2021
-  demand_year: 2021
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2021-01-08 00:00"
-    end: "2021-01-14 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# 2022 — Energy crisis winter peak (Dec 12-18, 2022)
-# Cold snap during UK gas price crisis: elevated CCGT marginal costs, high demand,
-# moderate wind. Tests the extreme SMP conditions of late 2022.
-Historical_2022_highdemand:
-  description: "Historical 2022 - Energy crisis winter peak (Dec 12-18), wholesale only"
-  modelled_year: 2022
-  renewables_year: 2022
-  demand_year: 2022
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2022-12-12 00:00"
-    end: "2022-12-18 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# 2023 — High solar / low demand spring week (May 15-21, 2023)
-# Spring week with high wind and solar output, low system demand.
-# Tests curtailment pressure, low/negative prices, and renewable-dominant dispatch.
-Historical_2023_highsolar:
-  description: "Historical 2023 - High solar / low demand spring week (May 15-21), wholesale only"
-  modelled_year: 2023
-  renewables_year: 2023
-  demand_year: 2023
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2023-05-15 00:00"
-    end: "2023-05-21 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# 2024 — Storm Isha / Jocelyn high-wind event (Jan 21-27, 2024)
-# Storm Isha made landfall Jan 21-22; Storm Jocelyn followed Jan 24-25.
-# Peak wind output across GB — direct contrast with the low-wind Jan 6-12 baseline.
-Historical_2024_highwind:
-  description: "Historical 2024 - Storm Isha/Jocelyn high-wind week (Jan 21-27), wholesale only"
-  modelled_year: 2024
-  renewables_year: 2024
-  demand_year: 2024
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2024-01-21 00:00"
-    end: "2024-01-27 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# ══════════════════════════════════════════════════════════════════════════════
-# WHOLESALE-ONLY MARKET INVESTIGATION
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Historical 2021 with a low-wind late-winter week (Mar 2-8, mean 6.01 m/s at 100m)
-# Purpose: validate historical thermal+renewable integration for 2021 fleet
-Historical_2021_lowwind:
-  description: "Historical 2021 - Low wind winter week (Mar 2-8), wholesale only"
-  modelled_year: 2021
-  renewables_year: 2021
-  demand_year: 2021
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2021-03-02 00:00"
-    end: "2021-03-08 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Historical 2022 with a low-wind late-winter week (Mar 22-28, mean 6.42 m/s at 100m)
-# Purpose: validate historical thermal+renewable integration for 2022 fleet
-Historical_2022_lowwind:
-  description: "Historical 2022 - Low wind winter week (Mar 22-28), wholesale only"
-  modelled_year: 2022
-  renewables_year: 2022
-  demand_year: 2022
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2022-03-22 00:00"
-    end: "2022-03-28 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Historical 2024 with a low-wind winter week (Jan 6-12)
-# Purpose: see thermal merit order with correction factors under real wind drought
-Historical_2024_lowwind:
-  description: "Historical 2024 - Low wind winter week (Jan 6-12), wholesale only"
-  modelled_year: 2024
-  renewables_year: 2024
-  demand_year: 2024
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2024-01-06 00:00"
-    end: "2024-01-12 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Full calendar year 2024 — continuous wholesale-market dispatch over all 8784 hours
-# Purpose: annual generation mix, seasonal price patterns, IC use, SMP vs MID validation
-# Note: renewable_aggregation + component_aggregation ON to keep the LP tractable at 8784 h
-Historical_2024_fullyear:
-  description: "Historical 2024 - Full year (Jan-Dec 2024), Reduced network, wholesale market"
-  modelled_year: 2024
-  renewables_year: 2024
-  demand_year: 2024
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true                 # Aggregate REPD sites per bus to keep LP tractable (8784h)
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2024-01-01 00:00"
-    end: "2024-12-31 23:00"       # Leap year: 8784 hours
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Full year 2024 — rolling day-ahead wholesale + per-timestep balancing mechanism
-# Purpose: realistic two-stage market dispatch with 24h day-ahead windows and
-#          per-timestep BM re-solve with full network constraints and bid/offer prices.
-# Wholesale: Each day solved independently (copperplate, 24h foresight for storage).
-# BM: Each timestep solved independently, anchored to day-ahead positions.
-Historical_2024_market:
-  description: "Historical 2024 - Rolling day-ahead + per-timestep BM, Reduced network"
-  modelled_year: 2024
-  renewables_year: 2024
-  demand_year: 2024
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true                 # Aggregate REPD sites per bus for tractability
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2024-01-01 00:00"
-    end: "2024-12-31 23:00"       # Leap year: 8784 hours
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24            # 24h day-ahead market windows
-      carry_soc: true             # Storage SoC carries between days
-    balancing:
-      mode: "rolling"
-      window_hours: 1             # Per-timestep BM (hourly)
-
-# Historical 2023 with a low-wind late-winter week (Feb 27 - Mar 5)
-# Purpose: validate historical thermal+renewable integration for 2023 fleet
-Historical_2023_lowwind:
-  description: "Historical 2023 - Low wind winter week (Feb 27 - Mar 5), wholesale only"
-  modelled_year: 2023
-  renewables_year: 2023
-  demand_year: 2023
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: false
-  component_aggregation:
-    enabled: false
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2023-02-27 00:00"
-    end: "2023-03-05 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    empirical_calibration:
-      enabled: true
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: true
-
-# FES HT 2035 with low-wind weather from 2023 (Feb 27 - Mar 5)
-# Purpose: validate future FES integration under wind drought stress
-HT35_lowwind:
-  description: "FES 2024 HT 2035 - Low wind week (2023 weather Feb 27 - Mar 5), wholesale only"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2023
-  demand_year: 2023
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-02-27 00:00"
-    end: "2035-03-05 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    correction_factors:
-      enabled: true
-      file: "data/market/carrier_correction_factors.csv"
-      nuclear_override: 10.0
-      renewable_empirical:
-        enabled: true
-        file: "data/market/renewable_empirical_mc.csv"
-    subsidies:
-      enabled: true
-      cfd_dispatch_cost: 0.0
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Dunkelflaute scenario - simultaneous low wind and low solar in winter
-# Uses Dec 2021 weather: worst winter week across all available years
-# Combined renewable CF ~9%, offshore wind 3-12%, solar negligible (near solstice)
-HT35_dunkelflaute:
-  description: "FES 2024 HT 2035 - Dunkelflaute (2021 weather Dec 16-22), wholesale only"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2021
-  demand_year: 2021
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-12-16 00:00"
-    end: "2035-12-22 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    correction_factors:
-      enabled: true
-      file: "data/market/carrier_correction_factors.csv"
-      nuclear_override: 10.0
-      renewable_empirical:
-        enabled: true
-        file: "data/market/renewable_empirical_mc.csv"
-    subsidies:
-      enabled: true
-      cfd_dispatch_cost: 0.0
-  market:
-    enabled: true
-    wholesale_only: true
-
-# Wholesale market only - Reduced network, 24 hours, no balancing mechanism
-# Purpose: investigate wholesale clearing price and generator dispatch ordering
-HT35_wholesale_only:
-  description: "HT 2035 Reduced - Wholesale market only (copperplate dispatch, 24h)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-01 23:00"
-  marginal_costs:
-    correction_factors:
-      enabled: true
-      file: "data/market/carrier_correction_factors.csv"
-      nuclear_override: 10.0          # £/MWh direct SRMC for nuclear
-  market:
-    enabled: true
-    wholesale_only: true              # Skip balancing mechanism + market analysis
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Two-step dispatch test - Reduced network, 24 hours, wholesale + balancing mechanism
-# Uses the rolling validation market shape, with future-safe derived BM prices.
-HT35_two_step_dispatch_1day:
-  description: "HT 2035 Reduced - Two-step dispatch (wholesale + BM, 24h)"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  renewables_year: 2020
-  demand_year: 2020
-  network_model: "Reduced"
-  renewable_aggregation:
-    enabled: true
-  component_aggregation:
-    enabled: true
-    include_storage_units: true
-    include_loads: true
-  solve_period:
-    enabled: true
-    start: "2035-01-07 00:00"
-    end: "2035-01-07 23:00"
-  subsidy_tracking:
-    enabled: true
-    roc_eligibility_years: 20
-    fes_cfd_fractions:
-      wind_offshore: 1.0
-      wind_onshore: 0.3
-      solar_pv: 0.5
-  marginal_costs:
-    nuclear_mc: 10.0
-    carrier_correction_factors:
-      enabled: true
-      file: "data/market/historical_carrier_correction_factors.csv"
-      source_year: "closest"
-    subsidies:
-      enabled: true
-  market:
-    enabled: true
-    wholesale_only: false
-    wholesale:
-      mode: "rolling_day_ahead"
-      window_hours: 24
-      carry_soc: true
-    balancing:
-      mode: "rolling"
-      window_hours: 24
-      bid_offer_source: "derived"
-      participation:
-        generators:
-          mode: "all"
-          behavior: "fallback_priced"
-          min_p_nom_mw: 50.0
-          exclude_carriers:
-            - "load_shedding"
-          penalty_offer_price: 6000.0
-          penalty_bid_price: 6000.0
-        storage_units:
-          mode: "all"
-          behavior: "priced_out"
-
-# TEMPLATES (copy and modify for new scenarios)
-# ══════════════════════════════════════════════════════════════════════════════
-#
-# HISTORICAL TEMPLATE:
-# --------------------
-# My_Historical_YYYY:
-#   description: "Historical Year YYYY"
-#   modelled_year: YYYY            # Must be ≤ 2024
-#   renewables_year: YYYY          # Match modelled_year for actual weather
-#   demand_year: YYYY              # Match modelled_year for actual demand
-#   network_model: "ETYS"          # Or "Reduced", "Zonal"
-#   # clustering: gsp_spatial      # Optional: add clustering
-#
-# FUTURE TEMPLATE:
-# ----------------
-# My_Future_YYYY:
-#   description: "FES XXXX Scenario Name YYYY"
-#   modelled_year: YYYY            # Must be > 2024
-#   FES_year: XXXX                 # 2021, 2022, 2023, 2024, or 2025 (REQUIRED)
-#   FES_scenario: "Scenario Name"  # See FES options (REQUIRED)
-#   renewables_year: 2020          # Historical weather for renewable profiles
-#   demand_year: 2020              # Year for ESPENI profile shape (if using ESPENI)
-#   network_model: "ETYS"          # Or "Reduced", "Zonal"
-#   # demand_timeseries: "ESPENI"  # Optional: "ESPENI" (default), "eload", "desstinee"
-#   # profile_year: 2050           # Optional: for eload/desstinee, 2010 or 2050 (auto-selected if omitted)
-#
-# DEMAND DATA SOURCES FOR FUTURE SCENARIOS:
-# -----------------------------------------
-# - Annual demand: From FES projections (FES_year + FES_scenario)
-# - Spatial distribution: From FES GSP-level breakdown
-# - Temporal profile (demand_timeseries option):
-#     "ESPENI"    - Historical half-hourly GB demand (uses demand_year)
-#     "eload"     - eLOAD model hourly profile (2010 or 2050 via profile_year)
-#     "desstinee" - DESSTINEE model hourly profile (2010 or 2050 via profile_year)
-#   
-#   For eload/desstinee: profile_year auto-selects based on modelled_year:
-#     - modelled_year >= 2040: uses 2050 profile (includes EV/HP electrification)
-#     - modelled_year < 2040:  uses 2010 profile (baseline demand shape)
-#     - Can explicitly set profile_year: 2010 or 2050 to override auto-selection
-#   
-#   All profiles are scaled to match FES annual demand projections.
+    start: 2030-01-01 00:00
+    end: 2030-01-07 23:00

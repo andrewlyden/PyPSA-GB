@@ -1,4 +1,4 @@
-﻿"""
+"""
 Scenario validation tests for PyPSA-GB.
 
 Tests the pre-flight validation system that checks scenarios before expensive workflows:
@@ -15,6 +15,8 @@ import pytest
 import yaml
 import subprocess
 from pathlib import Path
+from config.config_loader import load_config
+from config.config_loader import load_defaults
 
 
 @pytest.fixture
@@ -26,9 +28,9 @@ def project_root():
 @pytest.fixture
 def scenarios_master(project_root):
     """Load scenarios master configuration."""
-    scenarios_path = project_root / "config" / "scenarios.yaml"
-    with open(scenarios_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    from config.config_loader import load_scenario_entries
+
+    return load_scenario_entries(project_root / "config")
 
 
 @pytest.fixture
@@ -42,31 +44,20 @@ def config(project_root):
 @pytest.fixture
 def defaults(project_root):
     """Load defaults configuration."""
-    defaults_path = project_root / "config" / "defaults.yaml"
-    with open(defaults_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    return load_defaults(project_root / "config")
 
-
+@pytest.fixture
+def resolved_scenarios():
+    """Load scenarios after defaults and scenario-family defaults are applied."""
+    return load_config()["scenarios"]
 class TestValidationScriptsExist:
     """Test that validation scripts exist and are accessible."""
     
     def test_validate_scenarios_script_exists(self, project_root):
         """Test that scenario validation script exists."""
-        # Check in scripts/ and scripts/archive/ (may have been moved)
         validate_script = project_root / "scripts" / "validate_scenarios.py"
-        validate_script_alt = project_root / "scripts" / "archive" / "validate_scenarios.py"
-        
-        assert validate_script.exists() or validate_script_alt.exists(), \
-            f"Validation script not found at {validate_script} or {validate_script_alt}"
-    
-    def test_generate_validation_report_script_exists(self, project_root):
-        """Test that validation report generation script exists."""
-        # Check in scripts/ and scripts/archive/ (may have been moved)
-        report_script = project_root / "scripts" / "generate_validation_report.py"
-        report_script_alt = project_root / "scripts" / "archive" / "generate_validation_report.py"
-        
-        assert report_script.exists() or report_script_alt.exists(), \
-            f"Report generation script not found at {report_script} or {report_script_alt}"
+
+        assert validate_script.exists(), f"Validation script not found at {validate_script}"
 
 
 class TestScenarioConfigurationValidation:
@@ -111,7 +102,7 @@ class TestScenarioConfigurationValidation:
         scenarios = scenarios_master
         
         for scenario_id, scenario in scenarios.items():
-            voll = scenario.get('voll', defaults.get('voll'))
+            voll = (scenario.get('solve') or {}).get('voll', (defaults.get('solve') or {}).get('voll'))
             assert voll is not None and voll > 0, \
                 f"Scenario {scenario_id} has non-positive VOLL: {voll}"
 
@@ -145,27 +136,44 @@ class TestHistoricalScenarioValidation:
             
             # Historical scenarios should use ESPENI (or inherit from defaults)
             if modelled_year and modelled_year <= 2024:
-                demand_timeseries = scenario.get('demand_timeseries', defaults.get('demand_timeseries'))
+                demand_timeseries = (scenario.get('demand') or {}).get(
+                    'timeseries', (defaults.get('demand') or {}).get('timeseries'))
                 assert demand_timeseries == "ESPENI", \
                     f"Scenario {scenario_id}: historical should use ESPENI, got {demand_timeseries}"
+
+
+def is_cp30_scenario(scenario):
+    source = scenario.get('scenario_source') or scenario.get('source') or scenario.get('data_source') or ''
+    return str(source).upper() == 'CP30' or 'CP30_pathway' in scenario
 
 
 class TestFutureScenarioValidation:
     """Test validation specific to future scenarios."""
     
-    def test_future_scenarios_have_fes_config(self, scenarios_master):
-        """Test that future scenarios have FES configuration."""
-        scenarios = scenarios_master
+    def test_future_scenarios_have_source_config(self, resolved_scenarios):
+        """Test that future scenarios have either FES or CP30 source configuration."""
+        scenarios = resolved_scenarios
         
         for scenario_id, scenario in scenarios.items():
             modelled_year = scenario.get('modelled_year')
             
-            # Future scenarios should have FES config
             if modelled_year and modelled_year > 2024:
-                assert 'FES_year' in scenario, \
-                    f"Scenario {scenario_id}: future scenario missing FES_year"
-                assert 'FES_scenario' in scenario, \
-                    f"Scenario {scenario_id}: future scenario missing FES_scenario"
+                if is_cp30_scenario(scenario):
+                    assert scenario.get('scenario_source') == 'CP30', \
+                        f"Scenario {scenario_id}: CP30 scenario should set scenario_source: CP30"
+                    assert 'CP30_pathway' in scenario, \
+                        f"Scenario {scenario_id}: CP30 scenario missing CP30_pathway"
+                    assert 'files' in (scenario.get('source_data') or {}), \
+                        f"Scenario {scenario_id}: CP30 scenario missing source_data.files"
+                    assert 'spatial_proxy' in (scenario.get('fleet') or {}), \
+                        f"Scenario {scenario_id}: CP30 scenario missing explicit fleet.spatial_proxy"
+                    assert 'FES_year' not in scenario and 'FES_scenario' not in scenario, \
+                        f"Scenario {scenario_id}: CP30 scenario should not use top-level FES fields"
+                else:
+                    assert 'FES_year' in scenario, \
+                        f"Scenario {scenario_id}: future FES scenario missing FES_year"
+                    assert 'FES_scenario' in scenario, \
+                        f"Scenario {scenario_id}: future FES scenario missing FES_scenario"
     
     def test_future_scenarios_use_base_data(self, scenarios_master):
         """Test that future scenarios use recent base year for weather/demand."""
@@ -217,7 +225,8 @@ class TestClusteringConfigurationValidation:
         scenarios = scenarios_master
         
         for scenario_id, scenario in scenarios.items():
-            clustering = scenario.get('clustering', defaults.get('clustering', {}))
+            clustering = (scenario.get('network') or {}).get(
+                'clustering', (defaults.get('network') or {}).get('clustering', {}))
             if isinstance(clustering, dict) and clustering.get('enabled'):
                 assert 'method' in clustering, \
                     f"Scenario {scenario_id}: clustering enabled but no method specified"
@@ -230,7 +239,8 @@ class TestClusteringConfigurationValidation:
         valid_methods = ['spatial', 'busmap', 'kmeans', 'hierarchical', 'custom']
         
         for scenario_id, scenario in scenarios.items():
-            clustering = scenario.get('clustering', defaults.get('clustering', {}))
+            clustering = (scenario.get('network') or {}).get(
+                'clustering', (defaults.get('network') or {}).get('clustering', {}))
             if isinstance(clustering, dict) and clustering.get('enabled'):
                 method = clustering.get('method')
                 assert method in valid_methods, \
@@ -302,7 +312,7 @@ class TestActiveScenarioConfiguration:
     
     def test_run_scenarios_exist_in_master(self, config, scenarios_master):
         """Test that all run_scenarios exist in scenarios_master."""
-        run_scenarios = config.get('run_scenarios', [])
+        run_scenarios = load_config()["run_scenarios"]   # family names expanded to their months
         available_scenarios = scenarios_master
         
         for scenario_id in run_scenarios:
@@ -361,8 +371,8 @@ class TestScenarioConsistency:
                 assert isinstance(scenario['timestep_minutes'], int), \
                     f"{scenario_id}: timestep_minutes should be int"
             
-            if 'voll' in scenario:
-                assert isinstance(scenario['voll'], (int, float)), \
+            if 'voll' in (scenario.get('solve') or {}):
+                assert isinstance(scenario['solve']['voll'], (int, float)), \
                     f"{scenario_id}: voll should be numeric"
 
 

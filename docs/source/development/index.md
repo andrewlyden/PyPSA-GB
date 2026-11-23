@@ -1,12 +1,13 @@
 # Development
 
-Resources for contributing to and understanding the PyPSA-GB codebase.
+How the code is organised, how to contribute, what to do when something goes wrong, and what changed between
+releases.
 
 ```{toctree}
 :maxdepth: 2
 
-contributing
 architecture
-release_notes
+contributing
 troubleshooting
+release_notes
 ```

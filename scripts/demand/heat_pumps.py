@@ -44,7 +44,7 @@ Key Equations (same for both modes):
     - Higher COP in milder weather (COP ~4-5 at 10°C ambient)
     - Lower COP in cold weather (COP ~2-3 at 0°C ambient)
 
-Configuration (config/defaults.yaml):
+Configuration (demand.flexibility in config/defaults/base/demand.yaml):
     heat_pumps:
       enabled: true
       flexibility:
@@ -839,7 +839,7 @@ def add_heat_pump_flexibility(n: pypsa.Network,
         buses: List of bus names with heat pumps
         hp_demand_mw: Heat pump demand time series (MW)
         cop_profile: COP time series
-        flex_config: Flexibility configuration from defaults.yaml
+        flex_config: Flexibility configuration (demand.flexibility, config/defaults/base/demand.yaml)
         logger: Logger instance
 
     Returns:

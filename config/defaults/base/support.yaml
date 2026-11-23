@@ -1,0 +1,194 @@
+# Support schemes (CfD, RO, DPA): which generators hold which support, and how support enters dispatch costs,
+# balancing bids and post-solve revenue.
+#
+# labels: assigns support_type (CfD | ROC | merchant) to generators during integration. Needed by dispatch_costs,
+# bm_bids and revenue; when disabled every generator is treated as merchant.
+labels:
+  enabled: true
+
+  roc_eligibility_years: 20              # Years of ROC support from operational_date (standard accreditation period)
+
+  # Optional exact-name cross-walks for unit-level support labels.
+  dispatchable_support_overrides_file: null
+  renewable_support_overrides_file: null
+  # Optional sourced replacement of planning-record generators by separately accredited physical units, applied
+  # before aggregation.
+  historical_station_unit_splits_file: null
+
+  # Historical only: splits shared physical projects into LCCC contract tranches; unsupported capacity is merchant.
+  historical_cfd_tranches:
+    enabled: false
+    mapping_file: null
+    actuals_file: null
+
+  # Historical back-tests only: uses the calendar year's Ofgem RO output to correct or add station-evidenced ROC
+  # labels before marginal costs. Date-inferred labels keep their own confidence metadata; the post-solve ROC
+  # reconciliation remains the strict certificate test.
+  historical_roc_station_labels:
+    enabled: false
+    registry_file: null
+    station_overrides_file: null
+    residual_representation_assumptions_file: null
+    # Builds a source-register crosswalk before the solve (every issuing station against historical REPD extracts
+    # and DUKES); only explicit or high-confidence matches may change dispatch labels.
+    source_register_evidence: true
+    buyout_price: 50.05                  # GBP/ROC
+
+  # Non-CfD renewables operational before this date with no REPD ro_banding are inferred ROC-accredited at
+  # default_roc_bandings. The RO closed to new accreditation on 1 April 2017.
+  roc_closure_date: "2017-04-01"
+
+  # ROC/MWh by carrier where REPD ro_banding is blank (Ofgem banding, final accreditation period); applied only to
+  # sites operational before roc_closure_date.
+  default_roc_bandings:
+    wind_onshore: 0.9                    # Ofgem Band 2 (2013-2017)
+    wind_offshore: 2.0                   # Ofgem Band 2 (pre-2015 projects, most legacy)
+    solar_pv: 1.2                        # Ofgem Band 3 (>50 kW, 2013-2015)
+    small_hydro: 1.0                     # Ofgem Band 2 (up to 20 MW)
+    large_hydro: 1.0                     # Ofgem Band 2
+    tidal_stream: 5.0                    # Ofgem Band 1 (emerging tech)
+    shoreline_wave: 5.0                  # Ofgem Band 1 (emerging tech)
+    biomass: 1.5                         # Ofgem dedicated biomass band
+
+  # Optional sourced capacity schedule splitting CfD capacity into allocation-round tranches. null: every contract
+  # settles at one carrier-wide future_* strike.
+  cfd_vintage_schedule_file: null
+
+  # FES-sourced generators (no REPD data): share 0-1 of each carrier's capacity labelled CfD, the rest merchant.
+  # Unlisted carriers are all merchant. Nuclear is deliberately absent: CP30 places nuclear at named stations with
+  # their own labels (fleet.spatial_proxy.nuclear_station_schedule, data/market/CP30/nuclear_station_schedule_2030.csv),
+  # and Sizewell C is financed by a Regulated Asset Base (bill line sizewell_c_rab), not a CfD.
+  fes_cfd_fractions:
+    wind_offshore: 1.0                   # All new offshore assumed CfD
+    wind_onshore: 0.3                    # 30% CfD, 70% merchant
+    solar_pv: 0.5                        # 50% CfD, 50% merchant
+
+  # CfD strike prices by allocation round (GBP/MWh, no declared price year), for post-solve revenue tracking in
+  # historical runs only (not dispatch costs). Legacy values, several known wrong: AR5_offshore is the AR4 clearing
+  # price (AR5 drew no offshore bids) and the AR6 entries are administrative strike prices, not the cleared
+  # 58.87 / 50.90 / 50.07. Consumer-bill cases do not use this table; they read cleared prices (2012 prices) from
+  # data/market/lccc/cfd_strike_prices_by_round.csv.
+  cfd_strike_prices:
+    AR1_offshore: 150.0
+    AR2_offshore: 75.0
+    AR3_offshore: 58.0
+    AR4_offshore: 40.0
+    AR5_offshore: 37.35
+    AR6_offshore: 73.0
+    AR6_onshore: 53.0
+    AR6_solar: 47.0
+    future_offshore: 80.0               # Projected for 2030s
+    future_onshore: 55.0
+    future_solar: 50.0
+    future_nuclear: 92.50               # Hinkley Point C's strike (2012 prices)
+  # Scheme registers as the authority for named sites' support labels (scripts/renewables/support_register_labels.py).
+  # REPD leaves RO banding blank for most sites and CfD capacity blank for some, and the date rule misses the RO
+  # grace period. The RO eligibility test is the bill's RO line's own. Disabled: REPD and the date rule alone.
+  support_registers:
+    enabled: true
+    ro_register: "data/market/ofgem_renewables_obligation/accredited_stations_ro_current.csv"
+    ro_certificates: "data/market/ofgem_renewables_obligation/certificates_ro_current.csv"
+    ro_reference_date: null          # null: 1 April of modelled_year (the RO obligation year)
+    lccc_portfolio: "data/market/lccc/cfd_contract_portfolio_status.csv"
+    repd: "data/renewables/repd-q2-jul-2025.csv"
+    crosswalk_overrides: "data/market/support/support_register_crosswalk_overrides.csv"
+    # Named sites' CfD contracts, checked against the LCCC portfolio one row per round
+    # (support_register_labels.apply_checked_cfd_contracts). Part-contracted sites split into their rounds plus a
+    # merchant "<site>_non_CfD" remainder; multi-round sites settle each round at its own strike. Sites with
+    # terminated or no contracts carry action not_built_refill: left out of the named fleet, their MW refilled by
+    # the regional proxy as new capacity, their terminated awards kept netted off their rounds.
+    # null: REPD and the matcher alone.
+    checked_cfd_contracts: "data/market/lccc/checked_cfd_contracts.csv"
+    # Anonymous CP30 biomass and energy-from-waste proxies take the share of their capacity the RO register holds as
+    # live accreditations (certificates issued since min_certificate_year, the bill's activity rule).
+    dispatchable_proxy_share:
+      enabled: true
+      carriers: ["biomass", "waste_to_energy"]
+      min_certificate_year: 2023
+    # Marine (tidal and wave) proxies likewise; no activity rule.
+    renewable_proxy_share:
+      enabled: true
+      carriers: ["marine"]
+      min_certificate_year: null
+      # Marine proxy capacity the RO register does not hold is tidal stream on CfDs (AR4-AR7a ring-fenced tidal
+      # stream, data/market/lccc/cfd_strike_prices_by_round.csv): the CfD vintage schedule assigns those rounds,
+      # the rest at the future tidal strike.
+      remainder_support: "CfD"
+
+# Unit-level support treatment of modelled future renewable balancing bids and offers (ELEXON historical prices are
+# left untouched). Merchant assets keep their technology-specific opportunity-cost fallback.
+bm_bids:
+  enabled: true
+  # "fixed": the assumptions below; "empirical": BOD calibration for carrier/support groups with at least
+  # min_bmus directly matched BMUs.
+  mode: "fixed"
+  case: "central"
+  min_bmus: 3
+  # Optional bid-only addition for high-confidence LCCC CfD BMUs (ROC excluded until Ofgem accreditation evidence
+  # is provided).
+  legal_cfd_crosswalk:
+    enabled: false
+    file: null
+  # Bid and offer prices (GBP/MWh) by support type where evidence is missing.
+  cfd:
+    offer_price: 0.0
+    bid_price: 0.0
+  roc:
+    offer_price: 0.0
+    bid_multiplier: 1.0  # ro_banding x model-year ROC buyout price
+  # Carriers whose support label does not override their carrier bid/offer prices: nuclear keeps its carrier
+  # override (a zero CfD offer would let the BM turn Hinkley Point C up for free); CCS Biomass and biomass are
+  # fuelled CfD plant, whose bids must reflect the fuel saved when turned down. Must match the code default in
+  # market_utils._apply_renewable_support_pricing.
+  exclude_carriers: ["nuclear", "CCS Biomass", "biomass"]
+
+# Post-solve CfD difference payments and ROC income. Requires market.enabled and labels.enabled.
+revenue:
+  enabled: true
+  include_cfd: true                     # Calculate CfD top-up/clawback payments
+  include_roc: true                     # Calculate ROC income
+  output_format: "csv"                  # "csv", "json", or "both"
+
+# Support-aware dispatch costs: CfD units at cfd_dispatch_cost (GBP/MWh), ROC units at minus banding x buyout price.
+dispatch_costs:
+  enabled: true
+  cfd_dispatch_cost: 0.0
+  # Fuelled CfD carriers that keep their fuel-and-carbon marginal cost instead of cfd_dispatch_cost (the network
+  # marginal cost is also the settlement's fuel cost). BECCS runs baseload through min_output instead.
+  cfd_dispatch_cost_exempt_carriers: ["CCS Biomass", "biomass"]   # biomass: Drax and MGT CfDs
+  # Dispatchable Power Agreement plant (Net Zero Teesside Power) is dispatched ahead of unabated gas: its dispatch
+  # cost is at most the cheapest unabated CCGT's marginal cost less this margin (GBP/MWh).
+  dpa_margin_gbp_per_mwh: 1.0
+  # ROC buy-out price (GBP/ROC) by the calendar year in which the April-March obligation period starts. Not the
+  # realised value of a ROC, which also includes recycling.
+  roc_buyout_prices:
+    # Ofgem published values.
+    2010: 36.99
+    2011: 38.69
+    2012: 40.71
+    2013: 42.02
+    2014: 43.30
+    2015: 44.33
+    2016: 44.77
+    2017: 45.58
+    2018: 47.22
+    2019: 48.78
+    2020: 50.05
+    2021: 50.80
+    2022: 52.88
+    2023: 59.01
+    2024: 64.73
+    2025: 67.06
+    2026: 69.34
+    # Forecast: 3% a year nominal escalation from the 2026-27 value; replace with Ofgem's value once published.
+    2027: 71.42
+    2028: 73.56
+    2029: 75.77
+    2030: 78.04
+    2031: 80.38
+    2032: 82.79
+    2033: 85.27
+    2034: 87.83
+    2035: 90.46
+    2036: 93.18
+    2037: 95.97

@@ -1,0 +1,14 @@
+# PyPSA-GB is run as a Snakemake workflow, not installed as a package; this file
+# only holds tool settings. pytest settings live in pytest.ini.
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+# Snakemake injects `snakemake` into every script run through a `script:` directive.
+builtins = ["snakemake"]
+extend-exclude = ["docs/build", "notebooks", "docs/source/tutorials"]
+
+[tool.ruff.lint]
+# Errors only for now (syntax errors, undefined names, invalid comparisons):
+# the codebase predates any linter, so style rules are left for later.
+select = ["E9", "F63", "F7", "F82"]

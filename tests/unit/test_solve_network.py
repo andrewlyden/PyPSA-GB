@@ -20,6 +20,7 @@ import logging
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 from solve_network import (
     configure_solver,
+    enforce_feasible_generator_operating_bounds,
     export_optimization_results,
     generate_optimization_summary
 )
@@ -34,6 +35,22 @@ def set_network_objective(network, value):
     # Directly set the _objective attribute to avoid deprecation warning
     # This is what PyPSA does internally when accessing network.objective
     network._objective = value
+
+
+def test_generator_minimum_is_capped_at_time_varying_availability(logger):
+    import pypsa
+
+    network = pypsa.Network()
+    network.set_snapshots(pd.date_range("2020-01-01", periods=3, freq="h"))
+    network.add("Bus", "b")
+    network.add(
+        "Generator", "future", bus="b", p_nom=10.0,
+        p_min_pu=0.4, p_max_pu=0.8,
+    )
+    network.generators_t.p_max_pu["future"] = [0.0, 0.2, 0.8]
+
+    assert enforce_feasible_generator_operating_bounds(network, logger) == 1
+    assert network.generators_t.p_min_pu["future"].tolist() == [0.0, 0.2, 0.4]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -114,7 +131,7 @@ def scenario_config():
         'fes_year': 2024,
         'modelled_year': 2030,
         'network_model': 'Reduced',
-        'solver': 'highs',
+        'solve': {'solver': 'highs'},
         'solver_options': {'threads': 4}
     }
 

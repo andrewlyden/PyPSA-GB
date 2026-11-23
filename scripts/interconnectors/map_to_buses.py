@@ -23,7 +23,10 @@ import logging
 from pathlib import Path
 import re
 import time
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
+
+if TYPE_CHECKING:
+    import pypsa
 
 # Add the project root to the path so we can import our modules
 project_root = Path(__file__).parent.parent.parent
@@ -50,7 +53,8 @@ if 'snakemake' in globals():
     network_file = snakemake.input[1]
     bus_mapping_file = snakemake.params.get('bus_mapping_file', None)
     output_mapped = snakemake.output[0]
-    network_model = snakemake.wildcards.network_model
+    # The rule is keyed on the scenario and passes its network model.
+    network_model = snakemake.params.get('network_model') or snakemake.wildcards.network_model
 else:
     SNAKEMAKE_MODE = False
 
@@ -406,6 +410,74 @@ def map_by_coordinates(interconnectors_df: pd.DataFrame, bus_mapping_df: pd.Data
     return interconnectors_df
 
 
+def apply_explicit_etys_bus_mapping(
+    interconnectors_df: pd.DataFrame,
+    manual_mapping_df: pd.DataFrame,
+    network_buses,
+) -> pd.DataFrame:
+    """Pin each interconnector with an ETYS row in bus_mapping.csv to that bus.
+
+    Coordinate matching runs first and takes the nearest bus of any voltage to
+    the register's approximate landing coordinates. For Viking Link that was
+    TKNO22 (Triton Knoll 275 kV, 877 MVA of branches) for a 1,400 MW link that
+    lands at Bicker Fen 400 kV (BICF41, 14.6 GVA). A curated row is the better
+    answer, so it wins. A curated row naming a bus the network lacks is an
+    error, not a fallback: the old labels (BICK_400 and the like) matched no
+    bus, and the silent nearest-bus result is how the Viking error went unseen.
+
+    Rows are matched by exact interconnector name, then by GB landing point.
+    Interconnectors with no row keep their coordinate match.
+    """
+    if manual_mapping_df is None or manual_mapping_df.empty:
+        return interconnectors_df
+    rows = manual_mapping_df
+    if 'network_model' in rows.columns:
+        rows = rows[rows['network_model'] == 'ETYS']
+    if 'country' in rows.columns:
+        rows = rows[rows['country'] == 'GB']
+    rows = rows[rows['bus'].notna()]
+    named = rows[rows['interconnector_name'].notna() & (rows['interconnector_name'].astype(str).str.strip() != '')]
+    name_lookup = dict(zip(named['interconnector_name'].astype(str).str.strip(), named['bus']))
+    landing_lookup = {}
+    for landing, bus in zip(rows['landing_point'].astype(str).str.lower().str.strip(), rows['bus']):
+        if landing_lookup.setdefault(landing, bus) != bus:
+            raise ValueError(
+                f"bus_mapping.csv maps ETYS landing point '{landing}' to both "
+                f"{landing_lookup[landing]} and {bus}"
+            )
+
+    network_buses = set(network_buses)
+    df = interconnectors_df.copy()
+    unresolved = []
+    for idx, row in df.iterrows():
+        name = str(row.get('name', '')).strip()
+        landing = str(row.get('landing_point_gb', '')).lower().strip()
+        bus = name_lookup.get(name) or landing_lookup.get(landing)
+        if bus is None:
+            logger.info(f"  {name}: no explicit ETYS mapping, keeping coordinate match {row.get('from_bus')}")
+            continue
+        if bus not in network_buses:
+            unresolved.append(f"{name} ({row.get('landing_point_gb')}) -> {bus}")
+            continue
+        if bus != row.get('from_bus'):
+            logger.info(f"  {name}: explicit mapping {bus} replaces coordinate match {row.get('from_bus')}")
+        df.at[idx, 'from_bus'] = bus
+        if 'gb_bus' in df.columns:
+            df.at[idx, 'gb_bus'] = bus
+        if 'match_method' in df.columns:
+            df.at[idx, 'match_method'] = 'explicit'
+        if pd.isna(row.get('to_bus')):
+            df.at[idx, 'to_bus'] = create_external_bus_name(
+                row.get('counterparty_country', 'External'), row.get('international_location'))
+
+    if unresolved:
+        raise ValueError(
+            "bus_mapping.csv ETYS rows name buses that are not in the network "
+            "(fix the row rather than fall back to the nearest bus): " + "; ".join(unresolved)
+        )
+    return df
+
+
 def apply_etys_interconnector_voltage_correction(
     interconnectors_df: pd.DataFrame,
     network: 'pypsa.Network',
@@ -658,6 +730,10 @@ def main():
         if target_network_model == 'ETYS':
             import pypsa
             n = pypsa.Network(network_file)
+            manual_mapping_path = Path(project_root) / "data" / "interconnectors" / "bus_mapping.csv"
+            mapped_df = apply_explicit_etys_bus_mapping(
+                mapped_df, load_bus_mapping(str(manual_mapping_path), 'ETYS'), n.buses.index
+            )
             mapped_df = apply_etys_interconnector_voltage_correction(mapped_df, n)
         
         # Validate mapped data

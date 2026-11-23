@@ -34,7 +34,10 @@ import logging
 import time
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import TYPE_CHECKING, Optional, Dict, Any, Union
+
+if TYPE_CHECKING:
+    import pandas as pd
 import warnings
 
 # Suppress PyPSA export warnings
@@ -121,6 +124,31 @@ def load_network(
     return network
 
 
+
+def make_text_columns_netcdf_safe(network: pypsa.Network, log: logging.Logger | None = None) -> None:
+    """Give every static text column one type, so netCDF can store it.
+
+    A column that mixes text with missing values or numbers (for example ``repd_ref_id`` on historical networks)
+    cannot be written to netCDF; it is written as text, missing as "". Columns of one type are left as they are.
+    """
+    for component in network.iterate_components():
+        static = component.df
+        for column in static.columns[static.dtypes == object]:
+            values = static[column]
+            if values.map(type).nunique() > 1:
+                static[column] = values.where(values.notna(), "").astype(str)
+                if log is not None:
+                    log.debug("Wrote %s.%s as text for netCDF (mixed types)", component.list_name, column)
+
+
+def _sanitize_network_before_save(network: pypsa.Network, log: logging.Logger) -> None:
+    """Remove PyPSA-misleading static attributes before serialising networks."""
+    make_text_columns_netcdf_safe(network, log)
+    if hasattr(network, "lines") and len(network.lines) > 0 and "v_nom" in network.lines.columns:
+        if "voltage_kv" not in network.lines.columns:
+            network.lines["voltage_kv"] = network.lines["v_nom"]
+        network.lines.drop(columns=["v_nom"], inplace=True)
+        log.debug("Moved legacy lines.v_nom to lines.voltage_kv before saving")
 def save_network(
     network: pypsa.Network,
     path: Union[str, Path],
@@ -152,6 +180,8 @@ def save_network(
     
     # Ensure directory exists
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    _sanitize_network_before_save(network, log)
     
     ext = path.suffix.lower()
     

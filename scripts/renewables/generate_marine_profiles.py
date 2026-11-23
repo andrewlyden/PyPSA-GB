@@ -12,6 +12,7 @@ These technologies have predictable patterns based on oceanic cycles rather than
 import logging
 import time
 import warnings
+import zlib
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -149,38 +150,44 @@ class MarineRenewableGenerator:
         """
         # Extract day of year for seasonal pattern
         day_of_year = time_index.dayofyear
-        
-        # Seasonal wave height variation (winter storms, summer calm)
-        seasonal_amplitude = (
-            self.wave_seasonal_pattern['winter_amplitude'] * 
-            (0.5 - 0.5 * np.cos(2 * np.pi * day_of_year / 365.25))
+
+        # Seasonal wave height variation, peaking in winter storms. Until 26 Sep
+        # 2026 this used 0.5 - 0.5*cos(...), which peaks at midsummer, and ADDED
+        # the seasonal amplitude to the 0.25 base, so the fleet CF was 0.58 and
+        # highest in June-July (audit 26 Sep 2026). The shape is now normalised
+        # to mean 1 and scales mean_capacity_factor, so the configured 0.25 is
+        # the annual CF and the winter/summer ratio is (0.7 + 0.3) / 0.3.
+        seasonal_shape = (
+            self.wave_seasonal_pattern['winter_amplitude'] *
+            (0.5 + 0.5 * np.cos(2 * np.pi * day_of_year / 365.25))
         ) + self.wave_seasonal_pattern['summer_amplitude']
-        
+        seasonal_shape = seasonal_shape / np.mean(seasonal_shape)
+
         # Add stochastic weather-driven variation
         # Use correlated random walk to simulate storm patterns
         n_hours = len(time_index)
         random_component = np.random.normal(0, 0.1, n_hours)
-        
+
         # Apply autocorrelation to simulate persistent weather patterns
         alpha = 0.95  # Autocorrelation parameter
         wave_variation = np.zeros(n_hours)
         wave_variation[0] = random_component[0]
-        
+
         for i in range(1, n_hours):
             wave_variation[i] = alpha * wave_variation[i-1] + (1-alpha) * random_component[i]
-        
-        # Combine seasonal and stochastic components
+
         base_cf = self.wave_seasonal_pattern['mean_capacity_factor']
-        capacity_factor = base_cf + seasonal_amplitude * (0.5 + 0.5 * wave_variation)
-        
-        # Apply realistic constraints
-        capacity_factor = np.clip(capacity_factor, 0, 1)
-        
+        capacity_factor = np.clip(seasonal_shape * (1.0 + wave_variation), 0.0, None)
+
         # Add occasional storm events (high capacity factors)
         storm_probability = 0.02  # 2% chance per hour
         storm_mask = np.random.random(n_hours) < storm_probability
-        capacity_factor = np.where(storm_mask, np.minimum(capacity_factor * 2.5, 1.0), capacity_factor)
-        
+        capacity_factor = np.where(storm_mask, capacity_factor * 2.5, capacity_factor)
+
+        # Rescale so the annual mean is the configured capacity factor, then
+        # respect the unit's rating.
+        capacity_factor = np.clip(base_cf * capacity_factor / np.mean(capacity_factor), 0, 1)
+
         return pd.Series(capacity_factor, index=time_index)
 
     def generate_tidal_lagoon_profile(self, time_index, site_lat=51.5, site_lon=-4.0):
@@ -275,6 +282,11 @@ class MarineRenewableGenerator:
                 logger.warning(f"Site {site_name} has zero capacity, skipping")
                 continue
             
+            # Deterministic per site and year: the phases and storm draws were
+            # unseeded, so every rerun of this rule changed every marine profile
+            # (and the networks built on them) at random (audit 26 Sep 2026).
+            np.random.seed(zlib.crc32(f"{technology}|{site_name}|{time_index[0].year}".encode("utf-8")))
+
             # Generate technology-specific profile
             if technology == 'tidal_stream':
                 cf_profile = self.generate_tidal_stream_profile(time_index, lat, lon)

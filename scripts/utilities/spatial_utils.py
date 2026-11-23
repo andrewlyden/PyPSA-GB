@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # SPATIAL MAPPING DEFAULTS
 # Override at runtime by calling configure_spatial_mapping(snakemake.config).
-# Values here match config/defaults.yaml → spatial_mapping section.
+# Values here match config/defaults/base/network.yaml → network.spatial_mapping section.
 # =============================================================================
 _OSGB36_MIN_VALUE: float = 1000.0      # x or y > this → OSGB36 (metres)
 _WGS84_MAX_ABSOLUTE: float = 100.0     # x and y < this → WGS84 (degrees)
@@ -62,13 +62,177 @@ _EARTH_RADIUS_KM: float = 6371.0       # Earth radius for haversine distance
 _GEN_FALLBACK_HV_RADIUS_KM: float = 80.0  # Max km for post-agg nearest HV bus search
 
 
+# =============================================================================
+# EXPLICIT ONSHORE RENEWABLE CONNECTIONS
+# Named onshore projects whose connection point is documented but which
+# nearest-bus placement puts on a different, far weaker substation. Applied by
+# apply_etys_bmu_mapping() to every matching row regardless of size or voltage
+# heuristics; skipped when the bus is absent from the network (other network
+# models, or years before the asset exists), so placement then falls back to
+# the usual nearest-bus logic. Patterns match the lower-cased site name on
+# whole words, so 'clyde wind farm' does not match 'Inverclyde Wind Farm' and
+# 'whitelee' does not match 'Whitelees Hydrogen'. Order matters: the first
+# matching pattern wins, so extensions precede their parent project.
+# Evidence: GB_network.xlsx Dir_con_BMUs_to_node (official BMU -> node map)
+# and the TEC register (data/generators/tec-register-*.csv).
+# =============================================================================
+ONSHORE_RENEWABLE_DIRECT_BUS: Dict[str, str] = {
+    # T_CLDCW-1 (Clyde Central, the extension) -> CLYN3A-D; TEC "Clyde North
+    # 275/33kV" 374.5 MW. The 275 kV collector CLYN2Q exports over 476 MVA.
+    'clyde wind farm extension': 'CLYN2Q',
+    # The original 350 MW farm feeds both collectors (T_CLDNW-1 -> CLYN,
+    # T_CLDSW-1 -> CLYS; TEC Clyde South 128.8 MW). One REPD row cannot be
+    # split, so it sits at Elvanfoot 275 kV where the CLYS cable lands; putting
+    # all 350 MW behind either collector cable would invent a constraint.
+    # (Was NLEI3A, a 2029 upgrade bus 5 km away behind one 90 MVA transformer.)
+    'clyde wind farm': 'ELVA2R',
+    # T_WHILW-2 -> WLEX3A-C (was MEAD1Q, 100 MVA, shared with Whitelee).
+    'whitelee windfarm extension': 'WLEX2-',
+    # T_WHILW-1 -> WLEE3A-C.
+    'whitelee': 'WLEE2-',
+    # T_KLGLW-1 -> KILG3A-C (was GLLU1Q, 109 MVA).
+    'kilgallioch': 'KILG2-',
+    # T_FALGW-1 -> FALL4- (was POGB3-, 57 MVA).
+    'fallago rig': 'FALL4-',
+    # T_EWHLW-1 -> EWEH3- (was ECCF1J, 18 MVA line to Chapelcross).
+    'ewe hill': 'EWEH3-',
+    # T_CRDEW-1/2 -> CRDY31 (Crossdykes 33 kV, tied to EWEH3-; was ECCF1J).
+    'crossdykes': 'CRDY31',
+    # T_MKHLW-1 -> MAHI3- (was TRLO3-, 25 MVA line).
+    'mark hill': 'MAHI3-',
+    # T_KPMRW-1 -> KYPE3- (120 MVA); the extension stays on the other
+    # Kype Muir 33 kV section, KYPE3A (90 MVA).
+    'kype muir wind farm extension': 'KYPE3A',
+    'kype muir': 'KYPE3-',
+    # T_CRYRW-2/-3 (and T_CRYRD-2) -> CRYR1-, the Crystal Rig 132 kV collector
+    # behind the 240 MVA CRYR4- transformer (its 33 kV sections CRYR31/32 hang
+    # off it). Nearest-bus put the phases on CRYR1A and Extension II on the
+    # Neart na Gaoithe export substation NNGO21 (audit 27 Sep 2026).
+    'crystal rig': 'CRYR1-',
+    # T_ARCHW-1 -> AREC3A 50% / AREC3B 50% (2 x 90 MVA to AREC1-). One REPD
+    # row cannot be split without doubling its register matches, so it sits on
+    # AREC1-, the 132 kV bus both sections feed: the same export path for a
+    # 120 MW farm (was AREC3-, 60 MVA transformer + 40 MVA line).
+    'arecleoch': 'AREC1-',
+    # Scottish 132 kV connection points from the TEC register (02 Sep 2025)
+    # and GB_network.xlsx Dir_con_BMUs_to_node, for named farms nearest-bus
+    # put behind the wrong 132 kV circuit (audit 27 Sep 2026, once SHE/SPT
+    # 132 kV became constrained in the BM):
+    # TEC "Heathland 132/33kV Substation" 80 MW -> HLND1- (was BLKL1-, which
+    # then carried 394 MW on the 161 MVA Black Law-Wishaw circuit).
+    'heathland wind farm': 'HLND1-',
+    # TEC "Blacklaw Extension 132/33kV" 60 MW -> BLLX1- (was BLKL1-/BLKL3B).
+    'black law extension': 'BLLX1-',
+    # BMUs T_FARR-1 -> FAAR3J, T_FARR-2 -> FAAR3K: Farr splits across both
+    # Farr 132 kV sections; one row sits on FAAR1R, leaving Moy and Glen
+    # Kyllachy on FAAR1Q (all three were on FAAR1Q: 206 MW on 132 MVA).
+    'farr wind farm': 'FAAR1R',
+    # TEC "Maybole 132/33kV" / "Maybole GSP" (Assel Valley 25 MW, Kirk Hill
+    # 20 MW); were on Hadyard Hill's own 140 MVA export circuit.
+    'assel valley': 'MAYB1-',
+    'kirk hill wind farm': 'MAYB1-',
+    # TEC "Linnmill 132/33kV" 36 MW (was KYPE3A, the Kype Muir extension).
+    'auchrobert': 'LINM1R',
+    # BMUs T_MILWW-1 / T_MILWWD-1 -> MILW3-; TEC "Millennium GSP" (were on
+    # CEAN1Q, Ceannacroc hydro).
+    'millennium extension': 'MILW3-',
+    'millennium windfarm': 'MILW3-',
+    # TEC "Shin GSP" (Strath Oykel 74 MW, Meall Buidhe 40 MW); were on
+    # CASS1Q behind the 111 MVA Cassley-Dalchork circuit.
+    'strath oykel': 'SHIN1-',
+    'meall buidhe': 'SHIN1-',
+    # TEC "Achany Extension Wind Farm 132/33kV Substation": Achany (ACHE1-,
+    # 323 MVA). Nearest-bus put it on CASS1Q; weak-bus relief used to move it
+    # back only while Strath Oykel/Meall Buidhe overloaded Cassley.
+    'achany extension': 'ACHE1-',
+    # Strathy: TEC "Strathy North/South/Wood 132/33kV Substation"; ETYS STRW
+    # (Strathy Wind; BMU T_STRNW-1 -> STRW31, the 33 kV side), STSO (Strathy
+    # South) and STWO (Strathy Wood). All three were on ARMA1- (Armadale).
+    'strathy north': 'STRW3-',
+    'strathy south': 'STSO1B',
+    'strathy wood': 'STWO3-',
+    # Lewis projects: TEC "Stornoway 132/33kV" 180 MW and "Muaitheabhal
+    # 132/33kV" 189 MW, both on the Lewis 132 kV network behind the Western
+    # Isles HVDC (LEWI4R--FNLN4R), which ETYS builds from 2032. Inert while the
+    # link is absent; the 2030 CP30 fleet excludes both projects outright
+    # (data/renewables/cp30_named_fleet_exclusions.csv).
+    'stornoway wind farm': 'LEWI1J',
+    'muaitheabhal': 'LEWI1J',
+    # Radial 132 kV pockets the network audit of 15 Oct 2026 traced to placement,
+    # not ratings (TEC register 02 Sep 2025; GB_network.xlsx Dir_con_BMUs_to_node):
+    # TEC "Glenglass 132kV Substation" 250 MW; BMUs T_SANQW-1/T_SANQD-1 -> GLGL3-.
+    # Was SAKN1- (Sandy Knowe), 390 MW behind its 166 MVA circuit; nearest-bus matching still picks it,
+    # so the TEC substation is pinned here. GLGL1Q is the main Glenglass 132 kV busbar. Since 27 Oct 2026
+    # (F25.12) the Appendix B section GLGL1- (2025, the Sanquhar cable) is coupled to it as one node
+    # (ETYS_upgrades: glenglass_2025_terminal_reconciliation; the GLGL1B change rows apply), so GLGL1Q
+    # exports over SANQ1-, SAKN1-, BLAH1- and GHPS1-.
+    'sanquhar 2': 'GLGL1Q',
+    'sanquhar ii': 'GLGL1Q',
+    # TEC "New Cumnock 275/132kV Substation" 212 MW. Was DESA1Q (Dersalloch's
+    # 167 MVA radial), where only Dersalloch belongs.
+    'north kyle': 'NECU1-',
+    # TEC "Benbrack Wind Farm 132/33kV Substation": its own substation BENB1-
+    # in the New Cumnock pocket. Was DESA1Q.
+    'benbrack': 'BENB1-',
+    # TEC "Cloich 132kV Substation" 200 MW -> CLOI1A. Was BHLA11 (Bhlaraidh).
+    # Anchored: Coire Na Cloiche (Alness GSP) is a different farm.
+    '^cloiche wind farm': 'CLOI1A',
+    # Five farms (342 MW) were on OHLL1- behind its 180 MVA line to NECU1B.
+    # TEC: Enoch Hill at its own "Enoch Hill 132/33kV" (ENHI1-, on NECU1C);
+    # Pencloe ("Pencloe 132/33kV"), Windy Standard III, Greenburn ("Greenburn
+    # Mixed Technology 132kV") and Over Hill have no own bus in the network, so
+    # they are spread over the New Cumnock 132 kV sections: NECU1C (2 x 360 MVA
+    # SGTs) and NECU1B (3 x 240 MVA SGTs).
+    'enoch hill': 'ENHI1-',
+    'pencloe': 'NECU1C',
+    'windy standard iii': 'NECU1C',
+    'greenburn wind park': 'NECU1B',
+    'over hill wind farm': 'NECU1B',
+}
+
+
+def _explicit_onshore_connection(site_name: str, bus_index) -> Optional[Tuple[str, str]]:
+    """Return (pattern, bus) of the first explicit connection matching site_name.
+
+    Only buses present in ``bus_index`` are returned, so an explicit entry is
+    inert on a network that does not contain its substation. A pattern starting
+    with ``^`` must match at the start of the name ('^cloiche wind farm' is not
+    'Coire Na Cloiche Wind Farm').
+    """
+    import re
+    # Generator names in the network use underscores for spaces
+    # ("Clyde_Wind_Farm"); the post-aggregation pass matches on those.
+    name = str(site_name).lower().replace('_', ' ')
+    for pattern, bus in ONSHORE_RENEWABLE_DIRECT_BUS.items():
+        if pattern.startswith('^'):
+            regex = rf"^{re.escape(pattern[1:])}(?![a-z])"
+        else:
+            regex = rf"(?<![a-z]){re.escape(pattern)}(?![a-z])"
+        if re.search(regex, name):
+            if bus in bus_index:
+                return pattern, bus
+            return None
+    return None
+
+
+def documented_connection_mask(sites_df: pd.DataFrame, bus_index, name_col: str = 'site_name') -> pd.Series:
+    """True for rows whose name has a documented connection point on this network.
+
+    The rows :data:`ONSHORE_RENEWABLE_DIRECT_BUS` places (TEC register): a
+    placement rule that moves sites by geography (the GSP-node placement)
+    leaves them where the register says they connect.
+    """
+    names = sites_df.get(name_col, pd.Series('', index=sites_df.index)).fillna('').astype(str)
+    return names.map(lambda n: _explicit_onshore_connection(n, bus_index) is not None).astype(bool)
+
+
 def configure_spatial_mapping(cfg: dict) -> None:
     """
     Update spatial mapping constants from a Snakemake config dictionary.
 
     Call once at script startup:  ``configure_spatial_mapping(snakemake.config)``
 
-    Reads the ``spatial_mapping`` top-level key and updates all module-level
+    Reads the ``network.spatial_mapping`` key and updates all module-level
     constants.  Unknown keys are silently ignored; missing keys keep defaults.
     """
     global \
@@ -80,7 +244,7 @@ def configure_spatial_mapping(cfg: dict) -> None:
         _GEN_MEDIUM_MW, _GEN_MAX_XFMR_RATIO, \
         _GEN_MIN_PREFERRED_KV, _GEN_HIGH_KV, _GEN_LOW_KV, \
         _EARTH_RADIUS_KM, _GEN_FALLBACK_HV_RADIUS_KM
-    sm = cfg.get('spatial_mapping', {})
+    sm = (cfg.get('network') or {}).get('spatial_mapping', {})
     if not sm:
         return
 
@@ -1101,6 +1265,21 @@ def apply_etys_bmu_mapping(
     # STAGE 2: Apply corrections to generators
     # ==========================================================================
     for idx, row in sites_df.iterrows():
+        # An explicit CP30 connection allocation records the intended physical
+        # connection point.  Do not subsequently move it using generic BMU/
+        # voltage heuristics merely because a sensitivity network contains a
+        # nearby higher-voltage bus; this preserves paired topology tests.
+        # The CP30 gas station schedule declares each station's bus with its
+        # evidence (items MR1/MR2); it is not re-guessed here either.
+        # Distribution-size plant placed at its own GSP's demand node, and FES
+        # small-scale solar held there, connect inside the GSP (15 Oct 2026):
+        # moving them to a same-site 400 kV busbar would bypass the SGTs.
+        if str(row.get('data_source', '')).strip() in (
+                'CP30_connection_allocation', 'CP30_gas_station_schedule',
+                'CP30_biomass_station_schedule', 'CP30_ccs_biomass_station_schedule',
+                'CP30_committed_overlay', 'CP30_distributed_gsp_node', 'CP30_small_scale_solar_gsp'):
+            continue
+
         bus = row.get('bus')
         if pd.isna(bus) or bus not in bus_v_nom:
             continue
@@ -1110,6 +1289,25 @@ def apply_etys_bmu_mapping(
         
         # Get generator name for matching
         gen_name = str(row.get('station_name', row.get('site_name', row.get('name', row.get('Site Name', ''))))).lower()
+
+        # Documented onshore connection points win over every heuristic below.
+        explicit = _explicit_onshore_connection(gen_name, network.buses.index)
+        if explicit is not None:
+            pattern, new_bus = explicit
+            if new_bus != bus:
+                sites_df.at[idx, 'bus'] = new_bus
+                corrections_made += 1
+                corrections_log.append({
+                    'generator': gen_name,
+                    'capacity_mw': capacity_mw,
+                    'old_bus': bus,
+                    'old_v_nom': v_nom,
+                    'old_xfmr_capacity': np.nan,
+                    'new_bus': new_bus,
+                    'new_v_nom': bus_v_nom.get(new_bus, 0),
+                    'match_method': f"explicit_connection '{pattern}'",
+                })
+            continue
 
         # Only check generators above minimum threshold
         check_threshold = min_check_mw if min_check_mw is not None else _GEN_MIN_CHECK_MW
@@ -1279,3 +1477,1117 @@ def apply_etys_bmu_mapping(
     
     return sites_df
 
+
+
+
+# =============================================================================
+# WEAK-BUS RELIEF (placement check on branch capacity)
+# =============================================================================
+
+# Data sources whose bus is an evidenced connection and is never moved here.
+_PROTECTED_PLACEMENTS = (
+    'CP30_connection_allocation', 'CP30_connection_allocation_direct',
+    'CP30_ES5_regional_anchor_proxy', 'CP30_gas_station_schedule',
+    'CP30_biomass_station_schedule', 'CP30_ccs_biomass_station_schedule',
+    'CP30_committed_overlay',
+)
+
+
+#: ETYS rates bus sections and couplers at 9,999 MVA (the "Zero Length" rows
+#: and the 0.01 % couplers); no real circuit is rated this high.
+BUS_SECTION_MIN_RATING_MVA = 9998.0
+
+
+def bus_section_groups(network: pypsa.Network,
+                       min_rating_mva: float = BUS_SECTION_MIN_RATING_MVA) -> pd.Series:
+    """Map each bus to its bus-section group (one label per electrical node).
+
+    Buses of the same substation (four-character site code) and nominal
+    voltage joined by a line rated at least ``min_rating_mva`` (ETYS bus
+    sections and couplers, 9,999 MVA) form one node: ABNE1Q and ABNE1R
+    (Abernethy 132 kV) are joined by such a coupler. Lines to other sites are
+    never merged, even at 9,999 MVA (unrated offshore connections). The label
+    is the group's first bus in sorted order; a bus with no coupler is its own
+    group.
+    """
+    buses = network.buses
+    parent = {bus: bus for bus in buses.index}
+
+    def find(bus):
+        while parent[bus] != bus:
+            parent[bus] = parent[parent[bus]]
+            bus = parent[bus]
+        return bus
+
+    lines = network.lines
+    if len(lines):
+        v_nom = buses['v_nom']
+        for bus0, bus1, s_nom in zip(lines['bus0'], lines['bus1'], lines['s_nom']):
+            if bus0 not in parent or bus1 not in parent or bus0 == bus1:
+                continue
+            if float(s_nom) < min_rating_mva or str(bus0)[:4] != str(bus1)[:4]:
+                continue
+            if not np.isclose(float(v_nom.at[bus0]), float(v_nom.at[bus1])):
+                continue
+            a, b = find(bus0), find(bus1)
+            if a != b:
+                parent[max(a, b)] = min(a, b)
+    return pd.Series({bus: find(bus) for bus in buses.index}, dtype=object).reindex(buses.index)
+
+
+def bus_branch_capacity(network: pypsa.Network) -> pd.Series:
+    """Total MVA/MW of lines, transformers and links leaving each bus's node.
+
+    Buses joined by bus sections or couplers (:func:`bus_section_groups`) are
+    one node: every bus of the group gets the rating of the branches leaving
+    the group, and the coupler itself is not counted; a bus with no coupler is
+    its own node, so this is the sum of its branches. Counting per busbar made
+    the 9,999 MVA coupler ABNE1Q-ABNE1R look like a 10 GVA connection, so
+    512 MW of storage behind 264 MVA was never relieved (network audit
+    15 Oct 2026).
+    """
+    group = bus_section_groups(network)
+    parts = []
+    for component, rating in (('lines', 's_nom'), ('transformers', 's_nom'), ('links', 'p_nom')):
+        frame = getattr(network, component)
+        if not len(frame):
+            continue
+        g0 = frame['bus0'].map(group)
+        g1 = frame['bus1'].map(group)
+        leaving = g0.ne(g1)
+        for g in (g0, g1):
+            parts.append(pd.DataFrame({'group': g[leaving].values,
+                                       'capacity': frame.loc[leaving, rating].values}))
+    if not parts:
+        return pd.Series(0.0, index=network.buses.index)
+    by_group = pd.concat(parts).dropna(subset=['group']).groupby('group')['capacity'].sum()
+    return group.map(by_group).fillna(0.0).astype(float)
+
+
+#: x_pu given to an AC branch with no positive reactance (ETYS couplers are 0.01 % on 100 MVA, ~1e-6).
+_COUPLER_X_PU = 1.0e-6
+
+
+def branch_x_pu(buses: pd.DataFrame, lines: pd.DataFrame, transformers: pd.DataFrame) -> pd.Series:
+    """Series reactance on a 1 MVA base, as PyPSA computes it: lines x / v_nom(bus0)^2, transformers x / s_nom.
+
+    Indexed by branch name (lines then transformers). A branch with no positive x gets
+    ``_COUPLER_X_PU`` (a bus coupler).
+    """
+    v_nom = pd.to_numeric(buses['v_nom'], errors='coerce')
+    parts = []
+    if len(lines):
+        v = lines['bus0'].map(v_nom).astype(float)
+        x = lines['x'] if 'x' in lines.columns else pd.Series(np.nan, index=lines.index)
+        parts.append(pd.to_numeric(x, errors='coerce') / v.pow(2))
+    if len(transformers):
+        x = transformers['x'] if 'x' in transformers.columns else pd.Series(np.nan, index=transformers.index)
+        parts.append(pd.to_numeric(x, errors='coerce') / pd.to_numeric(transformers['s_nom'], errors='coerce'))
+    if not parts:
+        return pd.Series(dtype=float)
+    x = pd.concat(parts)
+    return x.where(np.isfinite(x) & x.gt(0.0), _COUPLER_X_PU).astype(float)
+
+
+def withdrawal_flow_shares(buses: pd.DataFrame, branches: pd.DataFrame, source_kv: float = 275.0) -> pd.DataFrame:
+    """DC flow on each AC branch per MW withdrawn at each bus (branch x bus; + is bus0 -> bus1).
+
+    The withdrawn MW is supplied by every bus at or above ``source_kv`` pro rata (a
+    distributed source on the transmission grid), on the main AC island of
+    ``branches`` (``bus0``, ``bus1``, ``x_pu``; lines and transformers). A relaxed
+    rating does not change a branch's impedance, so the shares are the balancing
+    solve's. Buses off the main island are absent.
+    """
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    from scipy.sparse.linalg import splu
+
+    ac = branches[branches['bus0'].isin(buses.index) & branches['bus1'].isin(buses.index)
+                  & branches['bus0'].ne(branches['bus1'])]
+    if ac.empty:
+        return pd.DataFrame()
+    names = pd.Index(sorted(set(ac['bus0']) | set(ac['bus1'])))
+    pos = pd.Series(np.arange(len(names)), index=names)
+    i, j = pos[ac['bus0']].to_numpy(), pos[ac['bus1']].to_numpy()
+    _, labels = connected_components(coo_matrix((np.ones(len(i)), (i, j)), shape=(len(names),) * 2), directed=False)
+    main = np.bincount(labels).argmax()
+    keep = labels[i] == main
+    ac, i, j = ac[keep], i[keep], j[keep]
+    island = names[labels == main]
+    pos = pd.Series(np.arange(len(island)), index=island)
+    i, j = pos[ac['bus0']].to_numpy(), pos[ac['bus1']].to_numpy()
+    b = 1.0 / pd.to_numeric(ac['x_pu'], errors='coerce').fillna(_COUPLER_X_PU).clip(lower=_COUPLER_X_PU).to_numpy()
+    n = len(island)
+    lap = coo_matrix((np.concatenate([b, b, -b, -b]), (np.concatenate([i, j, i, j]), np.concatenate([i, j, j, i]))),
+                     shape=(n, n)).tocsc()
+    v = pd.to_numeric(buses['v_nom'], errors='coerce').reindex(island).fillna(0.0)
+    sources = np.flatnonzero(v.to_numpy() >= float(source_kv))
+    if not len(sources):
+        sources = np.array([int(np.argmax(v.to_numpy()))])
+    ref = int(sources[0])
+    free = np.setdiff1d(np.arange(n), [ref])
+    lu = splu(lap[free][:, free].tocsc())
+    # One right-hand side per bus: the pro-rata source minus a unit withdrawal at the bus.
+    rhs = np.zeros((n, n))
+    rhs[sources, :] += 1.0 / len(sources)
+    rhs[np.arange(n), np.arange(n)] -= 1.0
+    theta = np.zeros((n, n))
+    theta[free, :] = lu.solve(rhs[free, :])
+    flows = b[:, None] * (theta[i, :] - theta[j, :])
+    return pd.DataFrame(flows, index=ac.index, columns=island)
+
+
+class NodeImportModel:
+    """Demand-side headroom of each electrical node: its demand against what its circuits can bring in (16 Oct 2026).
+
+    A node is a bus-section group (:func:`bus_section_groups`). Its pocket is the node
+    and the lower-voltage busbars of its own substation (four-character site code) it
+    reaches through the substation's own branches, which draw through it; its demand
+    is the pocket's (supplied from the >= ``source_kv`` buses outside it), and its circuits are the
+    branches with exactly one end in the pocket, which that demand must cross. Each
+    circuit carries its DC share of the demand (:func:`withdrawal_flow_shares`), so
+    the node's capacity is set by the first circuit to reach its rating: the demand
+    at which ``max_i loading_i / rating_i`` is 1. GB-internal DC links
+    (``kind == 'dc_link'``, controllable) add their rating on top. A 400 kV busbar fed
+    only through its own site's transformers is judged on the site's circuits.
+
+    Summing a node's ratings is optimistic twice over. Busbars without a coupler do not
+    share: BAIN1Q takes 97% of its own withdrawals on its own 114 MVA circuit, and half
+    of BAIN3-'s (the balancing stage held that circuit at its limit while BAIN1R's was
+    half used). Parallel circuits to different substations share by impedance: a
+    withdrawal at ABNE goes 68% via CHAR1- and 32% via AMUL1G, so 2 x 106 MVA delivers
+    156 MW, not 212. And counting the 132/33 kV transformers into a node's own load
+    busbar as capacity, as :func:`bus_branch_capacity` does for generation, passed
+    390 MW at BUMU1Q behind 264 MVA.
+
+    ``network`` needs ``buses`` (``v_nom``) and ``lines`` (bus sections);
+    ``branches``: ``bus0``, ``bus1``, ``rating`` (MW the solve enforces, inf when
+    relaxed), ``kind`` and, for lines and transformers, ``x_pu``. A node off the
+    main AC island falls back to the sum of its circuits' ratings.
+    """
+
+    def __init__(self, network, branches: pd.DataFrame, source_kv: float = 275.0):
+        self.source_kv = float(source_kv)
+        self.group = bus_section_groups(network)
+        v_nom = pd.to_numeric(network.buses['v_nom'], errors='coerce').fillna(0.0)
+        self.node_v = v_nom.groupby(self.group).max()
+        b = branches[branches['bus0'].isin(self.group.index) & branches['bus1'].isin(self.group.index)].copy()
+        kind = b['kind'].astype(str) if 'kind' in b.columns else pd.Series('line', index=b.index)
+        self.branches = b
+        ac = b[kind.isin(['line', 'transformer'])]
+        self.flows = withdrawal_flow_shares(network.buses, ac, source_kv)
+        site = pd.Series(self.node_v.index.astype(str).str[:4], index=self.node_v.index)
+        bus_site = pd.Series(self.group.index.astype(str).str[:4], index=self.group.index)
+        bus_v = v_nom.reindex(self.group.index)
+        self.circuits, self.behind, self.is_dc = {}, {}, kind.eq('dc_link')
+        # A branch can cross a node's pocket only if it touches a bus of the node's substation.
+        bus0, bus1 = b['bus0'].to_numpy(), b['bus1'].to_numpy()
+        by_site = {}
+        for k, (a0, a1) in enumerate(zip(b['bus0'].astype(str).str[:4], b['bus1'].astype(str).str[:4])):
+            by_site.setdefault(a0, []).append(k)
+            if a1 != a0:
+                by_site.setdefault(a1, []).append(k)
+        # Same-substation adjacency: a node's pocket is its buses and the lower-voltage busbars of its
+        # substation it reaches through the substation's own branches (not a 132 kV group at the
+        # same site that is fed from elsewhere).
+        inside = {}
+        for k, (a0, a1) in enumerate(zip(bus0, bus1)):
+            if str(a0)[:4] == str(a1)[:4]:
+                inside.setdefault(a0, []).append(a1)
+                inside.setdefault(a1, []).append(a0)
+        for node in self.node_v.index:
+            own_buses = self.group.index[self.group.eq(node).to_numpy()]
+            pocket, stack = set(own_buses), list(own_buses)
+            while stack:
+                for nb in inside.get(stack.pop(), ()):
+                    if nb not in pocket and nb in bus_v.index and bus_v[nb] < self.node_v[node] - 1e-9:
+                        pocket.add(nb)
+                        stack.append(nb)
+            self.behind[node] = own_buses.append(pd.Index(sorted(pocket - set(own_buses))))
+            cut = [k for k in by_site.get(site[node], []) if (bus0[k] in pocket) != (bus1[k] in pocket)]
+            self.circuits[node] = b.index[cut]
+        self.members = pd.Series(self.group.index, index=self.group.values).groupby(level=0).agg(
+            lambda s: '|'.join(sorted(map(str, s))))
+        # Positions into the flow matrix, and which nodes each bus's demand counts towards.
+        self._F = self.flows.to_numpy() if len(self.flows) else np.zeros((0, 0))
+        row = pd.Series(np.arange(len(self.flows.index)), index=self.flows.index)
+        col = pd.Series(np.arange(len(self.flows.columns)), index=self.flows.columns)
+        src_v = v_nom.reindex(self.flows.columns).fillna(0.0).to_numpy()
+        self._src = np.flatnonzero(src_v >= float(source_kv))
+        if not len(self._src) and len(src_v):
+            self._src = np.array([int(np.argmax(src_v))])
+        self._src_rowsum = self._F[:, self._src].sum(axis=1) if len(self._src) else np.zeros(len(self._F))
+        self._is_src = np.zeros(len(self.flows.columns), dtype=bool)
+        self._is_src[self._src] = True
+        self._pos = {}
+        self.nodes_of = {}
+        for node in self.node_v.index:
+            circuits = [c for c in self.circuits[node] if c in row.index]
+            behind = [bus for bus in self.behind[node] if bus in col.index]
+            own = np.array([self.group.get(bus) == node for bus in behind], dtype=bool)
+            self._pos[node] = (row[circuits].to_numpy(dtype=int), col[behind].to_numpy(dtype=int),
+                               pd.Index(circuits), pd.Index(behind), own)
+            for bus in self.behind[node]:
+                self.nodes_of.setdefault(bus, []).append(node)
+
+    def shares(self, node, demand: Optional[pd.Series] = None) -> pd.Series:
+        """Each circuit's flow per MW of the node's demand (the demand-weighted withdrawal shares).
+
+        With no demand behind the node, a withdrawal spread evenly over the node's own buses.
+        """
+        ci, bi, circuits, behind, own = self._pos[node]
+        if not len(ci) or not len(bi):
+            return pd.Series(dtype=float)
+        if demand is None:
+            w = own.astype(float) if own.any() else np.ones(len(bi))
+        else:
+            w = demand.reindex(behind).fillna(0.0).to_numpy(dtype=float)
+            if w.sum() <= 1e-9:
+                w = own.astype(float) if own.any() else np.ones(len(bi))
+        w = w / w.sum()
+        flow = self._F[np.ix_(ci, bi)] @ w + self._source_correction(node)
+        return pd.Series(np.abs(flow), index=circuits)
+
+    def _source_correction(self, node) -> np.ndarray:
+        """Per-MW flow change on the node's circuits from supplying only from the sources outside its pocket.
+
+        ``withdrawal_flow_shares`` supplies every MW from all >= source_kv buses pro rata. F[:, s] is the
+        flow for (source - e_s), so moving the source by c (summing to zero) adds -F[:, S] @ c (exact, by
+        linearity): the same for any withdrawal of one MW inside the pocket.
+        """
+        ci, bi, _, _, _ = self._pos[node]
+        inner = bi[self._is_src[bi]]
+        n_src, n_out = len(self._src), len(self._src) - len(inner)
+        if not len(inner) or n_out <= 0:
+            return np.zeros(len(ci))
+        inner_sum = self._F[np.ix_(ci, inner)].sum(axis=1)
+        outer_sum = self._src_rowsum[ci] - inner_sum
+        return -(1.0 / n_out - 1.0 / n_src) * outer_sum + inner_sum / n_src
+
+    def bus_flow(self, node, bus) -> pd.Series:
+        """Flow on each of the node's circuits per MW withdrawn at ``bus`` (a bus of its pocket), absolute."""
+        ci, bi, circuits, behind, _ = self._pos[node]
+        if bus not in behind or not len(ci):
+            return pd.Series(0.0, index=circuits)
+        col = self.flows.columns.get_loc(bus)
+        return pd.Series(np.abs(self._F[ci, col] + self._source_correction(node)), index=circuits)
+
+    def evaluate(self, demand_mw: pd.Series, ratings: Optional[pd.Series] = None,
+                 all_nodes: bool = False) -> pd.DataFrame:
+        """One row per node with demand (every node with ``all_nodes``), indexed by node label.
+
+        Columns ``buses``, ``v_nom``, ``own_mw`` (demand on the node's buses), ``demand_mw``
+        (with its substation's lower-voltage busbars), ``import_mw`` (the sum of its
+        circuits' finite ratings), ``capacity_mw`` (the demand its first-binding circuit allows,
+        plus DC links), ``binding`` (that circuit), ``binding_share`` (its flow per MW of the
+        node's demand) and ``ratio`` (demand / capacity).
+        """
+        rating = pd.to_numeric(self.branches['rating'] if ratings is None else ratings, errors='coerce') \
+            .reindex(self.branches.index).fillna(0.0).astype(float)
+        demand = pd.to_numeric(pd.Series(demand_mw, dtype=float), errors='coerce').fillna(0.0)
+        demand = demand[demand.index.isin(self.group.index) & demand.gt(0.0)]
+        own = demand.groupby(demand.index.map(self.group)).sum()
+        nodes = self.node_v.index if all_nodes else pd.Index(sorted(
+            {node for bus in demand.index for node in self.nodes_of.get(bus, [])}))
+        rows = []
+        for node in nodes:
+            behind = self.behind[node]
+            total = float(demand.reindex(behind).fillna(0.0).sum())
+            if total <= 1e-9 and not all_nodes:
+                continue
+            circuits = self.circuits[node]
+            dc = [c for c in circuits if self.is_dc.get(c, False)]
+            ac = [c for c in circuits if c not in dc]
+            dc_mw = float(rating[dc].sum()) if dc else 0.0
+            share = self.shares(node, demand if total > 1e-9 else None)
+            binding, bshare = None, np.nan
+            if len(share):
+                share = share[share > 1e-6]
+                limit = rating[share.index] / share
+                if len(limit) and np.isfinite(limit).any():
+                    binding = limit.idxmin()
+                    ac_mw, bshare = float(limit[binding]), float(share[binding])
+                else:
+                    ac_mw = np.inf
+            else:
+                ac_mw = float(rating[ac].sum()) if ac else 0.0
+            capacity = ac_mw + dc_mw
+            ratio = total / capacity if capacity > 0 else (np.inf if total > 1e-9 else 0.0)
+            rows.append({'node': node, 'buses': self.members.get(node, node), 'v_nom': float(self.node_v[node]),
+                         'own_mw': float(own.get(node, 0.0)), 'demand_mw': total,
+                         'import_mw': float(rating[circuits][np.isfinite(rating[circuits])].sum()) if len(circuits) else 0.0,
+                         'capacity_mw': capacity, 'binding': binding, 'binding_share': bshare, 'ratio': ratio})
+        cols = ['buses', 'v_nom', 'own_mw', 'demand_mw', 'import_mw', 'capacity_mw', 'binding', 'binding_share',
+                'ratio']
+        return pd.DataFrame(rows).set_index('node')[cols] if rows else pd.DataFrame(columns=cols)
+
+
+def node_import_headroom(network, branches: pd.DataFrame, demand_mw: pd.Series,
+                         all_nodes: bool = False) -> pd.DataFrame:
+    """:class:`NodeImportModel` evaluated once (build the model to evaluate several demands)."""
+    return NodeImportModel(network, branches).evaluate(demand_mw, all_nodes=all_nodes)
+
+
+def relieve_weak_bus_placements(
+    sites_df: pd.DataFrame,
+    network: pypsa.Network,
+    max_loading: float = 1.5,
+    search_radius_km: float = 40.0,
+    min_target_voltage_kv: float = 132.0,
+    capacity_col: str = 'capacity_mw',
+    log: Optional[logging.Logger] = None,
+    exclude_buses=None,
+    site_bound_sources=(),
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Move sites off buses whose branches cannot carry what is placed on them.
+
+    ``exclude_buses`` (e.g. :func:`generation_placement_exclusions`) are never
+    chosen as a target. Rows whose ``data_source`` is in ``site_bound_sources``
+    (plant placed on its own GSP's demand node, ``gsp_nodes.GSP_NODE_SOURCES``)
+    move only to a bus of the same substation, never to a nearby one: they
+    connect inside that GSP (16 Oct 2026).
+
+    Nearest-bus placement puts a site (or a CP30 proxy tranche) on whichever bus
+    is closest, often a 33 kV terminal busbar behind one small transformer:
+    505 MW of CP30 proxy at POGB3- behind a 57 MVA line, 389 MW at RAVE3S behind
+    32 MVA. Such a bus turns placement noise into curtailment and constraint
+    cost. For every bus where the placed capacity exceeds
+    ``max_loading`` times its total branch capacity, sites are moved, proxy
+    tranches first and then named projects, largest first, until the bus is
+    within the limit. Each goes to:
+
+    1. a bus of the same substation (four-character site code) with headroom,
+       highest branch capacity first; else
+    2. the nearest bus at or above ``min_target_voltage_kv`` within
+       ``search_radius_km`` with headroom,
+
+    where headroom is ``max_loading * branch capacity - capacity already
+    placed``. Offshore wind (landed by its own crosswalk), evidenced
+    connections (``_PROTECTED_PLACEMENTS``) and explicit onshore connections
+    are never moved but do count towards loading. Capacity, coordinates,
+    profiles and CP30 regional labels are unchanged; only ``bus`` moves.
+
+    Buses joined by bus sections or couplers are one node
+    (:func:`bus_section_groups`): loading and limit are the node's, its
+    capacity is the branches leaving it, and a site is never moved within its
+    own node.
+
+    Returns (sites_df with updated buses, log of moves).
+    """
+    log = log or logger
+    result = sites_df.copy()
+    if result.empty or 'bus' not in result.columns:
+        return result, pd.DataFrame()
+    capacity = bus_branch_capacity(network)
+    group = bus_section_groups(network)
+    buses = network.buses
+    v_nom = buses['v_nom']
+    xy = buses[['x', 'y']].astype(float)
+    external = buses.index.astype(str).str.contains('External', case=False)
+    if exclude_buses is not None and len(exclude_buses):
+        external = external | buses.index.isin(list(exclude_buses))
+    technology = result.get('technology', pd.Series('', index=result.index)).astype(str)
+    placed = pd.to_numeric(result[capacity_col], errors='coerce').fillna(0.0)
+    on_network = result['bus'].isin(buses.index)
+    onshore = ~technology.eq('wind_offshore') & on_network
+    # Every placed row loads its bus (an offshore farm landed on a target bus
+    # uses its headroom); only onshore rows are candidates to move.
+    row_group = result['bus'].map(group)
+    node_capacity = capacity.groupby(group).first()
+    load = placed[on_network].groupby(row_group[on_network]).sum()
+    load = load.reindex(node_capacity.index, fill_value=0.0)
+    limit = max_loading * node_capacity
+
+    names = result.get('site_name', pd.Series('', index=result.index)).astype(str)
+    source = result.get('data_source', pd.Series('', index=result.index)).fillna('').astype(str)
+    origin = result.get('fleet_origin', pd.Series('', index=result.index)).fillna('').astype(str)
+    movable = onshore & ~source.isin(_PROTECTED_PLACEMENTS) & placed.gt(0)
+    movable &= ~names.map(lambda n: _explicit_onshore_connection(n, buses.index) is not None)
+    site_bound = source.isin(list(site_bound_sources or ()))
+
+    moves = []
+    overloaded = load[load > limit + 1e-6].sort_values(ascending=False)
+    for node in overloaded.index:
+        rows = result.index[movable & row_group.eq(node)]
+        order = sorted(rows, key=lambda i: (origin.at[i] == 'named', -placed.at[i]))
+        for idx in order:
+            if load.at[node] <= limit.at[node] + 1e-6:
+                break
+            bus = result.at[idx, 'bus']
+            site = str(bus)[:4]
+            need = placed.at[idx]
+            headroom = (limit - load).reindex(group.to_numpy()).to_numpy()
+            fits = (headroom >= need) & ~external & (group.to_numpy() != node)
+            same_site = fits & (buses.index.str[:4] == site) & (capacity > capacity.at[bus])
+            target, method = None, None
+            if same_site.any():
+                target = capacity[same_site].idxmax()
+                method = 'same_substation'
+            elif not site_bound.at[idx]:
+                distance_km = np.hypot(xy['x'] - xy.at[bus, 'x'], xy['y'] - xy.at[bus, 'y']) / 1000.0
+                near = fits & (v_nom >= min_target_voltage_kv) & (distance_km <= search_radius_km)
+                if near.any():
+                    target = distance_km[near].idxmin()
+                    method = f'nearest_{distance_km[target]:.0f}km'
+            if target is None:
+                continue
+            result.at[idx, 'bus'] = target
+            load.at[node] -= need
+            load.at[group.at[target]] += need
+            moves.append({
+                'site_name': names.at[idx], 'fleet_origin': origin.at[idx], 'capacity_mw': need,
+                'from_bus': bus, 'from_branch_capacity': capacity.at[bus],
+                'to_bus': target, 'to_branch_capacity': capacity.at[target], 'method': method,
+            })
+        if load.at[node] > limit.at[node] + 1e-6:
+            log.warning(
+                f"Weak-bus relief: {node} still carries {load.at[node]:.0f} MW against "
+                f"{node_capacity.at[node]:.0f} MVA of branches (no movable site or no target with headroom)"
+            )
+    moves = pd.DataFrame(moves)
+    if len(moves):
+        log.info(
+            f"Weak-bus relief: moved {len(moves)} sites ({moves['capacity_mw'].sum():,.0f} MW) off "
+            f"{moves['from_bus'].nunique()} buses loaded above {max_loading:.1f}x their branch capacity"
+        )
+        summary = moves.groupby(['from_bus', 'to_bus', 'method']).agg(
+            mw=('capacity_mw', 'sum'), sites=('site_name', 'count'),
+            from_cap=('from_branch_capacity', 'first'), to_cap=('to_branch_capacity', 'first'))
+        for (from_bus, to_bus, method), row in summary.sort_values('mw', ascending=False).iterrows():
+            log.info(
+                f"  {from_bus} ({row.from_cap:.0f} MVA) -> {to_bus} ({row.to_cap:.0f} MVA) "
+                f"[{method}]: {row.mw:.1f} MW in {int(row.sites)} site(s)"
+            )
+    return result, moves
+
+
+# =============================================================================
+# EXPORT-CAPACITY RELIEF (proxy placement against the BM-constrained network)
+# =============================================================================
+
+BM_RELAXED_MVA = 9999.0
+_INF_CAPACITY = 1.0e9
+
+
+def bm_branch_capacities(network: pypsa.Network, transmission: Optional[dict] = None) -> pd.DataFrame:
+    """Undirected branch capacities as the balancing mechanism sees them.
+
+    Mirrors ``solve_network.apply_line_rating_overrides``: a line or
+    transformer with an end below ``min_bm_constraint_voltage_kv`` is relaxed
+    (infinite here), except Scottish (SHE/SPT) branches whose lower end is at
+    or above ``bm_voltage_floor.scottish_min_constrained_kv`` when
+    ``scottish_transmission_constrained``; ``line_rating_overrides`` win.
+    Links contribute their p_nom. Returns columns bus0, bus1, capacity, kind.
+    """
+    from scripts.network_build.branch_attributes import is_scottish_branch
+    transmission = transmission or {}
+    min_v = float(transmission.get('min_bm_constraint_voltage_kv', 220) or 0)
+    floor = transmission.get('bm_voltage_floor', {}) or {}
+    scot_on = bool(floor.get('scottish_transmission_constrained', True))
+    scot_min = float(floor.get('scottish_min_constrained_kv', 132.0))
+    overrides = transmission.get('line_rating_overrides', {}) or {}
+    v_nom = pd.to_numeric(network.buses['v_nom'], errors='coerce')
+    parts = []
+    for kind, table in (('line', network.lines), ('transformer', network.transformers)):
+        if not len(table):
+            continue
+        lo = pd.concat([table['bus0'].map(v_nom), table['bus1'].map(v_nom)], axis=1).min(axis=1)
+        cap = pd.to_numeric(table['s_nom'], errors='coerce').fillna(0.0).astype(float)
+        if min_v > 0:
+            relaxed = lo < min_v
+            if scot_on:
+                relaxed &= ~(is_scottish_branch(network, table) & (lo >= scot_min))
+            cap = cap.where(~relaxed, _INF_CAPACITY)
+        cap = cap.where(cap < BM_RELAXED_MVA - 1e-6, _INF_CAPACITY)
+        for name, value in overrides.items():
+            if name in cap.index:
+                cap.at[name] = float(value)
+        parts.append(pd.DataFrame({'bus0': table['bus0'], 'bus1': table['bus1'], 'capacity': cap, 'kind': kind}))
+    if len(network.links):
+        links = network.links
+        parts.append(pd.DataFrame({'bus0': links['bus0'], 'bus1': links['bus1'],
+                                   'capacity': pd.to_numeric(links['p_nom'], errors='coerce').fillna(0.0),
+                                   'kind': 'link'}))
+    return pd.concat(parts) if parts else pd.DataFrame(columns=['bus0', 'bus1', 'capacity', 'kind'])
+
+
+def _minimum_bus_load(network: pypsa.Network) -> pd.Series:
+    """Lowest hourly demand at each bus (MW, >= 0): the load an injection can always rely on."""
+    loads = network.loads
+    if not len(loads):
+        return pd.Series(dtype=float)
+    static = pd.to_numeric(loads.get('p_set', pd.Series(0.0, index=loads.index)), errors='coerce').fillna(0.0)
+    low = static.copy()
+    series = getattr(network.loads_t, 'p_set', pd.DataFrame())
+    cols = [c for c in series.columns if c in loads.index]
+    if cols:
+        low.loc[cols] = series[cols].min()
+    return low.clip(lower=0.0).groupby(loads['bus']).sum()
+
+
+class _ExportModel:
+    """Transport model: every bus injects its generation less its minimum load;
+    power must reach the >= ``sink_kv`` grid over BM-constrained branches."""
+
+    def __init__(self, network, capacities, sink_kv):
+        import networkx as nx
+        self.nx = nx
+        graph = nx.DiGraph()
+        for a, b, cap in zip(capacities['bus0'], capacities['bus1'], capacities['capacity']):
+            if a == b or cap <= 0:
+                continue
+            for u, v in ((a, b), (b, a)):
+                existing = graph.get_edge_data(u, v)
+                graph.add_edge(u, v, capacity=(existing['capacity'] if existing else 0.0) + float(cap))
+        v_nom = pd.to_numeric(network.buses['v_nom'], errors='coerce')
+        for bus in network.buses.index[v_nom.ge(sink_kv).to_numpy()]:
+            graph.add_edge(bus, '__T__')          # no capacity attribute: unbounded
+        self.graph = graph
+        self.min_load = _minimum_bus_load(network)
+
+    def solve(self, injection: pd.Series):
+        """(max flow, flow dict, per-bus unserved MW, source-side set)."""
+        graph = self.graph
+        graph.remove_node('__S__') if '__S__' in graph else None
+        for bus, mw in injection.items():
+            if mw > 1e-6 and bus in graph:
+                graph.add_edge('__S__', bus, capacity=float(mw))
+        if '__S__' not in graph:
+            return 0.0, {}, pd.Series(dtype=float), set()
+        value, flows = self.nx.maximum_flow(graph, '__S__', '__T__')
+        unserved = {b: graph['__S__'][b]['capacity'] - flows['__S__'].get(b, 0.0) for b in graph['__S__']}
+        # residual reachability from the source
+        seen, stack = {'__S__'}, ['__S__']
+        while stack:
+            u = stack.pop()
+            for v, data in graph[u].items():
+                cap = data.get('capacity', np.inf)
+                if v not in seen and flows[u].get(v, 0.0) < cap - 1e-6:
+                    seen.add(v); stack.append(v)
+            for v in graph.predecessors(u):
+                if v not in seen and flows[v].get(u, 0.0) > 1e-6:
+                    seen.add(v); stack.append(v)
+        seen.discard('__S__')
+        return value, flows, pd.Series(unserved), seen
+
+
+def relieve_export_constrained_proxies(
+    sites_df: pd.DataFrame,
+    network: pypsa.Network,
+    transmission: Optional[dict] = None,
+    capacity_col: str = 'capacity_mw',
+    carriers=('wind_onshore', 'solar_pv'),
+    exclude_buses=None,
+    search_radius_km: float = 60.0,
+    min_target_voltage_kv: float = 132.0,
+    sink_kv: float = 275.0,
+    max_local_loading: float = 1.5,
+    fixed_injection: Optional[pd.Series] = None,
+    log: Optional[logging.Logger] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Move proxy increments out of pockets that cannot export their generation.
+
+    ``relieve_weak_bus_placements`` compares a bus's generation with the sum
+    of its own branches (1.5x). With Scottish 132 kV constrained in the BM that
+    is too loose: CP30 proxies sat behind 112 MVA Brechin-Fiddes and the 240
+    MVA Crystal Rig transformer and bound there (27 Sep 2026). This models
+    the export path instead: every bus injects its placed generation less its
+    minimum hourly load, power flows over the BM-rated branches
+    (:func:`bm_branch_capacities`) to any bus at or above ``sink_kv``, and a
+    maximum flow finds the pockets whose generation cannot get out. Proxy rows
+    (``fleet_origin`` not ``named``, of ``carriers``, not an evidenced
+    placement) in a pocket in deficit move - the smallest that covers the
+    pocket's deficit, else the largest - to the nearest bus outside every
+    deficit pocket that has export headroom for them (checked by re-solving),
+    within ``search_radius_km``, at or above ``min_target_voltage_kv``, not in
+    ``exclude_buses`` and within ``max_local_loading`` x its own branch sum.
+    Named projects stay at their connection points and count towards the
+    loading; a pocket with a deficit and no proxy is genuine and is reported.
+
+    Returns (sites with updated buses, moves log, pocket table before/after).
+    """
+    log = log or logger
+    result = sites_df.copy()
+    if result.empty or 'bus' not in result.columns:
+        return result, pd.DataFrame(), pd.DataFrame()
+    buses = network.buses
+    model = _ExportModel(network, bm_branch_capacities(network, transmission), sink_kv)
+    xy = _bus_osgb_xy(buses)
+    v_nom = pd.to_numeric(buses['v_nom'], errors='coerce')
+    local_cap = bus_branch_capacity(network)
+    if isinstance(exclude_buses, pd.Series):
+        excluded = set(exclude_buses.index)
+    else:
+        excluded = set(exclude_buses) if exclude_buses is not None else set()
+    excluded |= set(buses.index[buses.index.astype(str).str.contains('External', case=False)])
+    placed = pd.to_numeric(result[capacity_col], errors='coerce').fillna(0.0)
+    fixed = fixed_injection if fixed_injection is not None else pd.Series(dtype=float)
+    technology = result.get('technology', pd.Series('', index=result.index)).astype(str)
+    origin = result.get('fleet_origin', pd.Series('', index=result.index)).fillna('').astype(str)
+    source = result.get('data_source', pd.Series('', index=result.index)).fillna('').astype(str)
+    names = result.get('site_name', pd.Series('', index=result.index)).astype(str)
+    movable = (~origin.eq('named') & technology.isin(list(carriers))
+               & ~source.isin(_PROTECTED_PLACEMENTS) & placed.gt(0))
+
+    def gen_by_bus():
+        on = result['bus'].isin(buses.index)
+        g = placed[on].groupby(result.loc[on, 'bus']).sum()
+        return g.add(fixed, fill_value=0.0)
+
+    def injection():
+        net = gen_by_bus().sub(model.min_load, fill_value=0.0).clip(lower=0.0)
+        return net[net > 1e-6]
+
+    def pockets(unserved, reach):
+        """Connected deficit pockets: {frozenset(buses): deficit MW}."""
+        reach = [b for b in reach if b != '__T__']
+        sub = model.graph.subgraph(reach).to_undirected()
+        out = {}
+        for comp in model.nx.connected_components(sub):
+            deficit = float(sum(unserved.get(b, 0.0) for b in comp))
+            if deficit > 1.0:
+                out[frozenset(comp)] = deficit
+        return out
+
+    def pocket_table(found, label):
+        rows = []
+        gen = gen_by_bus()
+        for comp, deficit in found.items():
+            members = sorted(comp)
+            g = float(gen.reindex(members).fillna(0.0).sum())
+            rows.append({'state': label, 'buses': ';'.join(members[:12]) + (';...' if len(members) > 12 else ''),
+                         'n_buses': len(members), 'generation_mw': g,
+                         'min_load_mw': float(model.min_load.reindex(members).fillna(0.0).sum()),
+                         'deficit_mw': deficit, 'export_mw': g - deficit,
+                         'gen_to_export': g / max(g - deficit, 1e-6),
+                         'proxy_mw': float(placed[movable & result['bus'].isin(members)].sum())})
+        return rows
+
+    _, _, unserved, reach = model.solve(injection())
+    found = pockets(unserved, reach)
+    report = pocket_table(found, 'before')
+    moves, frozen = [], set()
+    for _ in range(2000):
+        live = {c: d for c, d in found.items() if not (c & frozen)}
+        if not live:
+            break
+        comp, deficit = max(live.items(), key=lambda kv: kv[1])
+        rows = result.index[movable & result['bus'].isin(comp)]
+        if not len(rows):
+            frozen |= comp
+            continue
+        sizes = placed[rows].sort_values()
+        covering = sizes[sizes >= deficit]
+        idx = covering.index[0] if len(covering) else sizes.index[-1]
+        need = float(placed.at[idx])
+        origin_bus = result.at[idx, 'bus']
+        blocked = set().union(*found.keys()) | excluded
+        dist = np.hypot(xy['x'] - xy.at[origin_bus, 'x'], xy['y'] - xy.at[origin_bus, 'y']) / 1000.0
+        gen = gen_by_bus()
+        load = gen.reindex(buses.index).fillna(0.0)
+        ok = (dist <= search_radius_km) & (v_nom >= min_target_voltage_kv) \
+            & ~buses.index.isin(list(blocked)) \
+            & (load + need <= max_local_loading * local_cap + 1e-6)
+        target = None
+        for cand in dist[ok].sort_values().index:
+            if v_nom.at[cand] >= sink_kv:
+                target = cand
+                break
+            result.at[idx, 'bus'] = cand
+            _, _, trial_unserved, trial_reach = model.solve(injection())
+            result.at[idx, 'bus'] = origin_bus
+            if not any(cand in c for c in pockets(trial_unserved, trial_reach)):
+                target = cand
+                break
+        if target is None:
+            log.warning("Export relief: no target within %.0f km for %s (%.0f MW) at %s",
+                        search_radius_km, names.at[idx], need, origin_bus)
+            movable.at[idx] = False
+            _, _, unserved, reach = model.solve(injection())
+            found = pockets(unserved, reach)
+            continue
+        result.at[idx, 'bus'] = target
+        moves.append({'site_name': names.at[idx], 'carrier': technology.at[idx], 'capacity_mw': need,
+                      'from_bus': origin_bus, 'to_bus': target, 'distance_km': float(dist[target]),
+                      'target_kv': float(v_nom.at[target]), 'pocket_deficit_mw': deficit})
+        _, _, unserved, reach = model.solve(injection())
+        found = pockets(unserved, reach)
+    report += pocket_table(found, 'after')
+    moves = pd.DataFrame(moves)
+    report = pd.DataFrame(report)
+    if len(moves):
+        log.info("Export relief: moved %d proxy rows (%.0f MW) out of %d export-constrained pockets",
+                 len(moves), moves['capacity_mw'].sum(), moves['from_bus'].nunique())
+        for row in moves.itertuples():
+            log.info("  %s (%.0f MW): %s -> %s (%.0f kV, %.0f km)", row.site_name, row.capacity_mw,
+                     row.from_bus, row.to_bus, row.target_kv, row.distance_km)
+    remaining = report[report['state'].eq('after')] if len(report) else report
+    for row in remaining.itertuples():
+        log.info("  pocket still short (no proxy to move): %s gen %.0f MW, export %.0f MW",
+                 row.buses, row.generation_mw, row.export_mw)
+    return result, moves, report
+
+
+# =============================================================================
+# PLACEMENT EXCLUSIONS (buses onshore generation and storage must not use)
+# =============================================================================
+
+DEFAULT_LAND_BOUNDARY_FILE = "data/network/GSP/GSP_regions_27700_20250109.geojson"
+
+# Island AC networks whose substations nearest-bus placement cannot find from
+# coordinates. Orkney's 2029 network (ETYS 2024 Appendix B, B-1-1a: FINS
+# "Orkney Finstown", ELIB "Ellibister switching station", plus the COST and
+# HEST wind-farm substations off FINS1-) has no entry in
+# substation_coordinates.csv, so its buses sit on the Caithness coast and
+# Orkney's own generation went to the nearest coordinate: the HVDC hub
+# "Central DC Substation" (audit 27 Sep 2026). Rows inside ``bbox`` (lon_min,
+# lat_min, lon_max, lat_max; WGS84) that are on land (land boundary + 1 km)
+# or at sea north of ``sea_lat_min`` go to ``hub``; the Pentland Firth south
+# of it (MeyGen, landed in Caithness) is not Orkney. Rows elsewhere may not
+# sit on the island's buses. Inert when the hub is absent (before 2029).
+ISLAND_NETWORKS: Dict[str, dict] = {
+    'Orkney': {
+        'sites': ('FINS', 'ELIB', 'COST', 'HEST'),
+        'hub': 'FINS1-',
+        'bbox': (-3.50, 58.70, -2.30, 59.45),
+        'sea_lat_min': 58.80,
+    },
+}
+_LAND_GEOMETRY_CACHE: Dict[Tuple[str, float], object] = {}
+
+
+def _land_geometry(path: str, buffer_m: float):
+    """Union of the GSP-region polygons (EPSG:27700), buffered; cached per path."""
+    key = (str(path), float(buffer_m))
+    if key not in _LAND_GEOMETRY_CACHE:
+        import geopandas as gpd
+        from shapely.ops import unary_union
+        frame = gpd.read_file(path)
+        if frame.crs is not None and frame.crs.to_epsg() != 27700:
+            frame = frame.to_crs(27700)
+        _LAND_GEOMETRY_CACHE[key] = unary_union(frame.geometry.buffer(0)).buffer(float(buffer_m))
+    return _LAND_GEOMETRY_CACHE[key]
+
+
+def _bus_osgb_xy(buses: pd.DataFrame) -> pd.DataFrame:
+    """Bus coordinates in OSGB36 metres, whichever system the network uses."""
+    x = pd.to_numeric(buses['x'], errors='coerce')
+    y = pd.to_numeric(buses['y'], errors='coerce')
+    if (x.max() - x.min()) > _OSGB36_MIN_VALUE:
+        return pd.DataFrame({'x': x, 'y': y}, index=buses.index)
+    from pyproj import Transformer
+    transformer = Transformer.from_crs("EPSG:4326", "EPSG:27700", always_xy=True)
+    ox, oy = transformer.transform(x.to_numpy(), y.to_numpy())
+    return pd.DataFrame({'x': ox, 'y': oy}, index=buses.index)
+
+
+def _ac_edges(network: pypsa.Network) -> pd.DataFrame:
+    parts = [getattr(network, c)[['bus0', 'bus1']] for c in ('lines', 'transformers')
+             if len(getattr(network, c))]
+    return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=['bus0', 'bus1'])
+
+
+def dc_island_buses(network: pypsa.Network) -> pd.Index:
+    """Buses of an AC island other than the main one that carries no load.
+
+    Such an island reaches the grid only over a DC link: a converter or platform
+    pair such as Sofia's SOFWD/SOFW61 (two placeholder transformers behind the
+    Sofia HVDC poles), where nearest-bus matching had put 106 MW of onshore solar
+    (item F3, 13 Oct 2026). Islands with demand (Shetland) are real systems and
+    are kept; buses with no AC branch at all are ``dc_only``. The rule is
+    ``add_storage.stranded_storage_buses``'s, for generation.
+    """
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    buses = network.buses.index
+    edges = _ac_edges(network)
+    edges = edges[edges['bus0'].isin(buses) & edges['bus1'].isin(buses)]
+    if edges.empty:
+        return pd.Index([])
+    position = pd.Series(np.arange(len(buses)), index=buses)
+    i, j = position[edges['bus0']].to_numpy(), position[edges['bus1']].to_numpy()
+    graph = coo_matrix((np.ones(len(i)), (i, j)), shape=(len(buses), len(buses)))
+    _, labels = connected_components(graph, directed=False)
+    labels = pd.Series(labels, index=buses)
+    has_branch = pd.Series(False, index=buses)
+    has_branch[pd.unique(pd.concat([edges['bus0'], edges['bus1']]))] = True
+    main = labels[has_branch].value_counts().idxmax()
+    load_buses = network.loads['bus'].unique() if len(network.loads) else []
+    loaded = set(labels.reindex(load_buses).dropna().astype(int))
+    island = has_branch & labels.ne(main) & ~labels.isin(loaded)
+    return buses[island.to_numpy()]
+
+
+def coordinate_outlier_buses(network: pypsa.Network, outlier_km: float = 30.0,
+                             cluster_km: float = 5.0) -> pd.Index:
+    """Buses whose coordinates disagree with the rest of their substation.
+
+    For each four-character site code with at least three buses, the largest
+    group of buses within ``cluster_km`` of one another is taken as the site's
+    location when it holds a strict majority; any bus of the site more than
+    ``outlier_km`` from it is flagged (COST1- sat in the Borders while COST1A
+    and COST3- are on Orkney). Sites with no majority (two pairs) are left
+    alone because which pair is right cannot be told from the data.
+    """
+    buses = network.buses
+    xy = _bus_osgb_xy(buses)
+    site = pd.Series(buses.index.astype(str).str[:4], index=buses.index)
+    flagged = []
+    for _code, members in site.groupby(site).groups.items():
+        members = list(members)
+        if len(members) < 3:
+            continue
+        pts = xy.loc[members].to_numpy(dtype=float)
+        if np.isnan(pts).any():
+            continue
+        dist = np.hypot(pts[:, None, 0] - pts[None, :, 0], pts[:, None, 1] - pts[None, :, 1]) / 1000.0
+        counts = (dist <= cluster_km).sum(axis=1)
+        anchor = int(np.argmax(counts))
+        if counts[anchor] * 2 <= len(members):
+            continue
+        far = dist[anchor] > outlier_km
+        flagged.extend(np.asarray(members)[far].tolist())
+    return pd.Index(flagged)
+
+
+def generation_placement_exclusions(
+    network: pypsa.Network,
+    land_boundary_file: Optional[str] = DEFAULT_LAND_BOUNDARY_FILE,
+    land_buffer_m: float = 2000.0,
+    coordinate_outlier_km: float = 30.0,
+    cluster_km: float = 5.0,
+) -> pd.Series:
+    """Buses nearest-bus placement must not give onshore generation or storage.
+
+    Returns a Series indexed by bus with the reason, first reason winning:
+
+    * ``dc_only``: no AC line or transformer (HVDC hubs such as "Central DC
+      Substation", external interconnector buses);
+    * ``dc_island``: an AC island other than the main one with no load, reached
+      only over DC (:func:`dc_island_buses`; the Sofia converter pair, F3);
+    * ``offshore``: outside the GSP land boundary plus ``land_buffer_m``
+      (offshore wind platforms);
+    * ``coordinate_outlier``: see :func:`coordinate_outlier_buses`;
+    * ``offshore_export``: every onshore bus of a substation that is AC-connected
+      to an offshore bus, carries no demand and reaches the rest of the onshore
+      grid through at most one other substation (an OFTO onshore export
+      substation such as NNGO, whose branches exist only to carry the wind
+      farm to its grid connection).
+
+    Offshore wind is landed by its own crosswalk and is not subject to this
+    list; thermal plant and interconnectors are placed by declared schedules.
+    Storage placement can reuse the same Series.
+    """
+    buses = network.buses
+    reasons: Dict[str, str] = {}
+    edges = _ac_edges(network)
+    ac = set(edges['bus0']) | set(edges['bus1'])
+    for bus in buses.index:
+        if bus not in ac:
+            reasons[bus] = 'dc_only'
+    for bus in dc_island_buses(network):
+        reasons.setdefault(bus, 'dc_island')
+
+    offshore = set()
+    if land_boundary_file:
+        from pathlib import Path
+        if Path(land_boundary_file).exists():
+            from shapely import contains_xy
+            land = _land_geometry(land_boundary_file, land_buffer_m)
+            xy = _bus_osgb_xy(buses)
+            valid = xy.notna().all(axis=1)
+            inside = pd.Series(True, index=buses.index)
+            inside[valid] = contains_xy(land, xy.loc[valid, 'x'].to_numpy(), xy.loc[valid, 'y'].to_numpy())
+            offshore = set(buses.index[~inside])
+            for bus in offshore:
+                reasons.setdefault(bus, 'offshore')
+        else:
+            logger.warning("Placement exclusions: land boundary %s not found; offshore buses not detected",
+                           land_boundary_file)
+
+    outliers = set(coordinate_outlier_buses(network, coordinate_outlier_km, cluster_km))
+    for bus in outliers:
+        reasons.setdefault(bus, 'coordinate_outlier')
+
+    if offshore:
+        ignored = offshore | outliers
+        site = pd.Series(buses.index.astype(str).str[:4], index=buses.index)
+        loaded = set(network.loads['bus']) if len(network.loads) else set()
+        adjacent: Dict[str, set] = {}
+        for a, b in zip(edges['bus0'], edges['bus1']):
+            adjacent.setdefault(a, set()).add(b)
+            adjacent.setdefault(b, set()).add(a)
+        landing_sites = {
+            site[b] for b in buses.index
+            if b not in ignored and any(n in offshore for n in adjacent.get(b, ()))
+        }
+        for code in sorted(landing_sites):
+            members = [b for b in buses.index[site == code] if b not in ignored]
+            if any(b in loaded for b in members):
+                continue
+            neighbour_sites = {
+                site[n] for b in members for n in adjacent.get(b, ())
+                if n not in ignored and site[n] != code
+            }
+            if len(neighbour_sites) <= 1:
+                for b in members:
+                    reasons.setdefault(b, 'offshore_export')
+    return pd.Series(reasons, name='reason', dtype=object).sort_index()
+
+
+def reassign_excluded_placements(
+    sites_df: pd.DataFrame,
+    network: pypsa.Network,
+    exclusions,
+    carrier_col: str = 'technology',
+    carriers=None,
+    lon_col: str = 'lon',
+    lat_col: str = 'lat',
+    tie_km: float = 0.5,
+    protected_sources=_PROTECTED_PLACEMENTS,
+    log: Optional[logging.Logger] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Move rows off excluded buses to the nearest allowed bus.
+
+    ``exclusions`` is a collection of bus names (or the Series from
+    :func:`generation_placement_exclusions`). Rows of ``carriers`` (all rows
+    when None) on an excluded bus move to the nearest bus not excluded, from
+    the row's own coordinates (WGS84 ``lon``/``lat``) or, failing that, its
+    current bus's; among buses within ``tie_km`` of the nearest (co-located
+    busbars of one substation) the one with most branch capacity wins.
+    Evidenced placements (``protected_sources`` in ``data_source``) and
+    documented onshore connections are left alone. Only ``bus`` changes.
+
+    Returns (sites with updated buses, log of moves).
+    """
+    log = log or logger
+    result = sites_df.copy()
+    if result.empty or 'bus' not in result.columns:
+        return result, pd.DataFrame()
+    excluded = set(exclusions.index if isinstance(exclusions, pd.Series) else exclusions)
+    if not excluded:
+        return result, pd.DataFrame()
+    buses = network.buses
+    xy = _bus_osgb_xy(buses)
+    allowed = buses.index[~buses.index.isin(list(excluded)) & xy.notna().all(axis=1).to_numpy()]
+    if len(allowed) == 0:
+        return result, pd.DataFrame()
+    capacity = bus_branch_capacity(network)
+    carrier = result.get(carrier_col, pd.Series('', index=result.index)).astype(str)
+    source = result.get('data_source', pd.Series('', index=result.index)).fillna('').astype(str)
+    names = result.get('site_name', pd.Series('', index=result.index)).astype(str)
+    mask = result['bus'].isin(list(excluded)) & ~source.isin(list(protected_sources))
+    if carriers is not None:
+        mask &= carrier.isin(list(carriers))
+    mask &= ~names.map(lambda n: _explicit_onshore_connection(n, buses.index) is not None)
+    if not mask.any():
+        return result, pd.DataFrame()
+    from pyproj import Transformer
+    transformer = Transformer.from_crs("EPSG:4326", "EPSG:27700", always_xy=True)
+    ax = xy.loc[allowed, 'x'].to_numpy(dtype=float)
+    ay = xy.loc[allowed, 'y'].to_numpy(dtype=float)
+    lons = pd.to_numeric(result[lon_col], errors='coerce') if lon_col in result.columns else pd.Series(np.nan, index=result.index)
+    lats = pd.to_numeric(result[lat_col], errors='coerce') if lat_col in result.columns else pd.Series(np.nan, index=result.index)
+    moves = []
+    for idx in result.index[mask]:
+        old = result.at[idx, 'bus']
+        lon, lat = lons.at[idx], lats.at[idx]
+        if pd.notna(lon) and pd.notna(lat) and -12 < lon < 4 and 48 < lat < 62:
+            px, py = transformer.transform(float(lon), float(lat))
+        else:
+            px, py = float(xy.at[old, 'x']), float(xy.at[old, 'y'])
+        dist = np.hypot(ax - px, ay - py) / 1000.0
+        tied = np.flatnonzero(dist <= dist.min() + tie_km)
+        choice = max(tied, key=lambda i: (capacity.get(allowed[i], 0.0), -dist[i]))
+        target = allowed[choice]
+        result.at[idx, 'bus'] = target
+        moves.append({'site_name': names.at[idx], 'carrier': carrier.at[idx],
+                      'from_bus': old, 'to_bus': target, 'distance_km': float(dist[choice])})
+    moves = pd.DataFrame(moves)
+    if len(moves):
+        log.info("Placement exclusions: moved %d rows off %d excluded buses",
+                 len(moves), moves['from_bus'].nunique())
+        for (frm, to), grp in moves.groupby(['from_bus', 'to_bus']):
+            log.info("  %s -> %s: %d row(s)", frm, to, len(grp))
+    return result, moves
+
+
+def apply_island_networks(
+    sites_df: pd.DataFrame,
+    network: pypsa.Network,
+    carrier_col: str = 'technology',
+    carriers=None,
+    lon_col: str = 'lon',
+    lat_col: str = 'lat',
+    exclusions=None,
+    islands: Optional[Dict[str, dict]] = None,
+    protected_sources=_PROTECTED_PLACEMENTS,
+    log: Optional[logging.Logger] = None,
+    land_boundary_file: Optional[str] = DEFAULT_LAND_BOUNDARY_FILE,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Put island sites on their island's AC hub and keep mainland sites off it.
+
+    See ``ISLAND_NETWORKS``. A row of ``carriers`` whose WGS84 coordinates lie
+    inside an island's bounding box, on land or at sea north of the island's
+    ``sea_lat_min``, and whose bus is not one of the island's substations moves
+    to the island hub; any other row sitting on an island substation moves to
+    the nearest other bus not in ``exclusions``. Evidenced placements are left
+    alone. Without a land boundary every point in the box counts as the island.
+    Returns (sites, log of moves).
+    """
+    log = log or logger
+    result = sites_df.copy()
+    if result.empty or 'bus' not in result.columns:
+        return result, pd.DataFrame()
+    islands = ISLAND_NETWORKS if islands is None else islands
+    carrier = result.get(carrier_col, pd.Series('', index=result.index)).astype(str)
+    source = result.get('data_source', pd.Series('', index=result.index)).fillna('').astype(str)
+    eligible = ~source.isin(list(protected_sources))
+    if carriers is not None:
+        eligible &= carrier.isin(list(carriers))
+    lons = pd.to_numeric(result[lon_col], errors='coerce') if lon_col in result.columns else pd.Series(np.nan, index=result.index)
+    lats = pd.to_numeric(result[lat_col], errors='coerce') if lat_col in result.columns else pd.Series(np.nan, index=result.index)
+    site_code = result['bus'].astype(str).str[:4]
+    excluded = set(exclusions.index) if isinstance(exclusions, pd.Series) else set(exclusions if exclusions is not None else [])
+    moves = []
+    for island, spec in islands.items():
+        hub = spec['hub']
+        if hub not in network.buses.index:
+            continue
+        codes = set(spec['sites'])
+        lon_min, lat_min, lon_max, lat_max = spec['bbox']
+        inside = lons.between(lon_min, lon_max) & lats.between(lat_min, lat_max)
+        from pathlib import Path
+        if inside.any() and land_boundary_file and Path(land_boundary_file).exists():
+            from pyproj import Transformer
+            from shapely import contains_xy
+            land = _land_geometry(land_boundary_file, 1000.0)
+            transformer = Transformer.from_crs("EPSG:4326", "EPSG:27700", always_xy=True)
+            px, py = transformer.transform(lons[inside].to_numpy(), lats[inside].to_numpy())
+            on_land = pd.Series(contains_xy(land, px, py), index=lons.index[inside])
+            north = lats[inside].ge(float(spec.get('sea_lat_min', lat_min)))
+            inside.loc[inside] = on_land | north
+        on_island_bus = site_code.isin(codes)
+        to_hub = eligible & inside & ~on_island_bus
+        for idx in result.index[to_hub]:
+            moves.append({'site_name': result.at[idx, 'site_name'] if 'site_name' in result.columns else idx,
+                          'carrier': carrier.at[idx], 'from_bus': result.at[idx, 'bus'], 'to_bus': hub,
+                          'rule': f'{island}_hub'})
+            result.at[idx, 'bus'] = hub
+        off_island = eligible & ~inside & on_island_bus & lons.notna()
+        if off_island.any():
+            island_buses = network.buses.index[network.buses.index.astype(str).str[:4].isin(codes)]
+            moved, log_off = reassign_excluded_placements(
+                result.loc[off_island], network, set(island_buses) | excluded,
+                carrier_col=carrier_col, lon_col=lon_col, lat_col=lat_col,
+                protected_sources=protected_sources, log=log,
+            )
+            result.loc[moved.index, 'bus'] = moved['bus']
+            if len(log_off):
+                moves.extend(log_off.assign(rule=f'off_{island}').to_dict('records'))
+    moves = pd.DataFrame(moves)
+    if len(moves):
+        for (rule, frm, to), grp in moves.groupby(['rule', 'from_bus', 'to_bus']):
+            log.info("Island networks [%s]: %s -> %s: %d row(s)", rule, frm, to, len(grp))
+    return result, moves

@@ -1,0 +1,38 @@
+{
+  "purpose": "Ofgem default tariff cap period 17a (October-December 2026) values the 2030 bill takes for supplier costs, SMNCC, DUoS, NCC and the nuclear RAB (review 28 Sep 2026).",
+  "extract": "cap_17a_electricity_single_rate_components.csv: single-rate, other payment method, 14 regions, nil and 2,500 kWh benchmark values",
+  "sources": {
+    "cap_model_v1.31": {
+      "url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Default-tariff-cap-level-v1.31.xlsx",
+      "sheets": [
+        "ElecSingle_Other_Nil",
+        "ElecSingle_Other_Benchmark"
+      ],
+      "column": "October 2026 - December 2026",
+      "sha256": "f3635a64e583a9031ec0ed9aea636709cc6117f3719e9a29d1174917aa3da0ae",
+      "stored": false
+    },
+    "annex_3_v1.25": {
+      "url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-3-network-cost-allowance-methodology-electricity-v1.25.xlsx",
+      "sheet": "2b DUoS",
+      "column": "October 2026 - December 2026",
+      "sha256": "36bced6c48cf6c63bd5b3d0cc892a855a51c0e588e01d11a0f82fc14552f5ff3",
+      "stored": false,
+      "note": "16 MB; the values used are in the extract"
+    },
+    "annex_4_v1.25": {
+      "url": "https://www.ofgem.gov.uk/sites/default/files/2026-08/Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "sheet": "1a Policy Cost Allowance",
+      "rows": "NCC (GB average), nRAB (GB average)",
+      "column": "October 2026 - December 2026",
+      "stored": "Annex-4-policy-cost-allowance-methodology-v1.25.xlsx",
+      "sha256": "1f75eb46e93e54b486542025de142abd2d036255d8c9c1effa34b4a624ff06e5"
+    },
+    "neso_bsuos_forecast_oct_2026": {
+      "url": "https://www.neso.energy/document/387366/download",
+      "stored": "neso_bsuos_forecast_oct_2026.pdf",
+      "sha256": "087b542d24b20bbbc53f914290e7b03668825d2b90bf3fcd6cfa14c8ce8989a9"
+    }
+  },
+  "access_date": "2026-09-28"
+}

@@ -1,153 +1,138 @@
-# Quickstart: Run Your First Model
+# Quickstart
 
-This guide gets you running a PyPSA-GB scenario.
+This page runs `Test_Market`, the scenario `config/config.yaml` selects out of the box. It is the smallest run
+that goes through the whole model: six hours of 2035 on the 32-bus Reduced network, cleared first as a wholesale
+market and then redispatched through the balancing mechanism. Once the inputs are downloaded it takes minutes.
 
-## Prerequisites
+You need the environment and a solver from {doc}`installation`.
 
-Ensure you've completed the {doc}`installation` steps and have the `pypsa-gb-stable` environment activated:
+## The scenario
 
-```bash
-conda activate pypsa-gb-stable
+`Test_Market` is defined in `config/scenarios.yaml`:
+
+```yaml
+Test_Market:
+  modelled_year: 2035
+  FES_year: 2024
+  FES_scenario: Holistic Transition
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+  renewables:
+    aggregation:
+      enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+  solve_period:
+    enabled: true
+    start: 2035-01-01 00:00
+    end: 2035-01-01 05:00
+  description: Market test - Reduced network, 6 hours (fast smoke test)
+  market:
+    enabled: true
 ```
 
-## Step 1: Check Available Scenarios
+| Setting | Meaning |
+|---|---|
+| `modelled_year: 2035` with `FES_year`, `FES_scenario` | A future system: NESO's FES 2024 Holistic Transition pathway in 2035. (This scenario predates the `targets` and `method` keys; the loader derives `targets: {source: FES, edition: 2024, pathway: HT}` and `method: gsp_block` from these. New scenarios write `targets` and `method`, see {doc}`first_scenario`.) |
+| `renewables_year: 2020` | Wind and solar output from 2020 weather. |
+| `demand_year: 2020` | The shape of demand through the day and year from 2020; the annual total is FES's. |
+| `network_model: Reduced` | The 32-bus network. |
+| `renewables.aggregation`, `network.component_aggregation` | Merge generators, storage and loads of the same type at the same bus, which makes the problem smaller without changing its answer much. |
+| `solve_period` | The network is built for all of 2035, but only 00:00 to 05:00 on 1 January is solved. |
+| `market.enabled: true` | Solve as a two-stage market (wholesale, then balancing mechanism) instead of a single network-constrained solve. |
 
-PyPSA-GB comes with pre-configured scenarios. View them:
+Everything else comes from the defaults in `config/defaults/`. To see the scenario fully merged:
 
 ```bash
-# List active scenarios
-python -c "
-import yaml
-with open('config/config.yaml') as f:
-    config = yaml.safe_load(f)
-print('Active scenarios:', config.get('run_scenarios', []))
-"
+python config/config_loader.py --scenario Test_Market
 ```
 
-Common scenarios include:
+## Run it
 
-| Scenario | Description |
-|----------|-------------|
-| `HT35` | Holistic Transition 2035 (ETYS network) |
-| `HT50` | Holistic Transition 2050 (ETYS network) |
-| `Historical_2020` | Historical year 2020 |
-| `HT35_reduced` | Holistic Transition 2035 (32-bus reduced) |
-
-## Step 2: Run a Scenario
-
-Run the active scenarios listed in `config/config.yaml`:
+Look first. A dry run lists every job and why it would run, without running anything:
 
 ```bash
-snakemake --cores 4
+snakemake -n
+```
+
+Then run it with up to four jobs at once:
+
+```bash
+snakemake -j 4
+```
+
+`config/config.yaml` selects the scenario:
+
+```yaml
+run_scenarios:
+  - Test_Market
+```
+
+To run it whatever `config/config.yaml` says, add `--config scenario=Test_Market`. To build only Test_Market's own
+outputs, name the file you want; Snakemake then runs exactly the chain that file needs:
+
+```bash
+snakemake -j 4 resources/analysis/Test_Market_market_summary.json
 ```
 
 ```{note}
-The `--cores 4` flag runs up to 4 jobs in parallel. Adjust based on your CPU cores.
-To run one scenario without editing `config/config.yaml`, use
-`snakemake --cores 4 --config scenario=HT35_clustered`.
+If the dry run lists jobs for other scenarios or study-level checks (for example `validate_CP30_balancing`),
+`config/config.yaml` loads a study under `studies`. A study's checks join the default target whatever
+`run_scenarios` says. Ask for the file above instead, or remove the study from `studies`. See
+{doc}`running_the_workflow`.
 ```
 
-### What Happens
+## What runs
 
-The workflow executes these steps automatically:
+On a fresh clone the run first fetches what it needs: the FES 2024 tables from the NESO data portal and the 2020
+weather cutout from Zenodo (about 700 MB). Then, for Test_Market:
 
-```{mermaid}
-flowchart LR
-    A[Build Network] --> B[Add Demand]
-    B --> C[Add Renewables]
-    C --> D[Add Thermal]
-    D --> E[Add Storage]
-    E --> F[Add Hydrogen]
-    F --> G[Add Interconnectors]
-    G --> H[Solve Network]
+1. **Inputs.** Renewable sites and their hourly profiles from the 2020 cutout (wind, solar, hydro, marine);
+   FES 2024 capacities and demand; fuel and carbon prices.
+2. **Build.** The Reduced network (`build_reduced_base_network`), then demand, renewables, thermal plant and
+   their marginal costs, storage, hydrogen and interconnectors, each step adding to the network
+   (`resources/network/Test_Market_network_*.pkl`, `.nc`). `finalize_network` writes
+   `resources/network/Test_Market.nc`.
+3. **Stage 1: wholesale market** (`solve_wholesale_market`). The GB network is treated as a single node (a
+   "copperplate") and the six hours are cleared at least cost, giving each unit's schedule and one GB wholesale
+   price per hour.
+4. **Stage 2: balancing mechanism** (`solve_balancing_mechanism`). The network limits are restored. Units start
+   from their Stage 1 schedules and are moved up (paid their offer price) or down (paying their bid price) until
+   the flows fit the network, at least total cost.
+5. **Analysis** (`analyze_market_results`, `generate_market_analysis_notebook`). Accounting of volumes, costs and
+   prices, a dashboard and a notebook.
+
+The methods are described in {doc}`../model/dispatch/wholesale` and {doc}`../model/dispatch/balancing`.
+
+## Where the outputs are
+
+| File | Contents |
+|---|---|
+| `resources/network/Test_Market.nc` | The finalised network, before any solve. |
+| `resources/market/Test_Market_wholesale.nc` | The solved Stage 1 network. |
+| `resources/market/Test_Market_wholesale_price.csv` | The wholesale price per hour (GBP/MWh). |
+| `resources/market/Test_Market_wholesale_dispatch.csv`, `_wholesale_storage.csv`, `_wholesale_links.csv` | Stage 1 schedules of generators, storage and links (MW). |
+| `resources/market/Test_Market_balancing.nc` | The solved Stage 2 network: physical dispatch and flows. |
+| `resources/market/Test_Market_redispatch_summary.csv` | Per unit: energy moved up and down (MWh) and its offer and bid cost (GBP). |
+| `resources/market/Test_Market_constraint_costs.csv` | The same by technology. |
+| `resources/market/Test_Market_congestion.csv` | Lines and transformers that reached their limit, with hours congested. |
+| `resources/market/Test_Market_price_comparison.csv` | Per hour: the wholesale price beside the balancing stage's nodal prices and their spread. |
+| `resources/analysis/Test_Market_market_summary.json` | Headline figures: demand, redispatch volume and cost, prices, interconnector flows. |
+| `resources/analysis/Test_Market_market_dashboard.html` | An interactive dashboard; open it in a browser. |
+| `resources/analysis/Test_Market_market_notebook.ipynb` | A notebook that loads and plots the results. |
+
+Logs are in `logs/` (the market stages in `logs/market/`). How to read these files is in {doc}`results`.
+
+```{note}
+Six hours is a smoke test, not a study. Its costs and prices say little about 2035; use it to check that the
+installation works, then write a scenario of your own.
 ```
 
-## Step 3: View Results
+## Next
 
-Once complete, load and inspect the solved network:
-
-```python
-import pypsa
-
-# Load the solved network
-n = pypsa.Network("resources/network/HT35_clustered_solved.nc")
-
-# Basic statistics
-print(f"Buses: {len(n.buses)}")
-print(f"Generators: {len(n.generators)}")
-print(f"Storage units: {len(n.storage_units)}")
-print(f"Lines: {len(n.lines)}")
-
-# Generation capacity by technology
-print("\nGeneration capacity (GW):")
-print((n.generators.groupby('carrier')['p_nom'].sum() / 1000).round(1).sort_values(ascending=False))
-```
-
-## Step 4: Generate Analysis Outputs
-
-Generate HTML analysis reports:
-
-```bash
-# Generate spatial analysis map
-snakemake resources/analysis/HT35_clustered_spatial.html --cores 1
-
-# Generate summary dashboard
-snakemake resources/analysis/HT35_clustered_dashboard.html --cores 1
-```
-
-Open the generated HTML files in your browser.
-
-Market scenarios produce additional outputs under `resources/market/` and
-`resources/analysis/`. After the basic workflow is working, see
-{doc}`../user_guide/market` for wholesale-only and two-stage market runs.
-
-## Quick Commands Reference
-
-```bash
-# Dry run (show what would execute)
-snakemake --cores 4 -n -p
-
-# Force re-run of a specific rule
-snakemake -R solve_network --cores 4
-
-# Run with verbose logging
-snakemake --cores 4 --verbose
-
-# Clean all outputs for a scenario
-snakemake clean_HT35_clustered
-```
-
-## Faster Testing with Reduced Networks
-
-For quick tests, use reduced network models:
-
-```yaml
-# In config/config.yaml
-run_scenarios:
-  - HT35_reduced
-```
-
-```bash
-snakemake --cores 4
-```
-
-## Expected Run Times
-
-| Network Type | Buses | Typical Solve Time |
-|-------------|-------|-------------------|
-| Zonal | 17 | ~1 minute |
-| Reduced | 32 | ~2 minutes |
-| Clustered (100) | ~100 | ~5 minutes |
-| ETYS Full | 2000+ | ~30 minutes |
-
-```{tip}
-Start with reduced networks for testing, then scale up to full ETYS for production runs.
-```
-
-## Next Steps
-
-- {doc}`first_scenario` - Create your own custom scenario
-- {doc}`../user_guide/configuration` - Understand configuration options
-- {doc}`../user_guide/workflow` - Deep dive into the Snakemake workflow
-- {doc}`../user_guide/market` - Run wholesale and balancing market dispatch
-- {doc}`../tutorials/16-market-dispatch` - Analyse market validation outputs
+- {doc}`results`: open the networks and read the summaries.
+- {doc}`first_scenario`: write and run your own scenario.

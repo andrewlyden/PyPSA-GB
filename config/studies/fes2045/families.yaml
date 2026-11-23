@@ -1,0 +1,55 @@
+# FES 2025 HT 2045 month families. Each becomes twelve scenarios, FES25_HT_2045_<Mon>_<family> (study.yaml
+# family_id), one per calendar month; `stage1: <family>` takes the wholesale (Stage 1) result from that family's month.
+
+# The market year: Stage 1 and the balancing mechanism.
+market:
+  inherits: [ht45_period_on, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1]
+
+# Central dispatch at resource cost, perfect foresight (institution I3).
+central_dispatch:
+  inherits: [ht45_period_on, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_central_dispatch]
+
+# The market year on its own annual-pass trajectory file (every family is on the TYNDP 2026 draft NT+ foreign prices).
+tyndp2026_prices:
+  inherits: [ht45_period_on, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1, ht45_h2_pass_tyndp26_trajectory]
+
+# P2 bid stacks: the state's share of the fleet (25-100%) bidding at cost in the balancing mechanism.
+p2_bids_25pct:
+  inherits: [ht45_bids_p2, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2045_generator_state_shares_deployment_share_25.csv
+          case_id: public_ownership@deployment_share_25
+
+p2_bids_50pct:
+  inherits: [ht45_bids_p2, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2045_generator_state_shares_deployment_share_50.csv
+          case_id: public_ownership@deployment_share_50
+
+p2_bids_75pct:
+  inherits: [ht45_bids_p2, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2045_generator_state_shares_deployment_share_75.csv
+          case_id: public_ownership@deployment_share_75
+
+p2_bids_100pct:
+  inherits: [ht45_bids_p2, ht45_on_parent_build, ht45_h2_annual_pass, ht45_h2_pass_with_storage_units, ht45_h2_pass_soft_floor, ht45_h2_pass_trajectory, ht45_bm_bids, ht45_dpa_dispatch, ht45_cfd_bids_contract_value, ht45_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2045_generator_state_shares_deployment_share_100.csv
+          case_id: public_ownership@deployment_share_100

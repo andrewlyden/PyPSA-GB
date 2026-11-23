@@ -1,0 +1,57 @@
+# CP30 FFR 2030: NESO's Clean Power 2030 "Further Flex and Renewables" pathway, solved month by month as a
+# wholesale market (Stage 1) and a balancing mechanism on the full ETYS network, under three network-delivery
+# cases, with the public-ownership bid stacks and central dispatch beside them. The study layout is described in
+# config/studies/README.md; the loader expands families.yaml with family_id and year.
+label: CP30 FFR 2030
+year: 2030
+family_id: CP30_FFR_2030_{Mon}_{family}
+
+# Complete-year aggregates: each names a family whose twelve solved months cover one calendar year; rule
+# aggregate_CP30_months sums them into resources/analysis/{name}_annual_summary.json. Declaring one does not
+# enable a solve.
+monthly_aggregates:
+  CP30_2030_no_acceleration:
+    scenario_family: CP30 FFR 2030, balancing mechanism, CENTRAL network (CP30's accelerations not delivered)
+    family: no_acceleration
+  CP30_2030_cp30_network:
+    scenario_family: CP30 FFR 2030, balancing mechanism, LOWER network (CP30's recommended network)
+    family: cp30_network
+  CP30_2030_seven_late:
+    scenario_family: CP30 FFR 2030, balancing mechanism, NESO's seven most critical projects late
+    family: seven_late
+  CP30_2030_no_upgrades:
+    scenario_family: CP30 FFR 2030, balancing mechanism, UPPER network (no upgrades after 2025)
+    family: no_upgrades
+  CP30_2030_cp30_network_p2_bids:
+    scenario_family: CP30 FFR 2030, P2 bid stack, LOWER network
+    family: cp30_network_p2_bids
+  CP30_2030_cp30_network_p3_bids:
+    scenario_family: CP30 FFR 2030, P3 bid stack, LOWER network
+    family: cp30_network_p3_bids
+  CP30_2030_no_acceleration_p2_bids:
+    scenario_family: CP30 FFR 2030, P2 bid stack, CENTRAL network
+    family: no_acceleration_p2_bids
+  CP30_2030_no_acceleration_p3_bids:
+    scenario_family: CP30 FFR 2030, P3 bid stack, CENTRAL network
+    family: no_acceleration_p3_bids
+  CP30_2030_no_upgrades_p2_bids:
+    scenario_family: CP30 FFR 2030, P2 bid stack, UPPER network
+    family: no_upgrades_p2_bids
+  CP30_2030_no_upgrades_p3_bids:
+    scenario_family: CP30 FFR 2030, P3 bid stack, UPPER network
+    family: no_upgrades_p3_bids
+  CP30_2030_cp30_network_ic_premium_0:
+    scenario_family: CP30 FFR 2030, balancing mechanism, LOWER network, interconnector premium 0
+    family: cp30_network_ic_premium_0
+  CP30_2030_neso_consistent_ic_caps:
+    scenario_family: CP30 FFR 2030, balancing mechanism on the NESO-consistent Stage 1, LCP interconnector caps
+    family: neso_consistent_ic_caps
+
+# Families whose NESO balancing check joins rule all (rules/CP30.smk), and the family rule audit_secured_capability
+# compares the delay families against.
+balancing_validation_families:
+- cp30_network
+- no_acceleration
+- seven_late
+- no_upgrades
+secured_capability_audit_central: cp30_network

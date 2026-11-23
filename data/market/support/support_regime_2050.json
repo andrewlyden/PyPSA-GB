@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "title": "Private support regime in calendar 2050: declared scheme parameters (FES 2050 plan task Y11, decisions 4, 6, 19, 22)",
+  "price_year": 2024,
+  "model_year": 2050,
+  "commodity_prices": {
+    "gas_gbp_per_mwh_thermal": {"value": 23.64, "source": "FES 2025 CP1 base case 2050 (28.72 EUR/MWh 2025 / 1.17, then / 1.0384 CPIH), task Y1", "source_page": "plan Part 4 Y1 status table; resources/FES/fes2025_future_costs_2050.json when built", "status": "extracted"},
+    "carbon_gbp_per_tco2": {"value": 110.80, "source": "FES 2025 CP2 base case 2050 (134.6 EUR/t 2025 / 1.17 / 1.0384), task Y1", "source_page": "plan Part 4 Y1 status table", "status": "extracted"},
+    "biomass_gbp_per_mwh_thermal": {"value": 45.0, "source": "config/defaults.yaml marginal_costs.future_costs.cases.central.fuel_prices.biomass (the HT50 fallback_case: FES publishes no biomass price)", "source_page": "config/defaults.yaml future_costs.cases.central", "status": "declared"},
+    "note": "A caller with the solved year passes the run's own prices; these are the defaults the parameter tables are built with."
+  },
+  "thermal": {
+    "gas_emission_factor_tco2_per_mwh_thermal": {"value": 0.183, "source": "scripts/generators/apply_marginal_costs.py CARBON_EMISSION_FACTORS['gas'] (UK Government factor)", "status": "sourced"},
+    "ccs_capture_rate": {"value": 0.90, "source": "scripts/generators/apply_marginal_costs.py: CCS Gas assumes 90% capture (CARBON_EMISSION_FACTORS['CCS Gas'] = 18.3)", "status": "declared"},
+    "efficiency": {"CCGT": 0.52, "CCS Gas": 0.47, "Hydrogen": 0.55, "CCS Biomass": 0.35,
+                   "source": "config/defaults.yaml marginal_costs.future_costs.efficiency_defaults (the model's dispatch efficiencies); CCS Gas 0.47 from the 2050 study (DESNZ Electricity Generation Costs 2025 Annex A, 2050; user, 26 Oct 2026)", "status": "declared"},
+    "variable_om_gbp_per_mwh": {"CCGT": 2.0, "CCS Gas": 18.09, "Hydrogen": 6.0, "CCS Biomass": 20.0,
+                                "source": "config/defaults.yaml marginal_costs.future_costs.cases.central.variable_om; CCS Gas from the 2050 study (user, 26 Oct 2026): DESNZ EGC 2025 Annex A variable O&M 6 plus the CO2 transport and storage flow charge at 34.5 GBP/t (the reformer's) on 0.183 x 0.90 / 0.47 = 0.3504 tCO2 captured per MWh, 12.09", "status": "declared"},
+    "biomass_emission_factor_tco2_per_mwh_thermal": {"value": 0.403, "source": "IPCC 2006 Guidelines vol. 2 table 2.2, wood/wood waste default 112 tCO2/TJ (biogenic)", "status": "declared"}
+  },
+  "dpa": {
+    "form": "Availability payment (rate x net dependable capacity x availability of low-carbon capacity) plus a variable payment that keeps the plant just ahead of an unabated reference CCGT in merit, with gainshare. NZT Power DPA (LCCC, 19 Nov 2024) and CMA SAU report (Jul 2024); hydrogen power by decision 22 (same form, declared).",
+    "technologies": {"CCS Gas": "Gas generation - CCUS - mature", "Hydrogen": "Hydrogen CCHT"},
+    "term_years": {"value": 15, "source": "NZT Power DPA: expiry at the 15th anniversary of the earlier of the Start Date and the last day of the Target Commissioning Window (research Y5/Y11/Y12 section 3); scheme 10 to 15 years", "status": "sourced"},
+    "first_modelled_build_year": {"value": 2029, "source": "NZT Power (742.91 MW, FID Dec 2024, commissioning about 2028) ends about 2043, so no CCS plant in 2050 is on it; every 2050 DPA is a modelled later agreement", "status": "declared"},
+    "availability_payment_basis": "cost plus the private rate: APR = (capex x CRF(private rate, economic life) + fixed O&M ex-DESNZ insurance + D4(a) insurance + use of system) / expected availability, from the build year's Y2 vintage row",
+    "expected_availability": {"value": 0.90, "source": "declared: a DPA pays on the availability of low-carbon capacity; 0.90 matches the NESO 2030/31 CCGT de-rating factor (0.9048)", "status": "declared"},
+    "use_of_system_gbp_per_kw_year": {"CCS Gas": 4.4, "Hydrogen": 4.4, "source": "DESNZ EGC 2025 Annex A row 37, Gas CCUS 900MW and CCHT 900MW (4,400 GBP/MW/yr)", "status": "sourced"},
+    "variable_payment_carriers": {"value": ["CCS Gas"], "source": "user, 26 Oct 2026 (supersedes decisions 35 and 38 for hydrogen): the government's hydrogen-to-power response (DESNZ, Dec 2024, p.29) proceeds with a DPA-style availability payment but has not adopted a variable payment, which it says 'could create market distortions'; LCP and Frontier for DESNZ (Dec 2023) found a dispatch incentive 'would not reduce costs to society'. Hydrogen power's DPA is an availability payment with gainshare only; gas CCS keeps the NZT variable payment.", "status": "declared"},
+    "variable_payment_margin_gbp_per_mwh": {"value": 1.0, "source": "declared: 'just ahead' of the reference plant in merit", "status": "declared"},
+    "reference_plant": {"value": "CCGT", "source": "NZT DPA: a daily top-up benchmarked on a reference unabated CCGT (research section 3); used for hydrogen power too (decision 22)", "status": "declared"},
+    "gainshare_share": {"value": 0.5, "source": "declared: the NZT gainshare terms are redacted; half of the annual energy margin (market revenue less short-run cost) above the threshold is returned", "status": "declared"},
+    "gainshare_threshold_gbp_per_kw_year": {"value": 0.0, "source": "declared: the availability payment already recovers full cost, so every pound of energy margin is above the threshold", "status": "declared"},
+    "transport_and_storage_fixed": {"value": 0.0, "source": "ECC full business case (June 2025) section 5.6.1, via the 2030 remaining_ccs line: T&S revenue support to NEP is Exchequer-funded, not a bill charge", "status": "sourced"},
+    "capacity_market": "DPA units cannot hold a Capacity Market agreement while the DPA is live (capacity_market.CM_INELIGIBLE_SUPPORT)"
+  },
+  "beccs": {
+    "form": "Declared dispatchable CfD on the electricity leg (as the 2030 Power BECCS line and its CCS levy treatment); the carbon-removal leg is paid off-bill (lever beccs_removal_funding, default off-bill).",
+    "technology": "Biomass - with CCUS - mature",
+    "term_years": {"value": 15, "source": "Power BECCS 15 years (DESNZ business model update, Dec 2023; config contract_term_years_by_round.POWER_BECCS)", "status": "sourced"},
+    "removal_price_gbp_per_tco2": {"value": 110.80, "source": "declared: negative emissions valued at the 2050 carbon price (FES CP2, task Y1) through the off-bill removals contract", "status": "declared"},
+    "capture_rate": {"value": 0.90, "source": "declared, as gas CCS", "status": "declared"},
+    "note": "The 2030 Drax Power BECCS contract (POWER_BECCS, 2030/31 + 15 years) has expired by 2050."
+  },
+  "ldes_cap_and_floor": {
+    "term_years": {"value": 25, "source": "Ofgem LDES window 1 minded-to decision (26 Jun 2026): 25-year terms; 16 projects, 7,645 MW / 136.9 GWh", "status": "sourced"},
+    "carriers": {"LAES": "Liquid air energy storage - 6h", "CAES": "Compressed air energy storage - 6h", "Pumped Storage Hydroelectricity": "Pumped hydro energy storage (PHES) - 20h",
+                 "source": "vintage-table row nearest each FES 2050 duration (LAES 4.1 h, CAES declared 6 h, PHS 17 h)", "status": "declared"},
+    "first_build_year": {"value": 2026, "source": "declared: every LDES vintage from window 1 on holds a cap and floor; pre-2026 pumped hydro is merchant", "status": "declared"},
+    "floor_rate": {"value": 0.045, "source": "config/defaults.yaml public_ownership.consumer_bill.ldes_cap_and_floor.floor_return.real_rate_by_case.private (the 2030 private floor: a debt-like 4.5% real, CEPA 2025 BBB-)", "status": "sourced"},
+    "cap_rate_basis": {"value": "cost_of_equity_cepa", "source": "declared: Ofgem's cap gives an equity-like return; workbook v2.0 Sc1 Operative cost of equity, pre-tax (snapshot cost_of_equity_pre_tax), of the Novel LDES row (F29, 26 Oct 2026)", "status": "declared"},
+    "above_cap_returned_share": {"value": 1.0, "source": "declared: as the interconnector regime (Ofgem OFG1164 section 4.6, revenue above the cap returned via TNUoS)", "status": "declared"},
+    "recovery": "final demand, like a network charge (the 2030 ldes_cap_and_floor.recovery_denominator)",
+    "capacity_market_revenue": "counted in the revenue tested against the floor and the cap, as the 2030 public account nets it"
+  }
+}

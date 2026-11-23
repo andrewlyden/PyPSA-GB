@@ -1,0 +1,171 @@
+# Templates: named building blocks, composed by `inherits: [...]` (two may not set the same leaf, D8).
+
+archive_val20_base:
+  modelled_year: 2020
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: ETYS
+  market:
+    enabled: true
+    wholesale:
+      mode: rolling_day_ahead
+    balancing:
+      mode: rolling
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind]
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+          behavior: fallback_priced
+      elexon:
+        price_ladders:
+          enabled: true
+  renewables:
+    aggregation:
+      enabled: true
+    embedded:
+      wind_overlap_exclusion:
+        enabled: true
+  network:
+    component_aggregation:
+      enabled: true
+      include_storage_units: true
+      include_loads: true
+    transmission:
+      outage_schedule:
+        enabled: true
+        neso:
+          boundary_include: [SCOTEX, SSE-SP, 'SSHARN::SSHARN_SPARSE_GATE_FIT', ESTEX, SEIMP, SWALEX]
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+    biofuel_subsidy:
+      enabled: true
+  thermal:
+    availability_factors:
+      enabled: true
+
+archive_val20_except_Validation_Feb23_2020_NoLineOverrides_SSESPStrict_Validation_Jun2020_0p5hLegacy:
+  inherits: archive_val20_base
+  solve_period:
+    enabled: true
+
+archive_val20_performance_factors_factors:
+  inherits: archive_val20_except_Validation_Feb23_2020_NoLineOverrides_SSESPStrict_Validation_Jun2020_0p5hLegacy
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.6460803
+        wind_onshore: 0.85
+        solar_pv: 0.8612621
+
+archive_val20_nolineoverrides:
+  inherits: archive_val20_except_Validation_Feb23_2020_NoLineOverrides_SSESPStrict_Validation_Jun2020_0p5hLegacy
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.638858
+        wind_onshore: 0.840498
+        solar_pv: 0.678725
+
+archive_val20_performance_factors_factors_2:
+  inherits: archive_val20_except_Validation_Feb23_2020_NoLineOverrides_SSESPStrict_Validation_Jun2020_0p5hLegacy
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.6469
+        wind_onshore: 0.882
+        solar_pv: 0.8616
+
+archive_val20_transmission_line_rating_overrides__7_members:
+  network:
+    transmission:
+      line_rating_overrides:
+        CLUN1T_ERRO1J_0: 180
+        ERRO1T_KIIN1-_0: 180
+        INVR1C_KIIN1-_0: 120
+        INVR1A_INVR1C_0: 120
+        INVR1-_INVR1A_0: 120
+        INVR1-_SLOY1K_0: 120
+        GARB1T_SLOY1K_1: 120
+        GARB1T_GARE1T_0: 120
+        GARE1T_WIYH1-_0: 120
+        BIHI1R_COUA1R_0: 180
+        BIHI1R_TEAL1-_0: 120
+
+archive_val20_timestep_minutes__7_members:
+  timestep_minutes: 30
+
+archive_val20_labels_historical_roc_station_labels__6_members:
+  renewables:
+    aggregation:
+      preserve_support_types: [ROC, CfD]
+    hydro:
+      large_hydro:
+        roc_hydro_supplement_file: data/market/ofgem_renewables_obligation/dukes_2020_roc_hydro_supplement.csv
+  support:
+    labels:
+      dispatchable_support_overrides_file: data/market/support/generator_support_overrides_2020.csv
+      renewable_support_overrides_file: data/market/support/renewable_support_overrides_2020.csv
+      historical_station_unit_splits_file: data/market/ofgem_renewables_obligation/historical_station_unit_splits_2020.csv
+      historical_cfd_tranches:
+        enabled: true
+        mapping_file: data/market/lccc/cfd_pypsa_mapping_overrides_2020.csv
+        actuals_file: data/market/lccc/actual_cfd_generation_and_payments.csv
+      historical_roc_station_labels:
+        enabled: true
+        registry_file: data/market/ofgem_renewables_obligation/accredited_stations_ro_current.csv
+        station_overrides_file: data/market/ofgem_renewables_obligation/roc_pypsa_mapping_overrides_2020.csv
+        residual_representation_assumptions_file: data/market/ofgem_renewables_obligation/roc_residual_representation_assumptions_2020.csv
+        residual_output_calibration_file: data/market/ofgem_renewables_obligation/roc_residual_output_calibration_2020.csv
+      historical_roc_physical_overlay:
+        enabled: true
+        actions_file: data/market/ofgem_renewables_obligation/roc_historical_overlay_actions_2020.csv
+        permitted_actions: [split_existing_asset_roc_and_non_roc, add_missing_phase_and_link_existing_assets]
+  marginal_costs:
+    biofuel_subsidy:
+      require_support_label: true
+  thermal:
+    availability_factors:
+      generator_monthly_file: data/market/support/generator_monthly_availability_2020.csv
+    dispatch_anchors:
+      enabled: true
+      carriers: [coal]
+  fleet:
+    commissioning:
+      profile_gate_within_solve_period: true
+      date_overrides_file: data/market/lccc/cfd_pypsa_source_candidates_2020.csv
+
+archive_val20_transmission_outage_schedule__4_members:
+  network:
+    transmission:
+      outage_schedule:
+        neso:
+          soft_boundaries:
+            SEIMP:
+              enabled: true
+              penalty_gbp_per_mwh: 1000.0
+              max_violation_mw: 2500.0
+
+archive_val20_balancing_window_hours__4_members:
+  market:
+    balancing:
+      window_hours: 24
+
+archive_val20_balancing_window_hours__3_members:
+  market:
+    balancing:
+      window_hours: 0.5
+
+archive_val20_transmission_outage_schedule__nolineoverrides_ssespstrict:
+  network:
+    transmission:
+      outage_schedule:
+        neso:
+          boundary_mapping: data/network/neso_boundary_mapping_ssesp_strict.yaml

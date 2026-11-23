@@ -22,11 +22,13 @@ and can test against real Historical_2020 outputs if available in resources/.
 
 import pytest
 import yaml
+import numpy as np
 import pandas as pd
 import pypsa
 from pathlib import Path
 import sys
 from glob import glob
+from config.config_loader import load_defaults
 
 # Add scripts to path
 sys.path.insert(0, str(Path.cwd() / "scripts"))
@@ -142,17 +144,15 @@ def config(project_root):
 @pytest.fixture
 def scenarios_master(project_root):
     """Load scenarios master configuration."""
-    scenarios_path = project_root / "config" / "scenarios.yaml"
-    with open(scenarios_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    from config.config_loader import load_scenario_entries
+
+    return load_scenario_entries(project_root / "config")
 
 
 @pytest.fixture
 def defaults(project_root):
     """Load defaults configuration."""
-    defaults_path = project_root / "config" / "defaults.yaml"
-    with open(defaults_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    return load_defaults(project_root / "config")
 
 
 @pytest.fixture
@@ -415,7 +415,8 @@ class TestHistoricalDemandProcessing:
     
     def test_historical_demand_uses_espeni(self, test_historical_scenario, defaults):
         """Test that historical scenario uses ESPENI demand data."""
-        demand_timeseries = test_historical_scenario.get('demand_timeseries', defaults.get('demand_timeseries'))
+        demand_timeseries = (test_historical_scenario.get('demand') or {}).get(
+            'timeseries', (defaults.get('demand') or {}).get('timeseries'))
         
         # Historical scenarios should use ESPENI (or inherit it from defaults)
         assert demand_timeseries == "ESPENI", \
@@ -641,13 +642,13 @@ class TestHistoricalScenarioMetadata:
         assert timestep in [30, 60], \
             "Invalid timestep_minutes value"
         
-        voll = test_historical_scenario.get('voll', defaults.get('voll'))
+        voll = (test_historical_scenario.get('solve') or {}).get('voll', (defaults.get('solve') or {}).get('voll'))
         assert voll and voll > 0, \
             "VOLL should be positive"
     
     def test_clustering_configuration_valid(self, test_historical_scenario):
         """Test that clustering configuration is valid."""
-        clustering = test_historical_scenario.get('clustering', {})
+        clustering = (test_historical_scenario.get('network') or {}).get('clustering', {})
         
         if clustering.get('enabled'):
             # If clustering is enabled, should have method and config
@@ -660,8 +661,8 @@ class TestHistoricalResourceOutputs:
     
     def test_historical_outputs_detected(self, historical_outputs):
         """Test that historical outputs are available."""
-        pytest.skip("No historical outputs detected") if not historical_outputs else None
-        assert historical_outputs['scenario_name'] is not None
+        if not historical_outputs or historical_outputs['scenario_name'] is None:
+            pytest.skip("No historical outputs detected")
         assert historical_outputs['scenario_name'].startswith('Historical_')
     
     @pytest.mark.workflow

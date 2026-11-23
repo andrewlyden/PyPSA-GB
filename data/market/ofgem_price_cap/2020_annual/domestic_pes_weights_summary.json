@@ -1,0 +1,13 @@
+{
+  "purpose": "2020 domestic electricity consumption weights for PES/DNO tariff allocation",
+  "desnz_source": "https://assets.publishing.service.gov.uk/media/694295bd9273c48f554cf4ef/elec_LA_stacked_2005-2024.csv",
+  "ons_centroid_source": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_DEC_2025_Boundaries_UK_BFE/FeatureServer/0/query?where=1%3D1%20AND%20LAD25CD%20IS%20NOT%20NULL&outFields=LAD25CD%2CLAD25NM&returnGeometry=false&returnCentroid=true&outSR=4326&f=json",
+  "geography_reference_year": 2025,
+  "neso_gsp_dno_source": "https://api.neso.energy/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/resource/bbe2cc72-a6c6-46e6-8f4e-48b879467368/download/gsp_gnode_directconnect_region_lookup.csv",
+  "domestic_consumption_gwh": 108535.96788444,
+  "domestic_meters_thousands": 28568.537000000004,
+  "unmapped_local_authority_count": 0,
+  "unmapped_domestic_consumption_gwh": 0.0,
+  "maximum_la_centroid_to_gsp_km": 239.12039167648544,
+  "treatment": "Domestic sales/account geography input, not PyPSA demand. DESNZ 2020 values are published on current local-authority codes and use 2025 centroids. Local authorities spanning a PES boundary are assigned by centroid; retain this limitation in tariff results."
+}

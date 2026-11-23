@@ -1,0 +1,55 @@
+# FES 2025 HT 2050 month families. Each becomes twelve scenarios, FES25_HT_2050_<Mon>_<family> (study.yaml
+# family_id), one per calendar month; `stage1: <family>` takes the wholesale (Stage 1) result from that family's month.
+
+# The market year: Stage 1 and the balancing mechanism.
+market:
+  inherits: [ht50_period_on, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1]
+
+# Central dispatch at resource cost, perfect foresight (institution I3).
+central_dispatch:
+  inherits: [ht50_period_on, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_central_dispatch]
+
+# The market year on its own annual-pass trajectory file (every family is on the TYNDP 2026 draft NT+ foreign prices).
+tyndp2026_prices:
+  inherits: [ht50_period_on, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1, ht50_h2_pass_tyndp26_trajectory]
+
+# P2 bid stacks: the state's share of the fleet (25-100%) bidding at cost in the balancing mechanism.
+p2_bids_25pct:
+  inherits: [ht50_bids_p2, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2050_generator_state_shares_deployment_share_25.csv
+          case_id: public_ownership@deployment_share_25
+
+p2_bids_50pct:
+  inherits: [ht50_bids_p2, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2050_generator_state_shares_deployment_share_50.csv
+          case_id: public_ownership@deployment_share_50
+
+p2_bids_75pct:
+  inherits: [ht50_bids_p2, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2050_generator_state_shares_deployment_share_75.csv
+          case_id: public_ownership@deployment_share_75
+
+p2_bids_100pct:
+  inherits: [ht50_bids_p2, ht50_on_parent_build, ht50_h2_annual_pass, ht50_h2_pass_with_storage_units, ht50_h2_pass_soft_floor, ht50_h2_pass_trajectory, ht50_bm2050_bids, ht50_dpa_dispatch, ht50_cfd_bids_contract_value, ht50_h2_store_band_stage1]
+  stage1: market
+  support:
+    bm_bids:
+      contract_value_bids:
+        public_ownership_bids:
+          shares_file: resources/public_ownership/fes_ht_2050_generator_state_shares_deployment_share_100.csv
+          case_id: public_ownership@deployment_share_100

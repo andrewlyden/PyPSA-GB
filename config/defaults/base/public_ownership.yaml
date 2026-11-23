@@ -1,0 +1,573 @@
+# Public-ownership finance layer: a post-solve accounting layer over completed
+# market runs.  It changes no capacities, dispatch, bids, existing CfD/ROC
+# contracts, network costs or consumer-bill outputs.  Rules:
+# rules/public_ownership.smk; code: scripts/public_ownership/.
+#
+# Workflow
+#   enabled: true adds a reference-run group to `snakemake all` only when every
+#   scenario in that group is in config.yaml run_scenarios, so the layer never
+#   forces an extra market solve.  Any group can be built explicitly, e.g.
+#     snakemake resources/public_ownership/<group>_consumer_bill_financing_bridge.csv
+#   provided its market outputs and those of its baseline_run_group exist.
+#   `python scripts/public_ownership/run_financing.py --run-group <group>`
+#   rebuilds the same accounts from the same completed outputs without Snakemake.
+#
+# Every key is validated when the workflow is parsed
+# (scripts/public_ownership/reference_runs.py): a value the code does not
+# implement fails loudly instead of being ignored.
+enabled: true
+# Existing pumped hydro that CP30's long-duration storage carrier (LAES) absorbs.
+# Up to existing_mw (MW) at each bus it is registered as legacy pumped_hydro
+# (acquired and costed where a case buys the legacy fleet), not as new-build LDES
+# under the cap and floor; any excess stays new build.  A site matches on the bus's
+# four-character substation code (the build may put a site on, or share it over,
+# any of its busbars: Cruachan CRUA2Q/2R), units named after the site first.  The
+# network carries each site as its own unit at its real size
+# (hydro.pumped_hydro.existing_sites), so existing_mw must equal power_mw there.
+existing_storage_sites:
+  - {name: Dinorwig, bus: DINO41, network_carrier: LAES, existing_mw: 1728, register_carrier: pumped_hydro}
+  - {name: Cruachan, bus: CRUA2Q, network_carrier: LAES, existing_mw: 440, register_carrier: pumped_hydro}
+  - {name: Ffestiniog, bus: FFES21, network_carrier: LAES, existing_mw: 360, register_carrier: pumped_hydro}
+  - {name: Foyers, bus: FOYE2-, network_carrier: LAES, existing_mw: 300, register_carrier: pumped_hydro}
+# The financing workbook.  openpyxl
+# cannot recalculate Excel, so extract_workbook_v5.py copies its cached cells into
+# assumptions_snapshot (schema 5) with sheet/cell provenance and the workbook SHA256;
+# all accounting reads the snapshot, never the workbook.  The workbook's alternative
+# cases (its dropdown switches) are recalculated in Excel by workbook_variants.py into
+# source_variants, a committed file the extractor checks against the workbook's hash.
+# Rates used (WACC Scenarios A7:J39, real CPI):
+#   D     Sc1 lead (tax-shielded at a notional 55% gearing): the private rate
+#   F     Sc2 lead: P1 (30% state equity at the risk-free rate, a two-notch guarantee)
+#   H     Sc3/Sc4 cash rate: the state's rate on bills, the real gilt (2.65%: the 0.125%
+#         March 2026 inflation) plus the National Loans Fund's 11 bp (DMO, Aug 2026) =
+#         2.758%.  Alternatives: lever public_rate_basis (lending margins).
+#   I, J  Sc3/Sc4 economic rate (cash + a flat 1.9%): the socialised risk, priced off
+#         the bill (lever systematic_premium)
+# v6.2 was saved by LibreOffice: workbook_variants.py opens it with --repair.
+source_workbook: data/public_ownership/GB_Power_Model_v6.2.xlsx
+source_variants: data/public_ownership/financing/workbook_v6_2_variants.csv
+source_methodology: data/public_ownership/GB_Power_Model_Methods_Academic-3.docx
+assumptions_snapshot: resources/public_ownership/workbook_v5_assumptions.yaml
+# The snapshot committed for clones without the workbook (not distributed); copied to assumptions_snapshot.
+committed_snapshot: data/public_ownership/financing/workbook_v6_2_assumptions.yaml
+# PyPSA carrier -> workbook technology mapping, and the cost registry used for
+# capital recovery.  Costs are DESNZ/BEIS 2030 central estimates in 2024 real
+# GBP (nuclear takes the workbook LCOE inputs).  They deliberately differ from
+# the workbook's own five LCOE inputs, which the snapshot keeps for parity
+# tests only.  Every accepted row must carry price_year == price_year below
+# and real_or_nominal == real, matching the snapshot's real-CPI WACCs.
+crosswalk: data/public_ownership/financing/pypsa_finance_technology_crosswalk.csv
+technology_costs: data/public_ownership/financing/technology_costs.csv
+price_year: 2024
+# Battery revenue in 2030 (scripts/public_ownership/support_lines_2050.py, the same
+# rules as the 2050 study).  Ancillary services: a CP30-driven projection of NESO's
+# FY2024/25 outturn to 2030 (2024 GBP; ancillary_services_2030.csv: each service's 2030
+# need over 2025's at FY2024/25 clearing prices, low x0.5, high x1.5) paid to the plant
+# that provides them, a transfer inside the BSUoS lines the bill already holds (720.8 m
+# of other services and 194.6 m of voltage and stability both fit inside those lines,
+# so they are not rebased).  Sub-hourly uplift: a share of batteries' wholesale and
+# balancing revenue (central 20%, high 40%).  A battery top-up bill line covers any
+# residual shortfall.  LAES stays on the LDES cap and floor (no overlap).
+support_lines:
+  ancillary_services:
+    enabled: true
+    table: data/public_ownership/financing/ancillary_services_2030.csv
+    case: central
+  battery_subhourly_uplift:
+    enabled: true
+    carriers: [Battery]
+    case: central
+    central: 0.20
+    high: 0.40
+  # basis: owner_cost | private.  owner_cost sizes each case's top-up on its owner's
+  # required revenue (a state row at the state's cost, a P1 joint venture's at the JV
+  # rate); the bill carries the difference from private as
+  # battery_revenue_top_up_public_financing_adjustment.  private pays every owner the
+  # private case's shortfall.  Vintaged (2050) registers keep the private basis unless
+  # owner_cost_in_vintaged_registers is true.
+  battery_top_up:
+    enabled: true
+    carriers: [Battery]
+    basis: owner_cost
+    owner_cost_in_vintaged_registers: false
+# Build years before this are the legacy fleet in the finance register, and undated
+# capacity is spread on an even build profile from this year to the model year.  The
+# 2030 networks carry no asset-level dates, so eligibility is the positive carrier-level
+# capacity change against baseline_run_group, applied pro rata to every asset of that
+# carrier (build_asset_finance_register.py).  Which new build a public case owns is set
+# by legislation below.
+policy_start_year: 2025
+# Small-scale plant (FES "Distributed - Micro", on homes' and businesses' own premises)
+# stays out of public ownership in every case and is not bought in P3's transfer.  Rows
+# from data_sources are wholly small-scale (2030: CP30's rooftop solar); a vintaged study
+# names its ES1 lines table (es1_lines), and the micro supply capacity there is taken pro
+# rata from the FES rows of each carrier (build_asset_finance_register.exclude_small_scale).
+# Industrial CHP and small biogas engines are outside through the crosswalk
+# (finance_eligible false); domestic batteries are a non-ownership carrier.
+small_scale_exclusion:
+  data_sources: [CP30_small_scale_solar_gsp]
+  es1_lines: null
+# The policy timeline (scripts/public_ownership/legislation_year.py).  A public scenario
+# owns only new build committed on or after the legislation year: a CfD or DPA by its
+# award year, other plant by its investment date (commissioning less the construction
+# period, lead_times), undated capacity on an even build profile from policy_start_year to
+# the model year, pro rata.  Plant committed before it is existing plant: private under P1
+# and P2, bought at owners' value by P3 with the rest of the fleet in transfer_year.  A run
+# group may set its own legislated_year (the "in force since 2025" bound).
+legislation:
+  year: 2028
+  transfer_year: 2030
+  lead_times: data/public_ownership/financing/legislation_lead_times.csv
+  snapshot_year: 2025
+  # true: plant at the end of its economic life is rebuilt on its site as new build of
+  # that year (public under P2 once the law is in force); false: privately life-extended.
+  # An undated (2030) register rebuilds dated wind, solar, marine and battery rows
+  # (legislation_year.REBUILT_CARRIERS); a vintaged (2050) one takes it from the
+  # stock-flow's retirement rule.
+  rebuild_at_end_of_life: true
+# Scenarios: a scenario is a named bundle of lever settings and nothing else.  The
+# catalogue of levers and their values is scripts/public_ownership/levers.py (LEVERS); a
+# value the code does not implement fails at Snakemake parse time.  A lever a bundle does
+# not name sits at the private baseline's value.  Three core scenarios; every other
+# position is a sensitivity under one of them.  Every public scenario's base is
+# "bill-payers first": every positive state balance rebated gross to the bill, every
+# deficit and shortfall with the Exchequer, no tax equivalents, any network saving to the
+# bill; the wires are private in every base (the networks axis of each toggle grid moves
+# them).
+scenarios:
+  # Private ownership: every lever at its baseline value.  The comparator everything else
+  # is measured against; parse_scenarios refuses a private bundle that moves any lever.
+  private: {}
+  # P1, public control: a stylised 30% public stake in the eligible new build (GB Energy
+  # and the National Wealth Fund; not GB Energy as legislated), the share from the
+  # snapshot (Assumptions C30) or state_stake_share, financed at workbook v2.0's Sc2 rate
+  # (the state's equity at the risk-free rate, a guarantee lifting the debt two notches).
+  # The Capacity Market and CCS savings are booked on the bill.  The CfD strike falls by
+  # the financing saving over the contract term: a minority stake leaves a private
+  # majority owner on a 20-year (AR7+) CfD, so an at-cost contract would not be written
+  # (the grid's strike axis prices the alternatives).  The at-cost variant, a shortfall
+  # levied on bills, is the gbe_value_to_bills sensitivity.  The todays_rules preset is
+  # the alternative incidence (the state's return paid to the Exchequer).
+  public_control:
+    new_build_generation: state_stake
+    public_return: cepa_decomposition
+    networks: private
+    route_booking: booked
+    surplus_recycling: rebate_gross
+    shortfall_funding: exchequer
+    state_deficit_funding: exchequer
+    tax_equivalent: none
+    network_incidence: bills
+  # P2, public ownership ("state developer"): a state-owned developer-owner of the
+  # eligible new build at the state's cash rate (workbook v2.0's Sc3 rate, real gilt + the
+  # NLF margin), selling at cost under a two-way contract amortised over the assets'
+  # economic lives (the state holds the asset for its life), with the Capacity Market and
+  # CCS routes booked.  The legacy fleet and the wires stay private, so P2 stays on the
+  # market bill and is directly comparable with `private`; @networks_acquired adds the
+  # wires, and P3 (the state also buys the existing fleet) is the
+  # fully_nationalised_market_value family.  new_build_generation `public` means the state
+  # owns 100% of the eligible cohort by 2030: a deliverability assumption, not a financing
+  # one.  The todays_rules preset is the alternative incidence (an at-cost CfD, a
+  # shortfall levied on eligible supply).  acquisition_financing is not named: it bites
+  # only where the legacy fleet is bought, and its baseline value (the purchase on the
+  # tariff) is inherited by every acquiring case.
+  public_ownership:
+    new_build_generation: public
+    public_return: public_rate
+    public_rate_basis: real_cpi
+    cfd_strike_basis: at_cost
+    cfd_amortisation: economic_life
+    route_booking: booked
+    networks: private
+    surplus_recycling: rebate_gross
+    shortfall_funding: exchequer
+    state_deficit_funding: exchequer
+    tax_equivalent: none
+    network_incidence: bills
+# What it costs the state to run the business (GBP per kW-year of the state's SHARE of
+# owned generation and storage).  DESNZ's fixed operating costs are site-level ("staffing
+# costs and routine maintenance and any equipment contracts" for the generator and site,
+# with insurance and connection as separate LCOE inputs), so technology_costs.csv carries
+# no holding-company G&A.  A state owner adds one: board, group finance and treasury,
+# legal, HR, IT, risk, regulatory and policy.  Acquired networks keep their RIIO allowed
+# opex in network_account, so no overhead is charged there.
+# Central 3 GBP/kW/yr from two independent routes that agree:
+#   bottom-up  BVG Associates, Guide to an Offshore Wind Farm (1 GW, 15 MW turbines, FID
+#              2027, operation 2030): total OPEX 85,000 GBP/MW/yr, of which maintenance
+#              and service 46,800 (within rounding of DESNZ's offshore fixed O&M of 46
+#              GBP/kW/yr, so the onshore admin block sits outside what the model counts)
+#              and "admin and support staff (onshore)" 7,900.  That rate for offshore wind,
+#              3 for onshore wind, CCGT, BECCS and hydro, and 1.5 for solar, battery and
+#              LAES (unstaffed, remotely operated), over the mix P2 owns: about 2.7
+#              GBP/kW/yr.
+# top-down   Great British Energy's first accounts: GBP 14.2m
+#              operating expense on 121 staff in a set-up year.  Scaled to a company
+#              owning 83 GW: of order 1,500-3,000 staff fully loaded at 120k, i.e.
+#              GBP 180m-360m/yr, or 2.2-4.3 GBP/kW/yr.
+# For comparison, the LCCC and ESC operational cost levies already on the bill are 0.68
+# GBP/household/yr for administering the whole CfD scheme.  An assumption with a stated
+# basis, not a measurement: no published source separates a generator's holding-company
+# G&A from its site costs.  low and high (lever state_overhead) are wide on purpose: low
+# is strong scale economies plus most admin already inside DESNZ fixed O&M, high applies
+# BVG's offshore onshore-admin rate to the whole fleet.
+state_operating_overhead:
+  enabled: true
+  central_gbp_per_kw_year: 3.0
+  low_gbp_per_kw_year: 1.0
+  high_gbp_per_kw_year: 8.0
+  applies_to: [Generator, StorageUnit]
+  # Unstaffed, remotely operated storage at the bottom-up route's 1.5 GBP/kW/yr, the
+  # low and high scaled in proportion (1.0/3.0 and 8.0/3.0 of the central).  Code
+  # defaults: finance.STATE_OVERHEAD_STORAGE_DEFAULTS.  Vintaged (2040 on) registers
+  # keep the fleet rate unless in_vintaged_registers is true.
+  unstaffed_storage:
+    carriers: [Battery, LAES, pumped_hydro]
+    central_gbp_per_kw_year: 1.5
+    low_gbp_per_kw_year: 0.5
+    high_gbp_per_kw_year: 4.0
+    in_vintaged_registers: false
+# Generator TNUoS and insurance.  DESNZ carries insurance and "connection and use of
+# system charges" as LCOE inputs of their own, outside fixed O&M (Electricity Generation
+# Costs 2025, Section 1), so technology_costs.csv has neither.  Both are costs of the
+# plant whoever owns it: they are added to EVERY row's required revenue, folded into
+# annual_fixed_om_gbp with the parts reported beside it (annual_site_fixed_om_gbp,
+# annual_generator_tnuos_gbp, annual_insurance_gbp)
+# (calculate_financing_scenarios.generator_charges).
+generator_costs:
+  tnuos:
+    enabled: true
+    # NESO, Five-Year View of TNUoS Tariffs 2027/28-2031/32, v1.0,
+    # data/market/network_cost_sources/tnuos/neso_tnuos_five_year_view_2027_28_to_2031_32_v1.pdf
+    # (tables workbook beside it): Table 5 (wider tariffs by zone, 2030/31) and
+    # Table 13a (offshore local substation, circuit and ETUoS, 2030/31; NESO's
+    # split OFTO phases, Hornsea 1A-1C, 2A-2C, Walney 3/4, Robin Rigg West, carry
+    # identical tariffs and keep one row each).  The CSV adds one reference point
+    # per zone, placed from the zone's name (NESO defines zones by transport-model
+    # nodes, not polygons: a declared approximation).
+    wider_tariffs: data/public_ownership/financing/neso_tnuos_generation_wider_tariffs_2030_31_fyv_2027_28_v1.csv
+    offshore_local_tariffs: data/public_ownership/financing/neso_tnuos_offshore_local_tariffs_2030_31_fyv_2027_28_v1.csv
+    # Nominal money of the tariff year to the register's 2024 prices on the bill's
+    # CPIH path (2025 = 138.0, 2% a year; 2024 = 132.9): FY2030/31 midpoint 153.119
+    # -> 132.9/153.119 = 0.86795.  Both tables are NESO's 2030/31 forecast.
+    wider_tariffs_to_price_year: 0.86795
+    offshore_local_to_price_year: 0.86795
+    # Offshore farms not yet transferred to an OFTO have no published tariff;
+    # they take the table's median (substation + circuit + ETUoS).
+    offshore_local_unmatched: median
+    offshore_carriers: [wind_offshore]
+    # NESO generator classes (Five-Year View, Generation Wider Tariffs).
+    class_by_carrier:
+      CCGT: conventional_carbon
+      OCGT: conventional_carbon
+      CHP: conventional_carbon
+      oil: conventional_carbon
+      gas_engine: conventional_carbon
+      biomass: conventional_carbon
+      CCS Biomass: conventional_carbon
+      CCS Gas: conventional_carbon
+      waste_to_energy: conventional_carbon
+      Battery: conventional_carbon
+      battery: conventional_carbon
+      LAES: conventional_carbon
+      pumped_hydro: conventional_carbon
+      nuclear: conventional_low_carbon
+      large_hydro: conventional_low_carbon
+      wind_onshore: intermittent
+      wind_offshore: intermittent
+      solar_pv: intermittent
+      marine: intermittent
+    # Transmission-connected whatever their size; everything else when its
+    # site capacity reaches the large-station threshold (MW) of its TO region.
+    # Smaller embedded plant pays no generator TNUoS (the small Embedded
+    # Export Tariff it earns is left out).
+    always_transmission_carriers: [wind_offshore, nuclear, CCGT, CCS Biomass, CCS Gas]
+    transmission_threshold_mw_by_region: {SHETL: 10, SPTL: 30, NGET: 100}
+    hours_per_year: 8760
+  insurance:
+    enabled: true
+    # GHD for DESNZ, Unabated Gas Generation Costs (2025), Table 3.5: insurance
+    # 0.4% of capex a year (medium, 2024 prices), the same basis DESNZ uses
+    # across technologies.  Offshore wind takes the sourced GBP/kW figure:
+    # BVG Associates, Guide to an Offshore Wind Farm (1 GW, FID 2027),
+    # insurance 11,220 GBP/MW/yr, itself 0.42% of DESNZ's 2,670 GBP/kW capex,
+    # so the two sources agree.
+    share_of_capex_per_year: 0.004
+    gbp_per_kw_year_by_technology:
+      Offshore wind: 11.22
+    # Cost sources that do not separate insurance from fixed O&M: the workbook
+    # nuclear LCOE and the BEIS 2018 storage cost assumptions.
+    excluded_technologies: [Large-scale nuclear, Lithium batteries, Novel long duration energy storage (LDES)]
+# The state's stake (share 0-1) under new_build_generation: state_stake.  null takes the
+# workbook value (v2.0 Assumptions B22, sigma, 30%).
+state_stake_share: null
+# Corporation tax the state's plant does not pay: a transfer within the public sector
+# (Great British Energy pays corporation tax as a company today, GBE Annual Report
+# 2025-26 note 2.11).  The bill is unchanged; the Exchequer, investors and resource
+# columns move.  Its size is capped at what the comparator's plant would actually pay
+# (calculate_financing_scenarios.legacy_corporation_tax, _comparator_rows):
+#   new build: the tax embedded in the private capital charge, but none on a row whose
+#     comparator rent is below its required return;
+#   legacy plant under acquisition: rate x max(0, 2030 operating margin - capital
+#     allowances - interest), replacing the as-new embedded tax.  The margin is the
+#     comparator row's rent plus its capital charge.  Allowances: generation plant in the
+#     special-rate pool (long-life assets, CAA 2001 s.91; integral features s.33A),
+#     written down at special_rate_writing_down_allowance a year reducing balance
+#     (s.104D) from its commissioning year on the as-new capex (a declared approximation
+#     to historical cost), with the special-rate first-year allowance on expenditure from
+#     first_year_allowance_from_year (s.45S; full expensing covers only the main pool).
+#     Interest: debt at gearing (the earlier v11-2 workbook's model gearing, Assumptions
+#     C66) on the written-down value at cost_of_debt_nominal (CEPA for DESNZ, Hurdle rates
+#     2025, Table 4.14: real cost of debt 4.68-5.13%, at 2% CPI).  rate: the corporation
+#     tax rate (workbook v2.0 Assumptions B45).
+# Context: HMRC Corporation Tax Statistics 2025, Table 1B: SIC D (electricity, gas, steam,
+# air conditioning) paid GBP 3.62bn in 2024-25 after GBP 12.98bn of capital allowances
+# (Table 6, 2023-24).  A 2030 rule: vintaged (2050) registers keep the as-new basis unless
+# in_vintaged_registers is true.  Code defaults:
+# calculate_financing_scenarios.CORPORATION_TAX_BASIS_DEFAULTS.
+corporation_tax_basis:
+  enabled: true
+  in_vintaged_registers: false
+  rate: 0.25
+  special_rate_writing_down_allowance: 0.06
+  special_rate_first_year_allowance: 0.50
+  first_year_allowance_from_year: 2023
+  gearing: 0.70
+  cost_of_debt_nominal: 0.07
+# The 2030/31 T-4 Capacity Market re-cleared per public case with the state's own plant
+# bidding at its own cost of capital (scripts/public_ownership/capacity_market_state_bids.py,
+# read by the public account).  A bid is the missing money; its capital part falls by
+# 1 - CRF_case / CRF_private (the register's capital recovery ratio), so a row's bid scales
+# by 1 - (1 - CRF ratio) x capital share (annuitised capital over capital plus fixed O&M,
+# private row).  Only the categories whose bids recover capital move (new build and
+# refurbishing); existing plant bids its going-forward cost; new LDES on the cap and floor
+# is a price-taker and never sets the price.  Pay as clear: the new price goes to every
+# 2030/31 T-4 winner and the T-1 volume (t1_volume_mw, MW; build_capacity_market.T1_VOLUME_MW);
+# calendar 2030 pays calendar_weight of 2030/31.  The bill books the change on its own row
+# against private's unchanged Capacity Market line; the state's winners' part is the
+# Exchequer's, the rest private investors'.  Vintaged (2050) registers never take it.
+capacity_market_state_bids:
+  enabled: true
+  categories: [new_build, refurbishing]
+  auction: T-4 2030/31
+  t1_volume_mw: 1000.0
+  calendar_weight: 0.5
+# Parameters of the toggle levers; the code defaults
+# (calculate_financing_scenarios.LEVER_PARAMETER_DEFAULTS) must match.
+#   state_stake_funded_scale: P1's stake at the scale GB Energy and the
+#     National Wealth Fund can fund (share of the new-build cohort)
+#   delivered_share_half: P2 delivers this share of each carrier's eligible
+#     cohort (the rest stays private)
+#   capex_overrun_share / state_om_premium_share: the state builds and runs
+#     dearer than a private developer by these shares
+#   generation_control_premium_share: a control premium on the legacy fleet's
+#     purchase price (P3)
+lever_parameters:
+  state_stake_funded_scale: 0.15
+  delivered_share_half: 0.5
+  capex_overrun_share: {plus_15pct: 0.15}
+  state_om_premium_share: {plus_10pct: 0.10}
+  generation_control_premium_share: {twenty_pct: 0.20}
+  # Lever auction_margin: CfD auctions pay as clear, so projects cheaper than the
+  # marginal one keep a margin; the calibrated cohorts keep this share of contract
+  # revenue above full cost.
+  auction_margin_share: {central: 0.05, none: 0.0, high: 0.10}
+  # Lever self_insurance: central government carries its own risks rather than
+  # insuring commercially (HM Treasury, Managing Public Money), so plant the state owns
+  # outright saves the insurer's loading on its premium (share of the premium; central
+  # from Lloyd's 2025 expense ratio, 35.6%).  Vintaged (2040 on) registers take it only
+  # when self_insurance_in_vintaged_registers is true.  Caveat: Managing Public Money
+  # does not bind a public corporation to self-insure (A7.3.13), and a self-insuring
+  # body that charges for its output takes "the notional cost of premium payments" into
+  # its charges (A4.4.4); none is the public-corporation reading.
+  self_insurance_share: {central: 0.35, none: 0.0, high: 0.50}
+  self_insurance_in_vintaged_registers: false
+  # new_build_generation gbe_announced / gbe_announced_partnership_half ("GB Energy as
+  # announced"); code defaults calculate_financing_scenarios.LEVER_PARAMETER_DEFAULTS
+  # ["gbe_announced"].
+  #  - offshore_stake_share: a 30% stake in the eligible offshore wind cohort through
+  #    the partnership GB Energy announced with The Crown Estate (GB Energy founding
+  #    statement, 25 Jul 2024, and the GB Energy / Crown Estate partnership
+  #    announcement, 2024), on P1's stake mechanics (the Sc2 WACC at the workbook's 30%,
+  #    Assumptions C30, which this must equal) and P1's contract form (the financing
+  #    saving over the CfD term, never at cost: a private majority owner beside it).
+  #  - local_capacity_mw / local_carriers: "up to 8GW of local and community-owned power
+  #    by 2030" (GB Energy founding statement; the GBP 3.3 bn Local Power Plan), taken pro
+  #    rata (whole rows, the same share of every technology and build year, md5 order)
+  #    from the eligible solar and onshore wind cohort P2 owns, owned at the public rate
+  #    on P2's mechanics and contract form (at cost over economic life).  Everything else,
+  #    storage included, stays private.
+  #  - partnership_public_share: the Local Power Plan funds partnerships with councils,
+  #    combined authorities and cooperatives, so gbe_announced_partnership_half holds the
+  #    8 GW at this public share (the partner's share at the private rate).
+  #  - legislated_year: the calendar year from which GB Energy's eligibility (the local
+  #    part and the offshore stake) is judged, in the two GB Energy cases only: a row is
+  #    GB Energy's on its share committed in or after it, by the legislation-year rules
+  #    (a CfD by its award year, other plant by commissioning less its lead time, undated
+  #    capacity on the 2025-to-model-year profile; legislation_year.eligible_share_at).
+  #    2025: the Great British Energy Act 2025 (c. 16, Royal Assent 15 May 2025; user
+  # Every other case keeps legislation.year; null
+  #    judges GB Energy at legislation.year too.
+  gbe_announced:
+    offshore_stake_share: 0.30
+    offshore_carriers: [wind_offshore]
+    local_capacity_mw: 8000.0
+    local_carriers: [solar_pv, wind_onshore]
+    partnership_public_share: 0.5
+    legislated_year: 2025
+  # Lever capacity_procurement: cost_based_existing (code defaults
+  # scripts/public_ownership/capacity_procurement.DEFAULT_PARAMETERS).  Existing units
+  # (these register finance vintages) holding a Capacity Market receipt are paid their
+  # going-forward fixed cost (the register's fixed O&M, generator TNUoS and insurance:
+  # technology_costs.csv, DESNZ Electricity Generation Costs; CCGT 17.8 GBP/kW-yr, against
+  # 18.6 in the Capacity Market builder's DESNZ gas table, merchant_revenue_adequacy.csv)
+  # less their own wholesale and balancing margin, floored at zero and, with the cap, never
+  # more than the receipt they cleared at.  A row the register cannot cost keeps its receipt.
+  capacity_cost_based_existing:
+    existing_finance_vintages: [legacy]
+    cap_at_auction_receipt: true
+  # Lever legacy_offshore_price: transaction_multiple (code defaults
+  # calculate_financing_scenarios.LEVER_PARAMETER_DEFAULTS).  Every legacy offshore wind row
+  # of the valued group is priced at one multiple (GBP per MW of the row's capacity, 2024
+  # money): the `statistic` of the deals the file marks in_central (enterprise value or
+  # debt-free consideration per MW of 100%-equivalent capacity, rebased to 2024 by ONS CPIH
+  # annual averages), with the low and high (minimum and maximum of those deals) reported
+  # beside it.  One multiple, not by cohort: six deals cannot support a split.  Applied
+  # before any control premium.
+  legacy_offshore_transaction_multiple:
+    file: data/public_ownership/financing/legacy_offshore_transaction_multiples.csv
+    carrier: wind_offshore
+    statistic: median
+# Auction calibration: capex is scaled so each cleared CfD cohort breaks even at its
+# cleared strike (factor k on the capital charge, per carrier and round, in every case),
+# both ways (k > 1 where the DESNZ cost is below the strike).  Calibrated: offshore wind,
+# tidal stream, and onshore wind and solar PV from AR7a with their future cohorts, each
+# with the auction margin.  The table is derived from the private register; the scan of
+# the other CfD technologies and rounds is reported, not calibrated.
+cost_calibration:
+  enabled: true
+  table: data/public_ownership/financing/private_cost_calibration.csv
+  # The table is derived from this market group's register
+  # (derive_cost_calibration.py --out) and held for every group, so the network bounds
+  # show network risk, not a different auction calibration.
+  # verify_public_ownership_cost_calibration checks it against this group's register only.
+  derived_from_group: cp30_2030_no_acceleration
+existing_support_contracts: unchanged
+ownership_scope: [Generator, StorageUnit]           # PyPSA component types entered in the register
+# The wires follow the networks lever: private (held at their private values) or acquired
+# (the state buys the Regulatory Asset Value and finances it at the public cash rate, so
+# TNUoS and DUoS fall by the financing wedge plus the corporation-tax allowance).
+network_account:
+  # RIIO-3 runs to 31 March 2031, so transmission in 2030 is a published
+  # figure. RIIO-ED2 ends 31 March 2028 and RIIO-ED3 had only a methodology
+  # decision as at May 2026, so the distribution asset base in 2030 is an
+  # assumption and the rule that made it is written onto every output row.
+  #   hold_flat:      ED2 closing RAV held at its 31 March 2028 level
+  #   ed2_net_growth: plus roll_forward_years of the final ED2 year's net
+  #                   additions less depreciation (conservative: ED3 is
+  #                   expected to step investment up for electrification)
+  #   explicit:       distribution_rav_2030_gbp, for when ED3 lands
+  distribution_roll_forward: ed2_net_growth
+  roll_forward_years: 2.5            # ED2 closing balance to the midpoint of FY2030/31
+  distribution_rav_2030_gbp: null
+  # Acquisition at (1 + premium) x RAV, the premium from the table (lever
+  # network_acquisition_premium: central 0.50 = median EV/RAV of the three recent
+  # full-control GB distribution sales, ENWL 2024, UKPN 2026, WPD 2021; low 0.20 = the
+  # listed minority market, Ofgem RIIO-2 FD Finance Annex para 3.119; high 0.75 = the
+  # Parliament-set compensation at RAV).  The premium is annuitised at the public rate
+  # over premium_annuity_years (years), and the break-even premium is reported on both
+  # the annuity and the perpetual basis.
+  acquisition_premium_table: data/public_ownership/financing/network_acquisition_premium.csv
+  premium_annuity_years: 30
+  # Share of the calendar-2030 cost-of-debt allowance carried by debt raised or
+  # refinanced 2026-2030 under Ofgem's trailing average.  Kept as data; no current
+  # case reads it.
+  guarantee_pass_through_table: data/public_ownership/financing/network_guarantee_pass_through.csv
+  # Ofgem's own CPIH-real WACC allowances (calendar 2030 is inside RIIO-3 for
+  # transmission and ED3 for distribution).
+  allowed_wacc_cpih_real:
+    transmission: 0.0457
+    distribution: 0.0435
+  allowed_wacc_sources:
+    transmission: "Ofgem RIIO-3 Final Determinations Finance Annex (4 Dec 2025), Table 16 p.77, WACC allowance (real): NGET 4.46%, SPT 4.58%, SHET 4.67%, unweighted mean 4.57% (the same average the semi-nominal figure took)"
+    distribution: "Ofgem ED3 Sector Specific Methodology Decision Finance Annex (21 May 2026), Table 18 p.67, SSMD baseline WACC allowance (real) 4.35%, an early view to be updated at Draft and Final Determinations"
+  # Used only where allowed_wacc_cpih_real gives no transmission rate: they convert
+  # RIIO-3's semi-nominal WACC to CPIH-real.  Only the fixed-rate portion of debt
+  # carries inflation.
+  semi_nominal_inflation: 0.02
+  fixed_rate_debt_share: 0.75
+  include_tax_allowance: true        # the corporation-tax allowance a public owner does not pay
+  # Transmission RAV of calendar 2030 (GBP, 2024 prices), matching the bill's TNUoS line
+  # (NESO Five-Year View, the TOs' full Final Determinations programme), not the RIIO-3
+  # period average (GBP 55.47 bn, centred on autumn 2028).
+  transmission_rav_2030_gbp: 74.0e+9
+  transmission_rav_2030_gbp_source: "calendar 2030 RAV (2024 prices, central of 72-78 bn): mean of Ofgem's closing RAV at 31 Mar 2030 (82.09 bn nominal) and 31 Mar 2031 (94.54 bn nominal), RIIO-3 FD Finance Annex (4 Dec 2025) Appendix 2 (NGET p.170, SHET Table 53, SPT Table 55), deflated to 2024 prices with the de-linked share added back; includes ASTI and re-opener spend (net additions 64.8 bn nominal against 10.7 bn baseline). Committed spend only would be about 57 bn"
+  # Distribution tax allowance: the ED2 final year's (2027/28, GBP 294.7 m in 2020/21
+  # prices, sum of 14 DNOs, ED2 FD Finance Annex Appendix 8), 21% below the period
+  # average; an upper bound for ED3 (the ED2 PCFM v5 trend falls to zero by 2027/28
+  # under full expensing).
+  distribution_tax_allowance_basis: final_year
+  distribution_tax_allowance_final_year_gbp_m: 294.7
+  distribution_tax_allowance_source: "ED2 FD Finance Annex Appendix 8 (revised financial values), 2027/28, sum of 14 DNOs; the ED2 PCFM v5 shows SSES's allowance falling to zero by 2027/28"
+  # What the premium buys: the return on regulated equity above the allowed return, earned for the
+  # state in the bought-wires cases (a transfer from the vendors, not a resource saving). Central at
+  # RIIO-2 operational rates, RIIO-1 rates reported as the high case; the fixed-rate debt windfall is
+  # excluded (financing, which the public-rate account already covers).
+  excess_return:
+    central: riio2
+    high: riio1
+    equity_share: {transmission: 0.45, distribution: 0.40}   # one less notional gearing (RIIO-3 55%, ED2 60%)
+    rates:
+      riio2: {transmission: 0.0105, distribution: 0.0016}
+      riio1: {transmission: 0.0242, distribution: 0.0227}
+    sources:
+      transmission: "Ofgem RIIO-2 regulatory performance data 2025 (13 Feb 2026): RIIO-ET2 operational RoRE 5.75% against 4.70% allowed incl. BPI (totex +0.95 pp, ODIs +0.12 pp); RIIO-ET1 9.42% against 7.00% (supporting data file, 30 Mar 2023)"
+      distribution: "Ofgem RIIO-2 regulatory performance data 2025: RIIO-ED2 operational RoRE 5.69% against 5.52% allowed incl. BPI (ODIs +0.43 pp, totex -0.26 pp); RIIO-ED1 8.39% against 6.12%"
+# How the public cases reach the bill (the surplus_recycling and shortfall_funding levers
+# are set per scenario bundle above).  The state's renewable and hydro new build sits on a
+# two-way CfD whose strike is its cost, one policy line over CfD-eligible supply carrying
+# the rent returned or the top-up; gas and BECCS are outside it (Capacity Market and
+# dispatchable CfD routes, consumer_bill.label_corrections.route_classification) and the
+# saving on contracts awarded before the eligibility year stays in the public account.
+consumer_benefit:
+  treatment: routed_via_consumer_bill_link          # routes R1, R3 and W1 reach the per-case bill; the rest is declared
+# Each reference run group is one complete calendar year of completed market runs: either
+# a single full_year scenario or twelve_months expanded from scenario_pattern with {month}
+# in Jan..Dec.  baseline_run_group must be an earlier model year before policy_start_year;
+# it defines the legacy fleet for the cohort split.
+# institution_comparison: the dispatch_institution lever's nationalised_dispatch value is
+# measured against a second solved year, central dispatch at resource cost (institution
+# I3), by scripts/public_ownership/nationalised_institutions.py.  Its case joins `all` only
+# when these twelve scenarios are in run_scenarios.  The central year is perfect
+# foresight: forecast error is carried only by the borrowed charge below, and firm access
+# settles against the market twin's Stage 1 (rules/public_ownership.smk).
+institution_comparison:
+  central_scenario_pattern: CP30_FFR_2030_{month}_cp30_network_central_dispatch
+  marginal_costs: resources/generators/CP30_FFR_2030_marginal_costs_breakdown.csv
+  fti_settlement: resources/market/CP30_FFR_2030_year_cp30_network_central_dispatch_fti_settlement_copperplate.csv
+  # The model produces almost no forecast-error cost, so FTI's is borrowed and
+  # scaled to this fleet (scripts/market/forecast_error_charge.py) and charged to
+  # central dispatch (I3): the net, FTI-comparable saving is the headline, gross
+  # beside it.
+  forecast_error_charge:
+    enabled: true
+    basis: renewable_capacity
+    as_simple_total: false
+    # Our fleet over FTI's discount-weighted 2030-2040 fleet: 1.10 / 1.354.
+    fleet_ratio: 0.812
+    price_year: 2024
+  # When the market year is re-solved without the central-dispatch year, the comparison
+  # records both years' identities (file write windows and fingerprints) and flags
+  # mixed_vintage when the two windows are more than this many hours apart (a judgement:
+  # one Snakemake run writes its months within a day of each other).  Code default
+  # MIXED_VINTAGE_GAP_HOURS_DEFAULT.
+  mixed_vintage_gap_hours: 24
+# The market group the reader-facing reports read (explorer, dispatch explainer, bill
+# notebook, the bill chapter's generated values, the must-run sensitivity, the lever
+# workbook and the repowering sensitivity): the CENTRAL network's, the one carrying every
+# case (rules/public_ownership.smk PO_REPORT_GROUP).
+report_group: cp30_2030_no_acceleration
+# The 2027-2050 pathway (rule build_public_ownership_pathway_2030_2050): solved years between 2030 and 2050 whose
+# Exchequer ledgers it passes through.
+pathway:
+  intermediate_snapshots:
+    2040: fes_ht_2040

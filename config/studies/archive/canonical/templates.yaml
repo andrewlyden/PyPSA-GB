@@ -1,0 +1,380 @@
+# Templates: named building blocks, composed by `inherits: [...]` (two may not set the same leaf, D8).
+
+archive_canonical_demand_year:
+  renewables_year: 2020
+  demand_year: 2020
+
+archive_canonical_wholesale_mode:
+  inherits: archive_canonical_demand_year
+  market:
+    wholesale:
+      mode: rolling_day_ahead
+
+archive_canonical_balancing_mode:
+  inherits: archive_canonical_wholesale_mode
+  market:
+    balancing:
+      mode: rolling
+
+archive_canonical_balancing_participation:
+  inherits: archive_canonical_balancing_mode
+  market:
+    balancing:
+      participation:
+        generators:
+          min_p_nom_mw: 1.0
+
+archive_canonical_biofuel_subsidy_enabled:
+  inherits: archive_canonical_balancing_participation
+  marginal_costs:
+    biofuel_subsidy:
+      enabled: true
+  thermal:
+    availability_factors:
+      enabled: true
+
+archive_canonical_transmission_outage_schedule:
+  inherits: archive_canonical_biofuel_subsidy_enabled
+  network:
+    transmission:
+      outage_schedule:
+        enabled: true
+        neso:
+          boundary_include: [SCOTEX, SSE-SP, 'SSHARN::SSHARN_SPARSE_GATE_FIT', ESTEX, SEIMP, SWALEX]
+  market:
+    balancing:
+      participation:
+        generators:
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind]
+
+archive_canonical_renewables_year:
+  renewables_year: 2019
+  demand_year: 2019
+
+archive_canonical_balancing_elexon:
+  inherits: archive_canonical_transmission_outage_schedule
+  market:
+    balancing:
+      elexon:
+        price_ladders:
+          enabled: true
+
+archive_canonical_ht35_etys_unclustered_market_wp4:
+  inherits: archive_canonical_balancing_mode
+  market:
+    balancing:
+      interconnector_retrading: true
+
+archive_canonical_test:
+  inherits: archive_canonical_balancing_elexon
+  network:
+    transmission:
+      line_rating_overrides:
+        CLUN1T_ERRO1J_0: 180
+        ERRO1T_KIIN1-_0: 180
+        INVR1C_KIIN1-_0: 120
+        INVR1A_INVR1C_0: 120
+        INVR1-_INVR1A_0: 120
+        INVR1-_SLOY1K_0: 120
+        GARB1T_SLOY1K_1: 120
+        GARB1T_GARE1T_0: 120
+        GARE1T_WIYH1-_0: 120
+        BIHI1R_COUA1R_0: 180
+        BIHI1R_TEAL1-_0: 120
+
+archive_canonical_ht35_etys_unclustered_market_1day_wp4:
+  inherits: archive_canonical_ht35_etys_unclustered_market_wp4
+  network:
+    upgrades:
+      topology_sensitivities: [yorkshire_green_full_chain_2027]
+
+archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy:
+  inherits: archive_canonical_ht35_etys_unclustered_market_1day_wp4
+  market:
+    wholesale:
+      position_source:
+        scenario: HT35_ETYS_unclustered_market_1day_WP4_yorkshire_green_full_chain_sensitivity
+
+archive_canonical_historical_2019:
+  inherits: archive_canonical_renewables_year
+  modelled_year: 2019
+
+archive_canonical_historical_2024:
+  modelled_year: 2024
+  renewables_year: 2024
+  demand_year: 2024
+
+archive_canonical_renewables_year_2:
+  renewables_year: 2021
+  demand_year: 2021
+
+archive_canonical_renewables_year_3:
+  renewables_year: 2023
+  demand_year: 2023
+
+archive_canonical_historical_2022:
+  modelled_year: 2022
+  renewables_year: 2022
+  demand_year: 2022
+
+archive_canonical_renewables_year_4:
+  renewables_year: 2013
+  demand_year: 2013
+
+archive_canonical_2010:
+  renewables_year: 2010
+  demand_year: 2010
+
+archive_canonical_test_2:
+  inherits: archive_canonical_test
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.6460803
+        wind_onshore: 0.85
+
+archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_2:
+  inherits: archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy
+  network:
+    topology_adequacy:
+      relaxation:
+        mode: none
+
+archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy_3:
+  inherits: archive_canonical_ht35_etys_unclustered_market_1day_wp4_adequacy
+  network:
+    topology_adequacy:
+      relaxation:
+        capacity_mw: 1000000
+
+archive_canonical_ht35_etys_unclustered_market_wp4_yorkshire_green_sensitivity:
+  inherits: archive_canonical_ht35_etys_unclustered_market_wp4
+  network:
+    upgrades:
+      topology_sensitivities: [yorkshire_green_mfsn_2027]
+
+archive_canonical_clustered_gsp:
+  inherits: archive_canonical_demand_year
+  network:
+    clustering: gsp_spatial
+
+archive_canonical_historical_2020_etys_market_wp5a:
+  inherits: archive_canonical_biofuel_subsidy_enabled
+  market:
+    balancing:
+      bid_offer_source: elexon
+
+archive_canonical_historical_2021:
+  inherits: archive_canonical_renewables_year_2
+  modelled_year: 2021
+
+archive_canonical_historical_2023:
+  inherits: archive_canonical_renewables_year_3
+  modelled_year: 2023
+
+archive_canonical_network_model__38_members:
+  network_model: Reduced
+
+archive_canonical_market_enabled__37_members:
+  market:
+    enabled: true
+
+archive_canonical_network_model__33_members:
+  network_model: ETYS
+
+archive_canonical_modelled_year__32_members:
+  modelled_year: 2035
+
+archive_canonical_FES_scenario__31_members:
+  FES_scenario: Holistic Transition
+
+archive_canonical_FES_year__31_members:
+  FES_year: 2024
+
+archive_canonical_component_aggregation_include_loads__28_members:
+  network:
+    component_aggregation:
+      include_storage_units: true
+      include_loads: true
+
+archive_canonical_dispatch_costs_enabled__25_members:
+  support:
+    labels:
+      enabled: true
+    dispatch_costs:
+      enabled: true
+
+archive_canonical_empirical_calibration_enabled__22_members:
+  marginal_costs:
+    empirical_calibration:
+      enabled: true
+
+archive_canonical_component_aggregation_enabled__20_members:
+  network:
+    component_aggregation:
+      enabled: true
+
+archive_canonical_modelled_year__20_members:
+  modelled_year: 2020
+
+archive_canonical_aggregation_enabled__19_members:
+  renewables:
+    aggregation:
+      enabled: true
+
+archive_canonical_market_wholesale_only__13_members:
+  market:
+    wholesale_only: true
+
+archive_canonical_balancing_participation__10_members:
+  market:
+    balancing:
+      participation:
+        generators:
+          penalty_offer_price: 6000.0
+          penalty_bid_price: 6000.0
+
+archive_canonical_timestep_minutes__8_members:
+  timestep_minutes: 30
+
+archive_canonical_balancing_participation__7_members:
+  market:
+    balancing:
+      participation:
+        generators:
+          behavior: fallback_priced
+
+archive_canonical_balancing_window_hours__7_members:
+  market:
+    balancing:
+      window_hours: 0.5
+
+archive_canonical_pricing_source__etys_market:
+  interconnectors:
+    pricing:
+      source: entsoe
+
+archive_canonical_topology_adequacy_enabled__ht35_etys_market:
+  network:
+    topology_adequacy:
+      enabled: true
+      loading_threshold: 0.95
+
+archive_canonical_balancing_window_hours__5_members:
+  market:
+    balancing:
+      window_hours: 24
+
+archive_canonical_pricing_source__ht35_etys_market:
+  interconnectors:
+    pricing:
+      source: cp30
+
+archive_canonical_embedded_wind_overlap_exclusion__4_members:
+  renewables:
+    embedded:
+      wind_overlap_exclusion:
+        enabled: true
+
+archive_canonical_correction_factors_enabled__ht35:
+  marginal_costs:
+    correction_factors:
+      enabled: true
+      file: data/market/carrier_correction_factors.csv
+      nuclear_override: 10.0
+
+archive_canonical_balancing_participation__etys_market:
+  market:
+    balancing:
+      participation:
+        generators:
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind, EU_import]
+      participation_audit:
+        enabled: true
+
+archive_canonical_clustering_method__ht35:
+  network:
+    clustering:
+      method: kmeans
+
+archive_canonical_labels_historical_roc_station_labels__fast:
+  solve_period:
+    enabled: true
+  network:
+    transmission:
+      outage_schedule:
+        neso:
+          boundary_mapping: data/network/neso_boundary_mapping_ssesp_strict.yaml
+          soft_boundaries:
+            SEIMP:
+              enabled: true
+              penalty_gbp_per_mwh: 1000.0
+              max_violation_mw: 2500.0
+      line_rating_overrides: null
+  renewables:
+    aggregation:
+      preserve_support_types: [ROC, CfD]
+    hydro:
+      large_hydro:
+        roc_hydro_supplement_file: data/market/ofgem_renewables_obligation/dukes_2020_roc_hydro_supplement.csv
+    performance_factor_registry:
+      enabled: true
+    performance_factors:
+      factors:
+        wind_offshore: 0.638858
+        wind_onshore: 0.840498
+        solar_pv: 0.678725
+  support:
+    labels:
+      historical_cfd_tranches:
+        enabled: true
+        mapping_file: data/market/lccc/cfd_pypsa_mapping_overrides_2020.csv
+        actuals_file: data/market/lccc/actual_cfd_generation_and_payments.csv
+      dispatchable_support_overrides_file: data/market/support/generator_support_overrides_2020.csv
+      renewable_support_overrides_file: data/market/support/renewable_support_overrides_2020.csv
+      historical_station_unit_splits_file: data/market/ofgem_renewables_obligation/historical_station_unit_splits_2020.csv
+      historical_roc_station_labels:
+        enabled: true
+        registry_file: data/market/ofgem_renewables_obligation/accredited_stations_ro_current.csv
+        station_overrides_file: data/market/ofgem_renewables_obligation/roc_pypsa_mapping_overrides_2020.csv
+        residual_representation_assumptions_file: data/market/ofgem_renewables_obligation/roc_residual_representation_assumptions_2020.csv
+        residual_output_calibration_file: data/market/ofgem_renewables_obligation/roc_residual_output_calibration_2020.csv
+      historical_roc_physical_overlay:
+        enabled: true
+        actions_file: data/market/ofgem_renewables_obligation/roc_historical_overlay_actions_2020.csv
+        permitted_actions: [split_existing_asset_roc_and_non_roc, add_missing_phase_and_link_existing_assets]
+    audit:
+      enabled: false
+  marginal_costs:
+    biofuel_subsidy:
+      require_support_label: true
+  fleet:
+    commissioning:
+      profile_gate_within_solve_period: true
+      date_overrides_file: data/market/lccc/cfd_pypsa_source_candidates_2020.csv
+  thermal:
+    availability_factors:
+      generator_monthly_file: data/market/support/generator_monthly_availability_2020.csv
+    dispatch_anchors:
+      enabled: true
+      carriers: [coal]
+  solve:
+    solver:
+      threads: 8
+
+archive_canonical_clustering_n_clusters__ht35_etys_kmeans30_market:
+  network:
+    clustering:
+      n_clusters: 30
+      random_state: 42
+      init_method: k-means++
+
+archive_canonical_correction_factors_renewable_empirical__ht35:
+  marginal_costs:
+    correction_factors:
+      renewable_empirical:
+        enabled: true
+        file: data/market/renewable_empirical_mc.csv
+
+archive_canonical_network_model__zonal:
+  network_model: Zonal

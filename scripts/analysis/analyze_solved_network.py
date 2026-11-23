@@ -379,7 +379,7 @@ def get_generation_including_links(n):
             gen_ts['H2_turbine'] = h2_ts
         
         # Add capacity
-        h2_cap = h2_links['p_nom'].sum()
+        h2_cap = (h2_links['p_nom'] * h2_links['efficiency']).sum()   # electrical output
         if 'H2_turbine' in gen_capacity.index:
             gen_capacity['H2_turbine'] = gen_capacity['H2_turbine'] + h2_cap
         else:
@@ -561,11 +561,20 @@ def create_analysis_summary(n, output_path):
     load_shed_gens = n.generators[n.generators['carrier'] == 'load_shedding']
     load_shedding = n.generators_t.p[load_shed_gens.index].sum().sum() if len(load_shed_gens) > 0 else 0
     
-    # Get combined generation including H2_turbine links
+    # Get combined generation including H2_turbine links. StorageUnit output is
+    # kept separate because it is dispatch, not primary generation, but it must
+    # be included in the served-energy balance.
     gen_ts, gen_capacity = get_generation_including_links(n)
     gen_by_carrier = gen_ts.sum()
-    total_demand = n.loads_t.p.sum().sum()
-    
+    total_generation = float(gen_by_carrier.sum())
+    total_demand = float(n.loads_t.p.sum().sum())
+    storage_net_output = 0.0
+    storage_by_carrier = {}
+    if len(n.storage_units) > 0 and hasattr(n, "storage_units_t") and not n.storage_units_t.p.empty:
+        storage_ts = n.storage_units_t.p.T.groupby(n.storage_units["carrier"]).sum().T
+        storage_by_carrier = {k: float(v) for k, v in storage_ts.sum().items()}
+        storage_net_output = float(storage_ts.sum().sum())
+    served_supply = total_generation + storage_net_output
     summary = {
         'scenario': str(n.name),
         'timestamp': pd.Timestamp.now().isoformat(),
@@ -580,15 +589,18 @@ def create_analysis_summary(n, output_path):
         },
         'results': {
             'total_cost_gbp': float(n.objective) if hasattr(n, 'objective') and n.objective else 0,
-            'total_generation_mwh': float(gen_by_carrier.sum()),
-            'total_demand_mwh': float(total_demand),
+            'total_generation_mwh': total_generation,
+            'storage_net_output_mwh': storage_net_output,
+            'generation_plus_storage_net_mwh': served_supply,
+            'total_demand_mwh': total_demand,
             'load_shedding_mwh': float(load_shedding),
             'load_shedding_pct': float(load_shedding / total_demand * 100 if total_demand > 0 else 0),
-            'energy_balance_error_pct': float(abs(gen_by_carrier.sum() - total_demand) / total_demand * 100 if total_demand > 0 else 0),
+            'energy_balance_error_pct': float(abs(served_supply - total_demand) / total_demand * 100 if total_demand > 0 else 0),
         },
         'peak_demand_mw': float(n.loads_t.p.sum(axis=1).max()),
         'avg_demand_mw': float(n.loads_t.p.sum(axis=1).mean()),
         'generation_by_carrier': {k: float(v) for k, v in gen_by_carrier.items()},
+        'storage_net_output_by_carrier': storage_by_carrier,
         'installed_capacity_by_carrier': {k: float(v) for k, v in gen_capacity.items()},
     }
     

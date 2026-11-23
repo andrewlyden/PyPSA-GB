@@ -4,11 +4,11 @@ Diagnostic: compare ERA5 wind profiles against ESPENI observed generation.
 ⚠ IMPORTANT — this is a DIAGNOSTIC / VALIDATION tool, NOT the source of
 correction factors applied to the model.
 
-The model uses fixed performance factors configured in defaults.yaml under
-``renewable_performance_factors.factors``.  Those factors represent the
+The model uses fixed performance factors configured in config/defaults/base/renewables.yaml under
+``renewables.performance_factors.factors``.  Those factors represent the
 uncurtailed available generation from real UK wind fleets (ERA5 bias +
 idealised turbine curve correction), and are derived from literature rather
-than ESPENI regression — see defaults.yaml for the derivation.
+than ESPENI regression — see config/defaults/base/renewables.yaml for the derivation.
 
 Why ESPENI is a WRONG calibration target for p_max_pu
 ------------------------------------------------------
@@ -35,10 +35,10 @@ For each year Y and carrier it computes a *raw comparison ratio*:
 This ratio (printed to stdout and written to CSV) is useful for:
   - Quantifying the magnitude of ERA5 overestimate + curtailment combined
   - Sanity-checking profile quality by year
-  - Informing (but not directly setting) the defaults.yaml performance factors
+  - Informing (but not directly setting) the config/defaults/ performance factors
 
 The reported ratio for 2020 is ~0.79, which is the sum of a genuine ERA5
-overestimate (~20-25%) and real-world curtailment (~4-8%).  The defaults.yaml
+overestimate (~20-25%) and real-world curtailment (~4-8%).  The config/defaults/
 factors use slightly higher values to avoid over-correcting for curtailment.
 
 Usage

@@ -1,0 +1,200 @@
+# Single-period scenarios.
+
+HT50_reduced_eload_2050:
+  inherits: archive_fes2050_base
+  description: FES 2024 HT 2050 - Reduced with eLOAD 2050 profile
+  renewables_year: 2020
+  demand_year: 2020
+  network_model: Reduced
+  FES_year: 2024
+  demand:
+    timeseries: eload
+  profile_year: 2050
+
+HT50_clustered_gsp:
+  inherits: archive_fes2050_base
+  solve_period:
+    enabled: true
+    start: 2050-01-01 00:00
+    end: 2050-01-31 23:00
+  description: FES 2024 Holistic Transition 2050 - ETYS to GSP Clusters (1 month)
+  renewables_year: 2022
+  demand_year: 2022
+  network:
+    clustering: gsp_spatial
+  FES_year: 2024
+
+HT50_1week_gate:
+  inherits: archive_fes2050_foreign_price_override_tyndp
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: 'FES 2025 HT 2050 gate week: 10-16 January (2013 weather), both stages on the shared network'
+
+HT50_1week_gate_central_dispatch_fe:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_market_dispatch__central_dispatch_fe]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: FES 2025 HT 2050 gate week (10-16 January) centrally dispatched at least cost on the real network (perfect foresight)
+
+HT50_1week_gate_h2_90:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_initial_fraction__ht50_1week_gate_h2_90]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week with the hydrogen store starting at 90% (decision 33 sensitivity)
+
+HT50_1week_gate_h2_90_bmflex:
+  inherits: [archive_fes2050_except_HT50_clustered_gsp_HT50_reduced_eload_2050, archive_fes2050_hydrogen_store_initial_fraction__ht50_1week_gate_h2_90]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week, hydrogen store at 90%, consumer flexibility in the BM at 500 GBP/MWh
+  market:
+    balancing:
+      participation:
+        generators:
+          exclude_carriers: [load_shedding, embedded_solar, embedded_wind, EU_import, waste_to_energy, biogas, gas_supply]
+        storage_units:
+          hold_consumer_flexibility: false
+      carrier_overrides:
+        EV_smart_charging:
+          offer_price: 500.0
+          bid_price: 500.0
+        V2G_fleet:
+          offer_price: 500.0
+          bid_price: 500.0
+        HP_flexibility:
+          offer_price: 500.0
+          bid_price: 500.0
+        DH_flexibility:
+          offer_price: 500.0
+          bid_price: 500.0
+        IC_DSR:
+          offer_price: 500.0
+          bid_price: 500.0
+        residential_DSR:
+          offer_price: 500.0
+          bid_price: 500.0
+        DACCS:
+          offer_price: 500.0
+          bid_price: 500.0
+        SH_flexibility:
+          offer_price: 500.0
+          bid_price: 500.0
+
+HT50_1week_gate_seasonal:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: 'HT50 gate week (10-16 January) on the annual pass: starts pinned, soft floor, storage units on the pass (decision 33)'
+  support:
+    bm_bids:
+      enabled: false
+
+HT50_1week_gate_seasonal_value:
+  inherits: [archive_fes2050_ht50_1week_gate_seasonal, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week on the annual pass without the soft floor (decision 33 sensitivity)
+
+HT50_1week_gate_seasonal_h2only:
+  inherits: [archive_fes2050_ht50_1week_gate_seasonal, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week with only the hydrogen store on the annual pass, no soft floor (decision 33 sensitivity)
+
+HT50_1week_gate_seasonal_bm2050:
+  inherits: [archive_fes2050_ht50_1week_gate, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_bm_bids_contract_value_bids__ht50_1week_gate]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  wholesale_from: HT50_1week_gate_seasonal
+  description: HT50 gate week, Y8a Stage 1 with the 2050 BM at contract value (BM2050 first pass, record)
+
+HT50_1week_gate_seasonal_bm2050_strike:
+  inherits: [archive_fes2050_ht50_1week_gate, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_bm_bids_contract_value_bids__10_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  wholesale_from: HT50_1week_gate_seasonal
+  description: HT50 gate week, Y8a Stage 1, 2050 BM with CfD bids at the strike (BM2050 first pass, record)
+
+HT50_1week_gate_seasonal_bm2050_h2band:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_balancing_hydrogen_links__9_members, archive_fes2050_bm_bids_contract_value_bids__ht50_1week_gate]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  wholesale_from: HT50_1week_gate_seasonal
+  description: HT50 gate week, Y8a Stage 1, 2050 BM at contract value with the turbines kept to the Stage 1 store band (record)
+
+HT50_1week_gate_final:
+  inherits: [archive_fes2050_ht50_1week_gate, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week (10-16 January), both stages on the final 2050 market settings (BM2050)
+
+HT50_1week_gate_final_contract_value:
+  inherits: [archive_fes2050_ht50_1week_gate, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__ht50_1week_gate]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  wholesale_from: HT50_1week_gate_final
+  description: HT50 final gate week with CfD bids at contract value, max(strike - reference, 0) - sensitivity
+
+HT50_1week_gate_d40:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 gate week (10-16 January), both stages on the decision-40 year settings (decision 29 central)
+
+HT50_1week_gate_d40_ga:
+  inherits: [archive_fes2050_balancing_carrier_overrides, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 decision-40 gate week with TYNDP 2024 Global Ambition 2050 foreign prices (decision 29)
+  market:
+    foreign_price_override:
+      tyndp:
+        scenario: GA
+
+HT50_1week_gate_d40_tyndp26:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 decision-40 gate week with TYNDP 2026 draft National Trends+ 2050 foreign prices (decision 29)
+
+HT50_1week_gate_d40_ic1fit:
+  inherits: [archive_fes2050_foreign_price_override_tyndp, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  solve_period:
+    enabled: true
+    start: 2050-01-10 00:00
+    end: 2050-01-16 23:00
+  description: HT50 decision-40 gate week with the IC1 tranche steps re-fitted at the traded prices of the week (Y8 follow-up)
+  market:
+    ic1_tranche_refit:
+      enabled: true
+      level_basis: traded_window

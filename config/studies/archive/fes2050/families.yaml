@@ -1,0 +1,47 @@
+# Month families: one entry per family, expanded by the loader into one scenario per month.
+
+h2band:
+  inherits: [archive_fes2050_solve_period_enabled, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  month_overrides:
+    Jan:
+      wholesale_from: FES25_HT_2050_Jan_market
+    Feb:
+      wholesale_from: FES25_HT_2050_Feb_market
+    Mar:
+      wholesale_from: FES25_HT_2050_Mar_market
+    Apr:
+      wholesale_from: FES25_HT_2050_Apr_market
+    May:
+      wholesale_from: FES25_HT_2050_May_market
+    Jun:
+      wholesale_from: FES25_HT_2050_Jun_market
+    Jul:
+      wholesale_from: FES25_HT_2050_Jul_market
+    Aug:
+      wholesale_from: FES25_HT_2050_Aug_market
+    Sep:
+      wholesale_from: FES25_HT_2050_Sep_market
+    Oct:
+      wholesale_from: FES25_HT_2050_Oct_market
+    Nov:
+      wholesale_from: FES25_HT_2050_Nov_market
+    Dec:
+      wholesale_from: FES25_HT_2050_Dec_market
+
+reserve4:
+  inherits: [archive_fes2050_reserve4, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  months: [Apr]
+
+central_dispatch_fe_reserve4:
+  inherits: [archive_fes2050_reserve4, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_market_dispatch__central_dispatch_fe]
+  months: [Apr]
+
+pxs:
+  inherits: [archive_fes2050_wholesale_scarcity_pricing, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_hydrogen_store_seasonal_trajectory__14_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+
+pxsn:
+  inherits: [archive_fes2050_wholesale_scarcity_pricing, archive_fes2050_hydrogen_store_seasonal_trajectory__17_members, archive_fes2050_hydrogen_store_seasonal_trajectory__16_members, archive_fes2050_hydrogen_store_seasonal_trajectory__15_members, archive_fes2050_bm_bids_contract_value_bids__13_members, archive_fes2050_wholesale_marginal_cost_basis__10_members, archive_fes2050_bm_bids_contract_value_bids__10_members, archive_fes2050_balancing_hydrogen_links__9_members]
+  market:
+    hydrogen_store:
+      seasonal_trajectory:
+        file: resources/market/FES25_HT_2050_tyndp2026_prices_seasonal_trajectory.csv

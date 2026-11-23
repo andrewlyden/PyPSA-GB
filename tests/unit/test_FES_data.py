@@ -19,6 +19,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 from FES_data import fetch_data, raw_FES_data
 
 
+@pytest.fixture(autouse=True)
+def _temporary_raw_cache(tmp_path, monkeypatch):
+    """Downloads go to a temporary cache, never the workflow's resources/sources/raw (mock bytes would stay there)."""
+    import FES_data
+    monkeypatch.setattr(FES_data, "RAW_DIR", tmp_path / "raw")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FIXTURES
 # ══════════════════════════════════════════════════════════════════════════════

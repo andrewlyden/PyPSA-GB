@@ -5,6 +5,7 @@ This script performs optimal power flow optimization on the network
 to determine least-cost dispatch, storage operation, and interconnector flows.
 """
 
+import functools
 import pypsa
 import logging
 from pathlib import Path
@@ -17,9 +18,19 @@ from scripts.solve.hydro_constraints import (
     combine_extra_functionalities,
     log_hydro_constraint_setup,
 )
+from scripts.interconnectors.market_coupling import (
+    build_interconnector_shared_capacity_callback,
+)
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+# Transformer impedances are stored per unit on s_nom: rating changes must
+# rescale them (scripts/network_build/branch_units.py).
+from scripts.network_build.branch_units import (
+    BASE_MVA,
+    require_pypsa_branch_units,
+    set_transformer_s_nom_preserving_impedance,
+)
 
 
 RENEWABLE_CARRIERS = {
@@ -140,15 +151,35 @@ def validate_network_costs(network, logger):
     else:
         warnings.append("No load shedding generators found - network may be infeasible if supply < demand")
     
-    # Check 2: Thermal generators should have positive marginal cost
-    thermal_carriers = ['CCGT', 'OCGT', 'Coal', 'Oil', 'gas', 'coal', 'oil',
+    # Check 2: Unsupported thermal generators should have positive marginal
+    # cost. CfD-supported dispatchable generation is intentionally assigned a
+    # zero dispatch cost by the subsidy model and must not be mistaken for a
+    # missing fuel-price mapping.
+    thermal_carriers = ['CCGT', 'OCGT', 'gas_engine', 'Coal', 'Oil', 'gas', 'coal', 'oil',
                        'Conventional Steam', 'Conventional steam', 'AGR', 'PWR',
                        'Bioenergy', 'biomass', 'Biomass']
     thermal_mask = network.generators['carrier'].isin(thermal_carriers)
     thermal_gens = network.generators[thermal_mask]
+    support_type = network.generators.get(
+        'support_type', pd.Series('', index=network.generators.index)
+    ).fillna('').astype(str).str.strip().str.lower()
+    intentional_zero_cfd_mask = support_type.eq('cfd')
     
     if len(thermal_gens) > 0:
-        zero_cost_thermal = thermal_gens[thermal_gens['marginal_cost'] == 0]
+        zero_cost_thermal = thermal_gens[
+            thermal_gens['marginal_cost'].eq(0)
+            & ~intentional_zero_cfd_mask.reindex(thermal_gens.index, fill_value=False)
+        ]
+        zero_cost_cfd_thermal = thermal_gens[
+            thermal_gens['marginal_cost'].eq(0)
+            & intentional_zero_cfd_mask.reindex(thermal_gens.index, fill_value=False)
+        ]
+        if len(zero_cost_cfd_thermal) > 0:
+            logger.info(
+                "[OK] CfD-supported thermal generation: "
+                f"{len(zero_cost_cfd_thermal)} zero-cost units "
+                f"({zero_cost_cfd_thermal['p_nom'].sum():,.0f} MW), as configured"
+            )
         if len(zero_cost_thermal) > 0:
             total_capacity = zero_cost_thermal['p_nom'].sum()
             carriers_affected = zero_cost_thermal['carrier'].unique()
@@ -177,6 +208,10 @@ def validate_network_costs(network, logger):
     # If too many zero-cost generators (excluding renewables), warn
     non_renewable_mask = ~network.generators["carrier"].isin(RENEWABLE_CARRIERS)
     zero_cost_mask = network.generators["marginal_cost"] == 0
+    foreign_market_role = network.generators.get(
+        "foreign_market_role", pd.Series("", index=network.generators.index)
+    ).astype(str).str.strip().str.lower()
+    market_balance_mask = foreign_market_role.eq("market_balance")
 
     zero_cost_fixed_imports = network.generators[
         (network.generators["carrier"] == "EU_import") & zero_cost_mask
@@ -185,6 +220,8 @@ def validate_network_costs(network, logger):
         non_renewable_mask
         & zero_cost_mask
         & (network.generators["carrier"] != "EU_import")
+        & ~market_balance_mask
+        & ~intentional_zero_cfd_mask
     ]
 
     if len(zero_cost_fixed_imports) > 0:
@@ -193,6 +230,17 @@ def validate_network_costs(network, logger):
             "[OK] Fixed-flow interconnector supply: "
             f"{len(zero_cost_fixed_imports)} EU_import generators at zero cost "
             f"({capacity:,.0f} MW). This is expected for historical fixed-link flows."
+        )
+
+    zero_cost_market_balances = network.generators[
+        market_balance_mask & zero_cost_mask
+    ]
+    if len(zero_cost_market_balances) > 0:
+        capacity = zero_cost_market_balances["p_nom"].sum()
+        logger.info(
+            "[OK] Neutral foreign market balances: "
+            f"{len(zero_cost_market_balances)} generators at zero cost "
+            f"({capacity:,.0f} MW). Interconnector economics are priced on Links."
         )
 
     if len(suspicious_zero_cost) > 0:
@@ -236,9 +284,13 @@ def validate_network_costs(network, logger):
     logger.info("=" * 80)
 
 
-def apply_load_shedding_limits(network, logger):
+def apply_load_shedding_limits(network, logger, extra_local_load=None):
     """
     Cap load-shedding generators to same-bus demand at each snapshot.
+
+    ``extra_local_load`` (snapshots x bus, MW) is demand that is not a Load: consumer flexibility
+    (F5) carved out of the Loads and held at its Stage 1 draw in the BM. It can be interrupted
+    like any other demand, so it raises the cap at its bus.
 
     Load shedding is modelled as high-cost generation so the LP remains
     feasible, but it should behave like local demand interruption. Without a
@@ -281,7 +333,8 @@ def apply_load_shedding_limits(network, logger):
         load_names = network.loads.index[network.loads["bus"] == bus]
         if len(load_names) == 0:
             local_load = pd.Series(0.0, index=network.snapshots)
-            no_load_bus_count += 1
+            if extra_local_load is None or bus not in extra_local_load.columns:
+                no_load_bus_count += 1
         else:
             local_load = (
                 load_p_set.reindex(columns=load_names)
@@ -290,6 +343,8 @@ def apply_load_shedding_limits(network, logger):
                 .clip(lower=0.0)
             )
 
+        if extra_local_load is not None and bus in extra_local_load.columns:
+            local_load = local_load + extra_local_load[bus].reindex(network.snapshots).fillna(0.0).clip(lower=0.0)
         pmax[gen_name] = (local_load / p_nom).clip(lower=0.0, upper=1.0)
 
     network.generators_t.p_max_pu = pmax
@@ -314,6 +369,45 @@ def apply_load_shedding_limits(network, logger):
     return True
 
 
+def enforce_feasible_generator_operating_bounds(network, logger=None):
+    """Cap generator minimum output at its available maximum output.
+
+    Time-series columns containing only zeros may be omitted during a PyPSA
+    NetCDF round trip. A positive static must-run floor can then reappear even
+    though a commissioning or outage profile makes the generator unavailable.
+    Enforcing this invariant immediately before each solve prevents an opaque
+    infeasible/unbounded solver result and preserves all non-conflicting bounds.
+    """
+    if len(network.generators) == 0 or len(network.snapshots) == 0:
+        return 0
+
+    maximum = network.get_switchable_as_dense(
+        "Generator", "p_max_pu", network.snapshots
+    )
+    minimum = network.get_switchable_as_dense(
+        "Generator", "p_min_pu", network.snapshots
+    )
+    violations = minimum > maximum + 1e-12
+    affected = violations.any(axis=0)
+    names = affected.index[affected].tolist()
+
+    for name in names:
+        corrected = minimum[name].clip(upper=maximum[name])
+        network.generators_t.p_min_pu[name] = corrected
+        if corrected.eq(0.0).all():
+            network.generators.at[name, "p_min_pu"] = 0.0
+
+    if names and logger:
+        logger.warning(
+            "Corrected p_min_pu > p_max_pu for %d generators across %d "
+            "generator-snapshots: %s",
+            len(names),
+            int(violations.to_numpy().sum()),
+            ", ".join(names[:8]) + (" ..." if len(names) > 8 else ""),
+        )
+    return len(names)
+
+
 def apply_transmission_relaxation(network, scenario_config, logger):
     """
     Apply transmission constraint relaxation for feasibility.
@@ -329,7 +423,7 @@ def apply_transmission_relaxation(network, scenario_config, logger):
     network : pypsa.Network
         Network to modify
     scenario_config : dict
-        Scenario configuration (may contain 'transmission' key)
+        Scenario configuration (may contain a 'network.transmission' block)
     logger : logging.Logger
         Logger instance
         
@@ -338,19 +432,7 @@ def apply_transmission_relaxation(network, scenario_config, logger):
     bool
         True if any modifications were made
     """
-    # Load global defaults
-    defaults_path = Path("config/defaults.yaml")
-    global_transmission = {}
-    if defaults_path.exists():
-        try:
-            with open(defaults_path, 'r', encoding='utf-8') as f:
-                defaults = yaml.safe_load(f)
-            global_transmission = defaults.get('transmission', {})
-        except Exception as e:
-            logger.warning(f"Could not load defaults.yaml: {e}")
-    
-    # Scenario config overrides global defaults
-    transmission = scenario_config.get('transmission', global_transmission)
+    transmission = _transmission_config(scenario_config)
     
     min_line_s_nom = transmission.get('min_line_s_nom', 0)
     min_transformer_s_nom = transmission.get('min_transformer_s_nom', 0)
@@ -375,12 +457,14 @@ def apply_transmission_relaxation(network, scenario_config, logger):
             logger.info(f"Lines: Set minimum s_nom={min_line_s_nom} MVA for {n_modified} lines")
             modifications = True
     
-    # Apply minimum transformer capacity
+    # Apply minimum transformer capacity (impedance preserved: transformer
+    # x is per unit on s_nom)
     if min_transformer_s_nom > 0 and len(network.transformers) > 0:
         low_cap_trafos = network.transformers['s_nom'] < min_transformer_s_nom
         n_modified = low_cap_trafos.sum()
         if n_modified > 0:
-            network.transformers.loc[low_cap_trafos, 's_nom'] = min_transformer_s_nom
+            set_transformer_s_nom_preserving_impedance(
+                network, network.transformers.index[low_cap_trafos], float(min_transformer_s_nom))
             logger.info(f"Transformers: Set minimum s_nom={min_transformer_s_nom} MVA for {n_modified} transformers")
             modifications = True
     
@@ -391,7 +475,9 @@ def apply_transmission_relaxation(network, scenario_config, logger):
             logger.info(f"Lines: Scaled all s_nom by {capacity_scale}x")
             modifications = True
         if len(network.transformers) > 0:
-            network.transformers['s_nom'] = network.transformers['s_nom'] * capacity_scale
+            set_transformer_s_nom_preserving_impedance(
+                network, network.transformers.index,
+                network.transformers['s_nom'].astype(float) * capacity_scale)
             logger.info(f"Transformers: Scaled all s_nom by {capacity_scale}x")
             modifications = True
     
@@ -405,63 +491,187 @@ def apply_transmission_relaxation(network, scenario_config, logger):
     return modifications
 
 
+BM_RELAXED_RATING_MVA = 9999.0
+# Code fallbacks match config/defaults/ network.transmission.bm_voltage_floor.
+DEFAULT_SCOTTISH_TRANSMISSION_CONSTRAINED = True
+DEFAULT_SCOTTISH_MIN_CONSTRAINED_KV = 132.0
+#: Constrained (Scottish) lines rated below this after the overrides are listed as a warning.
+LOW_CONSTRAINED_RATING_WARN_MVA = 50.0
+
+
+def _branch_end_voltages(network, table):
+    v_nom = pd.to_numeric(network.buses['v_nom'], errors='coerce')
+    ends = pd.concat([table['bus0'].map(v_nom), table['bus1'].map(v_nom)], axis=1)
+    return ends.min(axis=1), ends.max(axis=1)
+
+
+def bm_voltage_floor_branches(network, min_v, scottish_transmission_constrained=False,
+                              scottish_min_constrained_kv=DEFAULT_SCOTTISH_MIN_CONSTRAINED_KV,
+                              return_scottish=False):
+    """Return the lines and transformers the BM voltage floor relaxes.
+
+    One rule for both branch types: a branch is relaxed when either end is a
+    bus below ``min_v`` kV, i.e. when it lies in, or feeds, a sub-``min_v``
+    network. In England and Wales the sub-220 kV network is DNO distribution:
+    ETYS carries individual 132 kV (and 33/66 kV) segments but not the mesh
+    around them, so neither those lines nor the transformers that step down
+    into them are constrained. Lines and transformers wholly at or above
+    ``min_v`` keep their ratings.
+
+    With ``scottish_transmission_constrained``, branches in the SHE and SPT
+    transmission areas (``branch_attributes.is_scottish_branch``: the ETYS
+    licensee of the source sheet, else bus geography) whose lower end is at or
+    above ``scottish_min_constrained_kv`` are NOT relaxed: Scottish 132 kV is
+    transmission, managed by NESO in the BM. Below that voltage (33/66 kV
+    collector networks) they stay relaxed.
+
+    Bus ``v_nom`` classifies each end. A line end whose bus is missing falls
+    back to the line's ``voltage_kv``/``v_nom`` column.
+
+    Returns ``(lines_index, transformers_index)``, plus the indices of the
+    Scottish branches kept constrained when ``return_scottish``.
+    """
+    from scripts.network_build.branch_attributes import is_scottish_branch
+    out, kept = [], []
+    for table in (network.lines, network.transformers):
+        if not len(table):
+            out.append(pd.Index([])); kept.append(pd.Index([]))
+            continue
+        lo, _ = _branch_end_voltages(network, table)
+        if table is network.lines:
+            voltage_col = 'voltage_kv' if 'voltage_kv' in table.columns else (
+                'v_nom' if 'v_nom' in table.columns else None)
+            if voltage_col is not None:
+                lo = lo.fillna(pd.to_numeric(table[voltage_col], errors='coerce'))
+        low = lo < min_v
+        keep = pd.Series(False, index=table.index)
+        if scottish_transmission_constrained:
+            keep = low & is_scottish_branch(network, table) & (lo >= float(scottish_min_constrained_kv))
+        out.append(table.index[low & ~keep]); kept.append(table.index[keep])
+    if return_scottish:
+        return out[0], out[1], kept[0], kept[1]
+    return out[0], out[1]
+
+
+def _floor_config(transmission):
+    cfg = transmission.get('bm_voltage_floor', {}) or {}
+    return (bool(cfg.get('scottish_transmission_constrained', DEFAULT_SCOTTISH_TRANSMISSION_CONSTRAINED)),
+            float(cfg.get('scottish_min_constrained_kv', DEFAULT_SCOTTISH_MIN_CONSTRAINED_KV)))
+
+
+def _log_by_area_and_voltage(network, table, names, label, logger):
+    if not len(names):
+        return
+    from scripts.network_build.branch_attributes import is_scottish_branch
+    sub = table.loc[names]
+    lo, hi = _branch_end_voltages(network, sub)
+    area = np.where(is_scottish_branch(network, sub), 'Scotland', 'E&W')
+    key = pd.Series([f"{a} {h:g}/{l:g}" if h != l else f"{a} {h:g}" for a, h, l in zip(area, hi, lo)])
+    logger.info(f"    {label} by area and kV: {key.value_counts().sort_index().to_dict()}")
+
+
+def _inert_radial_lines(network, names) -> pd.Index:
+    """Lines among ``names`` with an end bus that has no other branch and nothing on it.
+
+    Such a line carries no flow whatever its rating (CHAP1-_ECCF1J/K_0: 132 kV
+    stubs to Ecclefechan with only the 10 MW load-shedding dummies behind
+    them), so its low rating is not worth a warning. Load-shedding units do not
+    count as something on the bus.
+    """
+    names = pd.Index(names)
+    if not len(names):
+        return names
+    degree = pd.concat([
+        getattr(network, table)[end] for table in ("lines", "transformers", "links")
+        for end in ("bus0", "bus1") if len(getattr(network, table))
+    ]).value_counts()
+    occupied = set()
+    for table in ("loads", "storage_units", "stores"):
+        frame = getattr(network, table)
+        if len(frame):
+            occupied |= set(frame["bus"])
+    gens = network.generators
+    if len(gens):
+        carriers = gens["carrier"].astype(str).str.lower().str.replace(" ", "_", regex=False)
+        occupied |= set(gens.loc[~carriers.isin({"load_shedding", "voll"}), "bus"])
+
+    def _dead(bus):
+        return int(degree.get(bus, 0)) <= 1 and bus not in occupied
+
+    lines = network.lines.loc[names]
+    mask = [(_dead(b0) or _dead(b1)) for b0, b1 in zip(lines["bus0"], lines["bus1"])]
+    return names[np.asarray(mask, dtype=bool)]
+
+
 def apply_line_rating_overrides(network, scenario_config, logger):
     """Apply per-line s_nom overrides and voltage floor from config.
 
     Two mechanisms, applied in order:
 
-    1. min_bm_constraint_voltage_kv — set s_nom = 9999 MVA for all lines/transformers
-       with v_nom strictly below this threshold.  Removes sub-transmission loop-flow
-       artefacts caused by the DC power flow distributing currents through incomplete
-       132 kV ring topologies in ETYS.  Set to 0 to disable.
+    1. min_bm_constraint_voltage_kv: set s_nom = 9999 MVA for every line and
+       transformer with an end strictly below this voltage (see
+       :func:`bm_voltage_floor_branches`). The model has no distribution
+       detail: ETYS lists individual 132 kV trunk segments but omits the
+       33/66 kV mesh and ring paths, so the DC power flow saturates radial
+       segments that the real network relieves. Transformers into that
+       partial sub-transmission network are relaxed with its lines (before
+       27 Sep 2026 only the lines were). Transformer impedance is preserved
+       when its rating is relaxed. Scottish (SHE/SPT) branches at or above
+       ``bm_voltage_floor.scottish_min_constrained_kv`` stay constrained when
+       ``bm_voltage_floor.scottish_transmission_constrained`` (27 Sep 2026).
+       Set the floor to 0 to disable. Skipped for networks whose lines carry
+       no voltage column (Reduced/Zonal).
 
-    2. line_rating_overrides — explicit per-component s_nom values.  Applied after
-       the voltage floor so targeted corrections always take precedence.
+    2. line_rating_overrides: explicit per-component s_nom values. Applied
+       after the voltage floor so targeted corrections always take precedence.
     """
-    # Load global defaults
-    defaults_path = Path("config/defaults.yaml")
-    global_transmission = {}
-    if defaults_path.exists():
-        try:
-            with open(defaults_path, 'r', encoding='utf-8') as f:
-                defaults = yaml.safe_load(f)
-            global_transmission = defaults.get('transmission', {})
-        except Exception:
-            pass
-
-    transmission = scenario_config.get('transmission', global_transmission)
+    transmission = _transmission_config(scenario_config)
 
     logger.info("=" * 80)
     logger.info("APPLYING LINE RATING OVERRIDES")
     logger.info("=" * 80)
 
     applied = 0
+    kept_lines = pd.Index([])
 
     # ── 1. Voltage floor ─────────────────────────────────────────────────────
-    min_v = float(transmission.get('min_bm_constraint_voltage_kv', 0))
+    min_v = float(transmission.get('min_bm_constraint_voltage_kv', 0) or 0)
     if min_v > 0:
-        # Only applies to lines — transformers span two voltage levels so v_nom
-        # is ambiguous, and transformer constraints are not the source of loop-flow
-        # artefacts in the Highland 132 kV network.
-        
-        # Skip defining voltage floor if using Zonal model
-        if 'v_nom' not in network.lines.columns:
-            logger.info("  Voltage floor skipped: no v_nom column (Zonal network)")
+        voltage_col = 'voltage_kv' if 'voltage_kv' in network.lines.columns else ('v_nom' if 'v_nom' in network.lines.columns else None)
+        if voltage_col is None:
+            logger.info("  Voltage floor skipped: no line voltage column (Zonal network)")
         else:
-            low_lines = network.lines[network.lines['v_nom'] < min_v]
+            scot_constrained, scot_min_kv = _floor_config(transmission)
+            low_lines, low_trafos, kept_lines, kept_trafos = bm_voltage_floor_branches(
+                network, min_v, scot_constrained, scot_min_kv, return_scottish=True)
             if len(low_lines) > 0:
-                network.lines.loc[low_lines.index, 's_nom'] = 9999.0
-                v_counts = low_lines['v_nom'].value_counts().sort_index()
-                logger.info(
-                    f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_lines)} lines "
-                    f"({v_counts.to_dict()})"
-                )
+                network.lines.loc[low_lines, 's_nom'] = BM_RELAXED_RATING_MVA
+                logger.info(f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_lines)} lines")
+                _log_by_area_and_voltage(network, network.lines, low_lines, "relaxed lines", logger)
                 applied += len(low_lines)
             else:
                 logger.info(f"  Voltage floor {min_v:.0f} kV: no lines below threshold")
+            if len(low_trafos) > 0:
+                set_transformer_s_nom_preserving_impedance(
+                    network, low_trafos, BM_RELAXED_RATING_MVA)
+                logger.info(
+                    f"  Voltage floor {min_v:.0f} kV: relaxed {len(low_trafos)} transformers "
+                    f"into sub-{min_v:.0f} kV networks (impedance preserved)"
+                )
+                _log_by_area_and_voltage(network, network.transformers, low_trafos,
+                                         "relaxed transformers", logger)
+                applied += len(low_trafos)
+            if scot_constrained:
+                logger.info(
+                    f"  Scottish transmission (SHE/SPT, >= {scot_min_kv:g} kV) kept constrained: "
+                    f"{len(kept_lines)} lines, {len(kept_trafos)} transformers"
+                )
+                _log_by_area_and_voltage(network, network.lines, kept_lines, "constrained lines", logger)
+                _log_by_area_and_voltage(network, network.transformers, kept_trafos,
+                                         "constrained transformers", logger)
     else:
         logger.info("  Voltage floor disabled (min_bm_constraint_voltage_kv=0)")
-        
+
     # ── 2. Explicit per-line overrides ───────────────────────────────────────
     overrides = transmission.get('line_rating_overrides', {}) or {}
     if not isinstance(overrides, dict):
@@ -479,21 +689,103 @@ def apply_line_rating_overrides(network, scenario_config, logger):
             applied += 1
         elif line_id in network.transformers.index:
             old_val = network.transformers.at[line_id, 's_nom']
-            network.transformers.at[line_id, 's_nom'] = new_s_nom
+            set_transformer_s_nom_preserving_impedance(network, [line_id], new_s_nom)
             logger.info(f"  {line_id} (transformer): s_nom {old_val:.0f} → {new_s_nom:.0f} MVA")
             applied += 1
         else:
             logger.warning(f"  {line_id}: not found in network lines or transformers")
+
+    # Checked after the overrides, so the warning lists only ratings still in force
+    # (it used to print before them and name lines the overrides then corrected).
+    if len(kept_lines):
+        small = network.lines.loc[kept_lines, 's_nom'].astype(float)
+        small = small[small < LOW_CONSTRAINED_RATING_WARN_MVA]
+        stubs = _inert_radial_lines(network, small.index)
+        live = small.drop(index=stubs)
+        if len(live):
+            logger.warning(
+                f"  {len(live)} constrained Scottish lines are rated below "
+                f"{LOW_CONSTRAINED_RATING_WARN_MVA:.0f} MVA after overrides (check the Appendix B "
+                f"rating; add line_rating_overrides if an artefact): {live.round(0).to_dict()}"
+            )
+        if len(stubs):
+            logger.info(
+                f"  {len(stubs)} further constrained Scottish lines below "
+                f"{LOW_CONSTRAINED_RATING_WARN_MVA:.0f} MVA end at a bus with nothing behind it "
+                f"(radial stub, cannot bind): {small[stubs].round(0).to_dict()}"
+            )
 
     if applied:
         logger.info(f"Applied {applied} total line/transformer rating changes")
     return applied > 0
 
 
+def apply_seasonal_line_ratings(network, scenario_config, logger):
+    """Apply ETYS seasonal circuit ratings as time-varying line limits.
+
+    Each line's limit in a snapshot is its build ``s_nom_<season>`` (the
+    season of the snapshot's month, ``network.transmission.seasonal_ratings
+    .season_months``) relative to its winter rating, applied as a factor on
+    ``lines_t.s_max_pu`` (multiplying any factor already there, e.g. an
+    outage schedule). Lines relaxed to 9,999 MVA (the BM voltage floor,
+    couplers) are unaffected; transformers have a single Appendix B rating and
+    keep it (see scripts/network_build/branch_attributes.py). Call it after
+    apply_line_rating_overrides and apply_outage_schedule, only for
+    network-constrained solves (Stage 1 copperplate is unaffected).
+
+    Returns the number of lines given a seasonal factor.
+    """
+    from scripts.network_build.branch_attributes import seasonal_rating_factors
+    cfg = (((scenario_config.get('network', {}) or {}).get('transmission', {}) or {})
+           .get('seasonal_ratings', {}) or {})
+    if not bool(cfg.get('enabled', True)):
+        logger.info("Seasonal line ratings: disabled")
+        return 0
+    if 's_nom_winter' not in network.lines.columns:
+        logger.warning("Seasonal line ratings: network has no seasonal rating columns "
+                       "(built before 27 Sep 2026); winter ratings used all year")
+        return 0
+    factors = seasonal_rating_factors(network, network.snapshots, cfg.get('season_months'),
+                                      BM_RELAXED_RATING_MVA)
+    # The legacy NESO uniform_s_max_pu outage mode writes observed day-ahead
+    # boundary limits into lines_t.s_max_pu; those already carry the season,
+    # so its lines are not given a second, seasonal factor. Other modes are
+    # independent of it: aggregate_boundary / secured_capability constrain
+    # boundary flow sums (not s_max_pu), and csv/synthetic outages multiply.
+    outage_cfg = (((scenario_config.get('network', {}) or {}).get('transmission', {}) or {})
+                  .get('outage_schedule', {}) or {})
+    if (outage_cfg.get('enabled', False) and outage_cfg.get('source') == 'neso'
+            and _get_neso_constraint_mode(outage_cfg) == 'uniform_s_max_pu'
+            and not network.lines_t.s_max_pu.empty):
+        skip = factors.columns.intersection(network.lines_t.s_max_pu.columns)
+        if len(skip):
+            logger.info(f"Seasonal line ratings: {len(skip)} lines already carry NESO "
+                        f"uniform_s_max_pu limits (seasonal by construction); not re-scaled")
+            factors = factors.drop(columns=skip)
+    if factors.empty or not len(factors.columns):
+        logger.info("Seasonal line ratings: no line differs from its winter rating in this period")
+        return 0
+    static = network.lines['s_max_pu'].astype(float)
+    current = network.lines_t.s_max_pu if not network.lines_t.s_max_pu.empty else pd.DataFrame(index=network.snapshots)
+    base = pd.DataFrame({c: current[c] if c in current.columns else static[c] for c in factors.columns},
+                        index=network.snapshots)
+    merged = current.copy()
+    for c in factors.columns:
+        merged[c] = base[c] * factors[c]
+    network.lines_t.s_max_pu = merged
+    mean = factors.mean()
+    logger.info(
+        f"Seasonal line ratings: {len(factors.columns)} lines get season/winter factors "
+        f"(period mean {mean.mean():.3f}, min {factors.min().min():.3f}); seasons in period: "
+        f"{sorted(set(pd.DatetimeIndex(network.snapshots).month))}"
+    )
+    return len(factors.columns)
+
+
 def apply_outage_schedule(network, scenario_config, logger):
     """Apply time-varying transmission outage schedule via s_max_pu.
 
-    Supports three modes configured under ``transmission.outage_schedule``:
+    Supports three modes configured under ``network.transmission.outage_schedule``:
 
     ``csv``
         Load from a CSV file with columns:
@@ -521,17 +813,7 @@ def apply_outage_schedule(network, scenario_config, logger):
     -------
     bool  — True if any outages were applied.
     """
-    defaults_path = Path("config/defaults.yaml")
-    global_transmission = {}
-    if defaults_path.exists():
-        try:
-            with open(defaults_path, 'r', encoding='utf-8') as f:
-                defaults = yaml.safe_load(f)
-            global_transmission = defaults.get('transmission', {})
-        except Exception:
-            pass
-
-    transmission = scenario_config.get('transmission', global_transmission)
+    transmission = _transmission_config(scenario_config)
     outage_cfg = transmission.get('outage_schedule', {})
 
     if not outage_cfg.get('enabled', False):
@@ -573,6 +855,14 @@ def apply_outage_schedule(network, scenario_config, logger):
             )
             return False
         return _apply_neso_boundary_limits(network, outage_cfg, snapshots, logger)
+    elif source == 'secured_capability':
+        network.meta['neso_constraint_mode'] = 'aggregate_boundary'
+        logger.info(
+            "  secured_capability: ETYS secured boundary capabilities x NOA seasonal "
+            "factors are enforced inside the optimisation model (aggregate boundary "
+            "constraints), not via line s_max_pu derating"
+        )
+        return False
     else:
         logger.warning(f"Unknown outage_schedule source '{source}', skipping")
         return False
@@ -601,6 +891,35 @@ def _inspect_neso_boundary_coverage(bnd_df, snapshots, tolerance_minutes=45):
         'available_start': ts_index.min(),
         'available_end': ts_index.max(),
     }
+
+
+NESO_COMMITTED_BOUNDARY_CACHE = "data/network/neso_day_ahead_constraint_limits.csv.gz"
+
+
+@functools.lru_cache(maxsize=4)
+def _read_committed_boundary_cache(path_str, mtime_ns):
+    """Read the committed NESO boundary-limit snapshot (cached per file version)."""
+    df = pd.read_csv(path_str)
+    df['date'] = pd.to_datetime(df['date'], format='ISO8601')
+    return df
+
+
+def _committed_boundary_window(committed_cache, boundary_name, start_date, end_date):
+    """Rows of the committed snapshot for one boundary, in ``[start, end)``.
+
+    The window matches the SQL the API refresh used, so a window served from
+    the snapshot equals what the API returned for it.
+    """
+    path = Path(committed_cache)
+    if not path.exists():
+        return None
+    df = _read_committed_boundary_cache(str(path.resolve()), path.stat().st_mtime_ns)
+    mask = (
+        (df['boundary'] == boundary_name)
+        & (df['date'] >= pd.Timestamp(start_date))
+        & (df['date'] < pd.Timestamp(end_date))
+    )
+    return df.loc[mask].reset_index(drop=True)
 
 
 def _load_cached_boundary_file(cache_dir, boundary_name, date_tag, snapshots):
@@ -691,9 +1010,15 @@ def _get_neso_constraint_mode(outage_cfg):
 
 
 def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
-    """Load mapping plus cached/fetched NESO boundary data for the requested snapshots."""
-    import requests
+    """Load mapping plus NESO boundary data for the requested snapshots.
 
+    Sources, in order: a complete per-window file in ``cache_dir``, else the
+    committed snapshot ``committed_cache`` (built by
+    ``scripts/solve/build_neso_boundary_limit_cache.py``). The NESO API is
+    only queried when ``allow_api_fetch`` is true, and a failed request then
+    raises. A mapped boundary with no data in the window raises: it is never
+    skipped silently (F25.12).
+    """
     neso_cfg = outage_cfg.get('neso', {})
     mapping_path = Path(neso_cfg.get(
         'boundary_mapping', 'data/network/neso_boundary_mapping.yaml'
@@ -705,6 +1030,8 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
         'api_base', 'https://api.neso.energy/api/3/action/datastore_search_sql'
     )
     cache_dir = Path(neso_cfg.get('cache_dir', 'resources/neso_cache'))
+    committed_cache = Path(neso_cfg.get('committed_cache', NESO_COMMITTED_BOUNDARY_CACHE))
+    allow_api_fetch = bool(neso_cfg.get('allow_api_fetch', False))
     min_s_max_pu = float(neso_cfg.get('min_s_max_pu', 0.05))
     tolerance_minutes = int(neso_cfg.get('nearest_tolerance_minutes', 45))
     gap_fill_mode = str(neso_cfg.get('gap_fill_mode', 'interpolate')).strip().lower()
@@ -764,10 +1091,37 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
             cache_dir, neso_boundary_name, date_tag, snapshots
         )
 
+        # F25.12: the committed snapshot (data/network/...) is the source of
+        # record; it replaces the solve-time API refresh, which skipped the
+        # boundary silently when the request failed.
+        if not (bnd_df is not None and coverage and coverage['missing_snapshots'] == 0):
+            committed_df = _committed_boundary_window(
+                committed_cache, neso_boundary_name, start_date, end_date
+            )
+            if committed_df is not None and not committed_df.empty:
+                committed_cov = _inspect_neso_boundary_coverage(committed_df, snapshots)
+                if coverage is None or committed_cov['matched_snapshots'] >= coverage['matched_snapshots']:
+                    bnd_df, coverage, loaded_from = committed_df, committed_cov, committed_cache
+
         if bnd_df is not None and coverage and coverage['missing_snapshots'] == 0:
             logger.debug(
                 f"  {neso_boundary_name}: loaded {len(bnd_df)} cached records "
                 f"from {loaded_from.name}"
+            )
+        elif not allow_api_fetch:
+            if bnd_df is None or bnd_df.empty:
+                raise RuntimeError(
+                    f"NESO boundary limits for {neso_boundary_name} ({start_date} to "
+                    f"{end_date}) are in neither the committed cache {committed_cache} "
+                    f"nor {cache_dir}. Refresh the committed cache with "
+                    f"'python scripts/solve/build_neso_boundary_limit_cache.py --download' "
+                    f"(or set outage_schedule.neso.allow_api_fetch: true)."
+                )
+            logger.warning(
+                f"  {neso_boundary_name}: NESO data from {loaded_from.name} covers "
+                f"{coverage['matched_snapshots']}/{len(snapshots)} requested snapshots "
+                f"(missing days: {coverage['missing_days']}). "
+                f"Applying gap_fill_mode='{gap_fill_mode}'."
             )
         else:
             if bnd_df is not None and coverage and loaded_from is not None:
@@ -785,22 +1139,30 @@ def _load_neso_boundary_inputs(outage_cfg, snapshots, logger):
                 f"AND \"Constraint Group\" = '{neso_boundary_name}' "
                 f'ORDER BY "Date (GMT/BST)" LIMIT 32000'
             )
+            import requests
+
             try:
                 resp = requests.get(api_base, params={'sql': sql}, timeout=120)
                 resp.raise_for_status()
                 result = resp.json()
-                if not result.get('success'):
-                    logger.warning(f"  {neso_boundary_name}: API error, skipping")
-                    continue
-                records = result['result']['records']
             except Exception as e:
-                logger.warning(f"  {neso_boundary_name}: fetch failed ({e}), skipping")
-                continue
+                raise RuntimeError(
+                    f"NESO boundary limits for {neso_boundary_name}: API fetch failed ({e})"
+                ) from e
+            if not result.get('success'):
+                raise RuntimeError(
+                    f"NESO boundary limits for {neso_boundary_name}: API returned an error "
+                    f"({result.get('error')})"
+                )
+            records = result['result']['records']
 
             if not records:
-                logger.debug(f"  {neso_boundary_name}: no NESO records for this period")
-                if bnd_df is None:
-                    continue
+                if bnd_df is None or bnd_df.empty:
+                    raise RuntimeError(
+                        f"NESO boundary limits for {neso_boundary_name}: no records for "
+                        f"{start_date} to {end_date}, in the API or any cache"
+                    )
+                logger.warning(f"  {neso_boundary_name}: API returned no new records")
             else:
                 bnd_df = pd.DataFrame(records)
                 bnd_df.rename(columns={
@@ -882,20 +1244,25 @@ def _align_neso_boundary_limit_series(
     )
 
 
+def _transmission_config(scenario_config):
+    """The scenario's ``network.transmission`` block; the defaults' when the config has none (a bare test config)."""
+    network_cfg = scenario_config.get('network') or {}
+    if 'transmission' in network_cfg:
+        return network_cfg['transmission']
+    from config.config_loader import load_defaults
+
+    return (load_defaults().get('network') or {}).get('transmission', {})
+
+
 def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
     """Build an extra_functionality callback enforcing NESO limits as aggregate boundary constraints."""
-    defaults_path = Path("config/defaults.yaml")
-    global_transmission = {}
-    if defaults_path.exists():
-        try:
-            with open(defaults_path, 'r', encoding='utf-8') as f:
-                defaults = yaml.safe_load(f)
-            global_transmission = defaults.get('transmission', {})
-        except Exception:
-            pass
-
-    transmission = scenario_config.get('transmission', global_transmission)
+    transmission = _transmission_config(scenario_config)
     outage_cfg = transmission.get('outage_schedule', {})
+    if outage_cfg.get('enabled', False) and outage_cfg.get('source') == 'secured_capability':
+        from scripts.solve.secured_boundaries import build_secured_boundary_specs
+
+        specs = build_secured_boundary_specs(network, outage_cfg, scenario_config, logger)
+        return _aggregate_boundary_callback(specs, logger)
     if not outage_cfg.get('enabled', False) or outage_cfg.get('source', 'csv') != 'neso':
         return None
 
@@ -976,11 +1343,10 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
 
         bnd_data = neso_df[neso_df['boundary'] == neso_boundary_name].copy()
         if bnd_data.empty:
-            logger.debug(
-                f"  {boundary_name}: no NESO data found for aggregate constraint "
+            raise RuntimeError(
+                f"{boundary_name}: no NESO data for aggregate constraint "
                 f"(source {neso_boundary_name})"
             )
-            continue
 
         fallback_limit = 0.0
         used_line_ids = list(dict.fromkeys(positive + negative))
@@ -1058,6 +1424,16 @@ def _build_neso_boundary_constraints_callback(network, scenario_config, logger):
             'soft_max_violation_mw': soft_max_violation,
         })
 
+    return _aggregate_boundary_callback(specs, logger)
+
+
+def _aggregate_boundary_callback(specs, logger):
+    """extra_functionality enforcing |signed sum of branch flows| <= limit(t) per spec.
+
+    Each spec carries positive/negative lines and transformers, signed links, a
+    per-snapshot ``limit_series`` and optional soft-slack settings. Used by the
+    NESO day-ahead limits and by the ETYS secured boundary capabilities.
+    """
     if not specs:
         logger.warning("No aggregate NESO boundary constraints were prepared")
         return None
@@ -1309,11 +1685,14 @@ def _apply_neso_boundary_limits(network, outage_cfg, snapshots, logger):
         if total_s_nom <= 0:
             continue
 
-        # Get NESO data for this boundary
-        bnd_data = neso_df[neso_df['boundary'] == boundary_name].copy()
+        # Get NESO data for this boundary (a flattened NAME::SUB entry reads
+        # its parent's NESO series, as the aggregate mode does)
+        neso_boundary_name = str(boundary_def.get('neso_boundary', boundary_name))
+        bnd_data = neso_df[neso_df['boundary'] == neso_boundary_name].copy()
         if bnd_data.empty:
-            logger.debug(f"  {boundary_name}: no NESO data found, skipping")
-            continue
+            raise RuntimeError(
+                f"{boundary_name}: no NESO data (source {neso_boundary_name})"
+            )
 
         limit_series = _align_neso_boundary_limit_series(
             bnd_data=bnd_data,
@@ -1388,7 +1767,7 @@ def _apply_synthetic_outage_schedule(network, outage_cfg, snapshots, logger):
         smax = pd.DataFrame(1.0, index=snapshots, columns=eligible.index)
 
         for comp_id, row in eligible.iterrows():
-            v_nom = row.get('v_nom', 0)
+            v_nom = row.get('voltage_kv', row.get('v_nom', 0))
             # Find matching forced outage rate (nearest voltage level)
             rate = 0.0
             for v_level in sorted(for_rates.keys(), key=lambda x: abs(float(x) - v_nom)):
@@ -1414,7 +1793,7 @@ def _apply_synthetic_outage_schedule(network, outage_cfg, snapshots, logger):
                 probs = probs / probs.sum()
                 start_idx = rng.choice(n_snapshots, p=probs)
                 end_idx = min(start_idx + maint_hours, n_snapshots)
-                smax.iloc[start_idx:end_idx][comp_id] = 0.0
+                smax.iloc[start_idx:end_idx, smax.columns.get_loc(comp_id)] = 0.0
                 applied_count += 1
 
         affected = smax.columns[smax.min() < 1.0]
@@ -1431,6 +1810,39 @@ def _apply_synthetic_outage_schedule(network, outage_cfg, snapshots, logger):
     logger.info(f"  Generated {applied_count} synthetic outage events "
                 f"(seed={seed}, min_s_nom={min_s_nom} MVA)")
     return applied_count > 0
+
+
+#: Consumer-flexibility units smaller than this (MW) are solved as fixed loads at their own drain
+#: (improve_numerical_conditioning; 1 Nov 2026).
+MIN_CONSUMER_FLEX_PNOM_MW = 2.0
+
+
+def _small_flex_drains_to_loads(network, small_storage, logger) -> float:
+    """Fixed Loads for the drains of small consumer-flexibility units about to be dropped (MWh added).
+
+    Each drained unit (``inflow < 0``) gets a Load ``"<unit> fixed drain"`` on its bus, carrier "" (base
+    demand), p_set = drain / efficiency_store: the electricity its reference took out of the Loads.
+    """
+    from scripts.demand.demand_carriers import DEMAND_FLEX_STORAGE_CARRIERS
+
+    if len(small_storage) == 0 or "carrier" not in small_storage.columns:
+        return 0.0
+    flex = small_storage.index[small_storage["carrier"].astype(str).isin(DEMAND_FLEX_STORAGE_CARRIERS)]
+    inflow = getattr(network.storage_units_t, "inflow", pd.DataFrame())
+    drained = [u for u in flex if inflow is not None and u in inflow.columns and (inflow[u] < 0).any()]
+    if not drained:
+        return 0.0
+    eta = pd.to_numeric(small_storage.loc[drained, "efficiency_store"], errors="coerce").fillna(1.0).clip(lower=1e-9)
+    p_set = (-inflow[drained].clip(upper=0.0)).div(eta, axis=1)
+    names = [f"{u} fixed drain" for u in drained]
+    p_set.columns = names
+    network.add("Load", names, bus=small_storage.loc[drained, "bus"].astype(str).to_list(), carrier="",
+                p_set=p_set)
+    weights = network.snapshot_weightings.generators.reindex(p_set.index).fillna(1.0)
+    added = float(p_set.sum(axis=1).mul(weights).sum())
+    logger.info(f"Small consumer-flexibility units: {len(drained)} drains kept as fixed Loads "
+                f"({added / 1e3:,.3f} GWh over the snapshots)")
+    return added
 
 
 def improve_numerical_conditioning(network, logger):
@@ -1464,21 +1876,35 @@ def improve_numerical_conditioning(network, logger):
         total_removed_cap = small_gens.p_nom.sum()
         logger.info(f"Removing {len(small_gens)} generators with p_nom < {min_pnom} MW "
                      f"(total: {total_removed_cap:.2f} MW - negligible)")
-        # Also remove from time-varying DataFrames
-        for attr in ['p_max_pu', 'p_min_pu', 'marginal_cost']:
-            df = getattr(network.generators_t, attr, None)
+        # Also remove from every time-varying DataFrame, custom series included (the large-hydro
+        # inflow, hydro_inflow_pu, kept columns for removed units and PyPSA warned on export)
+        for attr in list(network.generators_t.keys()):
+            df = network.generators_t[attr]
             if df is not None and len(df) > 0:
                 cols_to_drop = [c for c in small_gens.index if c in df.columns]
                 if cols_to_drop:
                     df.drop(columns=cols_to_drop, inplace=True)
         network.generators.drop(small_gens.index, inplace=True)
     
-    # 2. Remove very small storage units
-    small_storage = network.storage_units[network.storage_units.p_nom < min_pnom]
+    # 2. Remove very small storage units. A small consumer-flexibility unit (F5) is demand carved out
+    # of the Loads: its drain's electricity becomes a fixed Load at its bus, so the energy stays (81
+    # units, 2.95 GWh a year on the CP30 2030 build). Keeping the units instead made the BM infeasible:
+    # held at Stage 1 legs solved to the barrier's absolute tolerance, a 0.002 MW heat-pump unit's
+    # rebuilt state of charge ended below zero (F5 fix test, 19 Jan 2030).
+    # Consumer flexibility (F5) is one unit per carrier per demand bus: 2,451 units in CP30 2030, half of them
+    # under 5 MW. Those small units made the central-dispatch windows 5-10x slower and left the barrier
+    # 'suboptimal' (objectives about 3% off); below MIN_CONSUMER_FLEX_PNOM_MW they become fixed loads at their
+    # own drain, losing 1.1% of the flexible capacity (probe of 1 Nov 2026: 12-13 Apr, objectives within 0.015%
+    # of a 5 MW threshold, both optimal).
+    from scripts.demand.demand_carriers import CONSUMER_FLEX_CARRIERS
+    su = network.storage_units
+    small_storage = su[(su.p_nom < min_pnom)
+                       | (su["carrier"].astype(str).isin(CONSUMER_FLEX_CARRIERS) & (su.p_nom < MIN_CONSUMER_FLEX_PNOM_MW))]
+    _small_flex_drains_to_loads(network, small_storage, logger)
     if len(small_storage) > 0:
         total_removed_stor = small_storage.p_nom.sum()
-        logger.info(f"Removing {len(small_storage)} storage units with p_nom < {min_pnom} MW "
-                     f"(total: {total_removed_stor:.2f} MW - negligible)")
+        logger.info(f"Removing {len(small_storage)} storage units with p_nom < {min_pnom} MW, or consumer "
+                    f"flexibility < {MIN_CONSUMER_FLEX_PNOM_MW} MW (total: {total_removed_stor:.2f} MW)")
         for attr in ['p_max_pu', 'p_min_pu', 'state_of_charge_set', 'inflow']:
             df = getattr(network.storage_units_t, attr, None)
             if df is not None and len(df) > 0:
@@ -1503,14 +1929,18 @@ def improve_numerical_conditioning(network, logger):
             network.links.drop(small_links.index, inplace=True)
     
     # 4. Clamp transformer reactance to reasonable range
-    # Very high x values (>10) create extreme coefficient ratios
+    # Reactances above 10 pu on 100 MVA (1,000 %) create extreme coefficient
+    # ratios. Transformer x is per unit on its own s_nom, so the test is on
+    # x * 100 / s_nom (a raw-x test would clamp relaxed 9,999 MVA units).
     if len(network.transformers) > 0:
-        high_x = network.transformers.x > 10.0
+        s_nom = network.transformers.s_nom.astype(float)
+        x_pu100 = network.transformers.x.astype(float) * BASE_MVA / s_nom
+        high_x = x_pu100 > 10.0
         n_high_x = high_x.sum()
         if n_high_x > 0:
             logger.info(f"Clamping {n_high_x} transformer reactance values from "
-                         f"max {network.transformers.loc[high_x, 'x'].max():.1f} to 10.0")
-            network.transformers.loc[high_x, 'x'] = 10.0
+                         f"max {x_pu100[high_x].max():.1f} to 10.0 pu on 100 MVA")
+            network.transformers.loc[high_x, 'x'] = 10.0 * s_nom[high_x] / BASE_MVA
     
     # Report final coefficient ranges
     gen_pnom = network.generators[network.generators.p_nom > 0]['p_nom']
@@ -1780,6 +2210,8 @@ if __name__ == "__main__":
         
         # Get parameters
         scenario_config = snakemake.params.scenario_config
+        require_pypsa_branch_units(network, "network solve",
+                                   scenario_config.get("network_model"), logger)
         solver_name = snakemake.params.solver
         solver_options = snakemake.params.solver_options
         scenario_id = scenario_config.get('scenario_id', snakemake.wildcards.scenario)
@@ -1886,8 +2318,13 @@ if __name__ == "__main__":
             logger.info("=" * 80)
         else:
             logger.info("Solving full year (no period restriction)")
+
+        # ETYS seasonal circuit ratings by month (after the floor, overrides,
+        # outages and the solve period, so the factor frame covers the period)
+        apply_seasonal_line_ratings(network, scenario_config, logger)
         
         apply_load_shedding_limits(network, logger)
+        enforce_feasible_generator_operating_bounds(network, logger)
 
         logger.info(f"Optimization will run for: {len(network.snapshots)} snapshots")
         
@@ -1978,12 +2415,15 @@ if __name__ == "__main__":
         neso_boundary_callback = _build_neso_boundary_constraints_callback(
             network, scenario_config, logger
         )
+        ic_capacity_callback = build_interconnector_shared_capacity_callback(
+            network, logger
+        )
 
         status, termination_condition = network.optimize(
             solver_name=solver_name,
             solver_options=solver_options,
             extra_functionality=combine_extra_functionalities(
-                hydro_callback, neso_boundary_callback
+                hydro_callback, neso_boundary_callback, ic_capacity_callback
             ),
         )
         

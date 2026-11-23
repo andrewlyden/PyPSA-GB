@@ -1,0 +1,23 @@
+component_type,pypsa_carrier,workbook_technology,cost_technology,finance_eligible,cost_source_id,vintage_method,notes
+Generator,solar_pv,Solar PV,,true,desnz_2025,CP30_asset_identifier,CP30 solar additions only; legacy assets unchanged
+Generator,embedded_solar,Solar PV,,true,desnz_2025,CP30_asset_identifier,CP30 solar additions only; legacy assets unchanged
+Generator,wind_onshore,Onshore wind,,true,desnz_2025,CP30_asset_identifier,CP30 wind additions only; legacy assets unchanged
+Generator,embedded_wind,Onshore wind,,true,desnz_2025,CP30_asset_identifier,CP30 wind additions only; legacy assets unchanged
+Generator,wind_offshore,Offshore wind,,true,desnz_2025,CP30_asset_identifier,Uses fixed-bottom offshore central estimate because CP30 carrier has no foundation subtype
+Generator,nuclear,Large-scale nuclear,,true,workbook_lcoe,CP30_asset_identifier,Uses project workbook capex costing
+Generator,CCGT,Gas generation - unabated,,true,desnz_2025,CP30_asset_identifier,Fixed and variable non-fuel cost; dispatch fuel/carbon remains held constant across cases
+Generator,large_hydro,Hydropower,Large hydro,true,irena_2023_europe_large_hydro,CP30_asset_identifier,Rates on Hydropower; cost row Large hydro (IRENA 2023 Europe large hydro 2016-2023 in 2024 real terms)
+Generator,marine,Tidal stream,,true,desnz_2025,CP30_asset_identifier,CP30 marine carrier mapped to tidal stream; no wave split is exposed
+Generator,biomass,Biomass - unabated,,true,beis_2020,CP30_asset_identifier,Dedicated biomass central estimate uplifted to 2024 real terms
+Generator,CCS Biomass,Biomass - with CCUS - mature,,true,beis_2020,CP30_asset_identifier,Biomass CCS FOAK used for workbook mature-BECCS WACC category; uplifted to 2024 real terms
+Generator,waste_to_energy,Energy from waste,,true,beis_2020,CP30_asset_identifier,EfW central estimate uplifted to 2024 real terms
+Generator,EU_market,,,false,not_gb_asset,excluded,External market import position; no GB asset finance account
+Generator,CHP,,,false,carrier_mixed,excluded,Carrier lacks fuel and vintage split (3.7 GW industrial CHP); stays private and is declared as excluded with its size (F27 item 5)
+Generator,oil,,,false,legacy_only,excluded,Legacy asset held unchanged across all cases
+Generator,OCGT,Gas generation - unabated,Gas OCGT,true,desnz_2025,CP30_asset_identifier,"New OCGT follows the new-build lever (F27 item 5, 20 Oct 2026): rate technology CCGT's (DESNZ 2025 gives OCGT the same 8.9% hurdle), costs DESNZ 2025 OCGT 300 MW; legacy OCGT is acquired only under P3"
+Generator,gas_engine,Gas generation - unabated,Gas reciprocating engine,true,desnz_2025,CP30_asset_identifier,"New gas engines follow the new-build lever (F27 item 5, 20 Oct 2026; MR2 had held them private): rate technology CCGT's (same 8.9% DESNZ hurdle), costs DESNZ 2025 reciprocating engine"
+StorageUnit,Battery,Lithium batteries,,true,beis_storage_2018,CP30_asset_identifier,Four-hour published cost benchmark is normalised to each modelled storage duration
+StorageUnit,battery,Lithium batteries,,true,beis_storage_2018,CP30_asset_identifier,Alias retained for other PyPSA-GB runs
+StorageUnit,LAES,Novel long duration energy storage (LDES),Liquid air energy storage - 6h,true,fes2025_vintage_2030,CP30_asset_identifier,Provisional thermal-storage proxy matched to the workbook LDES WACC category; flagged in every output
+StorageUnit,pumped_hydro,,,false,legacy_only,excluded,Existing asset held unchanged across all cases
+Generator,CCS Gas,Gas generation - CCUS - mature,Gas CCUS - Net Zero Teesside,true,desnz_2025,CP30_asset_identifier,"Net Zero Teesside Power (committed overlay on CP30) on its Dispatchable Power Agreement, whose payments are on bills through remaining_ccs. Costed since F27 item 1 (24 Oct 2026) so it can join the pre-2025 option: rate the workbook's mature gas CCUS row, costs DESNZ 2025 Gas CCUS 900MW. A pre-2025 contract (DPA signed Dec 2024): private unless pre_2025_cfd_capacity takes the pre-2025 plant, and kept on its DPA in every case that acquires the legacy fleet"

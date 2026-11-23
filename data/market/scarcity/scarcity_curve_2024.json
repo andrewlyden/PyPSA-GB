@@ -1,0 +1,200 @@
+{
+  "purpose": "Item MR3(b): the Stage 1 wholesale scarcity curve, a stepped reserve shortage curve priced from the 2024 gap between actual N2EX day-ahead prices and the model, binned on NESO's published de-rated margin, with the BSC Reserve Scarcity Price below 1 GW.",
+  "precedent": "DESNZ Dynamic Dispatch Model: wholesale price = system marginal price plus a mark-up derived from historic data at times of reduced capacity margins (DECC DDM, May 2012); the DDM peer review asks that tightness be measured against capacity actually available. BSC Section T 3.13: RSVP = LoLP x VoLL.",
+  "user_decision": "23 Sep 2026: the 8 to 20 GW band (+7 to +13 GBP/MWh) counts as scarcity, following the DDM, and is reported so it can be switched off as a sensitivity.",
+  "margin_definition": {
+    "source": "NESO Capacity Market de-rating factors, 2030-31 (T-4) Four Year Ahead Capacity Auction (data/market/scarcity/neso_cm_derating_factors.csv)",
+    "generator_factors": {
+      "CCGT": 0.9048,
+      "CHP": 0.9048,
+      "OCGT": 0.9297,
+      "gas_engine": 0.9297,
+      "oil": 0.9297,
+      "coal": 0.804,
+      "nuclear": 0.7566,
+      "biomass": 0.8908,
+      "CCS Biomass": 0.8908,
+      "advanced_biofuel": 0.8908,
+      "biogas": 0.8908,
+      "waste_to_energy": 0.8908,
+      "landfill_gas": 0.8908,
+      "sewage_gas": 0.8908,
+      "large_hydro": 0.906,
+      "small_hydro": 0.906
+    },
+    "default_generator_factor": 1.0,
+    "default_generator_note": "wind, solar and other variable renewables at available output: the BSC de-rated margin adds the wind forecast rather than a de-rated capacity",
+    "generator_notes": {
+      "coal": "Coal is 0 in 2030-31 (T-4) Four Year Ahead Capacity Auction; 2026-27 (T-4) Four Year Ahead Capacity Auction value used"
+    },
+    "storage": {
+      "mode": "derated_capacity",
+      "factors_by_duration_h": {
+        "0.5": 0.0558,
+        "1": 0.1115,
+        "1.5": 0.1673,
+        "2": 0.2231,
+        "2.5": 0.2788,
+        "3": 0.3346,
+        "3.5": 0.3904,
+        "4": 0.4461,
+        "4.5": 0.5019,
+        "5": 0.5592,
+        "5.5": 0.6149,
+        "6": 0.6692,
+        "6.5": 0.7265,
+        "7": 0.7822,
+        "7.5": 0.838,
+        "8": 0.9075,
+        "8.5": 0.9075,
+        "9": 0.9075,
+        "9.5": 0.9075,
+        "10": 0.9075,
+        "10.5": 0.9075,
+        "11": 0.9075,
+        "11.5": 0.9075,
+        "12": 0.9075,
+        "12.5": 0.9075
+      },
+      "note": "the factor of the longest listed duration not above the unit's max_hours"
+    },
+    "interconnectors": {
+      "mode": "derated_capacity",
+      "factors": {
+        "Britned": 0.57,
+        "IFA2": 0.57,
+        "IFA": 0.55,
+        "Nemo": 0.71,
+        "NS Link": 0.68,
+        "Moyle": 0.49,
+        "Auchencrosh": 0.49,
+        "ElecLink": 0.6,
+        "Viking": 0.67,
+        "East West": 0.6,
+        "Greenlink": 0.61,
+        "NeuConnect": 0.66
+      },
+      "default_factor": 0.6,
+      "default_note": "median of the auction's interconnector factors"
+    }
+  },
+  "drm_from_model_margin": {
+    "model_thresholds_mw_by_season": {
+      "winter": [
+        29626.7,
+        23674.3,
+        19778.0,
+        17507.3,
+        14729.6,
+        11992.2,
+        8915.7,
+        6639.1,
+        5500.8
+      ],
+      "summer": [
+        33678.7,
+        29261.8,
+        26004.0,
+        23537.7,
+        21221.1,
+        18944.4,
+        16667.8,
+        14391.2,
+        13252.9
+      ]
+    },
+    "neso_hours_below_by_season": {
+      "winter": [
+        2696,
+        1551,
+        915,
+        617,
+        340,
+        146,
+        37,
+        3,
+        0
+      ],
+      "summer": [
+        3161,
+        1695,
+        861,
+        399,
+        123,
+        12,
+        0,
+        0,
+        0
+      ]
+    },
+    "tail_slope": 0.8785,
+    "min_match_hours": 20,
+    "correlation": 0.803,
+    "basis": "hours matched per season (October to March, April to September): each threshold's model margin has as many 2024 hours below it as NESO's 12-hour-ahead de-rated margin had below the threshold; the model margin is the de-rated margin of the 2024 solved wholesale dispatch"
+  },
+  "reference_band_gap_gbp_per_mwh": -2.04,
+  "steps": [
+    {
+      "drm_below_mw": 20000.0,
+      "price_gbp_per_mwh": 6.81,
+      "hours_2024": 2611,
+      "basis": "mean of actual N2EX less model price in the band (2611 hours)"
+    },
+    {
+      "drm_below_mw": 15000.0,
+      "price_gbp_per_mwh": 7.99,
+      "hours_2024": 1470,
+      "basis": "mean of actual N2EX less model price in the band (1470 hours)"
+    },
+    {
+      "drm_below_mw": 12000.0,
+      "price_gbp_per_mwh": 10.15,
+      "hours_2024": 760,
+      "basis": "mean of actual N2EX less model price in the band (760 hours)"
+    },
+    {
+      "drm_below_mw": 10000.0,
+      "price_gbp_per_mwh": 12.56,
+      "hours_2024": 553,
+      "basis": "mean of actual N2EX less model price in the band (553 hours)"
+    },
+    {
+      "drm_below_mw": 8000.0,
+      "price_gbp_per_mwh": 17.16,
+      "hours_2024": 305,
+      "basis": "mean of actual N2EX less model price in the band (305 hours)"
+    },
+    {
+      "drm_below_mw": 6000.0,
+      "price_gbp_per_mwh": 38.46,
+      "hours_2024": 121,
+      "basis": "mean of actual N2EX less model price in the band (121 hours)"
+    },
+    {
+      "drm_below_mw": 4000.0,
+      "price_gbp_per_mwh": 86.66,
+      "hours_2024": 34,
+      "basis": "mean of actual N2EX less model price in the band (34 hours)"
+    },
+    {
+      "drm_below_mw": 2000.0,
+      "price_gbp_per_mwh": 229.49,
+      "hours_2024": 3,
+      "basis": "mean of actual N2EX less model price in the band (3 hours)"
+    },
+    {
+      "drm_below_mw": 1000.0,
+      "price_gbp_per_mwh": 1357.2,
+      "hours_2024": 0,
+      "basis": "BSC RSVP = LoLP x VoLL at NESO's mean gate-closure LoLP below 1 GW (0.2262, 2 settlement periods)"
+    }
+  ],
+  "sources": {
+    "lolpdrm": "Elexon BMRS dataset LOLPDRM (https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/LOLPDRM), 2024",
+    "mid": "Elexon Market Index Data, APXMIDP, 2024",
+    "model": "resources/market/Historical_2024_ETYS_14zone_market_wholesale_price.csv",
+    "wholesale_network": "resources/market/Historical_2024_ETYS_14zone_market_wholesale.nc",
+    "voll_gbp_per_mwh": 6000.0
+  },
+  "hours_used": 8737
+}

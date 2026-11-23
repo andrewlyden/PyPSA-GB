@@ -1,0 +1,39 @@
+# Single-period scenarios.
+
+Validation_2020:
+  inherits: validation_2020
+  solve_period:
+    enabled: true
+    start: 2020-01-01 00:00
+    end: 2020-12-31 23:00
+  description: Full year 2020 - rolling market validation against ESPENI/ELEXON (8784h)
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.6460803
+        wind_onshore: 0.85
+        solar_pv: 0.8612621
+  support:
+    revenue:
+      enabled: true
+  consumer_bill:
+    price_cap:
+      enabled: true
+      annual_consumption_kwh: [3100]
+      cost_stack:
+        enabled: true
+      forward_procurement:
+        method: pypsa_spot_to_procurement_raw_backtest
+        spot_multiplier: 1.0
+        spot_intercept_gbp_per_mwh: 0.0
+        future_pass_through: fit only on other historical years; validate out of sample
+      historical_support_outturn:
+        enabled: true
+      cap_snapshot: 2020_annual
+      regional_weights_csv: data/market/ofgem_price_cap/2020_annual/domestic_pes_weights.csv
+      network_allowed_revenue_assumptions: data/market/consumer_bill_forecast/network_allowed_revenue_projection_template.json
+      recovery_bridge_assumptions: data/market/consumer_bill_forecast/2020_recovery_bridge_assumptions.json
+      include_same_year_support_backtest: true
+      support_to_bill_bridge: resources/analysis/ConsumerBill_2020_MonthlyFast_support_to_bill_bridge.csv
+      include_same_year_network_backtest: true
+      loss_proxy_audit: ConsumerBill_2020_MonthlyFast

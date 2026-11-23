@@ -1,0 +1,134 @@
+# Network RAV roll-forward past the determined price controls, for model year 2045 (2026-11-11, scripts/sources/fes_year_inputs.py): the 2050 file with FES 2025 HT's own 2045 peak added to the distribution path (111.47 GW, ED1 row 134).
+# Network RAV roll-forward past the determined price controls (FES 2050 plan, task Y12).
+#
+# NO OFFICIAL RAV OR TNUoS PROJECTION EXISTS AFTER 2031.  RIIO-3 (transmission) ends
+# 31 March 2031, NESO's TNUoS five-year view ends at 2030/31, RIIO-ED3 (distribution,
+# April 2028 to March 2033) had only a methodology decision as at May 2026, and no
+# NESO, Ofgem or DESNZ projection of either asset base to the 2040s was found.
+# Every figure the roll-forward produces for 2050 is therefore a declared assumption
+# built from the inputs below, each with its source, locator and status.
+#
+# Read by scripts/public_ownership/network_rav_roll_forward.py; money in GBP bn in the
+# price basis stated on each input, rebased to the model's real 2024 GBP with ONS CPIH.
+# Nothing here is read by any 2030 rule: network_finance_account.py reads this file only
+# under network_account.model_years.<year>.roll_forward_inputs.
+schema: 1
+model_price_year: 2024
+statement: >-
+  No official RAV or TNUoS projection exists after 2031: RIIO-3 ends 31 March 2031 and
+  NESO's TNUoS view ends at 2030/31; RIIO-ED3 has no determination.  The 2050 asset
+  bases are a declared roll-forward of published investment plans and FES peak demand.
+
+# ONS CPIH all items, 2015=100 (series L522, dataset MM23), release 16 Sep 2026.
+# Calendar-year averages; financial-year bases use the quarterly means already declared
+# in network_finance_account.PRICE_BASIS (2020/21, 2023/24).
+cpih_calendar:
+  values: {"2020": 108.9, "2024": 132.9, "2025": 138.0}
+  source: "ONS CPIH index 00 all items 2015=100, series L522 (MM23), annual averages, release 16 Sep 2026"
+  source_url: "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23"
+  status: sourced
+
+transmission:
+  # The anchor is the RIIO-3 period-average RAV the 2030 account already uses
+  # (Finance Annex Table 32 equity portion / (1 - 55% gearing), 54.2 bn 2023/24 prices),
+  # read as the balance at the period midpoint (1 Oct 2028), placed at the end of
+  # calendar 2028 (declared: three months apart), on the committed programme.
+  anchor_year: 2028
+  anchor_basis: "RIIO-3 period-average RAV (Finance Annex Table 32), read as the committed programme's RAV at the period midpoint, placed at end-2028"
+  anchor_remaining_life_years:
+    value: 35
+    source: "declared assumption: Ofgem publishes no ET remaining-life or depreciation figure in the RIIO-3 Finance Annex; the RAV is young after RIIO-2/3 growth and the life of new assets is 45 years"
+    status: assumption
+  depreciation_life_years:
+    value: 45
+    source: "Ofgem RIIO-3 Final Determinations Finance Annex (4 Dec 2025), para 8.34 p.121: 45-year asset life, straight-line, single RAV for existing and new ET assets"
+    status: sourced
+  capitalisation_rate:
+    value: 0.85
+    source: "Ofgem RIIO-3 Final Determinations Finance Annex, Table 27 p.134: ET Bucket 2 (re-openers, where ASTI and Beyond 2030 projects sit) totex capitalisation 85%"
+    status: sourced
+    sensitivity: 1.0
+  programmes:
+    riio3:
+      value_gbp_bn: 70.0
+      committed_gbp_bn: 44.0
+      price_basis: "2023/24"
+      years: [2026, 2030]
+      source: "Ofgem RIIO-3 Final Determinations Overview (4 Dec 2025) p.11: upper-bound estimate of around GBP 70bn of ET investment used for the bill impact, at least GBP 44bn already committed; p.14: all figures 2023/24 prices"
+      status: sourced
+      treatment: >-
+        Spread evenly over calendar 2026-2030.  The anchor carries the committed 44 bn;
+        the part of the 70 bn above it that falls before the anchor year (3/5) is added
+        at the anchor, and 2029-2030 add a fifth of the 70 bn each.
+    beyond_2030_update:
+      value_gbp_bn: 89.0
+      price_basis: "2025"
+      years: [2031, 2039]
+      source: "NESO, Beyond 2030 - Electricity Transmission Update (30 June 2026), print report pp.33 and 104: 'around GBP 89 billion of total investment in electricity transmission beyond 2030', onshore and the coordinated offshore network, 43 options; HT optimal delivery dates 2031-2039 (data workbook 383401, sheet 'Beyond 2030 ET Update')"
+      source_url: "https://www.neso.energy/document/384126/download"
+      status: sourced (amount); price base assumed
+      price_basis_note: >-
+        The report does not state the price base of the 89 bn (checked 30 Sep 2026, print
+        report and technical report).  The technical report (p.16) states its net
+        transmission benefits in 2025 prices, so 2025 prices is assumed and declared.
+        It includes the coordinated offshore network; all of it is taken into TO RAV,
+        declared (some offshore assets may sit with OFTOs).  It may overlap RIIO-3
+        spending on projects that deliver after 2030; both are taken in full, declared.
+    after_plan:
+      rule: capex_equals_depreciation
+      years: [2040, 2050]
+      source: "declared assumption: no NESO investment figure exists after the Beyond 2030 Update; decision 10 holds the Beyond 2030 network, complete by 2041, flat to 2050, so the RAV is held flat by replacement capex equal to depreciation"
+      status: assumption
+  sensitivities:
+    low:
+      note: "RIIO-3 at the committed 44 bn; the March 2024 Beyond 2030 plan (GBP 58bn to 2035, price base not stated, taken as 2024 prices) in place of the June 2026 update"
+      riio3_value_gbp_bn: 44.0
+      beyond_2030_update: {value_gbp_bn: 58.0, price_basis: "2024", years: [2031, 2035],
+                           source: "NESO Beyond 2030 (19 Mar 2024) press release: GBP 58bn investment to 2035"}
+    full_capitalisation:
+      note: "every pound of programme investment enters the RAV (capitalisation 100%)"
+      capitalisation_rate: 1.0
+    cross_check_desnz_ensf:
+      note: "DESNZ Electricity Networks Strategic Framework Appendix I (Aug 2022): GBP 40-60bn onshore transmission 2021-2050, 2020 prices; superseded by RIIO-3 and Beyond 2030, reported as a cross-check only"
+      range_gbp_bn: [40.0, 60.0]
+      price_basis: "2020"
+      source_url: "https://assets.publishing.service.gov.uk/media/6690f4320808eaf43b50ce42/electricity-networks-strategic-framework-appendix-1.pdf"
+
+distribution:
+  # The anchor is the 2030 distribution RAV the 2030 account computes (ED2 closing RAV
+  # at 31 March 2028 plus 2.5 years of the final ED2 year's net additions less
+  # depreciation, 90.4 bn 2024), at the midpoint of FY2030/31, placed at end-2030.
+  anchor_year: 2030
+  anchor_basis: "the 2030 account's ED2 roll-forward (ed2_net_growth, 2.5 years), placed at end-2030"
+  rule: peak_elasticity
+  peak_elasticity:
+    value: 1.0
+    source: "CCC Seventh Carbon Budget Methodology Report (May 2025) section 10.2.7: distribution network costs scaled from DESNZ's Electricity Networks Strategic Framework by peak demand; elasticity 1 = the RAV in proportion to peak, declared"
+    status: assumption
+  peak_demand_gw:
+    values: {"2030": 62.09, "2045": 111.468, "2050": 120.05}
+    interpolation: geometric
+    source: "NESO FES 2025 Holistic Transition, ED1 row 134, peak demand (ACS, 5-6 pm, excluding electrolysis), fiscal year"
+    status: sourced
+  anchor_depreciation:
+    source: "Ofgem RIIO-ED2 Final Determinations Finance Annex (30 Nov 2022), Appendix 5: 2027/28 depreciation, 4,000.4 m 2020/21 prices across the 14 DNOs, held flat until the anchor RAV is exhausted (declared)"
+    status: sourced (level); run-off declared
+  depreciation_life_years:
+    value: 45
+    source: "Ofgem RIIO-ED2 Final Determinations Finance Annex: 45-year regulatory asset life for additions (straight line), declared for every post-2030 addition"
+    status: sourced
+  cross_checks:
+    ofgem_ed_rav_growth:
+      value: 0.07
+      source: "Ofgem RIIO-3 Final Determinations Finance Annex para 2.19 p.15: ED RAV growth rate of 7% after RIIO-ED2, applied in the ET cost-of-debt calibration (a nominal RAV weighting, declared)"
+    desnz_ensf_distribution:
+      range_gbp_bn: [60.0, 180.0]
+      price_basis: "2020"
+      source: "DESNZ Electricity Networks Strategic Framework Appendix I (Aug 2022): GBP 60-180bn load-related distribution 2021-2050, 2020 prices"
+
+cross_checks:
+  workbook_network_capex:
+    value_gbp_bn: 160.0
+    years: [2030, 2050]
+    basis: "8 GBP bn a year x 20 (Assumptions!C14 inv_tx_50, 'Transmission investment 2030-50 (annual)', note 'FES 2025 / Beyond 2030 (NESO)'); Scenario sheets row 10 'Network capex', note 'Per RIIO-3 + Beyond 2030'; workbook prices taken as real 2024, declared"
+    source: "data/public_ownership/GB_Power_Model_v11-2.xlsx, 'Scenario 1 Status Quo'!D10 = inv_tx_50*20"

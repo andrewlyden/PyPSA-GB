@@ -295,6 +295,43 @@ boundaries:
             - DRAX42_THOM41_0
           negative:
             - COTT41_STAY41_0
+      SSHARN_B7A:
+        description: >-
+          ETYS boundary B7a (Upper North) as NESO's SSHARN cut: the circuits and the Western HVDC link that cross the
+          B7a polyline of the NESO ETYS boundary GIS (data/network/ETYS/etys_boundaries_mar25_osgb36.geojson),
+          found by scripts/solve/secured_boundaries.find_boundary_crossings on the 2020 ETYS network. They are the
+          circuits
+          NESO's SSHARN3 and SSHARN7 diagrams name (Penwortham-Washway Farm, Carrington-Penwortham,
+          Norton-Osbaldwick, Lackenby-Thornton). January 2020: model flow 6.5 GW against NESO's SSHARN 5.7 GW,
+          where the Yorkshire gate above never bound (18 Nov 2026). Positive is north to south.
+          The Western link stays counted (19 Nov 2026). Leaving it out fixed August's storm days but took 2020 to
+          about 0.6 of NESO's thermal cost; NESO's SSHARN day-ahead flow sits above the model's AC-only flow and
+          tracks AC plus the link better (October 0.91 against 0.88, November 0.94 against 0.90). The link's
+          documented January 2020 outage is network.transmission.declared_link_outages in the validation study.
+        lines:
+          - CARR41_PEWO4A_0
+          - LACK41_THTO41_0
+          - LACK41_THTO42_0
+          - NORT41_OSBA41_0
+          - NORT41_OSBA42_0
+          - PADI41_PEWO4B_0
+          - PEWO2C_WASF2A_0
+          - PEWO2D_WASF2B_0
+        links:
+          # bus0=FLIB41 (England), bus1=HUCS4- (Scotland): negative p0 is north to south
+          - name: FLIB41_HUCS4-_0
+            sign: -1
+        flow_groups:
+          positive:
+            - LACK41_THTO41_0
+            - LACK41_THTO42_0
+            - NORT41_OSBA41_0
+            - NORT41_OSBA42_0
+            - PEWO2C_WASF2A_0
+            - PEWO2D_WASF2B_0
+          negative:
+            - CARR41_PEWO4A_0
+            - PADI41_PEWO4B_0
 
   # ── ESTEX: East Export boundary ────────────────────────────────────────────
   # Wider East / South-East export area cut. The previous first-pass definition

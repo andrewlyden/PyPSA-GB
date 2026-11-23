@@ -126,8 +126,13 @@ Solution: Delete the file and re-run to force fresh download
 
 """
 
+import sys
 import yaml
 from pathlib import Path
+
+# Set GDAL_DATA / PROJ_DATA / PATH when run without `conda activate` (Windows).
+from scripts.utilities.conda_env import ensure_conda_env_vars
+ensure_conda_env_vars()
 
 # === Load cutout-specific config file ===
 configfile: "config/cutouts_config.yaml"
@@ -143,42 +148,37 @@ configfile: "config/cutouts_config.yaml"
 
 # Get demand years based on configuration method
 def get_demand_years():
-    """Get years to generate cutouts for based on config method."""
-    try:
-        years = set()
-        method = config["years_config"]["method"]
-        
-        if method in ["from_scenarios", "all_scenarios_plus_manual"]:
-            # Extract years from scenarios
-            scenarios_file = config["paths"]["scenarios_file"]
-            with open(scenarios_file, 'r') as f:
-                scenarios_data = yaml.safe_load(f)
-            
-            for scenario_name, scenario_config in scenarios_data["scenarios"].items():
-                if 'demand_year' in scenario_config:
-                    years.add(scenario_config['demand_year'])
-                if 'renewables_year' in scenario_config:
-                    years.add(scenario_config['renewables_year'])
-                if 'modelled_year' in scenario_config:
-                    years.add(scenario_config['modelled_year'])
-        
-        if method in ["manual", "all_scenarios_plus_manual"]:
-            # Add manual years
-            manual_years = config["years_config"]["years_to_generate"]
-            years.update(manual_years)
-        
-        # Always include specified years
-        always_include = config["years_config"]["always_include"]
-        years.update(always_include)
-        
-        # Add default years if none found
-        if not years:
-            years = {2020}
-                
-        return sorted(list(years))
-    except Exception as e:
-        print(f"Warning: Could not parse years from config: {e}")
-        return [2020]  # Fallback default
+    """Get years to generate cutouts for based on config method.
+
+    Errors are raised, not swallowed: a silent fallback to [2020] downloads the
+    wrong weather years without saying so.
+    """
+    years = set()
+    method = config["years_config"]["method"]
+
+    if method in ["from_scenarios", "all_scenarios_plus_manual"]:
+        # The weather years the main workflow needs, from the merged scenarios
+        # (scenarios.yaml is keyed by scenario id and inherits renewables_year
+        # through defaults and anchors), using the same rule as the main
+        # Snakefile's summary: a future modelled_year such as 2030 is not a
+        # weather year.
+        sys.path.insert(0, str(Path.cwd() / "config"))
+        from config_loader import load_config
+        from scripts.utilities.scenario_detection import summarize_scenario_configuration
+
+        merged = load_config()["scenarios"]
+        years.update(summarize_scenario_configuration(merged)["cutout_years_needed"])
+
+    if method in ["manual", "all_scenarios_plus_manual"]:
+        years.update(config["years_config"]["years_to_generate"])
+
+    years.update(config["years_config"].get("always_include", []))
+
+    # Add default years if none found
+    if not years:
+        years = {2020}
+
+    return sorted(years)
 
 # # Configuration paths from config
 atlite_cutouts_path = config["paths"]["cutouts_dir"]
@@ -213,10 +213,9 @@ rule prepare_cutouts:
     Total data size: ~700MB per year. Use with caution!
     
     BACKUP RECOMMENDATION:
-    Before running workflow changes that might affect this rule:
-    1. Copy cutouts manually: 
-       robocopy resources\\atlite\\cutouts\\ C:\\cutouts_backup\\ /E
-    2. Or use backup script: python scripts/backup_cutouts.py
+    Before running workflow changes that might affect this rule, copy
+    resources/atlite/cutouts/ somewhere safe, or re-download the published
+    cutouts from Zenodo with scripts/utilities/download_cutouts.py.
     
     TIP: Use --rerun-triggers mtime to avoid unnecessary re-downloads
     when only code (not data dependencies) has changed.

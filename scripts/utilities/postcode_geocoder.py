@@ -36,6 +36,9 @@ class PostcodeGeocoder:
         self.cache_file = Path(cache_file)
         self.cache: Dict[str, Dict] = {}
         self.new_entries = 0
+        # Postcodes whose lookup ended on network/server errors (not a 404):
+        # never an answer, so callers should fail rather than drop them.
+        self.network_failures: List[str] = []
         
         # Load existing cache
         self._load_cache()
@@ -136,6 +139,7 @@ class PostcodeGeocoder:
                 time.sleep(0.5 * (attempt + 1))
         
         logger.error(f"Failed to geocode {postcode} after {max_retries} attempts")
+        self.network_failures.append(postcode)
         return None
     
     def geocode(self, postcode: str) -> Optional[Dict]:

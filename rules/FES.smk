@@ -30,7 +30,12 @@ rule FES_data:
     Performance: ~30-60s (depends on API response time)
     """
     input:
-        config_file=f"{data_path}/FES/FES_api_urls.yaml"
+        config_file=f"{data_path}/FES/FES_api_urls.yaml",
+        # The normalisation's own inputs (stage 2): the GSP name clean-up per edition, the
+        # edition's committed GSP info table (Node IDs; FES 2020 has none) and the registry.
+        gsp_aliases=f"{data_path}/FES/gsp_aliases.csv",
+        gsp_info=lambda wc: _fes_gsp_info_input(wc.year),
+        logic=["scripts/sources/registry.py", "scripts/FES/FES_data.py"],
     output:
         fes_data=f"{resources_path}/FES/FES_{{year}}_data.csv"
     params:
@@ -44,52 +49,25 @@ rule FES_data:
     script:
         "../scripts/FES/FES_data.py"
 
+
+def _fes_gsp_info_input(year):
+    """The edition's committed GSP info table, where the edition has one (scripts/FES/FES_data.load_gsp_info)."""
+    path = Path(data_path) / "network" / "ETYS" / f"fes{int(year)}_regional_breakdown_gsp_info.csv"
+    return str(path).replace("\\", "/") if path.exists() else []
+
+
 def get_fes_workbook_path(wildcards):
-    """Get path to FES workbook, dynamically detecting available files."""
-    import re
-    from pathlib import Path
-    
+    """The FES Data Workbook of edition ``wildcards.year`` (scripts/sources/fes_adapter.WORKBOOKS).
+
+    An edition with no registered workbook fails: no other edition's prices stand in for it
+    (stage 5; before, the nearest later workbook was used with a warning).
+    """
+    from scripts.sources.fes_adapter import WORKBOOKS
     year = int(wildcards.year)
-    fes_dir = Path(data_path) / "FES"
-    
-    # Scan for all .xlsx files in FES directory
-    workbooks = list(fes_dir.glob("*.xlsx"))
-    
-    # Extract year from filename using multiple patterns
-    year_patterns = [
-        r'(?:FES\s*)?(20\d{2})',  # FES 2021, FES2021, 2021
-        r'Data-workbook(20\d{2})',  # Data-workbook2020
-        r'Future Energy Scenarios (20\d{2})',  # Future Energy Scenarios 2024
-    ]
-    
-    workbook_map = {}
-    for wb in workbooks:
-        wb_name = wb.name
-        for pattern in year_patterns:
-            match = re.search(pattern, wb_name, re.IGNORECASE)
-            if match:
-                wb_year = int(match.group(1))
-                workbook_map[wb_year] = str(wb)
-                break
-    
-    # Use exact year if available
-    if year in workbook_map:
-        return workbook_map[year]
-    
-    # Fall back to closest available year (prefer same or newer)
-    available_years = sorted(workbook_map.keys())
-    if not available_years:
-        raise FileNotFoundError(f"No FES workbooks found in {fes_dir}")
-    
-    # Find closest year >= requested year, otherwise use most recent
-    fallback_year = max(available_years)
-    for avail_year in available_years:
-        if avail_year >= year:
-            fallback_year = avail_year
-            break
-    
-    print(f"Warning: FES workbook for {year} not found, using {fallback_year}")
-    return workbook_map[fallback_year]
+    if year not in WORKBOOKS:
+        raise FileNotFoundError(f"No FES {year} Data Workbook registered (scripts/sources/fes_adapter.WORKBOOKS has "
+                                f"{sorted(WORKBOOKS)}); add the workbook to data/FES/ and register it")
+    return WORKBOOKS[year].relative_to(WORKBOOKS[year].parents[2]).as_posix()
 
 
 rule extract_FES_building_block_definitions:
@@ -137,7 +115,7 @@ rule extract_FES_prices:
     Extracts price assumptions for fuels (gas, coal, oil) and carbon from
     the FES Data Workbook sheets CP1 (fuel prices) and CP2 (carbon prices).
 
-    Falls back to most recent available workbook (FES2022) if requested year not available.
+    The edition's own workbook only (get_fes_workbook_path); a missing one fails.
 
     Transforms: FES Workbook → fuel_prices_{year}.csv, carbon_prices_{year}.csv
     """
@@ -147,7 +125,10 @@ rule extract_FES_prices:
         fuel_prices=f"{resources_path}/marginal_costs/fuel_prices_{{year}}.csv",
         carbon_prices=f"{resources_path}/marginal_costs/carbon_prices_{{year}}.csv"
     params:
-        fes_year=lambda wc: int(wc.year)
+        fes_year=lambda wc: int(wc.year),
+        price_case="Base Case",
+        # FES 2024 publishes no Base Case gas price, only High and Low: take their mean (user, 18 Nov 2026).
+        missing_case="midpoint"
     wildcard_constraints:
         year="[0-9]{4}"
     log:

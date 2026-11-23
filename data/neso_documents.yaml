@@ -1,0 +1,69 @@
+# NESO website documents the workflow reads but the repository does not redistribute (NESO's
+# website terms allow personal copies only). Rule retrieve_neso_document (rules/neso_documents.smk)
+# downloads each one to its path when it is missing and refuses a file whose SHA-256 differs.
+# If NESO moves a document, download it by hand from the landing page and save it at the path.
+documents:
+  - path: "data/CP30/Clean Power 2030 Data Workbook_V003.xlsx"
+    url: "https://www.neso.energy/document/346781/download"
+    landing_page: "https://www.neso.energy/publications/clean-power-2030"
+    title: "Clean Power 2030 Data workbook (V003, November 2024)"
+    sha256: a17d0aad724ffbbf38a24d6804b2255b01a88de701a355b4dc0572c78d77da15
+    bytes: 3254317
+  # FES Data Workbooks (scripts/sources/fes_adapter.WORKBOOKS; rules FES.smk, demand.smk, market.smk).
+  # FES 2025 is not here: NESO has replaced V005 with V006 at its link, so V005 stays in the repository.
+  - path: "data/FES/Data-workbook2020_v1_4.xlsx"
+    url: "https://www.neso.energy/document/173806/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "FES 2020 Data workbook (v1.4)"
+    sha256: 0141964152a91c8e5210be27d4fd12870f504af37319092093263cee9ce1ea07
+    bytes: 14687790
+  - path: "data/FES/FES 2021 Data Workbook V08.xlsx"
+    url: "https://www.neso.energy/document/199971/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "FES 2021 Data Workbook (V08)"
+    sha256: 5bb130c0035df2ecbe04ac775ded66757499678d6496108a80b124d18fb051e2
+    bytes: 21074803
+  - path: "data/FES/Data-workbook2022_V006 (1).xlsx"
+    url: "https://www.neso.energy/document/263876/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "FES 2022 Data workbook (V006)"
+    sha256: 1f5824991cced6400a020d1541df724e5d633da2415e27d4006c1453d9fef0e4
+    bytes: 26927096
+  - path: "data/FES/FES 2023 Data Workbook V003.xlsx"
+    url: "https://www.neso.energy/document/283061/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "FES 2023 Data workbook (V003)"
+    sha256: d03df7d7e9fcb86e0a11f090b235c38802626d326d963a129eb0f18517674320
+    bytes: 25765418
+  - path: "data/FES/Future Energy Scenarios 2024 Data Workbook_V006_0.xlsx"
+    url: "https://www.neso.energy/document/321051/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "FES: Data Workbook 2024 (V006)"
+    sha256: 2d8ff1c7706625e83450f7923149afb3452a3944a48b23224d99096df9c17030
+    bytes: 18441217
+  - path: "data/network/ETYS/Regional breakdown of FES24 data.xlsx"
+    url: "https://www.neso.energy/document/321056/download"
+    landing_page: "https://www.neso.energy/publications/future-energy-scenarios-fes/fes-documents"
+    title: "Regional breakdown of FES 2024 data (workbook)"
+    sha256: 2ee6dbe4b4b768f8bcc7e0dae554d113bf79eec093837faca2312724da583ec9
+    bytes: 37054036
+  # ETYS Appendix B, system technical data (scripts/network_build/etys_file_registry.py; rules network_build.smk).
+  # The 2022 file is not linked from the landing page; its document link still serves it.
+  - path: "data/network/ETYS/ETYS Appendix B 2022.xlsx"
+    url: "https://www.neso.energy/document/275586/download"
+    landing_page: "https://www.neso.energy/publications/electricity-ten-year-statement-etys/etys-documents-and-appendices"
+    title: "ETYS 2022 Appendix B - System technical data"
+    sha256: 9f0bb6817ef0b765c1aa5759f0912ae1114830778cdd8129b9dd0b851473502b
+    bytes: 468723
+  - path: "data/network/ETYS/ETYS Appendix B 2023.xlsx"
+    url: "https://www.neso.energy/document/304986/download"
+    landing_page: "https://www.neso.energy/publications/electricity-ten-year-statement-etys/etys-documents-and-appendices"
+    title: "ETYS 2023 Appendix B - System technical data"
+    sha256: 244f2464b6af5170d9096f8b6a15ab55471ee284064cdad371e8403ae8d21a99
+    bytes: 835870
+  - path: "data/network/ETYS/ETYS 2024 Appendix-B V1.xlsx"
+    url: "https://www.neso.energy/document/351916/download"
+    landing_page: "https://www.neso.energy/publications/electricity-ten-year-statement-etys/etys-documents-and-appendices"
+    title: "ETYS 2024 Appendix B - System technical data (V1)"
+    sha256: 753719a297f89c1f43f8e9793d4e34f36ef41bbbd5ca0cfca74aae243e33b53d
+    bytes: 946362

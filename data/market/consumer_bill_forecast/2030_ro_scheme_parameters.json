@@ -1,0 +1,90 @@
+{
+  "purpose": "Renewables Obligation scheme parameters for obligation year 2030/31, used to value ROC-eligible generation and to express it per benchmark customer under two Exchequer-relief cases.",
+  "obligation_year": "2030/31",
+  "base_obligation_year": {
+    "obligation_year": "2020/21",
+    "buyout_price_gbp_per_roc": 50.05,
+    "final_recycle_value_gbp_per_roc": 4.42,
+    "final_notional_roc_value_gbp_per_roc": 54.47,
+    "rpi_anchor_year": 2019,
+    "rpi_anchor_note": "The 2020/21 buy-out price of 50.05 is 2.604% above the 2019/20 price of 48.78, which matches ONS RPI all-items annual growth in 2019 (288.8 against 281.5 in 2018). The buy-out for an obligation year beginning in April of year Y therefore embeds RPI at its year Y-1 annual level, so 2020/21 is anchored to 2019.",
+    "source_url": "https://www.ofgem.gov.uk/transparency-document/renewables-obligation-rocs-presented-and-redistribution-buy-out-fund-2020-21",
+    "source_note": "Final notional ROC value for obligation year 2020/21, already pinned locally in data/market/consumer_bill_forecast/2020_ro_scheme_recovery_parameters.json and reused here rather than re-sourced."
+  },
+  "rpi_restatement": {
+    "from_price_year": 2019,
+    "to_price_year": 2025,
+    "index": "ONS RPI All Items Index, Jan 1987=100 (CDID CHAW), annual average",
+    "from_index": 288.8,
+    "to_index": 402.7,
+    "factor": 1.3943905817174516,
+    "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23",
+    "note": "Restates the sourced notional ROC value at the report price year. Because the buy-out is RPI-indexed every obligation year, it is flat in real RPI terms and this restatement gives the 2030/31 level with no inflation forecast."
+  },
+  "roc_bandings": {
+    "wind_onshore": 0.9,
+    "wind_offshore": 2.0,
+    "solar_pv": 1.2,
+    "biomass": 1.5,
+    "large_hydro": 1.0,
+    "marine": 5.0
+  },
+  "roc_banding_source": "Observed per station from the Ofgem certificate register (reciprocal of MWh per certificate in the latest issued compliance year) where available; otherwise these carrier defaults, from config/defaults.yaml subsidy_tracking.default_roc_bandings (final-accreditation-period levels).",
+  "load_factor_overrides": {
+    "biomass": {
+      "value": 0.39,
+      "source": "resources/CP30/CP30_ES1.csv Further Flex and Renewables 2030: biomass generation 12,155 GWh on 3,544 MW (transmission + distributed, incl. biomass CHP)",
+      "reason": "The wholesale merit order under-dispatches biomass (fuel cost above CCGT) so the model load factor (0.07) is not a credible ROC issuance basis; overridden with the CP30 pathway implied load factor until the must-run rebuild."
+    }
+  },
+  "relief_cases": {
+    "relief_ends_march_2029": 0.0,
+    "relief_extended": 0.75
+  },
+  "relief_case_source": "Autumn Budget 2025 decided to fund 75% of the domestic share of the legacy Renewables Obligation from taxation for three years from April 2026, with the cost returning to bills in 2029-30. Calendar 2030 would therefore be the first full year of gross recovery from domestic customers (relief_ends_march_2029). The relief_extended case retains the 75% Exchequer share so the two bookends are visible. Neither is a policy forecast.",
+  "relief_case_source_urls": [
+    "https://www.gov.uk/government/publications/renewables-obligation-to-exchequer-scheme-expenditure-1-april-to-30-june-2026/the-renewables-obligation-to-exchequer-scheme-expenditure-1-april-to-30-june-2026",
+    "https://commonslibrary.parliament.uk/research-briefings/cbp-10505/"
+  ],
+  "reference_external_gbp_per_3100kwh_ex_vat": 17.0,
+  "reference_source": "The Electricity Bills 2030 RO allowance, retained for comparison. At 17 GBP it is consistent with roughly a quarter of a gross cost of the order of the 2024 Ofgem replay figure of 95.4 GBP per household, that is, with the relief continuing.",
+  "limitations": [
+    "The obligation level itself is set annually by the Secretary of State to track expected certificate supply plus headroom. This file values certificate supply directly and does not reproduce the obligation-setting mechanism or any buy-out shortfall and mutualisation.",
+    "The recycle value is carried at its 2020/21 sourced level in real terms. A larger obligation shortfall in 2030/31 would raise the notional ROC value above this."
+  ],
+  "certificate_evidence": {
+    "schemes": [
+      "RO",
+      "ROS",
+      "NIRO"
+    ],
+    "observed_banding": true,
+    "activity_rule": {
+      "carriers": [
+        "biomass"
+      ],
+      "min_compliance_year_start": 2023,
+      "reason": "Item MR8, 23 Sep 2026. A fuelled, landfill or sewage-gas accreditation earns ROCs only while it burns eligible fuel, so one issued no certificates since compliance year 2023/24 is not treated as operating in 2030/31. This removes Fawley Power Station (1,000 MW, an oil station closed in 2013, accredited 2011) and steelworks and waste-gas accreditations with no issuance. Wind, solar, hydro and marine are not tested: small stations there often issue through agents, so absence of certificates under their own reference is weaker evidence."
+    },
+    "source": "data/market/ofgem_renewables_obligation/certificates_ro_current.csv (Ofgem Renewables and CHP Register, certificates, compliance years 2015/16 to 2026/27)",
+    "niro_note": "NIRO added 27 Sep 2026: NI stations are in the UK certificate volume, so they take their observed banding and the biomass activity test from their own NIRO certificates."
+  },
+  "uk_obligation_split": {
+    "uk_total_obligation_rocs": 120100000.0,
+    "ni_supply_twh": 7.5,
+    "ni_obligation_rocs_per_mwh": 0.184,
+    "gb_obligation_rocs_per_mwh": 0.472,
+    "gb_share_of_uk_obligation": 0.9885095753538717,
+    "obligation_year": "2026/27",
+    "source": "DESNZ, Calculating the level of the Renewables Obligation for 2026 to 2027: Calculation B (ROCs expected to be issued to all UK stations, plus 10% headroom) sets the UK total at 120.1 million ROCs; UK supply 270.9 TWh split 97.2% GB (263.4 TWh) and 2.8% NI (7.5 TWh); obligation 0.472 ROCs/MWh in GB and 0.184 ROCs/MWh in NI",
+    "source_url": "https://www.gov.uk/government/publications/renewables-obligation-level-calculations-2026-to-2027/calculating-the-level-of-the-renewables-obligation-for-2026-to-2027",
+    "market_source": "Ofgem, Renewables Obligation (RO) Guidance for Suppliers, version 8 (27 March 2025): 'ROC' covers England and Wales ROCs, Scottish ROCs and Northern Ireland ROCs (NIROCs), traded in a UK-wide market; each supplier's obligation is based on its supply in England and Wales, Scotland and Northern Ireland",
+    "market_source_url": "https://www.ofgem.gov.uk/sites/default/files/2025-03/Renewables-Obligation-(RO)-Guidance-Suppliers.pdf",
+    "access_date": "2026-09-27",
+    "method": "GB share = (UK total obligation - NI supply x NI level) / UK total = (120.1m - 7.5 TWh x 0.184) / 120.1m. The GB bill carries that share of UK certificate volume, NI stations included, valued at the notional ROC value and divided by GB obligation-eligible supply.",
+    "limitations": [
+      "The 2026/27 split is held for 2030/31; NI's share of UK supply and the NI-to-GB level ratio are set annually.",
+      "The notional ROC value approximates supplier cost per certificate issued; with 10% headroom the obligation exceeds issuance and the recycle payment closes the gap, as in the base-year value."
+    ]
+  }
+}

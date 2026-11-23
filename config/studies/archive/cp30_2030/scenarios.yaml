@@ -1,0 +1,256 @@
+# Single-period scenarios.
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_landing_reassignment_reinforced:
+  inherits: [archive_cp30_labels_cfd_strike_table, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_solver_accepted_conditions__62_members, archive_cp30_wholesale_renewable_curtailment_order__62_members, archive_cp30_bm_bids_mode__61_members, archive_cp30_spatial_proxy_committed_overlay_carve_out__60_members, archive_cp30_bm_bids_contract_value_bids__60_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day direct landing-bus reassignment with CP30 reinforcement and no offshore export links'
+
+CP30_FFR_2030_ETYS_market_1week_central_dispatch:
+  inherits: [archive_cp30_performance_factor_registry_enabled, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_bm_bids_mode__61_members, archive_cp30_spatial_proxy_committed_overlay_carve_out__60_members, archive_cp30_network_from__59_members, archive_cp30_market_dispatch__central_dispatch]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: one week centrally dispatched at least cost on the real network'
+  support:
+    bm_bids:
+      contract_value_bids:
+        enabled: false
+  solve:
+    solver:
+      accepted_conditions: [optimal]
+      NumericFocus: 3
+      DualReductions: 0
+
+CP30_FFR_2030_ETYS_market_1week_central_dispatch_fe:
+  inherits: [archive_cp30_central_dispatch_fe, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_solver_accepted_conditions__62_members, archive_cp30_spatial_proxy_committed_overlay_carve_out__60_members, archive_cp30_network_from__59_members, archive_cp30_wholesale_forecast_error__fe, archive_cp30_market_dispatch__central_dispatch]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: one week centrally dispatched on a day-ahead forecast, errors resolved at cost'
+
+CP30_FFR_2030_ETYS_market_1week_neso_es5_landing_reassignment:
+  inherits: [archive_cp30_except_offshore_landing_profile_preserving, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_wholesale_renewable_curtailment_order__62_members, archive_cp30_bm_bids_mode__61_members, archive_cp30_bm_bids_contract_value_bids__60_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven-day ES5 landing-bus reassignment without artificial offshore export links'
+  network:
+    reinforcements:
+      enabled: false
+  fleet:
+    spatial_proxy:
+      offshore_connection_allocation:
+        purpose: etys_landing_bus_mechanism_test_no_artificial_export_links
+
+CP30_FFR_2030_ETYS_market_1week_public_bids_p2:
+  inherits: [archive_cp30_performance_factor_registry_enabled, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_solver_accepted_conditions__62_members, archive_cp30_wholesale_renewable_curtailment_order__62_members, archive_cp30_bm_bids_mode__61_members, archive_cp30_spatial_proxy_committed_overlay_carve_out__60_members, archive_cp30_bm_bids_contract_value_bids__60_members, archive_cp30_network_from__59_members, archive_cp30_bm_bids_contract_value_bids__public_bids, archive_cp30_bm_bids_contract_value_bids__public_bids_p2]
+  solve_period:
+    enabled: true
+    start: 2030-01-03 00:00
+    end: 2030-01-09 23:00
+  description: 'CP30 FFR 2030: seven days with P2 state-owned units bidding at cost in the BM (item BM1 probe)'
+
+CP30_ND_2030_ETYS_market_1weekJan_neso_es5_landing_reassignment_reinforced:
+  inherits: [archive_cp30_cp30_nd_2030_etys_market_neso_es5_landing_reassignment_reinforced, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_solver_accepted_conditions__62_members, archive_cp30_wholesale_renewable_curtailment_order__62_members, archive_cp30_bm_bids_mode__61_members, archive_cp30_bm_bids_contract_value_bids__60_members]
+  solve_period:
+    enabled: true
+    start: 2030-01-07 00:00
+    end: 2030-01-13 23:00
+  description: 'CP30 New Dispatch 2030: Jan test week'
+  CP30_pathway: New Dispatch
+
+CP30_ND_2030_ETYS_market_1weekJul_neso_es5_landing_reassignment_reinforced:
+  inherits: [archive_cp30_cp30_nd_2030_etys_market_neso_es5_landing_reassignment_reinforced, archive_cp30_spatial_proxy_offshore_connection_allocation__except_neso_comparator_offshore_landing_profile_preserving, archive_cp30_solver_accepted_conditions__62_members, archive_cp30_wholesale_renewable_curtailment_order__62_members, archive_cp30_bm_bids_mode__61_members, archive_cp30_bm_bids_contract_value_bids__60_members]
+  solve_period:
+    enabled: true
+    start: 2030-07-08 00:00
+    end: 2030-07-14 23:00
+  description: 'CP30 New Dispatch 2030: Jul test week'
+  CP30_pathway: New Dispatch
+
+# Moved from the live study, written fully resolved.
+
+CP30_FFR_2030_ETYS_market_1week_market_yearnet:
+  modelled_year: 2030
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  market:
+    enabled: true
+    balancing: {interconnector_retrading: true, fix_interconnectors: false, bid_offer_source: derived}
+    wholesale:
+      renewable_curtailment_order: {mode: contract_aware}
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+      regional_allocation: {enabled: true, region_anchor_file: data/network/ETYS/cp30_es5_region_anchors.csv, missing_proxy_policy: anchor_proxy,
+        region_method: gsp_polygon, gsp_polygon_file: data/network/GSP/GSP_regions_27700_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      offshore_connection_allocation: {enabled: true, min_bus_voltage_kv: 275, file: data/network/ETYS/cp30_offshore_landing_point_profile_preserving.csv,
+        mode: reassign_bus_preserve_profile, audit_mapping: true, audit_project_crosswalk: true, project_evidence_register: data/network/ETYS/cp30_offshore_landing_evidence_register.csv,
+        tec_register: data/generators/tec-register-02-september-2025.csv, purpose: etys_landing_bus_mechanism_test_no_artificial_export_links_reinforced}
+      storage_regional_allocation: {enabled: true, gsp_polygon_file: data/network/GSP/GSP_regions_4326_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      brownfield:
+        enabled: true
+        statuses: [Operational, Under Construction, Awaiting Construction]
+        overshoot_policy: trim_least_mature
+        offshore_landing_policy: nearest_bus_fallback
+        offshore_landing_crosswalk: data/network/ETYS/repd_offshore_landing_crosswalk.csv
+      nuclear_station_schedule: data/market/CP30/nuclear_station_schedule_2030.csv
+      gas_station_schedule: data/market/CP30/gas_station_schedule_2030.csv
+      ccs_biomass_station_schedule: data/market/CP30/ccs_biomass_station_schedule_2030.csv
+      cfd_station_schedule: data/market/CP30/cfd_station_schedule_2030.csv
+      biomass_station_schedule: data/market/CP30/biomass_station_schedule_2030.csv
+      committed_overlay: data/market/CP30/committed_overlay_2030.csv
+      committed_overlay_carve_out:
+        CCS Gas: {cp30_line: gas, from_carrier: CCGT, reason: 'user decision 14 Oct 2026: NZT inside CP30''s 31,253 MW Gas
+            line, so total gas capacity equals CP30''s'}
+    station_registry: {enabled: true}
+  scenario_source: CP30
+  CP30_pathway: Further Flex and Renewables
+  renewables:
+    hydro:
+      large_hydro:
+        power_ceiling: availability
+        availability_pu: 0.906
+        month_end: trajectory
+        trajectory: {mean_level_hours: 84.0, smoothing_days: 30}
+    performance_factor_registry: {enabled: true}
+  network:
+    transmission:
+      outage_schedule:
+        enabled: true
+        source: secured_capability
+        secured_capability:
+          fes_pathway: HT
+          capability_file: data/network/etys2024_cp30_boundary_capability.csv
+          capability_year: 2030
+          include:
+            B4:
+            - {component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}
+      line_rating_overrides: {ELST4A_ELST41_ETYS_UPG_2029: 4000, BRNX4Q_TORN4-_ETYS_UPG_2029: 1415, BRNX4R_TORN4-_ETYS_UPG_2029: 1360}
+    reinforcements: {enabled: true, reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv, manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv,
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv, strict: false}
+  support:
+    labels:
+      cfd_vintage_schedule_file: data/market/CP30/cfd_vintage_schedule_2030.csv
+      cfd_strike_table:
+        file: data/market/lccc/cfd_strike_prices_by_round.csv
+        model_price_year: 2024
+        indexation: {from_price_year: 2012, to_price_year: 2024, from_index: 96.1, to_index: 133.9, factor: 1.393340270551509,
+          index: 'ONS CPI annual average, all items, 2015=100 (CDID D7BT)'}
+    bm_bids:
+      mode: fixed
+      contract_value_bids: {enabled: true}
+  thermal:
+    availability_factors:
+      enabled: true
+      factors: {biogas: 0.55, biomass: 0.8, CHP: 0.45, nuclear: 0.854, waste_to_energy: 0.607, CCS Biomass: 0.958}
+      min_output: {nuclear: 0.5, biomass: 0.35, waste_to_energy: 0.55, biogas: 0.45, CHP: 0.345, CCS Biomass: 0.958}
+      min_output_energy_window_hours: {biomass: 24, waste_to_energy: 24, CHP: 24, biogas: 24}
+      group_overrides:
+      - {carrier: biomass, data_source: CP30_biomass_station_schedule, min_output: 0.396}
+      - {carrier: biomass, data_source: CP30, factor: 0.382}
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2024
+      shape_conditioning: {enabled: true}
+      volume_tranches: {enabled: true}
+  solve:
+    solver:
+      accepted_conditions: [optimal, suboptimal]
+  hydrogen: {turbine_availability: 0.642}
+  network_from: CP30_FFR_2030
+  solve_period: {enabled: true, start: '2030-01-03 00:00', end: '2030-01-09 23:00'}
+  description: 'CP30 FFR 2030: seven days on the year network, contract-value bids (item BM1 probe baseline)'
+
+CP30_ND_2030_ETYS_market_neso_es5_landing_reassignment_reinforced:
+  modelled_year: 2030
+  renewables_year: 2013
+  demand_year: 2013
+  network_model: ETYS
+  market:
+    enabled: true
+    balancing: {interconnector_retrading: true, fix_interconnectors: false, bid_offer_source: derived}
+    wholesale:
+      renewable_curtailment_order: {mode: contract_aware}
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+      regional_allocation: {enabled: true, region_anchor_file: data/network/ETYS/cp30_es5_region_anchors.csv, missing_proxy_policy: anchor_proxy,
+        region_method: gsp_polygon, gsp_polygon_file: data/network/GSP/GSP_regions_27700_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      offshore_connection_allocation: {enabled: true, min_bus_voltage_kv: 275, file: data/network/ETYS/cp30_offshore_landing_point_profile_preserving.csv,
+        mode: reassign_bus_preserve_profile, audit_mapping: true, audit_project_crosswalk: true, project_evidence_register: data/network/ETYS/cp30_offshore_landing_evidence_register.csv,
+        tec_register: data/generators/tec-register-02-september-2025.csv, purpose: etys_landing_bus_mechanism_test_no_artificial_export_links_reinforced}
+      storage_regional_allocation: {enabled: true, gsp_polygon_file: data/network/GSP/GSP_regions_4326_20250109.geojson, gsp_group_region_file: data/network/ETYS/cp30_es5_region_by_gsp_group.csv}
+      brownfield:
+        enabled: true
+        statuses: [Operational, Under Construction, Awaiting Construction]
+        overshoot_policy: trim_least_mature
+        offshore_landing_policy: nearest_bus_fallback
+        offshore_landing_crosswalk: data/network/ETYS/repd_offshore_landing_crosswalk.csv
+      nuclear_station_schedule: data/market/CP30/nuclear_station_schedule_2030.csv
+      gas_station_schedule: data/market/CP30/gas_station_schedule_2030.csv
+      ccs_biomass_station_schedule: data/market/CP30/ccs_biomass_station_schedule_2030.csv
+      cfd_station_schedule: data/market/CP30/cfd_station_schedule_2030.csv
+      biomass_station_schedule: data/market/CP30/biomass_station_schedule_2030_new_dispatch.csv
+      ccs_gas_support_type: DPA
+    station_registry: {enabled: true}
+  scenario_source: CP30
+  CP30_pathway: New Dispatch
+  renewables:
+    hydro:
+      large_hydro:
+        power_ceiling: availability
+        availability_pu: 0.906
+        month_end: trajectory
+        trajectory: {mean_level_hours: 84.0, smoothing_days: 30}
+    performance_factor_registry: {enabled: true, file: data/market/support/renewable_performance_factor_registry_new_dispatch.csv}
+    proxy_profile_basis: national
+  network:
+    transmission:
+      outage_schedule:
+        enabled: true
+        source: secured_capability
+        secured_capability:
+          fes_pathway: HT
+          capability_file: data/network/etys2024_cp30_boundary_capability.csv
+          capability_year: 2030
+          include:
+            B4:
+            - {component: link, name: DRAX41_PEHE4J_HVDC_2029, sign: -1.0}
+      line_rating_overrides: {ELST4A_ELST41_ETYS_UPG_2029: 4000, BRNX4Q_TORN4-_ETYS_UPG_2029: 1415, BRNX4R_TORN4-_ETYS_UPG_2029: 1360}
+    reinforcements: {enabled: true, reference_file: resources/CP30/CP30_reference_N1_N2_NA1.csv, manifest_file: data/network/ETYS/cp30_n1_reinforcement_manifest.csv,
+      components_file: data/network/ETYS/cp30_n1_accelerated_components.csv, strict: false}
+  support:
+    labels:
+      cfd_vintage_schedule_file: data/market/CP30/cfd_vintage_schedule_2030.csv
+      cfd_strike_table:
+        file: data/market/lccc/cfd_strike_prices_by_round.csv
+        model_price_year: 2024
+        indexation: {from_price_year: 2012, to_price_year: 2024, from_index: 96.1, to_index: 133.9, factor: 1.393340270551509,
+          index: 'ONS CPI annual average, all items, 2015=100 (CDID D7BT)'}
+    bm_bids:
+      mode: fixed
+      contract_value_bids: {enabled: true}
+  thermal:
+    availability_factors:
+      enabled: true
+      factors: {biogas: 0.55, biomass: 0.8, CHP: 0.45, nuclear: 0.9, waste_to_energy: 0.62}
+      min_output: {nuclear: 0.5, biomass: 0.35, waste_to_energy: 0.55, biogas: 0.45, CHP: 0.3, CCS Biomass: 1.0}
+      min_output_energy_window_hours: {biomass: 24, waste_to_energy: 24, CHP: 24, biogas: 24}
+  interconnectors:
+    pricing:
+      hourly_shape_year: 2024
+      shape_conditioning: {enabled: true}
+      volume_tranches: {enabled: true}
+  solve:
+    solver:
+      accepted_conditions: [optimal, suboptimal]
+      threads: 2
+  description: 'CP30 New Dispatch 2030: shared full-year network for the monthly runs (built once, never solved on its own)'

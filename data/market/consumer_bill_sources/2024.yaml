@@ -1,0 +1,65 @@
+# One pinned Ofgem pre-levelised electricity model per 2024 cap period.
+# Do not replace URLs or hashes in-place: add a reviewed manifest revision if
+# Ofgem republishes a source document.
+calendar_year: 2024
+raw_cache_dir: data/market/consumer_bill_sources/raw/2024
+sources:
+  - cap_period: 2024_Q1
+    publication_date: "2023-11-23"
+    as_of_date: "2023-11-23"
+    delivery_start: "2024-01-01"
+    delivery_end: "2024-03-31"
+    workbook_period_label: "January 2024 - March 2024"
+    filename: 2024_Q1_default_cap_model.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2023-11/Default_tariff_cap_level_v1.20.xlsx
+    sha256: 1ad60a0ba7b9ff6f54eff7a081b7e53fdea5447f6dcd1c04c0fa781118aff3db
+  - cap_period: 2024_Q2
+    publication_date: "2024-02-23"
+    as_of_date: "2024-02-23"
+    delivery_start: "2024-04-01"
+    delivery_end: "2024-06-30"
+    workbook_period_label: "April 2024 - June 2024"
+    filename: 2024_Q2_prelevelised_cap.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2024-03/Default_tariff_cap_level_v1.21.xlsx
+    sha256: b374f7b7d7ba99d84998b249932623279a901939948f8389a2e8001c1cbaa74b
+    # Electricity base levelisation applied from April 2024.  The final
+    # consumer tariff therefore comes from Annex 9, while component detail
+    # continues to come from the pre-levelised cap model above.
+    applicable_tariff:
+      filename: 2024_Q2_levelised_cap.xlsx
+      sha256: d076aa7a7aa65dd8fbffd8825d0b95d52311fdb9181b8469aa19015a10d63580
+  - cap_period: 2024_Q3
+    publication_date: "2024-05-24"
+    as_of_date: "2024-05-24"
+    delivery_start: "2024-07-01"
+    delivery_end: "2024-09-30"
+    workbook_period_label: "July 2024 - September 2024"
+    filename: 2024_Q3_prelevelised_cap.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2024-05/Default_tariff_cap_level_v1.22.xlsx
+    sha256: be8ea10f6cee387b29c7a9f0858edfa43042ad31d7aa617d13a7acb1d79abf77
+    applicable_tariff:
+      filename: 2024_Q3_levelised_cap.xlsx
+      sha256: 0a9c7c4e3d8f7e3488ac34e1880eab60ff3cf775f00ab00bd82184cc2911dbd6
+  - cap_period: 2024_Q4
+    publication_date: "2024-08-23"
+    as_of_date: "2024-08-23"
+    delivery_start: "2024-10-01"
+    delivery_end: "2024-12-31"
+    workbook_period_label: "October 2024 - December 2024"
+    filename: 2024_Q4_prelevelised_cap.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2024-08/Default_tariff_cap_level_v1.23.xlsx
+    sha256: b4aa5e7b1504d706e5297ad525857dde2a586db5a981b79fa63f85b575c8f267
+    applicable_tariff:
+      filename: 2024_Q4_levelised_cap.xlsx
+      sha256: a5c7f68866ca7991aabe6601239f9101141786ef22be79d79321e5d9ecce7b89
+detail_sources:
+  # Annex 4 Q2 publishes the detailed policy costs applicable in Q1 and Q2.
+  - filename: 2024_Q2_annex_4_policy.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2024-03/Annex_4_-_Policy_cost_allowance_methodology_v1.18.xlsx
+    sha256: 2380eab14db22086d00c37b5aa97bcd0c835c421591f8a684f7d0c2458636e4f
+    cap_periods: [2024_Q1, 2024_Q2]
+  # The Q4 release supplies the detailed values for Q3 and Q4.
+  - filename: 2024_Q4_annex_4_policy.xlsx
+    url: https://www.ofgem.gov.uk/sites/default/files/2024-08/Annex_4_-_Policy_cost_allowance_methodology_v1.19%20%281%29.xlsx
+    sha256: 9fb90eb8d315820aefba2d2237c2f1fb99875fb4ea638917064d544d7f56aca1
+    cap_periods: [2024_Q3, 2024_Q4]

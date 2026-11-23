@@ -1,0 +1,33 @@
+# F20 phase 0 (13 Oct 2026): how the parity run's reduced case list is cut from a tree's own
+# config/defaults.yaml (scripts/public_ownership/f20_parity/make_reduced_config.py).
+#
+# The cut is a transform, not a copy: everything the config has today is kept except what is
+# named here, so a later edit to the case catalogue (a new named case, a preset, a twin group)
+# reaches the parity run without touching this file.
+#
+# What it keeps, and why that covers the layer:
+#   * every non-grid case (scenarios, one at a time, named, presets, bounds and the bound
+#     comparator): 118 on 13 Oct 2026.  They hold every lever value but the seven that occur
+#     only in grids, all eleven private comparators, the P2 bid case and its presets, the P3
+#     bid case and its same-fleet tariff family, and the institution (I3) case.  One at a time
+#     alone is 55 cases (an entry expands on every scenario where its lever bites), so ~60 in
+#     total cannot cover every value.
+#   * a few axes of each grid, chosen to exercise selectors, coupled options, a conditional
+#     switch, comparator levers and acquisition-only P3 positions (the P3-bids family).  The
+#     seven grid-only lever values are each on a kept axis.
+#
+# Grid axes are named by their switch token or selector name.  An axis the config no longer
+# has is reported and skipped; a kept conditional switch whose selector is dropped is dropped.
+# F29 (26 Oct 2026): passthrough-full and thermal-book were retired; strike and price-state-value replace them.
+toggle_grids:
+  max_cases: 600
+  grids:
+    public_control: [stake-15, networks, strike]
+    public_ownership: [delivered-half, overrun-15, om-plus-10]
+    public_ownership@fully_nationalised_market_value: [control-premium-20, networks, rav-premium-high]
+  bound_grids:
+    public_control: [wacc, ldes-wacc]
+    public_ownership: [wacc]
+    public_ownership@fully_nationalised_market_value: [overhead, price-state-value]
+# null keeps every named case; a list keeps those (and the cases they extend).
+named_keep: null

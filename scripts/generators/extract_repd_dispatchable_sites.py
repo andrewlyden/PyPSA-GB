@@ -106,6 +106,26 @@ def convert_osgb36_to_wgs84(x_coords: pd.Series, y_coords: pd.Series) -> tuple:
                 x_coords[valid_mask].values,
                 y_coords[valid_mask].values
             )
+            # Some Windows/conda PROJ installations have a valid EPSG database
+            # but fail to locate the OSTN grid, returning ``inf`` without an
+            # exception.  Use the published OSGB36 Helmert transform as a
+            # deterministic fallback so generated site files are never corrupt.
+            finite = np.isfinite(lon_vals) & np.isfinite(lat_vals)
+            if not finite.all():
+                logger.warning("EPSG:27700 transform returned non-finite coordinates; using Helmert fallback")
+                osgb36 = (
+                    "+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 "
+                    "+x_0=400000 +y_0=-100000 +ellps=airy "
+                    "+towgs84=446.448,-125.157,542.060,0.1502,0.2470,0.8421,-20.4894 "
+                    "+units=m +no_defs"
+                )
+                fallback = Transformer.from_crs(
+                    osgb36, "+proj=longlat +datum=WGS84 +no_defs", always_xy=True
+                )
+                lon_vals, lat_vals = fallback.transform(
+                    x_coords[valid_mask].values,
+                    y_coords[valid_mask].values,
+                )
             lon.loc[valid_mask] = lon_vals
             lat.loc[valid_mask] = lat_vals
         
@@ -210,13 +230,31 @@ def extract_dispatchable_sites_from_repd(repd_path: str) -> dict:
         
         # Create standardized site records
         for _, row in tech_sites.iterrows():
+            # Keep the original REPD identity.  These fields must survive into
+            # the PyPSA component so dispatchable biomass/biogas sites can be
+            # reconciled to the Ofgem RO register after integration.
+            source_site_name = row.get(name_col, f"Site_{_}") if name_col else f"Site_{_}"
             site = {
-                'site_name': row.get(name_col, f"Site_{_}") if name_col else f"Site_{_}",
+                'site_name': source_site_name,
+                'source_site_name': source_site_name,
+                'repd_ref_id': row.get('Ref ID', ''),
                 'capacity_mw': pd.to_numeric(row.get(capacity_col, 0), errors='coerce') or 0,
                 'technology': tech,
                 'category': category,
                 'data_source': 'REPD',
             }
+
+            # Retain scheme-relevant source attributes for later bill and
+            # certificate reconciliation.  They are intentionally not used to
+            # infer eligibility here; the source values remain auditable.
+            for source_column, output_column in {
+                'Operational': 'operational_date',
+                'RO Banding (ROC/MWh)': 'ro_banding',
+                'CfD Allocation Round': 'cfd_round',
+                'CfD Capacity (MW)': 'cfd_capacity_mw',
+            }.items():
+                if source_column in repd_df.columns:
+                    site[output_column] = row.get(source_column)
             
             # Add coordinates
             if x_col and y_col:
@@ -325,8 +363,12 @@ def main():
                 logger.info(f"Wrote {sites} {category} sites to {output_path}")
             else:
                 # Write empty CSV with headers
-                pd.DataFrame(columns=['site_name', 'capacity_mw', 'technology', 'category', 
-                                     'data_source', 'x_coord', 'y_coord', 'lat', 'lon']).to_csv(output_path, index=False)
+                pd.DataFrame(columns=[
+                    'site_name', 'source_site_name', 'repd_ref_id', 'capacity_mw',
+                    'technology', 'category', 'data_source', 'operational_date',
+                    'ro_banding', 'cfd_round', 'cfd_capacity_mw',
+                    'x_coord', 'y_coord', 'lat', 'lon',
+                ]).to_csv(output_path, index=False)
                 summary_lines.append(f"{category}: 0 sites")
                 logger.info(f"Wrote empty file for {category} (no sites found)")
         

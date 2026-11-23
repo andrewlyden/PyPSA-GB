@@ -1,0 +1,26 @@
+{
+  "description": "External comparator for the modelled 2030 constraint cost (a cited constant for the explorer's trust panel and the bill notebook). Not an input to any bill line.",
+  "added": "2026-09-29",
+  "comparators": {
+    "neso_cp30_ffr_thermal": {
+      "value_gbp": 3570000000.0,
+      "unit": "GBP a year",
+      "price_basis": "2024 prices",
+      "scope": "thermal constraints only; one year on 2013 weather; the recommended CP30 network; interconnector counter-trades are inside the figure",
+      "pathway": "Further Flex and Renewables (FFR)",
+      "source_label": "NESO, Clean Power 2030: Advice on achieving clean power for Great Britain by 2030 (5 Nov 2024), main report, Table 1, p.36",
+      "source_url": "https://www.neso.energy/publications/clean-power-2030",
+      "like_for_like_model_measure": "balancing_costs.constraint_cost_gbp (accepted offers and bids, net of slack and penalty-priced turn-down) plus annual_aggregate.interconnector_retrading_cost_GBP, in CP30_2030_cp30_network_consumer_bill_future_summary.json",
+      "price_basis_note": "The model is in real 2025 money; restating NESO to 2025 prices widens any gap by the 2024-25 inflation step."
+    },
+    "neso_cp30_ffr_thermal_voltage_stability": {
+      "value_gbp": 3680000000.0,
+      "unit": "GBP a year",
+      "price_basis": "2024 prices",
+      "scope": "thermal plus voltage and stability constraints",
+      "pathway": "Further Flex and Renewables (FFR)",
+      "source_label": "NESO, Clean Power 2030, Annex 4, Figure 10",
+      "source_url": "https://www.neso.energy/publications/clean-power-2030"
+    }
+  }
+}

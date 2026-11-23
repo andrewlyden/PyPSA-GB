@@ -194,6 +194,37 @@ class RenewableProfileGenerator:
         
         return profiles_df
 
+    def combine_with_pipeline(self, repd_sites, *pipeline_frames):
+        """Append named pipeline sites to an operational REPD site table.
+
+        The operational names are left exactly as they are, because the
+        historical scenarios match profile columns on them; pipeline names get
+        a ``(Pipeline)`` source tag, which the column matcher treats as the
+        canonical ``<site> (SOURCE)`` form. Pipeline frames may use either the
+        raw REPD ``Site Name`` schema or the prepared ``site_name`` schema;
+        duplicates across them are resolved on the tagged name, last wins.
+        """
+        frames = [frame for frame in pipeline_frames if frame is not None and not frame.empty]
+        if not frames:
+            return repd_sites.copy()
+        pipeline = pd.concat(
+            [self._standardize_site_columns(frame.copy(), 'Pipeline') for frame in frames],
+            ignore_index=True,
+        ).drop_duplicates(subset=['site_name'], keep='last')
+        if repd_sites.empty:
+            return pipeline
+        base = repd_sites.copy()
+        if 'Site Name' in base.columns and 'site_name' not in base.columns:
+            base = base.rename(columns={'Site Name': 'site_name'})
+        # Never let a pipeline row shadow an operational site of the same name.
+        pipeline = pipeline[~pipeline['site_name'].str.replace(r' \(Pipeline\)$', '', regex=True)
+                            .isin(base['site_name'].astype(str))]
+        combined = pd.concat([base, pipeline], ignore_index=True, sort=False)
+        logger.info(
+            "Combined %d operational sites with %d pipeline sites", len(base), len(pipeline)
+        )
+        return combined
+
     def combine_offshore_sites(self, repd_sites, pipeline_sites):
         """
         Combine REPD offshore wind sites with pipeline offshore wind sites.
@@ -344,30 +375,50 @@ def main():
             if cutout_year and cutout_year != year_int:
                 logger.warning(f"Cutout year {cutout_year} differs from expected {year_int}")
             
+            # Named REPD pipeline projects (under construction, consented, in
+            # planning) get coordinate-based profiles alongside the operational
+            # fleet, so a brownfield 2030 scenario can place them by site rather
+            # than fall back to the carrier fleet average. Their columns carry a
+            # "(Pipeline)" suffix, which the profile-column matcher treats as a
+            # canonical source tag.
+            def _pipeline_sites(name):
+                path = getattr(snakemake.input, name, None)
+                return gen.load_site_data(path) if path else pd.DataFrame()
+
             # Wind onshore
-            onshore_sites = gen.load_site_data(snakemake.input.wind_onshore)
+            onshore_sites = gen.combine_with_pipeline(
+                gen.load_site_data(snakemake.input.wind_onshore),
+                _pipeline_sites("wind_onshore_pipeline"),
+            )
             onshore_output = onshore_output_by_year.get(year_int)
             if onshore_output:
                 gen.generate_wind_profiles(cutout, onshore_sites, 'onshore', onshore_output)
                 total_sites += len(onshore_sites)
                 if 'wind_onshore' not in technologies_processed:
                     technologies_processed.append('wind_onshore')
-            
-            # Wind offshore - combine REPD sites with pipeline sites
-            offshore_sites = gen.load_site_data(snakemake.input.wind_offshore)
-            pipeline_sites = gen.load_site_data("resources/renewable/offshore_pipeline_processed.csv")
-            
-            # Combine offshore datasets
-            combined_offshore = gen.combine_offshore_sites(offshore_sites, pipeline_sites)
+
+            # Wind offshore - operational REPD sites plus the maintained offshore
+            # pipeline file and the REPD pipeline extract.
+            combined_offshore = gen.combine_with_pipeline(
+                gen.load_site_data(snakemake.input.wind_offshore),
+                gen.load_site_data(getattr(
+                    snakemake.input, "offshore_pipeline_processed",
+                    "resources/renewable/offshore_pipeline_processed.csv",
+                )),
+                _pipeline_sites("wind_offshore_pipeline"),
+            )
             offshore_output = offshore_output_by_year.get(year_int)
             if offshore_output:
                 gen.generate_wind_profiles(cutout, combined_offshore, 'offshore', offshore_output)
                 total_sites += len(combined_offshore)
                 if 'wind_offshore' not in technologies_processed:
                     technologies_processed.append('wind_offshore')
-            
+
             # Solar PV
-            solar_sites = gen.load_site_data(snakemake.input.solar_pv)
+            solar_sites = gen.combine_with_pipeline(
+                gen.load_site_data(snakemake.input.solar_pv),
+                _pipeline_sites("solar_pv_pipeline"),
+            )
             solar_output = solar_output_by_year.get(year_int)
             if solar_output:
                 gen.generate_solar_profiles(cutout, solar_sites, solar_output)

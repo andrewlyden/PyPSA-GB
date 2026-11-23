@@ -287,6 +287,38 @@ class TestNonRenewablesUntouched:
         assert n.generators.at["ccgt_a1", "marginal_cost"] == original_ccgt["marginal_cost"]
         assert n.generators.at["ccgt_a1", "carrier"] == "CCGT"
 
+
+class TestSchemeSupportPreservation:
+    """ROC/CfD assets must retain individual identity when requested."""
+
+    def test_preserves_roc_and_cfd_sites_while_aggregating_merchant_sites(
+        self, network_with_renewables
+    ):
+        n = network_with_renewables
+        n.generators["support_type"] = "merchant"
+        n.generators.at["wind_a1", "support_type"] = "ROC"
+        n.generators.at["wind_a2", "support_type"] = "CfD"
+
+        _, removed = aggregate_renewables_by_bus(
+            n, preserve_support_types=["ROC", "CfD"]
+        )
+
+        # The two scheme-supported wind farms share a bus/carrier, but must
+        # not be replaced by an aggregate generator.
+        assert "wind_a1" in n.generators.index
+        assert "wind_a2" in n.generators.index
+        assert n.generators.at["wind_a1", "support_type"] == "ROC"
+        assert n.generators.at["wind_a2", "support_type"] == "CfD"
+
+        # Merchant solar at BUS_C still receives the normal aggregation.
+        solar_c = n.generators[
+            (n.generators.carrier == "solar_pv")
+            & (n.generators.bus == "BUS_C")
+        ]
+        assert len(solar_c) == 1
+        assert "__agg" in solar_c.index[0]
+        assert removed == 1
+
     def test_generator_count_reduction(self, network_with_renewables):
         """Should reduce from 7 to 5 generators.
 

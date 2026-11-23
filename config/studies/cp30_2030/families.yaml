@@ -1,0 +1,114 @@
+# CP30 FFR 2030 month families. Each becomes twelve scenarios, CP30_FFR_2030_<Mon>_<family> (study.yaml family_id),
+# one per calendar month. `stage1: <family>` takes the wholesale (Stage 1) result from that family's same month.
+#
+# Network cases (the balancing stage): cp30_network = LOWER (CP30's recommended network), no_acceleration = CENTRAL
+# (the headline), seven_late, no_upgrades = UPPER. Bid stacks: market bids, or state-owned plant at cost (p2, p3).
+
+# ── Stage 1 ─────────────────────────────────────────────────────────────────
+
+stage1:
+  description: wholesale market (Stage 1) shared by every balancing family
+  inherits: [cp30_ffr_2030_month, market_stage1]
+  validation:
+    stage1:
+      energy_basis: info
+
+stage1_neso_consistent:
+  description: wholesale market (Stage 1) as CP30/NESO publish it
+  inherits: [cp30_ffr_2030_month, market_stage1_neso_consistent]
+
+# ── The balancing mechanism, by network case ────────────────────────────────
+
+no_acceleration:
+  description: balancing mechanism, CENTRAL network (CP30's accelerations not delivered)
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_acceleration]
+  stage1: stage1
+
+cp30_network:
+  description: balancing mechanism, LOWER network (CP30's recommended network)
+  inherits: [cp30_ffr_2030_month, market_balancing, network_cp30]
+  stage1: stage1
+
+seven_late:
+  description: balancing mechanism, NESO's seven most critical projects late
+  inherits: [cp30_ffr_2030_month, market_balancing, network_seven_late]
+  stage1: stage1
+
+no_upgrades:
+  description: balancing mechanism, UPPER network (no upgrades after 2025)
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_upgrades]
+  stage1: stage1
+
+# ── State-owned plant bidding at cost (public ownership P2 and P3) ──────────
+
+no_acceleration_p2_bids:
+  description: P2 bid stack, CENTRAL network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_acceleration, public_bids_p2]
+  stage1: stage1
+
+no_acceleration_p3_bids:
+  description: P3 bid stack, CENTRAL network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_acceleration, public_bids_p3]
+  stage1: stage1
+
+cp30_network_p2_bids:
+  description: P2 bid stack, LOWER network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_cp30, public_bids_p2]
+  stage1: stage1
+
+cp30_network_p3_bids:
+  description: P3 bid stack, LOWER network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_cp30, public_bids_p3]
+  stage1: stage1
+
+no_upgrades_p2_bids:
+  description: P2 bid stack, UPPER network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_upgrades, public_bids_p2]
+  stage1: stage1
+
+no_upgrades_p3_bids:
+  description: P3 bid stack, UPPER network
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_upgrades, public_bids_p3]
+  stage1: stage1
+
+# ── Central dispatch (institution I3) ───────────────────────────────────────
+
+no_acceleration_central_dispatch:
+  description: central dispatch at resource cost, CENTRAL network
+  inherits: [cp30_ffr_2030_month, market_central_dispatch, central_dispatch_secured, network_no_acceleration]
+
+cp30_network_central_dispatch:
+  description: central dispatch at resource cost, LOWER network
+  inherits: [cp30_ffr_2030_month, market_central_dispatch, central_dispatch_secured, network_cp30]
+
+no_upgrades_central_dispatch:
+  description: central dispatch at resource cost, UPPER network
+  inherits: [cp30_ffr_2030_month, market_central_dispatch, central_dispatch_secured, network_no_upgrades]
+
+# I3 is the central-dispatch year).
+cp30_network_nationalised_dispatch:
+  description: nationalised operator dispatching on forecast, LOWER network
+  inherits: [cp30_ffr_2030_month, market_central_dispatch, network_cp30]
+  market:
+    wholesale:
+      forecast_error:
+        enabled: true
+
+# ── Calibration variants ────────────────────────────────────────────────────
+
+# The interconnector counter-trade premium at 0 (calibration of the GBP 20 premium).
+cp30_network_ic_premium_0:
+  description: balancing mechanism, LOWER network, interconnector premium 0
+  inherits: [cp30_ffr_2030_month, market_balancing, network_cp30]
+  stage1: stage1
+  market:
+    balancing:
+      interconnector_counter_trade:
+        bid_premium_gbp_per_mwh: 0.0
+        premium_gbp_per_mwh: 0.0
+
+# On the NESO-consistent Stage 1, with LCP's per-country interconnector caps and no premium.
+neso_consistent_ic_caps:
+  description: balancing mechanism on the NESO-consistent Stage 1, LCP interconnector caps
+  inherits: [cp30_ffr_2030_month, market_stage1_neso_consistent, balancing, ic_premium_0, balancing_offers, network_cp30]
+  stage1: stage1_neso_consistent

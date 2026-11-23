@@ -105,11 +105,36 @@ def standardize_neso_data(neso_df: pd.DataFrame) -> pd.DataFrame:
     # Filter only built/operational interconnectors by default
     operational_status = ['Built', 'Under Construction/Commissioning']
     operational_df = result_df[result_df['status'].isin(operational_status)].copy()
-    
+
     logger.info(f"Standardized {len(result_df)} total projects")
     logger.info(f"Filtered to {len(operational_df)} operational/near-operational projects")
-    
-    return operational_df
+
+    stage = neso_df['Stage'] if 'Stage' in neso_df.columns else pd.Series(index=neso_df.index, dtype=float)
+    return collapse_staged_projects(operational_df, stage.loc[operational_df.index])
+
+
+def collapse_staged_projects(df: pd.DataFrame, stage: pd.Series) -> pd.DataFrame:
+    """Keep one row per project: its latest operational stage.
+
+    The register lists a staged TEC change as one row per stage, and the
+    "MW ... - Total" columns are cumulative, so the last stage carries the
+    asset's capacity. Moyle appears as "Auchencrosh (interconnector CCT)"
+    stage 1 (475 MW import) and stage 2 (500 MW); keeping both built a second
+    Northern Ireland link at AUCH2- beside the DUKES "Moyle" row, 990 MW of
+    HVDC for a 500 MW asset.
+    """
+    logger = logging.getLogger(__name__)
+    df = df.assign(_stage=pd.to_numeric(stage, errors='coerce').fillna(0.0),
+                   _effective=pd.to_datetime(df.get('commissioning_date'), dayfirst=True, errors='coerce'))
+    df = df.sort_values(['_stage', '_effective'], kind='stable')
+    duplicated = df.duplicated(subset=['name', 'landing_point_gb'], keep='last')
+    for name in df.loc[duplicated, 'name'].unique():
+        kept = df[(df['name'] == name) & ~duplicated].iloc[0]
+        logger.info(
+            f"Collapsed staged register rows for {name}: kept stage {kept['_stage']:.0f} "
+            f"({kept['capacity_mw']:.0f} MW import, cumulative)"
+        )
+    return df.loc[~duplicated].drop(columns=['_stage', '_effective']).sort_index()
 
 def extract_counterparty_country(project_name: str) -> str:
     """Extract counterparty country from project name."""
@@ -122,7 +147,9 @@ def extract_counterparty_country(project_name: str) -> str:
     # Order matters - check more specific keywords first
     country_keywords = {
         'france': ['ifa', 'fab', 'eleclink', 'aquind'],
-        'netherlands': ['britned', 'neuconnect'],  # Check Netherlands before Belgium
+        # NeuConnect is Germany (Fedderwarden), not the Netherlands: it was listed
+        # under both and matched the Netherlands first (fixed 26 Sep 2026).
+        'netherlands': ['britned'],  # Check Netherlands before Belgium
         'belgium': ['nemo'],  # Removed 'britned' - that's Netherlands
         'germany': ['neuconnect'],
         'norway': ['ns link', 'north sea link', 'northconnect'],

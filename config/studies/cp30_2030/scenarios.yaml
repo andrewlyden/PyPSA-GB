@@ -1,0 +1,40 @@
+# CP30 FFR 2030 single-period scenarios.
+
+# The full-year network every month family is solved on (network_from): built once, never solved on its own.
+CP30_FFR_2030:
+  description: 'CP30 FFR 2030: the full-year network the monthly families are solved on (built once, never solved on its own)'
+  inherits: [cp30_ffr_2030, self_dispatch]
+
+# A one-week dispatch on the ETYS network clustered to 30 buses (k-means), 2020 weather: a quick clustered example,
+# and the network of scripts/analysis/build_cp30_presentation_figures.py.
+CP30_FFR_2030_kmeans30:
+  description: CP30 Further Flex and Renewables 2030, ETYS clustered to 30 GB AC buses, one-week run
+  targets: {source: CP30, edition: 2024, pathway: FFR}
+  method: brownfield
+  modelled_year: 2030
+  network_model: ETYS
+  renewables_year: 2020
+  demand_year: 2020
+  fleet:
+    spatial_proxy:
+      FES_scenario: Holistic Transition
+  network:
+    clustering:
+      method: kmeans
+      n_clusters: 30
+      random_state: 42
+      init_method: k-means++
+  solve_period:
+    enabled: true
+    start: 2030-01-01 00:00
+    end: 2030-01-07 23:00
+
+# Tutorial 5 (docs/source/tutorials): one week of the CENTRAL case, 10-16 February, solved on the study's own network
+# and market settings, wholesale market then balancing mechanism.
+CP30_FFR_2030_tutorial_week:
+  description: 'Tutorials: CP30 FFR 2030, 10-16 February, wholesale market and balancing mechanism on the CENTRAL network'
+  inherits: [cp30_ffr_2030_month, market_balancing, network_no_acceleration]
+  solve_period:
+    enabled: true
+    start: 2030-02-10 00:00
+    end: 2030-02-16 23:00

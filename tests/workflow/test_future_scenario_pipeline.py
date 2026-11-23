@@ -17,6 +17,7 @@ import yaml
 import pandas as pd
 import pypsa
 from pathlib import Path
+from config.config_loader import load_defaults
 
 
 # ============================================================================
@@ -99,17 +100,15 @@ def future_scenario_outputs(project_root):
 @pytest.fixture
 def scenarios_master(project_root):
     """Load scenarios master configuration."""
-    scenarios_path = project_root / "config" / "scenarios.yaml"
-    with open(scenarios_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    from config.config_loader import load_scenario_entries
+
+    return load_scenario_entries(project_root / "config")
 
 
 @pytest.fixture
 def defaults(project_root):
     """Load defaults configuration."""
-    defaults_path = project_root / "config" / "defaults.yaml"
-    with open(defaults_path, encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    return load_defaults(project_root / "config")
 
 
 @pytest.fixture
@@ -117,7 +116,9 @@ def test_future_scenario(scenarios_master):
     """Get the Test_Future_2030 scenario configuration."""
     if "Test_Future_2030" not in scenarios_master:
         pytest.skip("Test_Future_2030 scenario not found in scenarios.yaml")
-    return scenarios_master["Test_Future_2030"]
+    # The merged scenario: the entry writes targets, and the loader fills FES_year and FES_scenario from it.
+    from config.config_loader import load_config
+    return load_config()["scenarios"]["Test_Future_2030"]
 
 
 class TestFutureScenarioConfiguration:
@@ -278,7 +279,8 @@ class TestFutureDemandProcessing:
     
     def test_demand_uses_espeni_base(self, test_future_scenario, defaults):
         """Test that future scenario uses ESPENI as base for demand."""
-        demand_timeseries = test_future_scenario.get('demand_timeseries', defaults.get('demand_timeseries'))
+        demand_timeseries = (test_future_scenario.get('demand') or {}).get(
+            'timeseries', (defaults.get('demand') or {}).get('timeseries'))
         
         # Future scenarios typically scale from historical demand (inherited from defaults)
         assert demand_timeseries == "ESPENI", \

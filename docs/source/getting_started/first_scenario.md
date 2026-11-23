@@ -1,249 +1,126 @@
-# Your First Custom Scenario
+# Your first scenario
 
-This tutorial walks you through creating and running a custom scenario.
+A scenario is a named entry in `config/scenarios.yaml` (or in a study folder). It lists only what differs from the
+defaults; everything else comes from `config/defaults/`. This page writes one, checks it and runs it. The full
+rules are in {doc}`../model/scenarios_configuration`.
 
-## Understanding Scenarios
+## 1. Start from a canonical scenario
 
-A **scenario** in PyPSA-GB defines:
-- The modelled year (historical or future)
-- Which FES pathway to use
-- Network model type (ETYS, Reduced, Zonal)
-- Solve settings and time period
-
-Scenarios are defined in `config/scenarios.yaml` and activated in `config/config.yaml`.
-
-## Step 1: View Existing Scenarios
-
-Open `config/scenarios.yaml` to see example scenarios:
+`config/scenarios.yaml` holds the canonical scenarios: tutorials, examples and quick tests. A good starting point
+is `HT35_clustered`, FES 2024 Holistic Transition in 2035 on the ETYS network clustered to GSP regions, solved for
+one winter week. Copied under a new id, it reads:
 
 ```yaml
-# Example scenario definition
-HT35:
-  description: "Holistic Transition 2035"
+My_HT35_clustered:
+  description: FES 2024 Holistic Transition 2035, ETYS clustered to GSP regions, one winter week
+  targets: {source: FES, edition: 2024, pathway: HT}
+  method: gsp_block
   modelled_year: 2035
-  renewables_year: 2019
-  demand_year: 2020              # Historical profile shape
-  network_model: "ETYS"
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  solve_period:
-    enabled: true
-    start: "2035-01-01 00:00"
-    end: "2035-01-07 23:00"
+  renewables_year: 2019          # weather year
+  demand_year: 2020              # demand profile shape year
+  network_model: ETYS
+  network:
+    clustering: gsp_spatial      # a preset from config/clustering.yaml
+  solve_period: {enabled: true, start: '2035-01-15 00:00', end: '2035-01-21 23:00'}
 ```
 
-## Step 2: Create Your Scenario
+Add it to the end of `config/scenarios.yaml`. The scenario id (`My_HT35_clustered`) becomes part of every output
+file name, so use letters, digits and underscores. Every new scenario writes `targets` and `method`, as this one
+does; the loader refuses a future scenario without them.
 
-Add a new scenario to `config/scenarios.yaml`:
+## 2. What each setting does
 
-```yaml
-# My custom scenario
-MyScenario_2040:
-  description: "Custom 2040 analysis - winter week"
-  modelled_year: 2040
-  renewables_year: 2018          # Weather year for renewables
-  demand_year: 2018              # Historical profile shape
-  network_model: "Reduced"       # Use 32-bus for faster solving
-  FES_year: 2024
-  FES_scenario: "Electric Engagement"
-  solve_period:
-    enabled: true
-    start: "2040-01-13 00:00"    # A winter week
-    end: "2040-01-19 23:00"
-  solver:
-    name: "gurobi"
-    method: 2                    # Barrier method
-```
+| Key | Meaning |
+|---|---|
+| `description` | Free text, shown by the loader and in reports. |
+| `targets` | Where the capacity, energy and demand numbers come from: `source` (`FES`, `CP30` or `historical`), `edition` (the publication year: the FES edition, 2024 for CP30) and `pathway` (a code such as `HT`, `EE`, `HE`, or a pathway name). Historical scenarios write `targets: {source: historical}`. |
+| `method` | How the fleet is built: `gsp_block` for FES, `brownfield` for CP30, `historical` for historical years. |
+| `modelled_year` | The year modelled. Up to 2024 the scenario is historical; after 2024 it is future. |
+| `renewables_year` | The weather year for wind, solar and hydro. It needs a cutout; the published ones cover 2010 to 2024. |
+| `demand_year` | The year whose half-hourly demand shape is used. For a future year the annual total comes from FES; this sets only the shape. |
+| `network_model` | `ETYS` (about 2,000 buses), `Reduced` (32 buses) or `Zonal` (17 zones). |
+| `network.clustering` | Optional: a preset name from `config/clustering.yaml` (`gsp_spatial`, `admin_regions`, `kmeans_10`, `kmeans_5`, `hierarchical_15`) or an inline block such as `{method: kmeans, n_clusters: 100}`. |
+| `solve_period` | The hours to solve. Without it the full modelled year is solved; with `enabled: true` only `start` to `end` (inclusive). The network is always built for the full year. |
+| `timestep_minutes` | Optional: 60 (the default) or 30. |
 
-### Key Configuration Options
+The FES pathways by edition are listed in `data/scenario_sources/pathways.csv`: for 2024 and 2025 they are
+Holistic Transition (`HT`), Electric Engagement (`EE`) and Hydrogen Evolution (`HE`), plus each edition's
+counterfactual (Counterfactual `CF` in 2024, Falling Behind `FB` in 2025).
 
-| Parameter | Description | Options |
-|-----------|-------------|---------|
-| `modelled_year` | Target year to model | 2010-2050 |
-| `renewables_year` | Weather data year | 2010-2024 (auto-download from Zenodo) |
-| `demand_year` | Temporal demand profile year; future annual demand comes from FES ED1 | 2010-2024 for ESPENI profiles |
-| `network_model` | Network resolution | `ETYS`, `Reduced`, `Zonal` |
-| `FES_year` | FES release year | 2021, 2022, 2023, 2024, 2025 |
-| `FES_scenario` | FES pathway name | Varies by FES release |
-| `solve_period` | Time window to solve | Any date range |
+## 3. Check it
 
-### Future Demand Accounting
-
-For future scenarios, `demand_year` selects the temporal profile shape. The annual demand target is read from the FES workbook `ED1` sheet as total consumer electricity demand. FES `Dem_BB003` supplies the GSP-level spatial shares and is scaled to the ED1 total.
-
-### Available FES Years and Scenarios
-
-FES releases are updated annually by NESO. You can use different FES release years to:
-- Compare scenario projections across different releases
-- Access historical FES assumptions from earlier releases
-- Model the evolution of capacity expectations over time
-
-**Note**: Different newer FES releases may have different scenario names and parameters. Check available data before running.
-
-## Step 3: Activate Your Scenario
-
-Edit `config/config.yaml` to add your scenario:
-
-```yaml
-run_scenarios:
-  - MyScenario_2040
-  # - HT35  # Comment out others if not needed
-```
-
-## Step 4: Validate Configuration
-
-Check your scenario is valid:
+Show the scenario as the workflow will see it, merged over the defaults:
 
 ```bash
-python scripts/validate_scenarios.py
+python config/config_loader.py --scenario My_HT35_clustered
 ```
 
-This checks:
-- All required fields are present
-- FES data exists for the specified year
-- Weather cutouts are available
-
-## Step 5: Run Your Scenario
+and see which file set a value, for example the clustering settings:
 
 ```bash
-# Dry run first to see what will execute
-snakemake --cores 4 -n -p
-
-# Full run
-snakemake --cores 4
+python config/config_loader.py --explain My_HT35_clustered --path network.clustering
 ```
 
-## Step 6: Analyze Results
+The loader stops with a clear message when something is wrong, for example:
 
-Load and analyze your results:
+- a future scenario with no `targets`: "a new scenario must write targets: {source, edition, pathway} and method";
+- an old key path: "writes solver, which was renamed in the config restructure: write solve.solver";
+- an unknown pathway, or a `targets.source` that does not fit the year (a 2020 scenario cannot take `FES` targets).
 
-```python
-import pypsa
-import pandas as pd
-import matplotlib.pyplot as plt
+`python scripts/validate_scenarios.py` runs further checks on the scenarios selected in `config/config.yaml`,
+including whether their data files and weather cutouts are present (`--no-files` skips the file checks).
 
-# Load network
-n = pypsa.Network("resources/network/MyScenario_2040_solved.nc")
+## 4. Run it
 
-# Generation dispatch over time
-gen = n.generators_t.p.groupby(n.generators.carrier, axis=1).sum()
-gen.plot.area(figsize=(12, 6), title="Generation Dispatch")
-plt.ylabel("Power (MW)")
-plt.tight_layout()
-plt.savefig("my_scenario_dispatch.png")
+Run it without editing `config/config.yaml`, dry run first:
 
-# Curtailment analysis
-renewable_carriers = ['wind_onshore', 'wind_offshore', 'solar_pv']
-for carrier in renewable_carriers:
-    gens = n.generators[n.generators.carrier == carrier]
-    if len(gens) > 0:
-        available = n.generators_t.p_max_pu[gens.index].sum(axis=1) * gens.p_nom.sum()
-        dispatched = n.generators_t.p[gens.index].sum(axis=1)
-        curtailment = (available - dispatched) / available * 100
-        print(f"{carrier}: {curtailment.mean():.1f}% average curtailment")
+```bash
+snakemake -n --config scenario=My_HT35_clustered
+snakemake -j 4 --config scenario=My_HT35_clustered
 ```
 
-## Scenario Variations
+or add it to `run_scenarios` in `config/config.yaml` and run `snakemake -j 4`.
 
-### Historical Scenario
+The first run downloads the 2019 cutout if it is missing and builds the FES 2024 inputs; later scenarios reuse
+both. The solved network is `resources/network/My_HT35_clustered_solved.nc`; see {doc}`results`.
 
-For historical validation (uses real data, not FES):
+## 5. Variations
+
+**The same system through the market.** `inherits` copies another entry and lets you change only what differs.
+Setting `market.enabled` replaces the single solve with the wholesale market and the balancing mechanism:
 
 ```yaml
-Historical_2022:
-  description: "Historical year 2022 validation"
+My_HT35_clustered_market:
+  inherits: My_HT35_clustered
+  description: as My_HT35_clustered, through the wholesale market and the balancing mechanism
+  market:
+    enabled: true
+```
+
+Both scenarios build the same network. To build it only once, give the child `network_from: My_HT35_clustered`;
+the workflow refuses this unless the two differ only in settings the build never reads (the market, the solver,
+the solve period and the description).
+
+**A historical year.**
+
+```yaml
+My_Historical_2022:
+  description: 2022 on the Reduced network, one week in January
+  targets: {source: historical}
+  method: historical
   modelled_year: 2022
   renewables_year: 2022
   demand_year: 2022
-  network_model: "ETYS"
-  # No FES_scenario needed for historical years
+  network_model: Reduced
+  solve_period: {enabled: true, start: '2022-01-10 00:00', end: '2022-01-16 23:00'}
 ```
 
-### High-Resolution Solve
+**Another solver.** `solve: {solver: {name: highs}}` in the scenario (see {doc}`installation`).
 
-For detailed analysis of specific events:
+**Another FES pathway or edition.** Change `targets`, for example `{source: FES, edition: 2025, pathway: EE}`.
 
-```yaml
-StormAnalysis_2035:
-  description: "Storm period analysis"
-  modelled_year: 2035
-  solve_period:
-    enabled: true
-    start: "2035-02-01 00:00"
-    end: "2035-02-03 23:00"  # 3-day detailed analysis
-  timestep_minutes: 30  # Half-hourly resolution
-```
+## Next
 
-### Clustered Network
-
-For faster solving with reasonable accuracy:
-
-```yaml
-HT35_clustered:
-  description: "Holistic Transition 2035 - clustered"
-  modelled_year: 2035
-  network_model: "ETYS"
-  clustering:
-    enabled: true
-    n_clusters: 100  # Reduce to 100 buses
-```
-
-### Comparing FES Releases
-
-Compare how projections change across FES releases:
-
-```yaml
-HT35_FES2024:
-  description: "HT scenario 2035 - FES 2024"
-  modelled_year: 2035
-  FES_year: 2024
-  FES_scenario: "Holistic Transition"
-  network_model: "Reduced"
-
-HT35_FES2023:
-  description: "HT scenario 2035 - FES 2023"
-  modelled_year: 2035
-  FES_year: 2023                    # Different FES release
-  FES_scenario: "Holistic Transition"
-  network_model: "Reduced"
-```
-
-Run both scenarios to compare results and understand how NESO's capacity expectations evolved between releases.
-
-## Common Issues
-
-### "Cutout not found"
-
-For years 2010-2024, cutouts are **automatically downloaded from Zenodo** when needed. If you get this error:
-
-1. **Check if cutout workflow was run**:
-   ```bash
-   ls resources/atlite/cutouts/
-   ```
-
-2. **Generate missing cutouts** (will auto-download from Zenodo for 2010-2024):
-   ```bash
-   # Configure the year first
-   nano config/cutouts_config.yaml
-   # Set: years_to_generate: [2018]
-   
-   # Run cutout workflow
-   snakemake -s Snakefile_cutouts --cores 1
-   ```
-
-3. **For years outside 2010-2024**, you'll need CDS API credentials (see {doc}`installation`).
-
-### "Infeasible optimization"
-
-Check that generation capacity meets demand:
-```python
-n = pypsa.Network("resources/network/MyScenario_unsolved.nc")
-print(f"Generation: {n.generators.p_nom.sum()/1000:.1f} GW")
-print(f"Peak demand: {n.loads_t.p_set.sum(axis=1).max()/1000:.1f} GW")
-```
-
-## Next Steps
-
-- {doc}`../user_guide/configuration` - Full configuration reference
-- {doc}`../user_guide/scenarios` - Advanced scenario design
-- {doc}`../data_reference/data_sources` - Understanding input data
+- {doc}`running_the_workflow`: targets, re-runs, studies and logs.
+- {doc}`../model/scenarios_configuration`: the configuration system in full.
+- {doc}`/reference/configuration_keys`: every setting and its default.

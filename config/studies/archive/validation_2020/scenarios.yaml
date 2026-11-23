@@ -1,0 +1,29 @@
+# Single-period scenarios.
+
+Validation_Feb23_2020_NoLineOverrides_SSESPStrict:
+  inherits: [archive_val20_base, archive_val20_timestep_minutes__7_members, archive_val20_labels_historical_roc_station_labels__6_members, archive_val20_transmission_outage_schedule__4_members, archive_val20_balancing_window_hours__4_members, archive_val20_transmission_outage_schedule__nolineoverrides_ssespstrict]
+  solve_period:
+    enabled: true
+    start: 2020-02-23 00:00
+    end: 2020-02-23 23:30
+  description: Quick one-day SSE-SP strict-cut smoke test - 23 February 2020
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.623714
+        wind_onshore: 0.820575
+        solar_pv: 0.735329
+
+Validation_Jun2020_0p5hLegacy:
+  inherits: [archive_val20_base, archive_val20_transmission_line_rating_overrides__7_members, archive_val20_timestep_minutes__7_members, archive_val20_balancing_window_hours__3_members]
+  solve_period:
+    enabled: true
+    start: 2020-06-01 00:00
+    end: 2020-06-30 23:30
+  description: June 2020 full month - rolling market validation against ESPENI/ELEXON
+  renewables:
+    performance_factors:
+      factors:
+        wind_offshore: 0.6579
+        wind_onshore: 0.918
+        solar_pv: 0.8617

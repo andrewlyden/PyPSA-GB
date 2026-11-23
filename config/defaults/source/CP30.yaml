@@ -1,0 +1,504 @@
+# Source overlay: NESO Clean Power 2030 (targets.source: CP30).
+#
+# Merged over the base and the method overlay for every scenario whose targets.source is CP30, never
+# by scenario name (config/defaults/README.md). It holds what the CP30 publication gives or what this
+# model pins for it: its files and workbook, its validation checks, the FES editions it uses as spatial
+# proxies, its fuel, carbon and interconnector price bases, its hydrogen demand, its cable set and dated
+# network works, the pinned station registry, and the calibration of the BM bid stack to it. How a
+# brownfield fleet is built belongs in method/brownfield.yaml, not here.
+source_data:
+  version: "V003"
+  workbook: "data/CP30/Clean Power 2030 Data Workbook_V003.xlsx"
+  files:
+    es1: "resources/CP30/CP30_ES1.csv"
+    es5: "resources/CP30/CP30_ES5_regional.csv"
+    ed1: "resources/CP30/CP30_ED1.csv"
+    reference: "resources/CP30/CP30_reference_N1_N2_NA1.csv"
+    validation: "resources/CP30/CP30_validation_report.csv"
+    interconnector_prices: "resources/CP30/CP30_interconnector_prices.csv"
+  network_assumption: "PyPSA_GB_configured_network_model_with_CP30_reference_metadata_only"
+network:
+  # (ETYS_upgrades.add_cp30_dated_works). Appendix B publishes snapshot years only (2029, then
+  # 2032/2033), so these works sit in a later snapshot. Pulled into a build only where the
+  # scenario's cp30_reinforcements is enabled and the work is due by its modelled year; each row
+  reinforcements:
+    appendix_b_dated_works_file: "data/network/ETYS/cp30_appendix_b_dated_works.csv"
+  # Adds only individually evidenced HND buses and circuits to the dated ETYS backbone. The register
+  # must state whether each asset is already in ETYS; an unreviewed overlap is an error, not a double count.
+  hnd_hybrid:
+    enabled: false
+    asset_register: "data/network/HND/hnd_hybrid_asset_register.csv"
+interconnectors:
+  # CP30's cable set (scripts/CP30/storage_interconnectors.compose_cp30_interconnectors), read by the
+  # network build, the availability profiles, the Capacity Market auction and the locational checks.
+  # Each mapped register cable at CP30's nominal rating, MaresConnect (Bodelwyddan BODE41, 750 MW,
+  # Ireland/SEM) added in 2030 and the Isle of Man cable (74 MW, outside CP30's count) left out:
+  # 10,300 + NeuConnect 1,400 + 750 = 12,450 MW = ES1 2030, nothing scaled; a mismatch fails the build.
+  # That the 750 MW step is MaresConnect is a modelling judgement (CP30 does not name the cable).
+  cp30_composition:
+    file: "data/interconnectors/cp30_interconnector_composition.csv"
+  pricing:
+    source: "cp30"
+    # Foreign prices (scripts/interconnectors/cp30_foreign_prices.py): TYNDP 2024 National Trends 2030
+    # rebased to CP30's fuel, one hourly price per counterparty country at its own level. The trading
+    # hurdle and the export-bid floor are the base's (single_price_transaction_spread_gbp_per_mwh,
+    # single_price_export_bid_floor_gbp_per_mwh); the hurdle is fitted to 2024 GB trade (ESPENI flows,
+    # Elexon MID, ENTSO-E day-ahead). The set is calibrated to CP30 FFR 2030 ES1's interconnector volumes
+    # on 2013 weather; re-fit it for another pathway, year or weather year. CP.29's import price above its
+    # export price (89.43 / 40.09 GBP/MWh) cannot be reproduced by a single foreign price.
+    foreign_price_source: "cp30_basis"
+    single_price_per_country: true
+    # method: rebase_cy2009 | refit_2013. refit_2013 learns TYNDP's price response to residual load in
+    # its CY2009 weather and predicts it on 2013 wind and solar (renewables.ninja), so continental prices
+    # co-move with GB wind. foreign_new_ccgt_gbp (GBP/MWh) is the rebase ratio's GB end: CP30's SRMC method
+    # (CP.25) for a 58% CCGT at 100.68 p/therm (CP.22) and carbon at 122 GBP/t (FES 147 less the 25 UK
+    # premium) on CP30's emission factor 0.2016 t/MWh. The SEM takes 2024 ENTSO-E prices + 7.5 GBP/MWh.
+    cp30_basis:
+      method: refit_2013
+      foreign_new_ccgt_gbp: 102.9
+fleet:
+  station_registry:
+    registry_id: "gb_public_2026_07"
+  spatial_proxy:
+    FES_year: 2025
+    # CP30 ES1 supplies national MW only. This optional, source-backed file can replace a carrier's FES
+    # spatial weights with explicit ETYS project-to-node shares, keeping the CP30 total exact. Keep it off
+    # until its cited rows have ratings and topology confirmed by NESO or the relevant TO/OFTO.
+    offshore_connection_allocation:
+      enabled: false
+      file: "data/network/ETYS/cp30_offshore_connection_allocation.csv"
+    # Optional project-to-node allocation that follows a documented ETYS-HND hybrid topology. Off: the
+    # HND plan alone does not supply the project-to-CP30-region/node crosswalk.
+    hnd_project_allocation:
+      enabled: false
+      portfolio_file: "data/network/HND/hnd_implementation_plan_2025_projects.csv"
+      crosswalk_file: "data/network/HND/hnd_cp30_project_crosswalk.csv"
+hydrogen:
+  electrolysis_capacity_source: "CP30_ED1_grid_connected_electrolysis_capacity"
+  electrolysis_missing_data_fallback: "CP30_ES1_electrolysis_demand_derived"
+  electrolysis_full_load_hours: 4000.0
+  # Exogenous hydrogen offtake on the GB H2 bus: the pathway's electrolysis electricity demand converted
+  # to H2 at the electrolyser efficiency, flat across the year (CP30 FFR 2030 ES1: 14.86 TWh). Without it
+  # electrolysis runs only to refuel the H2 turbines. source: cp30_es1_electrolysis_demand | fixed_mwh
+  # (with mwh_h2). share: share 0-1 of that demand. A study may rescale it at solve time
+  # (market.hydrogen_offtake_scale).
+  exogenous_demand:
+    enabled: true
+    source: "cp30_es1_electrolysis_demand"
+    share: 1.0
+  # source: external_supply | electrolysis (code default). external_supply: the H2 turbines burn hydrogen
+  # bought from the wider hydrogen system at CP30's price, on their own bus (GB_H2_power_fuel, a priced
+  # Store; scripts/hydrogen/add_hydrogen_system.py), so electrolysis is the offtake's alone. Price: CP30
+  # prices hydrogen at 1.2 x gas = 41.2 GBP/MWh on the gas price's gross-calorific basis (CP.22: 100.68
+  # p/therm), i.e. HHV. The GB_H2 system is in MWh LHV (electrolysis 0.70, turbines 0.50), so the price is
+  # 41.2 x 141.88 / 119.96 (H2 HHV / LHV, MJ/kg) = 48.73 GBP/MWh_H2 (LHV). market.hydrogen_store's
+  # end-of-window value carries the same price (a test holds them equal).
+  turbine_fuel:
+    source: "external_supply"
+    price_gbp_per_mwh_h2: 48.73
+  # The turbines' VOM (GBP/MWh) is per MWh of electricity (add_hydrogen_system.H2_TURBINE_MARGINAL_COST),
+  # but a link's marginal cost is per MWh of p0 (hydrogen in). basis: electricity_output puts
+  # 5 x 0.50 = 2.5 GBP/MWh on p0; hydrogen_input (code default) puts the full value on p0.
+  turbine_variable_om:
+    gbp_per_mwh: 5.0
+    basis: "electricity_output"
+  # FES edition and pathway for electrolyser siting by GSP node (method/brownfield.yaml): FES 2024
+  # Holistic Transition 2030 networked electrolysis (Dem_BB009, 3,653.1 MW = CP30 ED1 grid electrolysis).
+  electrolyser_siting:
+    fes_year: 2024
+    fes_scenario: "Holistic Transition"
+# Future commodity costs come from the generated NESO Annex 4 resource unless a scenario selects a
+# sensitivity case.
+marginal_costs:
+  future_costs:
+    case: neso_cp2030
+    # CP30's gas price, p/therm: CP.22's Clean pathways 100.68 p/therm = 34.354 GBP/MWh thermal (CP30
+    # Assumptions, Economic), not the "around 100p/therm" of Annex 4's text that the neso_cp2030 extract
+    # carries (34.12). Applied at build time by apply_marginal_costs.
+    gas_price_override_pence_per_therm: 100.68
+    # net_cv | gross_cv. CP30's efficiencies are net-CV (58% CCGT), so gas carbon uses CP30's net-CV
+    # factor 0.2016 t/MWh (Annex 4, CP.25), not the gross-CV 0.183: at 100 p/therm and 147 GBP/t a 58%
+    # CCGT costs 112 and a 42% one 154 GBP/MWh, CP.25's 112-155. CCS Gas emits 10% of it.
+    gas_emission_factor_basis: net_cv
+    # CP30 CP.25 prices gas reciprocating engines at a fuel cost of 98.157 GBP/MWh at the CP.22 gas
+    # price (34.354 GBP/MWh thermal): efficiency 0.350. CP30 gives no OCGT or fleet-average CCGT figure,
+    # so those keep the base class values (CP.25's CCGT range bounds the per-unit spread in
+    # scripts/CP30/gas_schedule.py).
+    efficiency_defaults:
+      gas_engine: 0.350
+support:
+  labels:
+    # Share 0-1 of the FES proxy increment labelled CfD (the rest merchant). Onshore 1.0: onshore is back
+    # in CfD auctions since AR4 and CP30 relies on AR7+ for new build.
+    fes_cfd_fractions:
+      wind_onshore: 1.0
+  bm_bids:
+    mode: "empirical"
+    calibration_scenarios:
+      - "Historical_2020_ETYS_market_WP5A_calibration"
+      - "Historical_2020_ETYS_market_WP5A_holdout"
+    quantiles: [0.25, 0.50, 0.75]
+    max_abs_historic_price: 2000.0
+    mapping_match_methods: ["direct", "power_station_dictionary_direct"]
+    legal_cfd_crosswalk:
+      enabled: true
+      file: "resources/market/station_identity/gb_public_2026_07/bmu_station_support_crosswalk.csv"
+    # The 2020-24 bid cache is time-valid against CfD evidence. Offers use compatible price-volume data
+    # available for 2021-23.
+    cached_bid_years: [2020, 2021, 2022, 2023, 2024]
+    renewable_bid_cache_dir: "resources/market/elexon"
+    cached_offer_years: [2021, 2022, 2023]
+    renewable_offer_cache_dir: "resources/market/elexon"
+    # Contract-value CfD bids in the balancing solve (scripts/market/cfd_bm_bids.py). When enabled each
+    # CfD unit bids by its own strike, read from the published strike table the bill's CfD line settles
+    # against, instead of one scalar bid for every CfD unit; merchant renewables bid merchant.bid_price.
+    # ROC bids are unchanged. Needs the Stage 1 clearing price, so it applies to the balancing solve only.
+    contract_value_bids:
+      enabled: false
+      # GBP/MWh; null keeps the offer price the rest of the pricing chain resolved (0.0 for CfD units).
+      cfd_offer_price: null
+      # error | retain_static. error refuses to solve when a CfD unit has no strike-table entry, not even
+      # the declared future strike; retain_static keeps its scalar bid and warns.
+      missing_strike_policy: "error"
+      # Each round's negative-pricing term (revenue_tracking.negative_price_eligibility): a CfD unit bids
+      # 0 in an hour its contract pays nothing (AR4+: price < 0; AR1-AR3: inside a six-hour negative run).
+      # Must match the bill's model_linked_rules.cfd.negative_price_rule; recorded in the bid audit.
+      negative_price_rule: "gb_contract_terms"
+      # What a privately held CfD unit bids to be turned down: strike = the whole strike in every hour the
+      # contract pays; contract_value = strike - reference, floored per contract_value_floor. Strike: 2024
+      # BM acceptances on CfD wind BMUs averaged 64.6 GBP/MWh, near strike, and NESO prices CP30
+      # constraint bids from allocation round data. FTI for NESO 2025 (slide 53) bids CfD renewables at
+      # "CfD strike price - Wholesale price"; LTMNC section 9 at the subsidy forgone. Recorded in the bid
+      # audit, so the bill's compensation recompute and the settlement follow it. Equals
+      # cfd_bm_bids.DEFAULT_BID_BASIS.
+      bid_basis: "strike"
+      # contract_value basis only: zero = max(strike - reference, 0); none = strike - reference unfloored
+      # (FTI), negative when the reference exceeds the strike: the unit then saves the difference payment
+      # it would pay back, and NESO receives it. Recorded in the bid audit, so the compensation recompute
+      # and the settlement follow it. Equals cfd_bm_bids.DEFAULT_CONTRACT_VALUE_FLOOR.
+      contract_value_floor: "zero"
+      # GBP/MWh, objective only: a price on turning any wind, solar or marine unit up, stripped from
+      # reported costs. Same-technology units are indifferent to swapping, so without it the reported
+      # swap volume is solver-arbitrary.
+      turn_up_floor_gbp_per_mwh: 2.0
+      merchant:
+        # GBP/MWh, ESO-cost convention (positive = the ESO pays to turn the unit down): what merchant wind
+        # was paid to turn down in the 2024 BM (Seagreen, merchant in 2024, about 20; thin evidence, one
+        # farm), reflecting lost REGO and PPA volume. In a negative-reference hour AR4+ CfDs (bid 0) are
+        # turned down before merchant. Equals cfd_bm_bids.DEFAULT_MERCHANT_BID.
+        bid_price: 20.0
+        carriers:
+          - wind_onshore
+          - wind_offshore
+          - solar_pv
+          - embedded_wind
+          - embedded_solar
+      # Baseload contracts settle against a season-ahead reference, not the hourly one. A monthly solve
+      # cannot form a seasonal mean, so a listed carrier is priced on the solve window's demand-weighted
+      # mean and the audit records that basis. Nuclear is the only baseload CfD carrier in the CP30 fleet
+      # and it is excluded from contract-value bids, so the list is empty and the branch inert.
+      reference_price_basis:
+        baseload_carriers: []
+# CP30 market settings. market.enabled stays false in the base: a scenario opts into the two-stage solve.
+market:
+  # Value of hydrogen left in the GB_H2 store at the end of a solve window, GBP/MWh_H2 (LHV): CP30's
+  # hydrogen price, 1.2 x gas (41.2 GBP/MWh HHV) in the GB_H2 system's LHV units (x 141.88 / 119.96). It
+  # must equal hydrogen.turbine_fuel.price_gbp_per_mwh_h2. An electrolyser's willingness to pay is then
+  # 0.70 x 48.73 = 34.11 GBP/MWh electricity. It sets only the banking bid; the offtake fixes the volume.
+  hydrogen_store:
+    end_of_window_value_gbp_per_mwh_h2: 48.73
+  balancing:
+    bid_offer_source: "future_bid_stack"
+    # Fossil-fuel offers at SRMC x (1 + offer_markup), bids unchanged. 0.29 is FTI for Ofgem 2023 App. A1
+    # (p.278): an uplift of "c.129%" from historic accepted gas offers against historic SRMC, weighted by
+    # accepted volume (the premium NESO/Arup use for CCGT), applied to every gas-fired carrier and oil
+    # because FTI derives one fossil uplift from gas generators. The CP30 2030 study's templates set 0.6
+    # instead (1.6 x SRMC): FTI for NESO 2025's "Baseline BM (NESO methodology)", the mean 2023 CCGT
+    # uplift in NESO data (slides 52-53, 75-76). Central dispatch prices these at cost
+    # (config/defaults/dispatch/central.yaml).
+    carrier_overrides:
+      CCGT: {mode: markup, offer_markup: 0.29}
+      OCGT: {mode: markup, offer_markup: 0.29}
+      gas_engine: {mode: markup, offer_markup: 0.29}
+      "CCS Gas": {mode: markup, offer_markup: 0.29}
+      CHP: {mode: markup, offer_markup: 0.29}
+      oil: {mode: markup, offer_markup: 0.29}
+    # Interconnector counter-trade prices, GBP/MWh (the rules, flow limits and spread gate are the base's
+    # market.balancing.interconnector_counter_trade). offer_pricing all_in: the premium is the whole price
+    # of the move, with no foreign marginal value beside it (FTI 2023 Table 5-5, p.118; A1.38). 128 at
+    # 2024 prices, within the evidence range 123-133: NESO GTMA constraint trades at the interconnector
+    # landing boundaries (SC1, SC2, LE1, B15, EC5; Historic GTMA Trades, Apr 2023-Dec 2024) bought at 131
+    # (MID + 35); FTI's 2025 EUR 130 = 123 GBP; NESO CP30's own CP.18 volumes and GBP 3.57 bn (main report
+    # Table 1) at this model's other prices imply 127-133. Bids stay additive at 40: the same GTMA trades
+    # sold 31-50 below MID.
+    interconnector_counter_trade:
+      premium_gbp_per_mwh: 128.0
+      offer_pricing: all_in
+      bid_premium_gbp_per_mwh: 40.0
+    # Electrolysers and H2 turbines are held at their Stage 1 position in the BM: FTI keeps demand out of
+    # the BM ("fix demand at each node to the load profile generated by the relevant wholesale market ST
+    # run", FTI 2023, A1.21, p.276), and NESO's CP30 redispatch (CP.18) shows no electrolyser turn-down.
+    # Every electrolyser bus carries a load-shedding unit, so a held load the network cannot serve is
+    # priced at VoLL and stripped as slack. The list replaces the base's, so H2_turbine is restated.
+    hydrogen_links:
+      hold_carriers: [H2_turbine, electrolysis]
+    future_bid_stack:
+      calibration_scenarios:
+        - "Historical_2020_ETYS_market_WP5A_calibration"
+        - "Historical_2020_ETYS_market_WP5A_holdout"
+validation:
+  # Stage 1 against CP30 (rule validate_CP30_stage1, rules/CP30.smk): ES1 energy and the CP.32 price
+  # duration curve for a family's twelve Stage 1 months, before any balancing solve. Tolerances are
+  # shares 0-1 of the reference unless named otherwise. Statuses and row rules:
+  # scripts/CP30/stage1_validation.py, whose DEFAULT_CONFIG must equal this block (a test holds them equal).
+  stage1:
+    enabled: true                    # in rule all's CP30 validation targets
+    fail_on_fail: true               # a FAIL row fails the rule (after the outputs are written)
+    # Energy (ES1).
+    main_generation_carriers: ["wind_offshore", "wind_onshore", "solar_pv", "nuclear", "gas",
+                               "biomass", "waste_to_energy", "CHP", "large_hydro"]
+    generation_warn_rel: 0.10        # every generation line
+    generation_fail_rel: 0.15        # main generation lines only
+    curtailment_warn_rel: 0.25
+    interconnector_warn_rel: 0.10
+    interconnector_fail_rel: 0.20
+    electrolysis_warn_rel: 0.10
+    demand_fail_rel: 0.005
+    small_line_gwh: 1000.0           # ES1 below this: judged on |difference| / this
+    energy_basis: "es1"              # es1 | info (a Stage 1 fitted to another target reports ES1 energy as INFO)
+    # Price (CP.32).
+    price_curve_file: "data/CP30/cp32_price_duration_curve_2030.csv"
+    price_curve_pathway: null        # null: the scenario's CP30_pathway as a CP.32 column
+    price_shares: [0.01, 0.1, 0.3, 0.5, 0.7, 0.9]
+    price_warn_rel: 0.25             # mean and every percentile
+    price_share_warn_rel: {}         # per-share override, e.g. {0.5: 0.50}
+    price_min_abs_gbp_per_mwh: 5.0
+    zero_price_threshold_gbp_per_mwh: 0.5
+    zero_price_share_warn_abs: 0.10
+  # NESO balancing check (rule validate_CP30_balancing, rules/CP30.smk): a balancing family's twelve
+  # months against NESO's published figures: CP.18 volumes, the NESO-comparable cost against GBP 3,570 m
+  # CHP, net export, the unabated
+  # gas share), clean turn-down by NESO's 17 CP.08 zones, the central-case score; a delay family against
+  # NESO's delay-case cost. Report only: WARN never fails a run. Which families join rule all is
+  # config.yaml's cp30_balancing_validation_families. Code defaults: scripts/CP30/balancing_validation.py
+  # DEFAULT_CONFIG, which must equal this block (tests/unit/test_cp30_balancing_validation.py).
+  balancing:
+    benchmarks_file: "data/CP30/validation_references/neso_balancing_benchmarks.csv"
+    zones_file: "data/CP30/validation_references/neso_cp08_zones.geojson"
+    volume_basis: "published"        # published: CP.18 as published | es1_start: restated to an ES1 start
+    volume_warn_rel: 0.15            # every CP.18 volume
+    small_volume_twh: 1.0            # CP.18 below this: judged on |difference| / this
+    cost_warn_rel: 0.15              # NESO-comparable cost against GBP 3,570 m
+    final_warn_rel: 0.05
+    gas_share_warn_abs: 0.01
+    zone_share_warn_abs: 0.05        # each zone's share of clean turn-down against CP.08
+    scotland_share_warn_rel: 0.15    # zones 1-4's share against CP.08's 0.532
+    central_cost_max_rel: 0.15       # a run more than this off on cost cannot be central
+    delay_cost_warn_rel: 0.20        # a delay family's cost against NESO's figure for its network
+    remote_bus_km: 2.0               # buses further outside every zone polygon are zoned by the graph
+    graph_cutoff: 6                  # branches searched for the nearest on-land bus
+  # CP30 fleet location (rule validate_CP30_fleet_location, rules/CP30.smk): installed capacity by ES5
+  # region against ES5, by NESO CP.08 zone (INFO), each side of the secured boundaries (B4/B6 remote sides
+  # against ES5's Scottish regions), named offshore farms at their reference landings, interconnectors at
+  # their NESO register substations and CP30 ratings, and bus positions against ETYS circuit lengths. Runs
+  # on every CP30 build that runs validate_CP30_locational; a FAIL row fails the rule (fail_on_fail); the
+  # position check never FAILs. Code defaults: scripts/CP30/fleet_location_validation.py DEFAULT_CONFIG
+  # (must match).
+  fleet_location:
+    enabled: true
+    fail_on_fail: true
+    zones_file: "data/CP30/validation_references/neso_cp08_zones.geojson"
+    landing_additions_file: "data/CP30/validation_references/offshore_landing_additions.csv"
+    ic_reference_file: "data/CP30/validation_references/interconnectors_2030.csv"
+    rel_tol: 0.05                    # WARN when |gap| exceeds 5% of the CP30 value ...
+    min_mw: 25.0                     # ... and at least this many MW
+    fail_mw: 500.0                   # FAIL when |gap| exceeds this ...
+    fail_rel: 0.15                   # ... or this share and fail_mw / 4
+    offshore_list_mw: 200.0          # offshore farms / proxy landing buses listed individually
+    unreferenced_warn_mw: 200.0      # a named offshore farm this big with no landing reference WARNs
+    region_side_warn_mw: 25.0        # MW on the wrong side of B4/B6 for its ES5 region: WARN above (FAIL above fail_mw)
+    graph_cutoff: 6                  # branches searched for the nearest bus inside a zone polygon
+    report_boundaries: ["B0", "B1a", "B2", "B4", "B6", "B7a", "B8", "B9", "EC5", "LE1", "SC1", "SW1", "B13"]
+    main_side_boundaries: ["B1a", "B2", "B4", "B6", "B7a", "B8", "EC5"]
+    # Position consistency (km, MW). WARN: a line further apart in a straight line than
+    # (1 + slack_rel) x its length + slack_km, or a transformer / same-site section with ends more than
+    # transformer_max_km apart. FAIL: a bus with at least min_circuits judged neighbours, more than
+    # suspect_share of them over by more than fail_excess_km; transformer ends more than
+    # fail_transformer_km apart; a circuit over by more than boundary_excess_km that crosses a secured
+    # boundary, or whose misplaced end its circuits put in another CP30 region / CP.08 zone, or
+    # (carrying more than fail_mw) across a boundary. Reviewed exemptions: exemptions_file (INFO).
+    position_line_slack_km: 3.0
+    position_line_slack_rel: 0.10
+    position_transformer_max_km: 2.0
+    position_min_circuits: 2
+    position_suspect_share: 0.5
+    position_fail_excess_km: 10.0
+    position_fail_transformer_km: 10.0
+    position_boundary_excess_km: 5.0
+    position_fail_mw: 50.0
+    position_exemptions_file: "data/CP30/validation_references/position_exemptions.csv"
+  # CP30 locational and network checks: where capacity sits, not only how much. Rule
+  # validate_CP30_locational (rules/CP30.smk) runs scripts/CP30/locational_validation.py on every built
+  # CP30 network and writes resources/CP30/validation/{scenario}_locational_checks.csv (check, item, model,
+  # reference, difference, tolerance, units, status, source, note). FAIL fails the rule (fail_on_fail),
+  # WARN reports, INFO documents. References derived from repository sources are built at run time from
+  # the rule's declared inputs (locational_validation.derive_references), so they cannot drift: FES node
+  # tables (demand, electrolysis, hydro, marine), offshore landings (crosswalk + checked CfD contracts),
+  # the named loads (the CP30 demand build's own function and the outputs of rule
+  # extract_cp30_demand_inputs), the FES24 ETYS winter-peak shares, and interconnector capacities (the
+  # CP30 cable composition). Only hand judgements are committed, each row with its source:
+  # data/CP30/validation_references/. Code defaults: locational_validation.DEFAULT_CONFIG (must match;
+  # test_cp30_locational_validation checks it). Tolerances: MW, or shares 0-1 (rel_tol, *_share).
+  locational:
+    enabled: true
+    fail_on_fail: true
+    reference_dir: "data/CP30/validation_references"
+    boundary_file: "data/network/ETYS/etys_boundaries_mar25_osgb36.geojson"
+    # The checks read the build's own settings, not copies: the regions from the scenario's
+    # spatial_proxy.regional_allocation files (spatial_allocation.load_gsp_region_map, with
+    # TRANSMISSION_SITE_REGIONS), the offshore landings from its brownfield crosswalk and checked
+    # CfD contracts, the BM voltage floor of check 9 from its transmission block, and the
+    # distribution thresholds and GSP polygon join of check 8 from scripts/utilities/gsp_nodes.py.
+    # FES node tables derived at run time from resources/FES/FES_{FES_year}_data.csv (a declared
+    # input): each block by FES node, at its network bus, else its GSP in gsp_info_file; the Direct
+    # rows at the points of fes_direct_row_locations.csv (reference_dir).
+    fes_reference:
+      FES_year: 2024
+      FES_scenario: "Holistic Transition"
+      gsp_info_file: "data/network/ETYS/fes2024_regional_breakdown_gsp_info.csv"
+      blocks: {demand: "Dem_BB003", electrolysis: "Dem_BB009", hydro: "Gen_BB018", marine: "Gen_BB017"}
+    # A point on the remote side of each boundary (OSGB36 m): north of the B boundaries
+    # (Thurso), inside EC5 (Leiston), LE1 (central London), SC1 (Brighton), B13 (Cornwall).
+    boundary_remote_points:
+      default: [311738.0, 967891.0]
+      EC5: [644682.0, 262905.0]
+      LE1: [530563.0, 180683.0]
+      SC1: [531087.0, 105033.0]
+      B13: [190000.0, 55000.0]
+    # 1. ES5 regional totals by the region of each unit's bus: FAIL beyond max(1%, 20 MW).
+    es5_regional:
+      abs_tol_mw: 20.0
+      rel_tol: 0.01
+      # Built capacity the build keeps above ES5 and carries nationally
+      # (brownfield_fleet.reconcile_with_es5); other regions may fall short by the same total.
+      declared_overshoots:
+        - technology: wind_onshore
+          region: Midlands
+          max_mw: 150.0
+          reason: "operational onshore above ES5 (brownfield operational_excess, about 130 MW)"
+        - technology: wind_offshore
+          region: Midlands
+          max_mw: 20.0
+          reason: "operational offshore above ES5 (Lincolnshire farms, about 16 MW)"
+      # Hydro and marine (not in ES5) against FES 2024 HT by region: WARN beyond max(25%, 50 MW).
+      fes_abs_tol_mw: 50.0
+      fes_rel_tol: 0.25
+      # Onshore/solar whose stored cp30_region differs from their bus's region: WARN above this.
+      tag_abs_tol_mw: 20.0
+    # 2. Offshore landing.
+    offshore:
+      proxy_boundaries: ["B1a", "B2", "B4", "B6", "B7a", "B8", "EC5"]
+      crossing_tol_mw: 5.0
+      # A FES source point at sea further than this from the coast has no judged side.
+      coast_km: 30.0
+      crossing_exceptions:
+        - boundary: B7a
+          landing_bus: CREB41
+          reason: "Teesside/Blyth FES proxies (LACK21, TODP21, BLYT21) land at Creyke Beck, the Dogger Bank South / Birkhill Wood point; about 250 MW, accepted on review"
+      region_tol_mw: 5.0
+      region_exceptions: []
+      refill_name_pattern: "_refill_"
+    # 3. Named stations at their TEC-register buses (named_station_buses.csv).
+    named_stations:
+      exceptions:
+        Enfield: ["TOTT2A"]
+      large_battery_mw: 100.0
+    # 4. Electrolysers behind B4/B6/B8 against FES 2024 HT Dem_BB009: FAIL beyond max(10%, 200 MW).
+    electrolysis:
+      carriers: ["electrolysis"]
+      boundaries: ["B4", "B6", "B8"]
+      abs_tol_mw: 200.0
+      rel_tol: 0.10
+    # 5. LDES and pumped hydro behind B2/B4/B6 against the FES/TEC project list plus the ES5
+    #    non-battery residual of each region: FAIL beyond max(15%, 250 MW).
+    ldes:
+      battery_carriers: ["Battery"]
+      boundaries: ["B2", "B4", "B6"]
+      abs_tol_mw: 250.0
+      rel_tol: 0.15
+    # 6. Interconnectors: CP30 ES1 total FAIL beyond max(1%, 20 MW); landing bus FAIL on
+    #    mismatch (interconnectors_2030.csv); capacity against CP30's nominal rating in the cable
+    #    composition (interconnectors.cp30_composition, read at run time) WARN beyond 5%; a cable the
+    #    composition leaves out (Isle of Man) INFO when absent, WARN when present.
+    interconnectors:
+      abs_tol_mw: 20.0
+      rel_tol: 0.01
+      capacity_warn_rel: 0.05
+    # 7. Demand: share of annual demand on the remote side of each boundary against the CP30
+    #    demand build's own definition: FES 2024 HT Dem_BB003 GSP shares for all but the
+    #    transmission-connected named loads (FES24 ETYS type T, 7.35% of demand), which sit at
+    #    their nodes (WARN 2 pp, FAIL 4 pp; FES24 ETYS peak and DESNZ 2024 as INFO); total against ED1
+    #    (FAIL beyond 0.1%); peak against CP30 ES1 "Demand (MW) - Excluding Electrolysis"
+    #    (56,284.67 MW FFR 2030, the dispatch-model basis of its 315.16 TWh; WARN 3%, FAIL 8%).
+    #    ED1's GBFES peak (62,357 MW) is INFO only.
+    demand:
+      boundaries: ["B6", "B7a", "B8", "LE1", "SC1"]
+      share_warn_pp: 2.0
+      share_fail_pp: 4.0
+      total_fail_rel: 0.001
+      peak_warn_rel: 0.03
+      peak_fail_rel: 0.08
+      # Compose the named loads of the scenario's CP30 demand build (cp30_demand.named_load_reference).
+      named_loads: true
+      ed1_total_item: "GB Total System Demand - Minus electrolysis"
+    # 8. Distribution-size solar, onshore and batteries not at their own GSP node: WARN above
+    #    10%, FAIL above 25%; distribution-size solar on substations with no demand: WARN above 10%.
+    distributed:
+      generator_carriers: ["solar_pv", "wind_onshore"]
+      storage_carriers: ["Battery"]
+      warn_share: 0.10
+      fail_share: 0.25
+      no_demand_warn_share: 0.10
+    # 9. Radial pockets (bridges at BM-effective ratings) whose generation plus storage
+    #    exceeds the connection by more than the margin: WARN with a list.
+    stranded:
+      margin: 0.30
+      max_rows: 40
+      excluded_generator_carriers: ["load_shedding", "EU_market"]
+    # 10. Boundary exposure summary (INFO).
+    exposure:
+      boundaries: ["B0", "B1a", "B2", "B4", "B5", "B6", "B7a", "B8", "B9", "EC5", "LE1", "SC1", "B13"]
+    # 11. Demand-side headroom: each node's peak load plus electrolysis against what it can import,
+    #     month by month at the ratings the BM enforces (voltage floor, line_rating_overrides, seasonal
+    #     ratings); bus-section nodes, same-site lower-voltage busbars passing their demand up
+    #     (spatial_utils.node_import_headroom). Ratios of demand to import capacity: above warn_ratio
+    #     WARN, above fail_ratio FAIL (the held electrolysers cannot run their Stage 1 schedule in the
+    #     month's peak hours without load shedding). A node whose peak load alone exceeds its capacity by
+    #     more than its firm local generation (carriers below excluded) FAILs: only load shedding can serve it.
+    demand_headroom:
+      warn_ratio: 1.0
+      fail_ratio: 1.2
+      max_rows: 40
+      non_firm_generator_carriers: ["load_shedding", "EU_market", "wind_onshore", "wind_offshore", "solar_pv",
+                                    "marine", "tidal_stream", "shoreline_wave", "tidal_lagoon"]
+
+demand:
+  build:
+    # GSP demand shares from FES 2024 Holistic Transition Dem_BB003, CP30's vintage, not the generation
+    # spatial proxy's FES 2025, whose northern DNO bases put 39.4% of demand north of B8 against 34-35%
+    # in DESNZ 2024 and FES 2024.
+    spatial:
+      FES_year: 2024
+      FES_scenario: "Holistic Transition"
+    # Transmission named loads (ETYS FES24 HT 2030/31, type T: 1.54 GW of data centres, Port Talbot,
+    # St Fergus INTOG, HS2 and rail, industrial); energy from FES 2024 ED1 transmission data centres
+    # (13,185 GWh) and direct transmission customers (7,913 GWh). Output of rule extract_cp30_demand_inputs.
+    named_loads:
+      file: "resources/demand/cp30_2030_named_large_loads.csv"
+    national_lines_file: "resources/demand/fes24_ht_2030_demand_lines.csv"
+    ed1_component_pathway: "Further Flex and Renewables"   # New Dispatch has no ED1 component rows
+    # peak_target: es1 | ed1 | a number (MW). es1 = CP30 ES1 'Demand (MW) - Excluding Electrolysis',
+    # 56,284.67 MW in FFR 2030 (CP30's own dispatch-model peak, same table and basis as its 315.16 TWh);
+    # ed1 = ED1 'GBFES Peak Customer Demand: Total Consumption plus Losses', 62,357 MW (FES's ACS peak).
+    shape:
+      peak_target: "es1"

@@ -1,6 +1,6 @@
 # Getting Started
 
-Welcome to PyPSA-GB! This section will help you get up and running quickly.
+From a fresh clone to a solved scenario and its results. Work through the pages in order the first time.
 
 ```{toctree}
 :maxdepth: 2
@@ -8,29 +8,31 @@ Welcome to PyPSA-GB! This section will help you get up and running quickly.
 installation
 quickstart
 first_scenario
+running_the_workflow
+results
+ai_assistants
 ```
 
-## Prerequisites
+## What you need
 
-Before you begin, ensure you have:
+- Git, and conda or mamba ([Miniforge](https://github.com/conda-forge/miniforge) is the simplest way to get both).
+- An internet connection on the first run: the workflow downloads the weather cutout for each weather year
+  (about 700 MB each) and the NESO data a scenario reads.
+- A linear programming solver: Gurobi (the default; free academic licences) or HiGHS (open source, installed with
+  the environment).
+- Memory to suit the network: the Reduced (32-bus) and Zonal networks run on a laptop; the full ETYS network
+  (about 2,000 buses) needs 8 GB of RAM or more.
 
-- Python 3.10 or later
-- Conda package manager (via Anaconda or Miniconda)
-- Git for cloning the repository
-- ~10GB disk space for data and results
-- Gurobi solver (free academic license) or HiGHS (open-source)
+## The pages
 
-## Workflow
+| Page | What you do |
+|---|---|
+| {doc}`installation` | Clone the repository, create the environment, set up a solver, and learn what the workflow downloads. |
+| {doc}`quickstart` | Run `Test_Market`, six hours of 2035 on the Reduced network through the wholesale market and the balancing mechanism. |
+| {doc}`first_scenario` | Write your own scenario in `config/scenarios.yaml`, check it, and run it. |
+| {doc}`running_the_workflow` | How the Snakemake workflow is organised: targets, dry runs, cores, re-runs, studies and logs. |
+| {doc}`results` | Open the solved networks and read the main CSV and JSON summaries. |
+| {doc}`ai_assistants` | Use the site's Ask AI button, or a coding assistant in your clone, to write scenarios, debug runs and read results. |
 
-PyPSA-GB uses a **Snakemake workflow** to orchestrate the model:
-
-1. **Configure** your scenario in YAML files
-2. **Run** the Snakemake workflow
-3. **Analyse** the results
-
-For market studies, scenarios can also enable the optional two-stage market
-workflow: a copperplate wholesale solve followed by constrained balancing
-redispatch. See {doc}`../user_guide/market` once you are comfortable running a
-standard scenario.
-
-If you encounter issues, check the {doc}`../development/troubleshooting` guide or open a [GitHub Issue](https://github.com/andrewlyden/PyPSA-GB/issues).
+If something goes wrong, see {doc}`../development/troubleshooting` or open a
+[GitHub issue](https://github.com/andrewlyden/PyPSA-GB/issues).

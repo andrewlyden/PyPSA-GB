@@ -8,12 +8,21 @@ Simplified two-tier approach:
 Flat if/elif logic — no layers, no static prerun files.
 """
 
-import pypsa
-import pandas as pd
-import numpy as np
+import json
+from copy import deepcopy
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pypsa
 from scripts.utilities.logging_config import setup_logging
 from scripts.utilities.network_io import load_network, save_network
+from scripts.CP30.assumptions import get_cp30_marginal_cost_overrides
+from scripts.utilities.carrier_definitions import (
+    CCS_GAS_CAPTURE_RATE,
+    GAS_CO2_T_PER_MWH_TH_GROSS_CV,
+    GAS_CO2_T_PER_MWH_TH_NET_CV,
+)
 
 logger = setup_logging("apply_marginal_costs")
 
@@ -33,6 +42,7 @@ THERMAL_CARRIERS = {
     'landfill_gas', 'sewage_gas', 'biogas', 'advanced_biofuel',
     'Conventional Steam', 'Conventional steam',
     'Biomass (dedicated)', 'Biomass (co-firing)',
+    'CCS Gas', 'CCS Biomass', 'Hydrogen', 'H2',
 }
 
 RENEWABLE_CARRIERS = {
@@ -53,16 +63,29 @@ BIOFUEL_CARRIERS = {
 
 
 
-# Carbon emission factors (kg CO2/MWh_thermal)
+# Direct combustion emission factors (kg CO2/MWh_thermal fuel input).
+#
+# These are fuel-input factors because the marginal-cost calculation divides
+# fuel and carbon inputs by electrical efficiency. The previous 488 kgCO2/MWh
+# gas value was an electricity-output/lifecycle intensity and was therefore
+# divided by efficiency a second time. Natural gas is the UK Government
+# gross-CV factor of about 0.183 kgCO2/kWh_th, which pairs with the gross-CV
+# fleet efficiencies (DUKES) of the historical path. Coal and oil use
+# corresponding direct-combustion factors; biogenic CO2 is zero for dispatch
+# carbon pricing. CCS Gas assumes 90% capture of the unabated combustion factor.
+# A future-cost case on net-CV efficiencies prices gas on the net-CV factor
+# instead (``carbon_emission_factors``; item F24.1).
+GAS_EMISSION_CARRIERS = ('gas', 'Gas', 'CCGT', 'OCGT', 'CHP', 'micro_CHP', 'gas_engine')
+_GAS_GROSS_KG = round(GAS_CO2_T_PER_MWH_TH_GROSS_CV * 1000.0, 6)
 CARBON_EMISSION_FACTORS = {
-    'coal': 846, 'Coal': 846, 'Conventional Steam': 846, 'Conventional steam': 846,
-    'gas': 488, 'Gas': 488, 'CCGT': 488, 'OCGT': 488, 'CHP': 488, 'micro_CHP': 488,
-    'gas_engine': 600,
-    'oil': 533, 'Oil': 533,
+    'coal': 341, 'Coal': 341, 'Conventional Steam': 341, 'Conventional steam': 341,
+    **{carrier: _GAS_GROSS_KG for carrier in GAS_EMISSION_CARRIERS},
+    'oil': 267, 'Oil': 267,
     'biomass': 0, 'Biomass': 0, 'Biomass (dedicated)': 0, 'Biomass (co-firing)': 0,
     'Bioenergy': 0, 'advanced_biofuel': 0,
     'waste': 180, 'Waste': 180, 'waste_to_energy': 180,
     'landfill_gas': 0, 'sewage_gas': 0, 'biogas': 0,
+    'CCS Gas': round(_GAS_GROSS_KG * (1.0 - CCS_GAS_CAPTURE_RATE), 6), 'CCS Biomass': 0,
     'nuclear': 12, 'Nuclear': 12, 'PWR': 12, 'AGR': 12,
     'hydro': 24, 'Hydro': 24, 'Large Hydro': 24, 'large_hydro': 24,
     'Small Hydro': 24, 'small_hydro': 24, 'Hydro / pumped storage': 24,
@@ -71,8 +94,53 @@ CARBON_EMISSION_FACTORS = {
     'Wind (Onshore)': 11, 'Wind (Offshore)': 11,
     'solar': 48, 'Solar': 48, 'solar_pv': 48,
     'geothermal': 38, 'tidal_stream': 15, 'shoreline_wave': 15,
-    'H2': 0, 'fuel_cell': 0,
+    'H2': 0, 'Hydrogen': 0, 'fuel_cell': 0,
 }
+
+# Gas on CP30's net-CV basis (0.2016 t/MWh, NESO Clean Power 2030 Annex 4 chart
+# CP.25), for a future-cost case whose efficiencies are net-CV. The same constant
+# sets the gas carriers' reported co2_emissions (carrier_definitions.py).
+_GAS_NET_KG = round(GAS_CO2_T_PER_MWH_TH_NET_CV * 1000.0, 6)
+NET_CV_CARBON_EMISSION_FACTORS = {
+    **CARBON_EMISSION_FACTORS,
+    **{carrier: _GAS_NET_KG for carrier in GAS_EMISSION_CARRIERS},
+    'CCS Gas': round(_GAS_NET_KG * (1.0 - CCS_GAS_CAPTURE_RATE), 6),
+}
+
+# Calorific basis of the gas emission factor in a future-cost case
+# (future_costs.gas_emission_factor_basis). Must match config/defaults/base/marginal_costs.yaml.
+DEFAULT_GAS_EMISSION_FACTOR_BASIS = 'gross_cv'
+#: MWh (gross calorific value) per therm: the conversion NESO's Annex 4 extract uses
+#: (resources/market/neso_clean_power_2030_annex4_costs.json, therm_to_mwh).
+THERM_TO_MWH = 0.0293071
+#: Code default of marginal_costs.future_costs.gas_price_override_pence_per_therm
+#: (null: the case's own gas price). Must match config/defaults/base/marginal_costs.yaml.
+DEFAULT_GAS_PRICE_OVERRIDE_PENCE_PER_THERM = None
+_GAS_OVERRIDE_LOGGED: set = set()
+_EMISSION_FACTORS_BY_BASIS = {
+    'gross_cv': CARBON_EMISSION_FACTORS,
+    'net_cv': NET_CV_CARBON_EMISSION_FACTORS,
+}
+
+
+def carbon_emission_factors(future_assumptions: dict | None) -> dict:
+    """Emission-factor table (kg CO2/MWh_th) for the scenario's cost path.
+
+    The historical path, and a future-cost case on the default basis, keep the
+    gross-CV gas factor; a case declaring ``gas_emission_factor_basis: net_cv``
+    (CP30, whose efficiencies are net-CV: 58% CCGT) prices gas at 201.6 kg and
+    CCS Gas at 10% of that.
+    """
+    if not future_assumptions:
+        return CARBON_EMISSION_FACTORS
+    basis = str(future_assumptions.get('gas_emission_factor_basis',
+                                       DEFAULT_GAS_EMISSION_FACTOR_BASIS)).lower()
+    if basis not in _EMISSION_FACTORS_BY_BASIS:
+        raise ValueError(
+            f"Unknown gas_emission_factor_basis {basis!r}; expected one of "
+            f"{sorted(_EMISSION_FACTORS_BY_BASIS)}"
+        )
+    return _EMISSION_FACTORS_BY_BASIS[basis]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -102,6 +170,203 @@ HISTORICAL_CARBON_PRICES = {
     2015: 25.0, 2016: 23.0, 2017: 23.0, 2018: 33.0, 2019: 43.0,
     2020: 43.0, 2021: 63.0, 2022: 88.0, 2023: 68.0, 2024: 85.0,
 }
+
+
+def get_future_cost_assumptions(scenario_config: dict | None) -> dict:
+    """Return the selected future commodity-cost case, if one is enabled.
+
+    Future cases are deliberately scenario-configured rather than inferred from
+    historical calibration. All monetary values must be expressed in the
+    declared real-price year.
+    """
+    scenario_config = scenario_config or {}
+    modelled_year = scenario_config.get('modelled_year')
+    if not modelled_year or modelled_year <= 2024:
+        return {}
+
+    mc_config = scenario_config.get('marginal_costs', {})
+    future_cfg = mc_config.get('future_costs', {})
+    if not future_cfg.get('enabled', False):
+        return {}
+
+    cases = future_cfg.get('cases', {})
+    case_name = str(future_cfg.get('case', 'central')).lower()
+    if case_name not in cases:
+        raise ValueError(
+            f"Unknown future marginal-cost case '{case_name}'. "
+            f"Available cases: {sorted(cases)}"
+        )
+
+    configured_case = deepcopy(cases[case_name])
+    source_file = configured_case.pop('source_file', None)
+    fallback_case = configured_case.pop('fallback_case', None)
+
+    if source_file:
+        if not fallback_case or fallback_case not in cases:
+            raise ValueError(
+                f"Future marginal-cost case '{case_name}' uses source_file but "
+                "does not name a valid fallback_case."
+            )
+        selected = deepcopy(cases[fallback_case])
+        source_path = Path(source_file)
+        if not source_path.exists():
+            raise FileNotFoundError(
+                f"NESO future-cost source file is missing: {source_path}. "
+                "Generate it with scripts/market/fetch_neso_cp2030_annex4_costs.py."
+            )
+        with source_path.open(encoding='utf-8') as handle:
+            payload = json.load(handle)
+
+        sourced = payload.get('assumptions', {})
+        fuel_prices = sourced.get('fuel_prices', {})
+        carbon = sourced.get('carbon', {})
+        required_carbon = {'uk_ets', 'carbon_price_support'}
+        if 'gas' not in fuel_prices or not required_carbon.issubset(carbon):
+            raise ValueError(
+                f"Invalid sourced future-cost file {source_path}: expected gas "
+                "fuel price plus UK ETS and Carbon Price Support values."
+            )
+        selected.setdefault('fuel_prices', {}).update(fuel_prices)
+        selected.setdefault('carbon', {}).update(carbon)
+        selected['source_file'] = str(source_path)
+        selected['source_provenance'] = payload.get('source', {})
+    else:
+        selected = configured_case
+
+    selected['case'] = case_name
+    selected['price_year'] = int(future_cfg.get('price_year', 2024))
+    selected['currency'] = str(future_cfg.get('currency', 'GBP'))
+    selected['efficiency_defaults'] = future_cfg.get('efficiency_defaults', {})
+    selected['unit_efficiency_overrides'] = future_cfg.get(
+        'unit_efficiency_overrides', {}
+    )
+    selected['gas_emission_factor_basis'] = str(future_cfg.get(
+        'gas_emission_factor_basis', DEFAULT_GAS_EMISSION_FACTOR_BASIS
+    ))
+    _apply_carbon_price_support_end(selected, future_cfg, scenario_config)
+    _apply_gas_price_override(selected, future_cfg)
+    return selected
+
+
+def _apply_gas_price_override(selected: dict, future_cfg: dict) -> None:
+    """Replace the case's gas price by ``future_costs.gas_price_override_pence_per_therm`` (null: keep it).
+
+    For CP30 (16 Oct 2026, NESO review S1-04): Annex 4's text gives "around 100p/therm",
+    which the neso_cp2030 extract carries (34.12 GBP/MWh), while CP30's assumptions
+    (CP.22, Clean pathways) use 100.68 p/therm, 34.354 GBP/MWh, the price CP.25's SRMCs,
+    the hydrogen price and the foreign-price rebase already use. Recorded on the case.
+    """
+    value = future_cfg.get('gas_price_override_pence_per_therm', DEFAULT_GAS_PRICE_OVERRIDE_PENCE_PER_THERM)
+    if value is None:
+        return
+    pence = float(value)
+    if not 0.0 < pence < 1000.0:
+        raise ValueError(f"future_costs.gas_price_override_pence_per_therm must be a positive p/therm, not {value}")
+    fuel = selected.setdefault('fuel_prices', {})
+    selected['gas_price_before_override_gbp_per_mwh'] = fuel.get('gas')
+    fuel['gas'] = pence / 100.0 / THERM_TO_MWH
+    selected['gas_price_override_pence_per_therm'] = pence
+    if pence in _GAS_OVERRIDE_LOGGED:   # resolved once per generator; log it once
+        return
+    _GAS_OVERRIDE_LOGGED.add(pence)
+    logger.info("Gas price override: %.2f p/therm = %.3f GBP/MWh thermal (case %s gave %s)", pence, fuel['gas'],
+                selected.get('case'), selected['gas_price_before_override_gbp_per_mwh'])
+
+
+def _modelled_period_start(scenario_config: dict) -> pd.Timestamp:
+    """First instant the scenario models: the solve period start, else 1 January of the modelled year."""
+    period = scenario_config.get('solve_period') or {}
+    if period.get('enabled') and period.get('start'):
+        return pd.Timestamp(period['start'])
+    return pd.Timestamp(year=int(scenario_config['modelled_year']), month=1, day=1)
+
+
+def _apply_carbon_price_support_end(selected: dict, future_cfg: dict, scenario_config: dict) -> None:
+    """Drop Carbon Price Support from a case whose modelled period starts on or after its end date.
+
+    ``future_costs.carbon_price_support_end`` (null = CPS continues). HM Treasury
+    (written statement HLWS1528, 16 April 2026) discontinues CPS for power
+    generation from April 2028, leaving the UK ETS as the only carbon price. A
+    sourced case such as neso_cp2030 carries CPS inside its total; the UK ETS part
+    is kept as the case gives it. Recorded on the case so the marginal-cost
+    breakdown (and the Exchequer ledger that reads it) shows CPS at zero.
+    """
+    end = future_cfg.get('carbon_price_support_end')
+    if not end:
+        return
+    carbon = selected.setdefault('carbon', {})
+    if _modelled_period_start(scenario_config) >= pd.Timestamp(end):
+        removed = float(carbon.get('carbon_price_support', 0.0))
+        carbon['carbon_price_support'] = 0.0
+        selected['carbon_price_support_ended'] = str(end)
+        logger.info(
+            "Carbon Price Support ends %s: removed %.2f GBP/tCO2 from the %s case; "
+            "UK ETS %.2f GBP/tCO2 kept", end, removed, selected.get('case'),
+            float(carbon.get('uk_ets', 0.0)),
+        )
+
+
+def _future_carbon_components(assumptions: dict) -> tuple[float, float]:
+    """Return UK ETS and Carbon Price Support assumptions in GBP/tCO2."""
+    carbon = assumptions.get('carbon', {})
+    return (
+        float(carbon.get('uk_ets', 0.0)),
+        float(carbon.get('carbon_price_support', 0.0)),
+    )
+
+
+def _lookup_carrier_value(values: dict, carrier: str, default: float = 0.0) -> float:
+    """Look up a carrier setting while tolerating case-only differences."""
+    if carrier in values:
+        return float(values[carrier])
+    carrier_lower = str(carrier).lower()
+    for key, value in values.items():
+        if str(key).lower() == carrier_lower:
+            return float(value)
+    return float(default)
+
+
+def resolve_thermal_efficiency(gen_name: str, generator: pd.Series,
+                               scenario_config: dict | None) -> float:
+    """Choose unit data first, then configured class heat-rate assumptions.
+
+    Order: an exact ``unit_efficiency_overrides`` entry, then the generator's
+    own ``unit_efficiency`` (set from an evidenced station schedule, e.g. the
+    CP30 gas schedule), then the class value, then the network placeholder.
+    """
+    assumptions = get_future_cost_assumptions(scenario_config)
+    if not assumptions:
+        value = generator.get('efficiency', 1.0)
+        return float(value) if pd.notna(value) else 1.0
+
+    unit_overrides = assumptions.get('unit_efficiency_overrides', {})
+    if gen_name in unit_overrides:
+        value = float(unit_overrides[gen_name])
+        if 0.0 < value <= 1.0:
+            return value
+        raise ValueError(f"Invalid unit efficiency for {gen_name}: {value}")
+
+    unit_value = pd.to_numeric(generator.get('unit_efficiency', np.nan), errors='coerce')
+    if pd.notna(unit_value):
+        if 0.0 < float(unit_value) <= 1.0:
+            return float(unit_value)
+        raise ValueError(f"Invalid unit_efficiency for {gen_name}: {unit_value}")
+
+    carrier = generator.get('carrier', '')
+    class_efficiency = _lookup_carrier_value(
+        assumptions.get('efficiency_defaults', {}), carrier, default=np.nan
+    )
+    if pd.notna(class_efficiency):
+        if not 0.0 < class_efficiency <= 1.0:
+            raise ValueError(
+                f'Invalid class efficiency for {carrier}: {class_efficiency}'
+            )
+        return class_efficiency
+
+    value = generator.get('efficiency', np.nan)
+    if pd.notna(value) and 0.0 < float(value) <= 1.0:
+        return float(value)
+    return 1.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -134,9 +399,11 @@ def _expand_fuel_prices(base_prices: dict) -> dict:
     coal = base_prices.get('coal', 30.0)
     oil = base_prices.get('oil', 75.0)
     bio = base_prices.get('biomass', 45.0)
+    waste = base_prices.get('waste', bio * 0.5)
+    hydrogen = base_prices.get('hydrogen', base_prices.get('H2', 50.0))
     return {
         'gas': gas, 'Gas': gas, 'CCGT': gas, 'OCGT': gas,
-        'CHP': gas, 'micro_CHP': gas, 'gas_engine': gas,
+        'CHP': gas, 'micro_CHP': gas, 'gas_engine': gas, 'CCS Gas': gas,
         'coal': coal, 'Coal': coal,
         'Conventional Steam': coal, 'Conventional steam': coal,
         'oil': oil, 'Oil': oil,
@@ -144,8 +411,8 @@ def _expand_fuel_prices(base_prices: dict) -> dict:
         'Biomass (dedicated)': bio, 'Biomass (co-firing)': bio,
         'Bioenergy': bio, 'biogas': bio * 0.9,
         'landfill_gas': bio * 0.6, 'sewage_gas': bio * 0.7,
-        'advanced_biofuel': bio * 1.1,
-        'waste': bio * 0.5, 'Waste': bio * 0.5, 'waste_to_energy': bio * 0.5,
+        'advanced_biofuel': bio * 1.1, 'CCS Biomass': bio,
+        'waste': waste, 'Waste': waste, 'waste_to_energy': waste,
         'nuclear': 8.0, 'Nuclear': 8.0, 'PWR': 8.0, 'AGR': 8.0,
         'hydro': 5.0, 'Hydro': 5.0, 'Large Hydro': 5.0, 'large_hydro': 5.0,
         'Small Hydro': 5.0, 'small_hydro': 5.0, 'Hydro / pumped storage': 5.0,
@@ -154,9 +421,16 @@ def _expand_fuel_prices(base_prices: dict) -> dict:
         'Wind (Onshore)': 0.5, 'Wind (Offshore)': 0.5,
         'solar': 0.5, 'Solar': 0.5, 'solar_pv': 0.5,
         'geothermal': 3.0, 'tidal_stream': 1.0, 'shoreline_wave': 1.0,
-        'H2': 50.0, 'fuel_cell': 50.0,
+        'H2': hydrogen, 'Hydrogen': hydrogen, 'fuel_cell': hydrogen,
     }
 
+
+def _get_cost_fes_year(scenario_config: dict):
+    """Return the FES year used only for cost assumptions."""
+    return (
+        scenario_config.get('FES_year')
+        or scenario_config.get('fleet', {}).get('spatial_proxy', {}).get('FES_year')
+    )
 
 def load_fuel_prices(scenario_config: dict) -> dict:
     """Load fuel prices: historical table > scenario override > FES > defaults."""
@@ -170,6 +444,18 @@ def load_fuel_prices(scenario_config: dict) -> dict:
                     f"gas={prices['gas']}, coal={prices['coal']}")
         return _expand_fuel_prices(prices)
 
+    future_assumptions = get_future_cost_assumptions(scenario_config)
+    if future_assumptions:
+        prices = future_assumptions.get('fuel_prices', {})
+        logger.info(
+            "Using future %s cost case in %s real %s: gas=%.2f GBP/MWh_th",
+            future_assumptions['case'],
+            future_assumptions['currency'],
+            future_assumptions['price_year'],
+            float(prices.get('gas', 0.0)),
+        )
+        return _expand_fuel_prices(prices)
+
     # Scenario explicit override
     if 'fuel_prices' in mc_config:
         logger.info("Using scenario-specific fuel prices")
@@ -177,7 +463,7 @@ def load_fuel_prices(scenario_config: dict) -> dict:
 
     # FES dynamic prices for future scenarios
     if modelled_year and modelled_year > 2024 and mc_config.get('use_fes_prices', True):
-        fes_year = scenario_config.get('FES_year')
+        fes_year = _get_cost_fes_year(scenario_config)
         fuel_file = scenario_config.get('_fuel_price_file')
         if fes_year:
             fes_prices = _load_fes_fuel_prices(fes_year, modelled_year, fuel_file)
@@ -201,11 +487,23 @@ def get_carbon_price(scenario_config: dict) -> float:
         logger.info(f"Using HISTORICAL carbon price for {modelled_year}: {price:.2f}/tCO2")
         return price
 
+    future_assumptions = get_future_cost_assumptions(scenario_config)
+    if future_assumptions:
+        uk_ets, cps = _future_carbon_components(future_assumptions)
+        total = uk_ets + cps
+        logger.info(
+            "Using future %s carbon case: UK ETS=%.2f + CPS=%.2f = %.2f GBP/tCO2 "
+            "(%s real %s)",
+            future_assumptions['case'], uk_ets, cps, total,
+            future_assumptions['currency'], future_assumptions['price_year'],
+        )
+        return total
+
     if 'carbon_price' in mc_config:
         return mc_config['carbon_price']
 
     if modelled_year and modelled_year > 2024 and mc_config.get('use_fes_prices', True):
-        fes_year = scenario_config.get('FES_year')
+        fes_year = _get_cost_fes_year(scenario_config)
         carbon_file = scenario_config.get('_carbon_price_file')
         if fes_year:
             fes_carbon = _load_fes_carbon_price(fes_year, modelled_year, carbon_file)
@@ -267,12 +565,21 @@ def _load_fes_carbon_price(fes_year, modelled_year, carbon_price_file=None):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def calculate_marginal_cost(carrier: str, fuel_price: float,
-                            carbon_price: float, efficiency: float = 1.0) -> tuple:
-    """Calculate (fuel_cost_elec, carbon_cost_elec, total_mc) for a generator."""
+                            carbon_price: float, efficiency: float = 1.0,
+                            emission_factors: dict | None = None) -> tuple:
+    """Calculate electrical-output fuel and carbon costs in GBP/MWh_e.
+
+    Fuel price is GBP/MWh_th and the emission factor is kgCO2/MWh_th, so both
+    inputs are divided by electrical efficiency exactly once. ``emission_factors``
+    defaults to the gross-CV table (``carbon_emission_factors`` picks the
+    scenario's).
+    """
     if efficiency <= 0 or efficiency > 1.0:
         efficiency = 1.0
     fuel_cost = fuel_price / efficiency
-    emission_factor = CARBON_EMISSION_FACTORS.get(carrier, 0)
+    if emission_factors is None:
+        emission_factors = CARBON_EMISSION_FACTORS
+    emission_factor = emission_factors.get(carrier, 0)
     carbon_cost = (emission_factor * carbon_price) / 1000 / efficiency
     return fuel_cost, carbon_cost, fuel_cost + carbon_cost
 
@@ -381,6 +688,21 @@ def _compute_carrier_factors(thermal_daily_df, fuel_prices, carbon_price,
     mc_config = (scenario_config or {}).get('marginal_costs', {})
     ccf_config = mc_config.get('carrier_correction_factors', {})
 
+    # Historical ELEXON correction factors are calibration aids, not future
+    # fuel-cost projections. A future scenario must explicitly opt in to use
+    # them; the WP3 default is formula costs from its commodity assumptions.
+    modelled_year = (scenario_config or {}).get('modelled_year')
+    if (
+        modelled_year and modelled_year > 2024
+        and ccf_config.get('enabled', False)
+        and not ccf_config.get('allow_future_historical_factors', False)
+    ):
+        logger.info(
+            "Skipping historical carrier correction factors for future scenario; "
+            "set allow_future_historical_factors: true to override"
+        )
+        return {}
+
     # ── External file mode (for future scenarios) ─────────────────────────────
     if ccf_config.get('enabled', False) and ccf_config.get('file'):
         return _load_carrier_factors_from_file(ccf_config, scenario_config)
@@ -484,6 +806,35 @@ def _load_carrier_factors_from_file(ccf_config, scenario_config):
 # MAIN: APPLY MARGINAL COSTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _apply_dpa_dispatch(network, mc_df: pd.DataFrame, sub_config: dict) -> pd.DataFrame:
+    """Dispatch Power Agreement plant runs ahead of unabated gas.
+
+    A DPA's variable payment is set so the CCS plant is dispatched ahead of
+    unabated gas generation (DESNZ, DPA terms): its dispatch cost is its own
+    marginal cost or the cheapest unabated CCGT's less ``dpa_margin_gbp_per_mwh``,
+    whichever is lower. Its payments are settled on bills outside the CfD line.
+    """
+    if "support_type" not in network.generators.columns or mc_df.empty:
+        return mc_df
+    dpa = network.generators.index[network.generators["support_type"].astype(str).str.strip().eq("DPA")]
+    if not len(dpa):
+        return mc_df
+    ccgt = mc_df[mc_df["carrier"].eq("CCGT")]
+    if ccgt.empty:
+        logger.warning("DPA plant found but no unabated CCGT to rank it against; keeping its own marginal cost")
+        return mc_df
+    margin = float(sub_config.get("dpa_margin_gbp_per_mwh", 1.0))
+    reference = float(ccgt["marginal_cost"].min()) - margin
+    rows = mc_df["generator"].isin(dpa)
+    own = mc_df.loc[rows, "marginal_cost"].astype(float)
+    mc_df.loc[rows, "marginal_cost"] = own.clip(upper=reference)
+    mc_df.loc[rows, "source"] = mc_df.loc[rows, "source"].astype(str) + f"|dpa_ahead_of_unabated({reference:.2f})"
+    network.generators.loc[mc_df.loc[rows, "generator"], "marginal_cost"] = mc_df.loc[rows, "marginal_cost"].to_numpy()
+    logger.info(f"DPA dispatch: {len(dpa)} unit(s) at or below {reference:.2f} GBP/MWh "
+                f"(cheapest unabated CCGT less {margin:.2f})")
+    return mc_df
+
+
 def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
                                     scenario_config=None):
     """Apply marginal costs to all generators using flat two-tier logic.
@@ -502,7 +853,15 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
 
     mc_config = (scenario_config or {}).get('marginal_costs', {})
     modelled_year = (scenario_config or {}).get('modelled_year', 2024)
-    sub_config = mc_config.get('subsidies', {})
+    sub_config = (scenario_config or {}).get('support', {}).get('dispatch_costs', {})
+    future_assumptions = get_future_cost_assumptions(scenario_config)
+    future_case_enabled = bool(future_assumptions)
+    future_variable_om = future_assumptions.get('variable_om', {})
+    uk_ets, carbon_price_support = _future_carbon_components(future_assumptions)
+    emission_factors = carbon_emission_factors(future_assumptions)
+    if emission_factors is not CARBON_EMISSION_FACTORS:
+        logger.info(f"Gas carbon on the net-CV factor: {emission_factors['CCGT']:.1f} kgCO2/MWh_th "
+                    f"(CCS Gas {emission_factors['CCS Gas']:.2f})")
 
     # Nuclear MC
     nuclear_mc = mc_config.get('nuclear_mc', 10.0)
@@ -532,6 +891,11 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
     # Subsidy config
     subsidy_enabled = sub_config.get('enabled', False)
     cfd_dispatch_cost = sub_config.get('cfd_dispatch_cost', 0.0)
+    cfd_dispatch_exempt = set(sub_config.get('cfd_dispatch_cost_exempt_carriers', []) or [])
+    # Item MR5: plant whose fuel is paid for by another product. Energy from
+    # waste is paid a gate fee to burn waste it must burn anyway; gas CHP sells
+    # heat that would otherwise come from a boiler.
+    byproduct_adjustments = mc_config.get('byproduct_adjustments', {}) or {}
     roc_buyout = 0.0
     if subsidy_enabled:
         buyout_prices = sub_config.get('roc_buyout_prices', {})
@@ -545,6 +909,14 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
     biofuel_roc_buyout = 0.0
     biofuel_default_bandings = {}
     biofuel_mc_floor = biofuel_cfg.get('mc_floor', 5.0)  # Prevent negative MC from ROC income
+    biofuel_require_support_label = biofuel_cfg.get('require_support_label', False)
+    # A biofuel unit explicitly labelled ROC (Ofgem register or proxy share)
+    # forgoes banding x buyout when it does not run, exactly as ROC wind and
+    # solar do. With the renewable subsidy layer on, it takes the same ROC
+    # value even when the carrier-wide biofuel deduction is off (CP30: 830 MW
+    # of ROC biomass sat at the 128.57 formula cost while ROC wind bid
+    # -(banding x buyout); audit 27 Sep 2026). Must match config/defaults/base/marginal_costs.yaml.
+    roc_labelled_follow_subsidies = bool(biofuel_cfg.get('roc_labelled_follow_subsidies', True))
     if biofuel_subsidy_enabled:
         # Use explicit buyout price if given, else fall back to the renewable ROC table
         if 'roc_buyout_price' in biofuel_cfg:
@@ -555,6 +927,10 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
         biofuel_default_bandings = biofuel_cfg.get('default_roc_bandings', {})
         logger.info(f"Biofuel subsidy enabled: ROC buyout={biofuel_roc_buyout:.2f}, "
                     f"bandings={biofuel_default_bandings}")
+
+    cp30_mc_overrides = get_cp30_marginal_cost_overrides(scenario_config)
+    if cp30_mc_overrides:
+        logger.info(f"CP30 marginal-cost overrides enabled: {cp30_mc_overrides}")
 
     # Normalize unclassified carriers
     if 'carrier' in network.generators.columns:
@@ -571,45 +947,119 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
         efficiency = gen.get('efficiency', 1.0)
         p_nom = gen.get('p_nom', 0)
         existing_mc = gen.get('marginal_cost', 0.0)
+        efficiency_used = efficiency
+        fuel_component = 0.0
+        carbon_component = 0.0
+        variable_om = 0.0
+        heat_credit = np.nan
+        mc_before_heat_credit = np.nan
 
         # 1. Protected — never touch
         if carrier in PROTECTED_CARRIERS:
             mc_data.append({'generator': gen_name, 'carrier': carrier,
                             'p_nom_MW': p_nom, 'marginal_cost': existing_mc,
-                            'source': 'protected'})
+                            'source': 'protected',
+                            'efficiency_used': efficiency_used,
+                            'fuel_cost_gbp_per_mwh': fuel_component,
+                            'carbon_cost_gbp_per_mwh': carbon_component,
+                            'variable_om_gbp_per_mwh': variable_om,
+                            'future_cost_case': future_assumptions.get('case'),
+                            'price_year': future_assumptions.get('price_year')})
             continue
 
         # 2. Nuclear — fixed override
         if carrier in ('nuclear', 'Nuclear', 'PWR', 'AGR'):
             mc = nuclear_mc
             source = 'nuclear_override'
+        # 3. CP30 clean dispatchable assumptions
+        elif carrier in cp30_mc_overrides and not future_case_enabled:
+            mc = cp30_mc_overrides[carrier]
+            source = 'cp30_assumption'
 
-        # 3. Thermal with empirical MC
-        elif gen_name in thermal_mc_lookup:
+        # CfD support is a unit-level dispatch condition and takes precedence
+        # over empirical or carrier-level thermal costs.
+        elif (
+            carrier in THERMAL_CARRIERS
+            and subsidy_enabled
+            and carrier not in cfd_dispatch_exempt
+            and str(gen.get('support_type', '') or '').strip() == 'CfD'
+        ):
+            mc = cfd_dispatch_cost
+            source = 'subsidy_CfD_dispatchable'
+
+        # 4. Thermal with empirical MC
+        elif (
+            gen_name in thermal_mc_lookup
+            and str(gen.get('support_type', '') or '').strip() != 'ROC'
+        ):
             mc = thermal_mc_lookup[gen_name]
             source = 'thermal_empirical'
 
         # 4. Thermal without empirical — formula x carrier factor
         elif carrier in THERMAL_CARRIERS:
             fp = fuel_prices.get(carrier, 0)
-            _, _, formula_mc = calculate_marginal_cost(carrier, fp, carbon_price, efficiency)
+            efficiency_used = resolve_thermal_efficiency(
+                gen_name, gen, scenario_config
+            )
+            fuel_component, carbon_component, formula_mc = calculate_marginal_cost(
+                carrier, fp, carbon_price, efficiency_used, emission_factors
+            )
             factor = carrier_factors.get(carrier, 1.0)
-            mc = formula_mc * factor
+            variable_om = _lookup_carrier_value(future_variable_om, carrier)
+            mc = formula_mc * factor + variable_om
             source = f'formula*{factor:.3f}' if factor != 1.0 else 'formula'
+            if variable_om:
+                source = f'{source}+vom'
+
+            adjustment = byproduct_adjustments.get(carrier)
+            if adjustment:
+                mode = adjustment.get('mode')
+                if mode == 'gate_fee_covers_fuel_and_carbon':
+                    # The waste is burned under disposal contracts whether or not
+                    # the power is worth much; its fuel and carbon are paid from
+                    # the gate fee, so the electricity's own cost is VOM only.
+                    fuel_component, carbon_component = 0.0, 0.0
+                    mc = variable_om
+                    source = f'{source}:gate_fee_covers_fuel_and_carbon'
+                elif mode == 'heat_credit':
+                    heat_fuel = fuel_prices.get(adjustment.get('heat_fuel', 'gas'), 0.0)
+                    # The boiler's gas on the unit's own basis, so the credit's
+                    # carbon is the unit's carbon per MWh of fuel (the split in
+                    # nationalised_institutions.heat_credit_rates relies on it).
+                    heat_ef = emission_factors.get(adjustment.get('heat_fuel', 'gas'), 0.0)
+                    boiler = float(adjustment['boiler_efficiency'])
+                    credit = float(adjustment['heat_to_power']) * (
+                        heat_fuel + heat_ef / 1000.0 * carbon_price) / boiler
+                    heat_credit, mc_before_heat_credit = credit, mc
+                    mc = max(mc - credit, 0.0)
+                    source = f'{source}-heat_credit({credit:.1f})'
+                else:
+                    raise ValueError(f"Unknown byproduct adjustment mode for {carrier}: {mode!r}")
 
             # 4b. Biofuel ROC subsidy deduction — biomass/biogas plants receive
             # ROC income per MWh that reduces their effective wholesale MC.
-            if biofuel_subsidy_enabled and carrier in BIOFUEL_CARRIERS:
+            support_type = str(gen.get('support_type', '') or '').strip()
+            labelled_roc = support_type == 'ROC'
+            legacy_unlabelled = not biofuel_require_support_label and not support_type
+            carrier_wide = biofuel_subsidy_enabled and (labelled_roc or legacy_unlabelled)
+            roc_label_only = (
+                not carrier_wide and labelled_roc and subsidy_enabled
+                and roc_labelled_follow_subsidies
+            )
+            if carrier in BIOFUEL_CARRIERS and (carrier_wide or roc_label_only):
+                buyout_used = biofuel_roc_buyout if carrier_wide else roc_buyout
                 ro_banding = gen.get('ro_banding', None)
-                if pd.isna(ro_banding) or ro_banding is None or ro_banding == 0:
-                    ro_banding = biofuel_default_bandings.get(carrier, 0.0)
-                if ro_banding and biofuel_roc_buyout > 0:
-                    subsidy_income = float(ro_banding) * biofuel_roc_buyout
+                if ro_banding is None or pd.isna(ro_banding) or ro_banding == 0:
+                    ro_banding = (biofuel_default_bandings or biofuel_cfg.get('default_roc_bandings', {}) or {}).get(carrier, 0.0)
+                if ro_banding and buyout_used > 0:
+                    subsidy_income = float(ro_banding) * buyout_used
                     mc = mc - subsidy_income
                     # Floor: prevent ROC income making biomass cost-free/negative to the system
                     # Negative MC causes unconditional 100% dispatch which is unrealistic
                     mc = max(mc, biofuel_mc_floor)
-                    source = f'{source}_ROC({ro_banding:.1f}x{biofuel_roc_buyout:.0f})'
+                    # The "_ROC(" marker lets the resource-cost basis
+                    # (scripts/market/marginal_cost_basis.py) strip this layer.
+                    source = f'{source}_ROC({float(ro_banding):.4g}x{buyout_used:.2f})'
 
         # 5. Renewable — subsidy type takes priority, then empirical fallback
         #    CfD generators always get cfd_dispatch_cost (typically £0) because
@@ -639,15 +1089,30 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
         # 7. Everything else — formula
         else:
             fp = fuel_prices.get(carrier, 0)
-            _, _, mc = calculate_marginal_cost(carrier, fp, carbon_price, efficiency)
+            fuel_component, carbon_component, mc = calculate_marginal_cost(
+                carrier, fp, carbon_price, efficiency, emission_factors
+            )
             source = 'formula'
 
         network.generators.loc[gen_name, 'marginal_cost'] = mc
         mc_data.append({'generator': gen_name, 'carrier': carrier,
                         'p_nom_MW': p_nom, 'marginal_cost': mc,
-                        'source': source})
+                        'source': source,
+                        'efficiency_used': efficiency_used,
+                        'emission_factor_kgco2_per_mwh_th':
+                            emission_factors.get(carrier, 0.0),
+                        'fuel_cost_gbp_per_mwh': fuel_component,
+                        'carbon_cost_gbp_per_mwh': carbon_component,
+                        'variable_om_gbp_per_mwh': variable_om,
+                        'heat_credit_gbp_per_mwh': heat_credit,
+                        'mc_before_heat_credit_gbp_per_mwh': mc_before_heat_credit,
+                        'carbon_uk_ets_gbp_per_tco2': uk_ets if future_case_enabled else np.nan,
+                        'carbon_price_support_gbp_per_tco2': carbon_price_support if future_case_enabled else np.nan,
+                        'future_cost_case': future_assumptions.get('case'),
+                        'price_year': future_assumptions.get('price_year')})
 
     mc_df = pd.DataFrame(mc_data)
+    mc_df = _apply_dpa_dispatch(network, mc_df, sub_config)
 
     # ── Logging ──────────────────────────────────────────────────────────────
     active = mc_df[mc_df['source'] != 'protected']
@@ -677,6 +1142,138 @@ def apply_marginal_costs_to_network(network, fuel_prices, carbon_price,
     for src, count in source_counts.items():
         logger.info(f"  {src}: {count} generators")
 
+    return mc_df
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SEASONAL HEAT CREDIT AND MUST-RUN FLOOR (heat-led CHP)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# The heat credit (byproduct_adjustments heat_credit) and the CHP must-run floor
+# (thermal.availability_factors.min_output) were flat all year, so gas CHP ran at
+# a 66 GBP/MWh heat-credited cost with a 30% floor in July as in January: CF 0.58
+# against CP30's 0.36, and its busiest month was July. Both now follow heat
+# demand. User decision, 26 Sep 2026.
+#
+# Shape: heat demand h(m) = base + (1 - base) x HDD(m) / max HDD, with ``base``
+# the process-heat share that does not follow the weather (industry holds most
+# GB CHP capacity; DUKES chapter 7) and HDD the monthly heating degree days.
+# The default HDD are the 2010-2024 means over GB land cells of this project's
+# ERA5 cutouts (resources/atlite/cutouts/uk-{year}.nc, cells with height > 1 m,
+# base 15.5 C, the base build_heat_profiles.py uses): 2,052 degree days a year,
+# 34 in July against 306 in January. h is then scaled to an hour-weighted
+# calendar-year mean of 1, so the annual heat credit and floor are the configured
+# ones and only their timing moves: with base 0.5 the credit and floor run from
+# 0.71x (August) to 1.28x (January) of their annual value.
+DEFAULT_MONTHLY_HEATING_DEGREE_DAYS = (
+    306.3, 273.2, 277.6, 219.4, 148.7, 72.0, 34.0, 32.1, 64.3, 132.8, 216.8, 274.8,
+)
+DEFAULT_PROCESS_HEAT_SHARE = 0.5
+
+
+def seasonal_heat_factors(snapshots: pd.DatetimeIndex, seasonal_cfg: dict | None) -> pd.Series:
+    """Heat-demand factor per snapshot, mean 1 over the snapshots' calendar year."""
+    cfg = seasonal_cfg or {}
+    hdd = np.asarray(cfg.get('monthly_heating_degree_days') or DEFAULT_MONTHLY_HEATING_DEGREE_DAYS, dtype=float)
+    if hdd.shape != (12,) or (hdd < 0).any() or hdd.max() <= 0:
+        raise ValueError("seasonal.monthly_heating_degree_days must be 12 non-negative values, not all zero")
+    base = float(cfg.get('base_load_share', DEFAULT_PROCESS_HEAT_SHARE))
+    if not 0.0 <= base <= 1.0:
+        raise ValueError(f"seasonal.base_load_share must be in [0, 1], got {base}")
+    monthly = base + (1.0 - base) * hdd / hdd.max()
+    snapshots = pd.DatetimeIndex(snapshots)
+    year = int(snapshots[0].year) if len(snapshots) else 2030
+    days = np.array([pd.Period(f"{year}-{m:02d}").days_in_month for m in range(1, 13)], dtype=float)
+    monthly = monthly / float((monthly * days).sum() / days.sum())
+    return pd.Series(monthly[snapshots.month - 1], index=snapshots, name='heat_factor')
+
+
+def apply_seasonal_heat_profile(network, mc_df: pd.DataFrame, scenario_config: dict | None) -> pd.DataFrame:
+    """Make heat-credited generators' marginal cost and must-run floor follow heat demand.
+
+    For each carrier whose ``byproduct_adjustments`` entry is ``heat_credit`` with
+    ``seasonal.enabled`` (default true): ``generators_t.marginal_cost`` becomes
+    ``max(mc_before_credit - credit x h(t), 0)`` and, with ``apply_to_min_output``
+    (default true), ``generators_t.p_min_pu`` becomes ``p_min_pu x h(t)`` capped
+    at ``p_max_pu``. The static ``marginal_cost`` is set to the snapshot mean so
+    static readers see the annual value. Returns ``mc_df`` with the mean written
+    back and the seasonal range recorded.
+    """
+    mc_config = (scenario_config or {}).get('marginal_costs', {}) or {}
+    adjustments = mc_config.get('byproduct_adjustments', {}) or {}
+    if 'heat_credit_gbp_per_mwh' not in mc_df.columns or len(network.snapshots) == 0:
+        return mc_df
+    snapshots = network.snapshots
+    for carrier, adjustment in adjustments.items():
+        if (adjustment or {}).get('mode') != 'heat_credit':
+            continue
+        seasonal = adjustment.get('seasonal', {}) or {}
+        if not bool(seasonal.get('enabled', True)):
+            logger.info(f"Seasonal heat profile: off for {carrier} (flat heat credit and floor)")
+            continue
+        rows = mc_df[(mc_df['carrier'] == carrier) & mc_df['heat_credit_gbp_per_mwh'].notna()]
+        rows = rows[rows['generator'].isin(network.generators.index)]
+        if rows.empty:
+            continue
+        factor = seasonal_heat_factors(snapshots, seasonal)
+        names = rows['generator'].tolist()
+        credit = rows['heat_credit_gbp_per_mwh'].to_numpy(dtype=float)
+        before = rows['mc_before_heat_credit_gbp_per_mwh'].to_numpy(dtype=float)
+        mc_t = pd.DataFrame(
+            np.maximum(before[None, :] - credit[None, :] * factor.to_numpy()[:, None], 0.0),
+            index=snapshots, columns=names,
+        )
+        varying = network.generators_t.marginal_cost
+        if varying is None or varying.empty:
+            varying = pd.DataFrame(index=snapshots)
+        varying = varying.reindex(index=snapshots)
+        network.generators_t['marginal_cost'] = pd.concat(
+            [varying.drop(columns=[n for n in names if n in varying.columns]), mc_t], axis=1
+        )
+        mean_mc = mc_t.mean()
+        network.generators.loc[names, 'marginal_cost'] = mean_mc.to_numpy()
+        index = rows.index
+        mc_df.loc[index, 'marginal_cost'] = mean_mc.to_numpy()
+        mc_df.loc[index, 'marginal_cost_seasonal_min'] = mc_t.min().to_numpy()
+        mc_df.loc[index, 'marginal_cost_seasonal_max'] = mc_t.max().to_numpy()
+        mc_df.loc[index, 'source'] = mc_df.loc[index, 'source'].astype(str) + '|seasonal_heat'
+
+        floor_note = ''
+        if bool(seasonal.get('apply_to_min_output', True)):
+            static_min = pd.to_numeric(network.generators.loc[names, 'p_min_pu'], errors='coerce').fillna(0.0)
+            active = static_min[static_min > 0].index.tolist()
+            if active:
+                static_max = pd.to_numeric(network.generators.loc[active, 'p_max_pu'], errors='coerce').fillna(1.0)
+                cap = pd.DataFrame(np.tile(static_max.to_numpy(), (len(snapshots), 1)),
+                                   index=snapshots, columns=active)
+                max_t = network.generators_t.p_max_pu
+                if max_t is not None and not max_t.empty:
+                    cols = [n for n in active if n in max_t.columns]
+                    if cols:
+                        cap[cols] = max_t[cols].reindex(snapshots).fillna(static_max[cols]).to_numpy()
+                floor_t = pd.DataFrame(
+                    static_min[active].to_numpy()[None, :] * factor.to_numpy()[:, None],
+                    index=snapshots, columns=active,
+                ).clip(lower=0.0)
+                floor_t = floor_t.where(floor_t <= cap, cap)
+                min_t = network.generators_t.p_min_pu
+                if min_t is None or min_t.empty:
+                    min_t = pd.DataFrame(index=snapshots)
+                min_t = min_t.reindex(index=snapshots)
+                network.generators_t['p_min_pu'] = pd.concat(
+                    [min_t.drop(columns=[n for n in active if n in min_t.columns]), floor_t], axis=1
+                )
+                floor_note = (f"; must-run floor {float(static_min[active].mean()):.2f} -> "
+                              f"{float(floor_t.min().mean()):.2f}-{float(floor_t.max().mean()):.2f} "
+                              f"({len(active)} units)")
+        by_month = mc_t.mean(axis=1).groupby(snapshots.month).mean()
+        logger.info(
+            f"Seasonal heat profile for {carrier}: {len(names)} units, heat factor "
+            f"{factor.min():.2f}-{factor.max():.2f} (mean 1 over the year); marginal cost "
+            f"{by_month.min():.2f} (month {int(by_month.idxmin())}) to {by_month.max():.2f} "
+            f"(month {int(by_month.idxmax())}), annual mean {float(mean_mc.mean()):.2f} GBP/MWh"
+            + floor_note
+        )
     return mc_df
 
 
@@ -814,6 +1411,10 @@ def main():
         # Time-varying MC (daily empirical base)
         thermal_mc_file = getattr(snakemake.params, 'thermal_mc_file', None)
         apply_time_varying_mc(network, scenario_config, daily_mc_file=thermal_mc_file)
+
+        # After the daily-empirical frame, which rebuilds generators_t.marginal_cost
+        # from the static column and would otherwise flatten the seasonal credit.
+        mc_df = apply_seasonal_heat_profile(network, mc_df, scenario_config)
 
         # Save outputs
         mc_df.to_csv(snakemake.output.marginal_costs_csv, index=False)

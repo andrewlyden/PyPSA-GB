@@ -31,6 +31,17 @@ warnings.filterwarnings('ignore', message='The network has not been optimized ye
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+from scripts.network_build.etys_file_registry import ELECTRICAL_DEFAULTS
+from scripts.network_build.branch_units import BASE_MVA
+
+# Branch impedance aggregation is done in per unit on PyPSA's 1 MVA base and
+# converted back to ohm/siemens at the aggregated line's bus0 v_nom (the
+# voltage PyPSA uses for x_pu). Aggregating raw ohm across voltage classes
+# made a 132 kV line merged into a 400 kV pair ~9x too stiff.
+IMPEDANCE_ATTRS = ("r", "x")
+ADMITTANCE_ATTRS = ("b", "g")
+# Zero/missing aggregated reactance: the ETYS coupler (0.01 % on 100 MVA).
+COUPLER_X_PU = ELECTRICAL_DEFAULTS["coupler"]["x"] / BASE_MVA
 
 # Try importing logging_config from same directory
 try:
@@ -77,13 +88,37 @@ class NetworkClusterer:
                 'y_osgb36': 'mean',  # Original OSGB36 y-coordinate (preserved during WGS84 conversion)
             },
             'line': {
-                'v_nom': 'max', 
+                'voltage_kv': 'max',  # this project's own column on built networks
+                # PyPSA's own line attribute, which a network may carry as well as
+                # voltage_kv. pypsa 1.0.7 refuses to aggregate an attribute whose
+                # values disagree within a cluster unless it is given a strategy,
+                # where earlier versions silently took the first value, so merging
+                # a 400 kV and a 275 kV line raised instead of clustering. Same
+                # rule as the transformer strategy below.
+                'v_nom': 'max',
                 's_nom': 'sum',  # Parallel lines add capacity
                 'length': 'mean',  # Average length is more reasonable than sum
                 'length_km': 'mean',  # Some networks use length_km instead of length
                 'r': self._parallel_impedance,  # Parallel aggregation: 1/R_total = sum(1/R_i)
                 'x': self._parallel_impedance,  # Parallel aggregation: 1/X_total = sum(1/X_i)
                 'b': 'sum',  # Susceptances add in parallel
+                # Networks built since 27 Sep 2026 carry seasonal ratings and ETYS
+                # provenance on every line; pypsa 1.0.7 refuses to aggregate a column
+                # whose values differ within a cluster unless it has a strategy, so
+                # clustering any of them failed (task Y5). Seasonal ratings add like
+                # s_nom; provenance keeps the first value. pypsa ignores strategies
+                # for columns a network lacks, so older networks cluster as before
+                # (the same set as boundary_busmap.LINE_STRATEGIES; task Y6b).
+                's_nom_winter': 'sum',
+                's_nom_spring': 'sum',
+                's_nom_summer': 'sum',
+                's_nom_autumn': 'sum',
+                'etys_licensee': 'first',
+                'etys_licensee_source': 'first',
+                'etys_topology_source': 'first',
+                'cp30_project_code': 'first',
+                'cp30_source': 'first',
+                'seasonal_rating_source': 'first',
             },
             'transformer': {'v_nom': 'max', 's_nom': 'sum'},
             'load': {'p_nom': 'sum'},
@@ -107,7 +142,9 @@ class NetworkClusterer:
         valid_impedances = impedances[impedances > 0].dropna()
         
         if len(valid_impedances) == 0:
-            return 0.0001  # Small default if all zeros
+            # All zero (e.g. r of couplers): 0; a zero reactance is filled with
+            # the coupler value after clustering, in per unit.
+            return 0.0
         elif len(valid_impedances) == 1:
             return valid_impedances.iloc[0]
         else:
@@ -732,6 +769,20 @@ class NetworkClusterer:
         if 'terrain_factor' in network.lines.columns:
             network.lines['terrain_factor'] = network.lines['terrain_factor'].astype(float).fillna(1.0)
         
+        # Impedances in per unit (1 MVA base) for voltage-consistent
+        # aggregation; parallel combination for r/x, sum for b/g, whatever the
+        # configured strategy says (a mean of ohms is not a network reduction).
+        line_strategies = dict(strategies.get('line', {}))
+        for attr in IMPEDANCE_ATTRS + ADMITTANCE_ATTRS:
+            wanted = self._parallel_impedance if attr in IMPEDANCE_ATTRS else 'sum'
+            if attr in line_strategies and line_strategies[attr] != wanted:
+                logger.warning(
+                    f"Line strategy {attr}={line_strategies[attr]!r} replaced by the "
+                    f"per-unit {'parallel' if attr in IMPEDANCE_ATTRS else 'sum'} rule")
+            line_strategies[attr] = wanted
+        strategies['line'] = line_strategies
+        self._lines_to_per_unit(network)
+
         # Perform clustering
         logger.info("Applying PyPSA spatial clustering...")
         clustering = get_clustering_from_busmap(
@@ -748,6 +799,8 @@ class NetworkClusterer:
         )
         
         clustered_network = clustering.n
+        self._lines_from_per_unit(clustered_network)
+        self._lines_from_per_unit(network)  # leave the input network in ohm
             
         # Add metadata
         clustered_network.meta = getattr(network, 'meta', {}).copy()
@@ -805,19 +858,53 @@ class NetworkClusterer:
         else:
             logger.info(f"Clustered bus coordinates are in WGS84 (x range: {x_range:.4f}°)")
         
-        # Post-processing: Ensure no zero or missing r, x, b in clustered lines
-        DEFAULT_R = 0.0001
-        DEFAULT_X = 0.0001
-        DEFAULT_B = 0.0001
-        for param, default in [('r', DEFAULT_R), ('x', DEFAULT_X), ('b', DEFAULT_B)]:
-            if param in clustered_network.lines.columns:
-                before = clustered_network.lines[param].isna().sum() + (clustered_network.lines[param] == 0).sum()
-                clustered_network.lines[param] = clustered_network.lines[param].replace(0, default).fillna(default)
-                after = clustered_network.lines[param].isna().sum() + (clustered_network.lines[param] == 0).sum()
-                replaced = before - after
-                if replaced > 0:
-                    logger.info(f"Replaced {replaced} zero or missing values in clustered lines '{param}' with default {default}.")
+        if 'v_nom' in clustered_network.lines.columns and 'voltage_kv' not in clustered_network.lines.columns:
+            clustered_network.lines['voltage_kv'] = clustered_network.lines['v_nom']
+            logger.info("Migrated legacy lines.v_nom to lines.voltage_kv")
+
+        # Post-processing: a zero or missing reactance gets the coupler value
+        # (in ohm at the line's bus0 v_nom); r, b, g may legitimately be zero.
+        lines = clustered_network.lines
+        if len(lines):
+            v0 = lines['bus0'].map(clustered_network.buses['v_nom']).astype(float)
+            bad_x = lines['x'].isna() | (lines['x'] <= 0)
+            if bad_x.any():
+                lines.loc[bad_x, 'x'] = COUPLER_X_PU * v0[bad_x] ** 2
+                logger.info(f"Set coupler reactance on {int(bad_x.sum())} clustered lines with zero/missing x")
+            for param in ('r', 'b', 'g'):
+                if param in lines.columns:
+                    lines[param] = lines[param].fillna(0.0)
         return clustered_network
+
+    @staticmethod
+    def _lines_to_per_unit(network: pypsa.Network) -> None:
+        """Lines r, x (ohm) and b, g (S) -> per unit on 1 MVA at bus0 v_nom."""
+        lines = network.lines
+        if not len(lines):
+            return
+        v0 = lines['bus0'].map(network.buses['v_nom']).astype(float)
+        if v0.isna().any() or (v0 <= 0).any():
+            raise ValueError("Cannot aggregate line impedances: bus0 v_nom missing or non-positive")
+        for attr in IMPEDANCE_ATTRS:
+            if attr in lines.columns:
+                lines[attr] = lines[attr].astype(float) / v0 ** 2
+        for attr in ADMITTANCE_ATTRS:
+            if attr in lines.columns:
+                lines[attr] = lines[attr].astype(float) * v0 ** 2
+
+    @staticmethod
+    def _lines_from_per_unit(network: pypsa.Network) -> None:
+        """Inverse of :meth:`_lines_to_per_unit` at the clustered bus0 v_nom."""
+        lines = network.lines
+        if not len(lines):
+            return
+        v0 = lines['bus0'].map(network.buses['v_nom']).astype(float)
+        for attr in IMPEDANCE_ATTRS:
+            if attr in lines.columns:
+                lines[attr] = lines[attr].astype(float) * v0 ** 2
+        for attr in ADMITTANCE_ATTRS:
+            if attr in lines.columns:
+                lines[attr] = lines[attr].astype(float) / v0 ** 2
     
     def _handle_unassigned_buses(self, busmap: pd.Series, unassigned: pd.Series,
                                 bus_gdf: gpd.GeoDataFrame, boundaries: gpd.GeoDataFrame,
@@ -859,15 +946,22 @@ class NetworkClusterer:
         """Convert transformers to lines for simplified clustering."""
         logger.info("Converting transformers to lines for clustering...")
         
+        # Transformer x, r (and b, g) are per unit on s_nom; the equivalent
+        # line keeps the same 1 MVA per-unit impedance, in ohm/S at its bus0
+        # v_nom (tap ratio and phase shift are not represented).
         for name, transformer in network.transformers.iterrows():
-            s_nom = transformer.s_nom or 1.0
+            s_nom = float(transformer.s_nom) if transformer.s_nom and transformer.s_nom > 0 else 1.0
+            v0 = float(network.buses.at[transformer.bus0, 'v_nom'])
+            z = v0 ** 2 / s_nom          # ohm per unit-on-s_nom
             network.add("Line",
                        name=f"tf_as_line_{name}",
                        bus0=transformer.bus0,
                        bus1=transformer.bus1,
                        s_nom=s_nom,
-                       x=0.1,
-                       r=0.0,
+                       x=float(transformer.x) * z,
+                       r=float(transformer.r) * z,
+                       b=float(transformer.get('b', 0.0) or 0.0) / z,
+                       g=float(transformer.get('g', 0.0) or 0.0) / z,
                        carrier="AC",
                        under_construction=0.0)  # Use 0.0 (float) to match ETYS lines
         
@@ -935,12 +1029,15 @@ def main():
     method_config = snakemake.params.get('method_config', {})
     aggregation_strategies = snakemake.params.get('aggregation_strategies', None)
     
-    # Add additional inputs to config if needed
-    if len(snakemake.input) > 1:
-        if clustering_method == 'spatial':
-            method_config['boundaries_path'] = snakemake.input[1]
-        elif clustering_method == 'busmap':
-            method_config['busmap_source'] = snakemake.input[1]
+    # Add method-specific source files from named Snakemake inputs.  Keeping
+    # these explicit means a map/function change correctly invalidates the
+    # clustered network instead of silently reusing an old NetCDF result.
+    if clustering_method == 'spatial' and snakemake.input.boundaries:
+        method_config['boundaries_path'] = snakemake.input.boundaries
+    elif clustering_method == 'busmap' and snakemake.input.busmap:
+        method_config['busmap_source'] = snakemake.input.busmap
+    elif clustering_method == 'custom' and snakemake.input.custom_function:
+        method_config['function_path'] = snakemake.input.custom_function
     
     try:
         # Perform clustering and get busmap
@@ -962,7 +1059,7 @@ def main():
         # Clean up non-standard attributes to avoid PyPSA 1.0.2 warnings
         # These can appear during clustering when components are aggregated
         cleanup_attrs = {
-            'lines': ['v_nom'],  # v_nom is for buses, not lines
+            'lines': ['v_nom'],  # legacy field; line voltage is stored as voltage_kv
             'links': ['b', 'r'],  # b, r are for lines, not links
         }
         for component, attrs in cleanup_attrs.items():

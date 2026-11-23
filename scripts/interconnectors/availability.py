@@ -46,8 +46,17 @@ if 'snakemake' in globals():
     output_availability = snakemake.output[0]
     # Try to get demand_year from params, default to 2020 if not provided
     demand_year = getattr(snakemake.params, 'demand_year', 2020) if hasattr(snakemake, 'params') else 2020
+    availability_config = (
+        getattr(snakemake.params, 'availability_config', {})
+        if hasattr(snakemake, 'params')
+        else {}
+    )
+    # CP30 cable composition (15 Oct 2026): cables it adds get profiles too.
+    input_composition = snakemake.input.get('cp30_composition', None)
 else:
     SNAKEMAKE_MODE = False
+    availability_config = {}
+    input_composition = None
 
 def create_time_index(year: int, freq: str = 'h') -> pd.DatetimeIndex:
     """
@@ -168,6 +177,68 @@ def generate_realistic_availability(interconnector_names: List[str],
     
     return combined_profiles
 
+def append_composition_cables(interconnector_names: List[str], composition_file, logger=None) -> List[str]:
+    '''Cables a CP30 composition adds, appended after the register cables (15 Oct 2026).
+
+    Outage draws are seeded by a cable's position in the list, so appending keeps
+    every existing cable's profile unchanged; the added cable gets the next seed.
+    '''
+    from scripts.CP30.storage_interconnectors import load_cp30_interconnector_composition
+    if isinstance(composition_file, (list, tuple)):
+        composition_file = composition_file[0] if composition_file else None
+    if not composition_file:
+        return list(interconnector_names)
+    composition = load_cp30_interconnector_composition(composition_file)
+    added = [n for n in composition.loc[composition['action'].eq('add'), 'name'] if n not in interconnector_names]
+    if added and logger is not None:
+        logger.info(f"CP30 composition cables added to the availability profiles: {added}")
+    return list(interconnector_names) + added
+
+
+def generate_outage_availability(
+    interconnector_names,
+    time_index,
+    planned_outages_per_year=1,
+    planned_outage_duration_hours=168,
+    planned_outage_months=(4, 5, 6, 7, 8, 9),
+    forced_outage_rate=0.03,
+    forced_outage_mean_duration_hours=24,
+    seed=42,
+):
+    '''Create reproducible contiguous planned and forced cable outages.'''
+    profiles = []
+    n_hours = len(time_index)
+    permitted = np.flatnonzero(time_index.month.isin(planned_outage_months))
+    for cable_number, name in enumerate(interconnector_names):
+        rng = np.random.default_rng(int(seed) + cable_number)
+        availability = np.ones(n_hours, dtype=float)
+
+        duration = max(1, int(planned_outage_duration_hours))
+        for _ in range(max(0, int(planned_outages_per_year))):
+            if len(permitted) == 0:
+                break
+            start = int(rng.choice(permitted))
+            availability[start:min(start + duration, n_hours)] = 0.0
+
+        mean_duration = max(float(forced_outage_mean_duration_hours), 1.0)
+        expected_events = n_hours * max(float(forced_outage_rate), 0.0) / mean_duration
+        for _ in range(int(rng.poisson(expected_events))):
+            start = int(rng.integers(0, n_hours))
+            event_duration = max(1, int(rng.exponential(mean_duration)))
+            availability[start:min(start + event_duration, n_hours)] = 0.0
+
+        profiles.append(pd.DataFrame({
+            'time': time_index,
+            'name': name,
+            'p_max_pu': availability,
+        }))
+    return (
+        pd.concat(profiles, ignore_index=True)
+        if profiles
+        else pd.DataFrame(columns=['time', 'name', 'p_max_pu'])
+    )
+
+
 def apply_seasonal_variations(profiles_df: pd.DataFrame) -> pd.DataFrame:
     """
     Apply seasonal variations to availability profiles.
@@ -258,19 +329,48 @@ def main():
         
         # Extract interconnector names
         interconnector_names = interconnectors_df['name'].unique().tolist()
+        if input_composition:
+            interconnector_names = append_composition_cables(interconnector_names, input_composition, logger)
         logger.info(f"Creating availability profiles for {len(interconnector_names)} interconnectors")
         
         # Create time index for the reference year
         time_index = create_time_index(reference_year)
         logger.info(f"Created time index: {len(time_index)} hourly time steps for {reference_year}")
         
-        # Generate availability profiles
-        # For now, use constant availability - can be extended later
-        availability_profiles = generate_constant_availability(
-            interconnector_names, 
-            time_index, 
-            availability_factor=1.0
-        )
+        mode = str(availability_config.get('mode', 'outage')).lower()
+        if mode == 'constant':
+            availability_profiles = generate_constant_availability(
+                interconnector_names,
+                time_index,
+                availability_factor=float(
+                    availability_config.get('availability_factor', 1.0)
+                ),
+            )
+        elif mode == 'outage':
+            availability_profiles = generate_outage_availability(
+                interconnector_names,
+                time_index,
+                planned_outages_per_year=availability_config.get(
+                    'planned_outages_per_year', 1
+                ),
+                planned_outage_duration_hours=availability_config.get(
+                    'planned_outage_duration_hours', 168
+                ),
+                planned_outage_months=tuple(
+                    availability_config.get(
+                        'planned_outage_months', [4, 5, 6, 7, 8, 9]
+                    )
+                ),
+                forced_outage_rate=availability_config.get(
+                    'forced_outage_rate', 0.03
+                ),
+                forced_outage_mean_duration_hours=availability_config.get(
+                    'forced_outage_mean_duration_hours', 24
+                ),
+                seed=availability_config.get('seed', 42),
+            )
+        else:
+            raise ValueError(f'Unsupported interconnector availability mode: {mode}')
         
         # Optional: Apply seasonal variations (uncomment to enable)
         # availability_profiles = apply_seasonal_variations(availability_profiles)

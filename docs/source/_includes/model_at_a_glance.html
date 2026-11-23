@@ -1,0 +1,48 @@
+<div class="pgb-flow" role="figure" aria-label="PyPSA-GB at a glance: public data is built into one PyPSA network per scenario, solved as a single network-constrained dispatch or as a two-stage market, and reported as dispatch, prices, constraint costs and household bills.">
+
+  <section class="pgb-flow-col pgb-flow-data">
+    <h4><span class="pgb-flow-step">1</span>Public data</h4>
+    <ul>
+      <li><strong>Network</strong> NESO ETYS circuits and planned upgrades</li>
+      <li><strong>Scenarios</strong> NESO FES and Clean Power 2030 pathways</li>
+      <li><strong>Fleet</strong> REPD sites, DUKES stations, CfD and RO registers</li>
+      <li><strong>Weather</strong> ERA5 wind and solar via atlite</li>
+      <li><strong>History</strong> ESPENI demand, ELEXON bids and offers</li>
+    </ul>
+  </section>
+
+  <div class="pgb-flow-arrow" aria-hidden="true"></div>
+
+  <section class="pgb-flow-col pgb-flow-build">
+    <h4><span class="pgb-flow-step">2</span>Build</h4>
+    <p class="pgb-flow-sub">one PyPSA network per scenario</p>
+    <div class="pgb-flow-box"><strong>Network</strong><span>ETYS (2,000+ buses), Reduced (32) or Zonal (17)</span></div>
+    <div class="pgb-flow-box"><strong>Demand</strong><span>historical profiles or FES totals, placed by node</span></div>
+    <div class="pgb-flow-box"><strong>Supply</strong><span>renewables, thermal, storage, hydrogen, interconnectors</span></div>
+  </section>
+
+  <div class="pgb-flow-arrow" aria-hidden="true"></div>
+
+  <section class="pgb-flow-col pgb-flow-solve">
+    <h4><span class="pgb-flow-step">3</span>Solve</h4>
+    <div class="pgb-flow-box"><strong>Single solve</strong><span>least-cost dispatch on the full network</span></div>
+    <p class="pgb-flow-or">or</p>
+    <div class="pgb-flow-box pgb-flow-stage"><strong>Stage 1: wholesale market</strong><span>copperplate, one GB price</span></div>
+    <div class="pgb-flow-down" aria-hidden="true"></div>
+    <div class="pgb-flow-box pgb-flow-stage"><strong>Stage 2: balancing mechanism</strong><span>redispatch until the schedule fits the network</span></div>
+  </section>
+
+  <div class="pgb-flow-arrow" aria-hidden="true"></div>
+
+  <section class="pgb-flow-col pgb-flow-results">
+    <h4><span class="pgb-flow-step">4</span>Results</h4>
+    <ul>
+      <li><strong>Dispatch</strong> generation, storage, flows and curtailment by hour</li>
+      <li><strong>Prices</strong> wholesale and nodal</li>
+      <li><strong>Constraint costs</strong> bids and offers by boundary and technology</li>
+      <li><strong>Household bills</strong> line by line, in Ofgem's price-cap groups</li>
+      <li><strong>Validation</strong> against NESO and ELEXON outturn</li>
+    </ul>
+  </section>
+
+</div>

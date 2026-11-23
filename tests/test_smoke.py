@@ -176,9 +176,10 @@ class TestDataFiles:
         assert scenarios_path.exists()
     
     def test_defaults_yaml_exists(self):
-        """Test defaults.yaml exists."""
-        defaults_path = Path(__file__).parent.parent / "config" / "defaults.yaml"
-        assert defaults_path.exists()
+        """Test the defaults files (config/defaults/) exist."""
+        from config.config_loader import defaults_files
+
+        assert all(path.exists() for path in defaults_files())
     
     def test_snakefile_exists(self):
         """Test Snakefile exists."""

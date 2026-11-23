@@ -1,13 +1,31 @@
-import requests
-import pandas as pd
+"""FES building blocks per edition: cached raw download, then normalisation to FES_{year}_data.csv.
+
+Two steps (year-generic workflow plan, stage 2):
+
+1. **Raw.** ``scripts/sources/fes_raw.py`` downloads each table the FES API file
+   (``data/FES/FES_api_urls.yaml``) lists, once per edition, to
+   ``resources/sources/raw/fes_{edition}/`` with its URL recorded. Later runs read the cache.
+2. **Normalise.** The building blocks are merged with their definitions, the GSP names are cleaned
+   by the edition's rows of ``data/FES/gsp_aliases.csv`` (``scripts/sources/registry.py``), mapped to
+   GSP ids with the edition's committed GSP info table
+   (``data/network/ETYS/fes{edition}_regional_breakdown_gsp_info.csv``) and to network nodes with
+   ``GB_network.xlsx`` ``Dem_per_node``.
+
+An edition with no alias rows or no committed GSP info table fails: there is no fallback to another
+edition's names or coordinates.
+"""
+
 import io
-import re
-import time
 import logging
-import yaml
 import os
+import re
 import sys
 from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+import requests
+import yaml
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -15,11 +33,9 @@ from urllib3.util.retry import Retry
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from scripts.FES.gsp_metadata import (
-    derive_gsp_metadata_from_spatial,
-    map_gsp_names_to_ids,
-    save_gsp_metadata_file,
-)
+from scripts.FES.gsp_metadata import map_gsp_names_to_ids, metadata_path_for_year  # noqa: E402
+from scripts.sources import fes_raw  # noqa: E402
+from scripts.sources.registry import apply_gsp_aliases  # noqa: E402
 
 # Configure logging
 try:
@@ -41,12 +57,25 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
+#: Cache root of the raw downloads (tests point it at a temporary directory).
+RAW_DIR = fes_raw.DEFAULT_RAW_DIR
+#: Committed GSP info tables, one per edition.
+GSP_INFO_DIR = project_root / "data" / "network" / "ETYS"
+#: Node id of each GSP id (sheet Dem_per_node).
+NODE_MAP_FILE = project_root / "data" / "network" / "ETYS" / "GB_network.xlsx"
+#: The two tables merged into FES_{year}_data.csv.
+BUILDING_BLOCK_TABLES = ("building_blocks", "building_block_definitions")
+#: How a raw building-block CSV was read before 2026 (kept: FES_{year}_data.csv is unchanged).
+RAW_ENCODING = "ISO-8859-1"
+#: A UTF-8 byte-order mark as the ISO-8859-1 read sees it.
+MOJIBAKE_BOM = "ï»¿"
+
 # Load configuration from YAML file
 snk = globals().get('snakemake')
 if snk:
     config_file_path = snakemake.input[0]
 else:
-    config_file_path = os.path.join('data', 'FES', 'FES_api_urls.yaml')
+    config_file_path = str(fes_raw.DEFAULT_URLS_FILE)
 try:
     with open(config_file_path, "r") as file:
         config = yaml.safe_load(file)
@@ -54,28 +83,49 @@ except Exception as e:
     logger.exception(f"Failed to load FES API config YAML at {config_file_path}: {e}")
     raise
 
+
+def _clean_text_cells(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    """Drop non-ASCII characters and apostrophes from every string cell (the names GSP info uses)."""
+    try:
+        return df.apply(lambda col: col.map(
+            lambda x: re.sub(r"[^\x00-\x7F]+", '', x).replace("'", '').replace("’", '') if isinstance(x, str) else x))
+    except Exception as e:
+        logger.debug(f"Non-ASCII cleanup failed for {label}: {e}")
+        return df
+
+
+def parse_raw_table(content: bytes, category: str, year: int) -> pd.DataFrame:
+    """A raw building-block table as a DataFrame with its string cells cleaned.
+
+    Args:
+        content: The bytes NESO served.
+        category: Table name (for messages).
+        year: FES edition (for messages).
+
+    Returns:
+        The table, column names as served.
+    """
+    df = pd.read_csv(io.BytesIO(content), encoding=RAW_ENCODING, low_memory=False)
+    return _clean_text_cells(df, f"{category} {year}")
+
+
 def fetch_data(category, year):
+    """One FES API table for an edition, from the raw cache (downloaded on first use).
+
+    Args:
+        category: Table name in the FES API file, e.g. "building_blocks".
+        year: FES edition.
+
+    Returns:
+        The parsed table, or None when the API file has no URL or the download or parse fails.
+    """
     url = config.get(category, {}).get(year)
     if not url:
         logger.error(f"Data for year {year} in category {category} is not available.")
         return None
-    
-    # polite delay between requests
-    time.sleep(1)
     try:
-        logger.info(f"Fetching {category} for {year} from {url}")
-        response = http.get(url, timeout=30)
-        response.raise_for_status()
-        csv_content = response.content
-        # read into dataframe
-        df = pd.read_csv(io.BytesIO(csv_content), encoding='ISO-8859-1', low_memory=False)
-
-        # Remove non-standard characters from string columns
-        try:
-            df = df.apply(lambda col: col.map(lambda x: re.sub(r"[^\x00-\x7F]+", '', x).replace("'", '').replace("’", '') if isinstance(x, str) else x))
-        except Exception as e:
-            logger.debug(f"Non-ASCII cleanup failed for {category} {year}: {e}")
-
+        path = fes_raw.fetch_raw(year, category, urls=config, raw_dir=RAW_DIR, session=http, logger=logger)
+        df = parse_raw_table(path.read_bytes(), category, year)
         logger.info(f"Fetched {category} for {year}: {df.shape[0]} rows, {df.shape[1]} columns")
         return df
     except requests.exceptions.RequestException as e:
@@ -88,341 +138,176 @@ def fetch_data(category, year):
         logger.error(f"Failed to decode CSV data for {category} {year}: {e}")
         return None
 
-def raw_FES_data(FES_year):
-    # Placeholder function for matching definitions to building blocks
-    # read the csvs first
 
+def _promote_header_if_needed(definitions: pd.DataFrame) -> pd.DataFrame:
+    """Use the first data row as the header when it, not the header, names the id column.
+
+    The FES 2021 and 2022 definitions were once served with a title row above the header; NESO's
+    current files (cached 26 Oct 2026) have the header first, so this now changes nothing.
+    """
+    key = 'Building Block ID Number'
+    if key in definitions.columns or definitions.empty or key not in set(definitions.iloc[0].astype(str)):
+        return definitions
+    promoted = definitions.copy()
+    promoted.columns = promoted.iloc[0]
+    return promoted[1:]
+
+
+def normalise_building_blocks(building_blocks: pd.DataFrame, building_block_definitions: pd.DataFrame,
+                              FES_year: int) -> pd.DataFrame:
+    """Merge the building blocks with their definitions on the block id.
+
+    The building blocks' column names lose a byte-order mark NESO left on the first column
+    (FES 2020 'Building Block ID Number', FES 2021-2023 'FES Scenario'). The definitions keep their
+    column names as served (FES 2024's first column stays 'ï»¿Template' in FES_2024_data.csv).
+
+    Args:
+        building_blocks: Raw building blocks.
+        building_block_definitions: Raw definitions.
+        FES_year: FES edition (for messages).
+
+    Returns:
+        Building blocks with definition columns, indexed by 'Building Block ID Number'.
+    """
+    definitions = _promote_header_if_needed(building_block_definitions)
+    definitions = definitions.set_index('Building Block ID Number')
+    blocks = building_blocks.rename(columns=lambda c: str(c).replace(MOJIBAKE_BOM, '').replace('﻿', ''))
+    blocks = blocks.set_index('Building Block ID Number')
+    # FES 2021-2023 name the pathway column 'FES Scenario'; FES 2024+ 'FES Pathway', which the build reads.
+    # The older editions get the 2024 name as well (19 Nov 2026: a FES 2023 build failed on KeyError 'FES Pathway').
+    if 'FES Pathway' not in blocks.columns and 'FES Scenario' in blocks.columns:
+        blocks['FES Pathway'] = blocks['FES Scenario']
+    merged = blocks.merge(definitions, left_index=True, right_index=True)
+    logger.info(f"Merged FES {FES_year} building blocks and definitions: {merged.shape[0]} rows, "
+                f"{merged.shape[1]} columns")
+    return merged
+
+
+def raw_FES_data(FES_year):
+    """FES building blocks merged with their definitions for one edition.
+
+    Raises:
+        RuntimeError: Either table is not available.
+    """
     year = str(FES_year)
     logger.info(f"Loading raw FES data for year {year}")
-    building_blocks = None
-    building_block_definitions = None
-    for category in config.keys():
+    tables = {}
+    for category in BUILDING_BLOCK_TABLES:
+        if category not in config:
+            continue
         df = fetch_data(category, FES_year)
         if df is None:
             logger.warning(f"No data returned for category {category} year {year}")
             continue
-        if category == 'building_blocks':
-            building_blocks = df
-        elif category == 'building_block_definitions':
-            building_block_definitions = df
+        tables[category] = df
 
-    if building_blocks is None:
+    if 'building_blocks' not in tables:
         logger.error("building_blocks data not available, aborting")
         raise RuntimeError("building_blocks data not available")
-    if building_block_definitions is None:
+    if 'building_block_definitions' not in tables:
         logger.error("building_block_definitions data not available, aborting")
         raise RuntimeError("building_block_definitions data not available")
+    return normalise_building_blocks(tables['building_blocks'], tables['building_block_definitions'], FES_year)
 
-    # if the year is 2022 then make the first row the column names
-    if FES_year == 2022 or FES_year == 2021:
-        logger.debug("Adjusting header row for building_block_definitions for year %s", year)
-        building_block_definitions.columns = building_block_definitions.iloc[0]
-        building_block_definitions = building_block_definitions[1:]
-    
-    building_block_definitions.set_index('Building Block ID Number', inplace=True)
-    # for 2020 set the first column name to 'Building Block ID Number'
-    if FES_year == 2020:
-        building_blocks.rename(columns={building_blocks.columns[0]: 'Building Block ID Number'}, inplace=True)
-    # set index
-    building_blocks.set_index('Building Block ID Number', inplace=True)
-    # merge
-    merged = building_blocks.merge(building_block_definitions, left_index=True, right_index=True)
-    logger.info(f"Merged building blocks and definitions: {merged.shape[0]} rows, {merged.shape[1]} columns")
-    # need to rename for 2022
-    if FES_year == 2022:
-        merged.rename(columns={merged.columns[0]: 'FES Scenario'}, inplace=True)
-        logger.debug("Renamed first merged column to 'FES Scenario' for year 2022")
-    return merged
 
-def add_node_id_to_gsp(FES_year, raw_FES_data):
+def load_gsp_info(FES_year: int, gsp_info_dir: Path = GSP_INFO_DIR) -> pd.DataFrame:
+    """The committed GSP info table of one FES edition.
+
+    FES 2021-2024 are NESO's regional-breakdown tables (re-encoded as UTF-8); FES 2025 has no NESO
+    table and is derived from the GSP region polygons (``gsp_metadata.derive_gsp_metadata_from_spatial``).
+
+    Raises:
+        FileNotFoundError: The edition has no committed table. Cache NESO's table with
+            ``python -m scripts.sources.fes_raw --edition N --table gsp_info`` (or derive one from the
+            GSP polygons), check it and commit it under ``data/network/ETYS/``.
     """
-    Clean GSP names and map to Node IDs.
-    
-    GSP CLEANING RATIONALE:
-    - NESO FES data uses informal/evolving GSP names
-    - ETYS network requires exact GSP name matches
-    - Offshore wind sites (2024+) include connection points in parentheses
-    - London LPN/SPN circuits need subcircuit disambiguation
-    - Some FES GSPs don't exist in ETYS network (islands, decommissioned sites)
-    
-    YEAR-SPECIFIC PATCHES:
-    - 2021-2022: Header format fixes, basic GSP standardization (Dunbar A/B, Ferrybridge)
-    - 2023: Broadford-Skye correction, Grange→Margam mapping, Grangemouth cleanup
-    - 2024: Extensive offshore wind (Robin Rigg, Walney, Sheringham) and London subcircuit cleaning
-    
-    NOTE: Future FES years will likely need new patches as:
-    - Offshore wind portfolio continues to expand
-    - Network topology evolves (new GSPs, decommissioning)
-    - NESO updates naming conventions in FES releases
-    
+    path = metadata_path_for_year(int(FES_year), Path(gsp_info_dir))
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"No GSP info for FES {FES_year}: {path} is missing. Cache NESO's table "
+            f"(python -m scripts.sources.fes_raw --edition {FES_year} --table gsp_info) or derive one from the "
+            "GSP polygons (scripts/FES/gsp_metadata.py), check it and commit it; no other edition is used.")
+    gsp_info = pd.read_csv(path, encoding='utf-8-sig')
+    logger.info(f"GSP info for FES {FES_year}: {len(gsp_info)} rows from {path}")
+    return gsp_info
+
+
+def add_node_id_to_gsp(FES_year, raw_FES_data, gsp_info: Optional[pd.DataFrame] = None,
+                       outpath: Optional[str | Path] = None, node_map_file: str | Path = NODE_MAP_FILE):
+    """Clean GSP names, map them to GSP and node ids, and write FES_{year}_data.csv.
+
+    GSP names change between FES editions (offshore wind named with its connection point from FES
+    2024, London LPN/SPN subcircuits, island GSPs not in ETYS); the edition's rows of
+    ``data/FES/gsp_aliases.csv`` say how each is cleaned or dropped. A new edition needs its rows.
+
     Args:
-        FES_year: Year of FES data being processed
-        raw_FES_data: Merged FES DataFrame with GSP column
-        
+        FES_year: FES edition.
+        raw_FES_data: Output of :func:`raw_FES_data`.
+        gsp_info: GSP info table; default the committed one (:func:`load_gsp_info`).
+        outpath: Output CSV; default the Snakemake output, else resources/FES/FES_{year}_data.csv.
+        node_map_file: Workbook with the Dem_per_node sheet.
+
     Returns:
-        None (writes output CSV via Snakemake output path)
+        The table written.
     """
-
-
     logger.info(f"Cleaning GSP names and mapping Node IDs for FES year {FES_year}")
-    # Work on an explicit copy to avoid SettingWithCopyWarning when the
-    # incoming `raw_FES_data` is a slice/view of another DataFrame.
-    # This makes in-place assignments and .loc operations safe.
-    raw_FES_data = raw_FES_data.copy()
-    if FES_year == 2021:
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar B', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar A', 'Dunbar')
-        # remove whitespace at end of strings
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.strip()
-        # remove row with Cain, which I cant find existence of
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Cain']
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ferrybridge B (_F)', 'Ferrybridge B')
-        # exact match for these
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Dumfries 11' if x == 'Dumfries' else x)
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Crookston A' if x == 'Crookston' else x)
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Grangemouth A' if x == 'Grangemouth' else x)
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Kilbowie 11' if x == 'Kilbowie' else x)
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Saltcoats A' if x == 'Saltcoats' else x)
-        # remove Finstown
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Finstown']
-        # remove shetland
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
+    raw_FES_data = apply_gsp_aliases(raw_FES_data, int(FES_year), column='GSP')
+    logger.info(f"Applied the FES {FES_year} GSP aliases: {len(raw_FES_data)} rows kept")
 
-    elif FES_year == 2022:
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ferrybridge B (_M)', 'Ferrybridge B')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar B', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar A', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_B)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Crookston A' if x == 'Crookston' else x)
-        # remove Finstown
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Finstown']
-        # remove shetland
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
-
-    elif FES_year == 2023:
-        # replace the 951 row with CLYM
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Broadford-Skye', 'Broadford')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].replace({'Grange': 'Margam'})
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_B)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ferrybridge B (_M)', 'Ferrybridge B')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar B', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar A', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Grangemouth A' if x == 'Grangemouth' else x)
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Kearsley 132kV' if x == 'Kearsley' else x)
-        # delete row with Roosecote as can't see it has anything, bar some battery storage
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Roosecote']
-        # delete row with Stornoway as only has little wind and no coordinates
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Stornoway']
-        # remove Finstown
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Finstown']
-        # remove shetland
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
-
-    elif FES_year == 2024:
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_B)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_H)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ferrybridge B (_M)', 'Ferrybridge B')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Kirkby (_G)', 'Kirkby SPEN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Kirkby (_D)', 'Kirkby SPEN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ormonde', 'Ormonde (Heysham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Robin Rigg', 'Robin Rigg (Harker)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Walney 2', 'Walney 2 (Heysham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 1', 'Tynemouth 132kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 2', 'Tynemouth 132kV')
-        # raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 132kV 2', 'Tynemouth 132kV')
-        # raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 132kV 1', 'Tynemouth 132kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Hams Hall', 'Hams Hall (Lea Marston 132kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Hart Moor', 'Hartmoor')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Camblesforth', 'Camblesforth 66kV (Drax)')
-        # raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Skelton Margam (Grange 66kV)', 'Margam (Grange 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Fiddlers Ferry', 'Fiddlers Ferry (Cuerdley 132kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('St. Asaph', 'St Asaph (Bodelwyddan)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Broadford-Skye', 'Broadford')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Axminster_H', 'Axminster H')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Clacton', 'Clacton (Bramford)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Loudwater', 'Loudwater (Amersham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Sheringham Shoal', 'Sheringham Shoal (Norwich)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Beddington (_C)', 'Beddington LPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Canal Bank', 'Canal Bank (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Greenford', 'Greenford (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Littlebrook (_C)', 'Littlebrook LPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Lodge Road', 'Lodge Road (St Johns Wood)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('New Cross', 'New Cross 66kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Perivale', 'Perivale (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Wesley Avenue (Willesden)', 'Wesley Avenue (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Beddington (_J)', 'Beddington SPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Littlebrook (_J)', 'Littlebrook SPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].replace({'Drax': 'Camblesforth 66kV (Drax)', 'Grange': 'Margam (Grange 66kV)'})
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar B', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar A', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Kearsley 132kV' if x == 'Kearsley' else x)
-        # delete row with Port Ham as only small and no gsp data
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Port Ham']
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Roosecote']
-        # remove these too Kellwood Road, Long Park, New Cumnock, Well Street Paisley, Stornoway
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Kellwood Road')]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Long Park')]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('New Cumnock')]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Well Street Paisley')]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Stornoway')]
-        # remove Finstown
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Finstown']
-        # remove shetland
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
-
-    elif FES_year >= 2025:
-        # FES 2025+ - Start with 2024 logic and expand as needed
-        logger.info(f"Using default GSP cleaning logic for FES {FES_year} (based on FES 2024)")
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_B)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('East Claydon (_H)', 'East Claydon')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ferrybridge B (_M)', 'Ferrybridge B')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Kirkby (_G)', 'Kirkby SPEN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Kirkby (_D)', 'Kirkby SPEN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Ormonde', 'Ormonde (Heysham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Robin Rigg', 'Robin Rigg (Harker)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Walney 2', 'Walney 2 (Heysham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 1', 'Tynemouth 132kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Tynemouth 2', 'Tynemouth 132kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Hams Hall', 'Hams Hall (Lea Marston 132kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Hart Moor', 'Hartmoor')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Camblesforth', 'Camblesforth 66kV (Drax)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Fiddlers Ferry', 'Fiddlers Ferry (Cuerdley 132kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('St. Asaph', 'St Asaph (Bodelwyddan)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Broadford-Skye', 'Broadford')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Axminster_H', 'Axminster H')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Clacton', 'Clacton (Bramford)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Loudwater', 'Loudwater (Amersham)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Sheringham Shoal', 'Sheringham Shoal (Norwich)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Beddington (_C)', 'Beddington LPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Canal Bank', 'Canal Bank (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Greenford', 'Greenford (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Littlebrook (_C)', 'Littlebrook LPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Lodge Road', 'Lodge Road (St Johns Wood)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('New Cross', 'New Cross 66kV')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Perivale', 'Perivale (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Wesley Avenue (Willesden)', 'Wesley Avenue (Willesden 66kV)')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Beddington (_J)', 'Beddington SPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Littlebrook (_J)', 'Littlebrook SPN')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].replace({'Drax': 'Camblesforth 66kV (Drax)', 'Grange': 'Margam (Grange 66kV)'})
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar B', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].str.replace('Dunbar A', 'Dunbar')
-        raw_FES_data['GSP'] = raw_FES_data['GSP'].apply(lambda x: 'Kearsley 132kV' if x == 'Kearsley' else x)
-        # Remove unmapped GSPs
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Port Ham']
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Roosecote']
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Kellwood Road', na=False)]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Long Park', na=False)]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('New Cumnock', na=False)]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Well Street Paisley', na=False)]
-        raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Stornoway', na=False)]
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Finstown']
-        raw_FES_data = raw_FES_data[raw_FES_data['GSP'] != 'Shetland']
-        logger.info(f"Applied default GSP cleaning rules for FES {FES_year}")
-
-    # Download or derive GSP info, and persist exact-year metadata for later workflow stages.
-    GSP_info = None
-
-    # Try to fetch from API for the requested year first.
-    gsp_url = config.get('gsp_info', {}).get(FES_year)
-    if gsp_url:
-        logger.info(f"Fetching GSP info for {FES_year} from API")
-        try:
-            time.sleep(1)  # polite delay
-            response = http.get(gsp_url, timeout=30)
-            response.raise_for_status()
-            GSP_info = pd.read_csv(io.BytesIO(response.content), encoding='utf-8-sig')
-            logger.info(f"Downloaded GSP info from API: {GSP_info.shape[0]} rows")
-            save_gsp_metadata_file(GSP_info, FES_year, logger=logger)
-        except Exception as e:
-            logger.warning(f"Failed to download GSP info for {FES_year} from API: {e}")
-            GSP_info = None
-
-    # FES 2025 and later may not publish a standalone GSP-info CSV. In that case,
-    # build the same metadata shape from the local GSP-region spatial layer.
-    if GSP_info is None:
-        try:
-            GSP_info = derive_gsp_metadata_from_spatial(FES_year, fes_data=raw_FES_data, logger=logger)
-            if GSP_info is not None and not GSP_info.empty:
-                save_gsp_metadata_file(GSP_info, FES_year, logger=logger)
-        except Exception as e:
-            logger.warning(f"Failed to derive GSP info for {FES_year} from spatial data: {e}")
-            GSP_info = None
-
-    # If primary year failed, try alternate years for name-to-code mapping only.
-    if GSP_info is None:
-        fallback_years = [2024, 2023, 2022, 2021]
-        for fallback_year in fallback_years:
-            if fallback_year == FES_year:
-                continue
-
-            fallback_url = config.get('gsp_info', {}).get(fallback_year)
-            if fallback_url:
-                logger.info(f"GSP info for {FES_year} not available, trying {fallback_year} from API")
-                try:
-                    time.sleep(1)  # polite delay
-                    response = http.get(fallback_url, timeout=30)
-                    response.raise_for_status()
-                    GSP_info = pd.read_csv(io.BytesIO(response.content), encoding='utf-8-sig')
-                    logger.info(f"Downloaded GSP info from {fallback_year}: {GSP_info.shape[0]} rows")
-                    break
-                except Exception as e:
-                    logger.debug(f"Failed to download GSP info for {fallback_year}: {e}")
-                    continue
-
-    if GSP_info is None:
-        raise RuntimeError(f"Could not download or derive GSP info for FES {FES_year}. Check internet connection, configuration, and local GSP region data.")
-    # remove any '' characters
+    GSP_info = load_gsp_info(FES_year) if gsp_info is None else gsp_info.copy()
     GSP_info['Name'] = GSP_info['Name'].str.replace("'", "")
-    # .replace("’", '')
     GSP_info['Name'] = GSP_info['Name'].str.replace("’", '')
-
-    GSP_info['Name'] = GSP_info['Name'].str.replace("'", '')
 
     # Map GSP names to IDs using exact match first, then canonical labels.
     raw_FES_data['GSP ID'] = map_gsp_names_to_ids(raw_FES_data['GSP'], GSP_info)
     missing_gsp_ids = raw_FES_data['GSP ID'].isna().sum()
     logger.info(f"Mapped GSP IDs; missing GSP ID count: {missing_gsp_ids}")
-    # # remove row where GSP contains Direct
-    # raw_FES_data = raw_FES_data[~raw_FES_data['GSP'].str.contains('Direct')]
 
-    # read the Node ID to GSP ID key from "../data/network/ETYS/GB_network.xlsx", sheetname="Dem_per_node"
-    node_info = pd.read_excel('data/network/ETYS/GB_network.xlsx', sheet_name="Dem_per_node")
-
-    # Create a mapping dictionary from GSP Id to Node Id
+    node_info = pd.read_excel(node_map_file, sheet_name="Dem_per_node")
     gsp_to_node_mapping = dict(zip(node_info['GSP Id'], node_info['Node Id']))
-
     raw_FES_data['Node ID'] = raw_FES_data['GSP ID'].map(gsp_to_node_mapping)
     missing_node_ids = raw_FES_data['Node ID'].isna().sum()
     logger.info(f"Mapped Node IDs; missing Node ID count: {missing_node_ids}")
-    
-    # If 'GSP' contains 'Direct', copy the 'GSP' value to both 'GSP ID' and 'Node ID'
+
+    # Transmission-connected rows ('Direct(...)') keep the GSP label as both ids.
     direct_mask = raw_FES_data['GSP'].str.contains('Direct', na=False)
     raw_FES_data.loc[direct_mask, 'Node ID'] = raw_FES_data.loc[direct_mask, 'GSP']
     raw_FES_data.loc[direct_mask, 'GSP ID'] = raw_FES_data.loc[direct_mask, 'GSP']
 
-    snk = globals().get('snakemake')
-    outpath = snk.output[0] if snk else os.path.join('resources', 'FES', f'FES_{FES_year}_data.csv')
+    if outpath is None:
+        snk = globals().get('snakemake')
+        outpath = snk.output[0] if snk else os.path.join('resources', 'FES', f'FES_{FES_year}_data.csv')
     logger.info(f"Writing output FES file to {outpath}")
     raw_FES_data.to_csv(outpath, index=True)
+    return raw_FES_data
+
+
+def build_fes_data(FES_year: int, outpath: Optional[str | Path] = None) -> pd.DataFrame:
+    """Raw building blocks to FES_{year}_data.csv for one edition."""
+    return add_node_id_to_gsp(FES_year, raw_FES_data(FES_year), outpath=outpath)
+
 
 if __name__ == "__main__":
-    # Get FES year from Snakemake params
     snk = globals().get('snakemake')
-    
+
     # Reinitialize logger with Snakemake log path if available
     if snk and hasattr(snk, 'log') and snk.log:
         logger = setup_logging(snk.log[0])
-    
+
+    out = None
     if snk:
         FES_year = snk.params.fes_year
     else:
-        FES_year = 2024  # Default for standalone testing
+        import argparse
+        parser = argparse.ArgumentParser(description="Build resources/FES/FES_{year}_data.csv for one FES edition")
+        parser.add_argument("--edition", type=int, default=2024)
+        parser.add_argument("--out", default=None)
+        args = parser.parse_args()
+        FES_year, out = args.edition, args.out
     try:
         logger.info(f"Starting FES data pipeline for year {FES_year}")
-        FES_data = raw_FES_data(FES_year)
-        add_node_id_to_gsp(FES_year, FES_data)
+        build_fes_data(FES_year, outpath=out)
         logger.info("FES data pipeline finished successfully")
     except Exception as e:
         logger.exception(f"FES data pipeline failed: {e}")
         raise
-

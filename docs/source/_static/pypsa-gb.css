@@ -1,0 +1,267 @@
+/* PyPSA-GB look for the Shibuya theme: the sage green of the earlier docs as the accent, with sky,
+   honey, coral, rose and lavender from the same palette for colour on the landing page. */
+
+/* ---- Accent scale: sage green (#7ba591), Radix-style 12 steps ---------------------------------- */
+:root, html.light {
+  --accent-1: #fbfdfc; --accent-2: #f3f8f5; --accent-3: #e5f0ea; --accent-4: #d6e8de;
+  --accent-5: #c5ded1; --accent-6: #b0d1c1; --accent-7: #97c0ac; --accent-8: #7ba591;
+  --accent-9: #6a9a83; --accent-10: #5c8b75; --accent-11: #3f6f59; --accent-12: #1f3a2e;
+  --accent-a1: rgba(47, 122, 87, 0.02); --accent-a2: rgba(47, 122, 87, 0.05);
+  --accent-a3: rgba(47, 122, 87, 0.10); --accent-a4: rgba(47, 122, 87, 0.16);
+  --accent-a5: rgba(47, 122, 87, 0.23); --accent-a6: rgba(47, 122, 87, 0.31);
+  --accent-a7: rgba(47, 122, 87, 0.41); --accent-a8: rgba(47, 122, 87, 0.56);
+  --accent-a9: rgba(47, 122, 87, 0.70); --accent-a10: rgba(47, 122, 87, 0.78);
+  --accent-a11: rgba(32, 92, 64, 0.88); --accent-a12: rgba(16, 48, 33, 0.95);
+  --accent-contrast: #ffffff;
+
+  --pgb-sage: #7ba591; --pgb-sage-deep: #3f6f59; --pgb-sky: #89b6d4; --pgb-honey: #dbb368;
+  --pgb-coral: #e8a87c; --pgb-rose: #d88b8b; --pgb-lavender: #a89bd0; --pgb-teal: #6ba89d;
+}
+
+html.dark {
+  --accent-1: #101814; --accent-2: #15201b; --accent-3: #1b2e25; --accent-4: #20382d;
+  --accent-5: #264336; --accent-6: #2e5141; --accent-7: #3a6352; --accent-8: #4b7c67;
+  --accent-9: #7ba591; --accent-10: #93c4ab; --accent-11: #a8d6bf; --accent-12: #dcf0e5;
+  --accent-a1: rgba(147, 196, 171, 0.02); --accent-a2: rgba(147, 196, 171, 0.05);
+  --accent-a3: rgba(147, 196, 171, 0.10); --accent-a4: rgba(147, 196, 171, 0.15);
+  --accent-a5: rgba(147, 196, 171, 0.21); --accent-a6: rgba(147, 196, 171, 0.28);
+  --accent-a7: rgba(147, 196, 171, 0.37); --accent-a8: rgba(147, 196, 171, 0.50);
+  --accent-a9: rgba(147, 196, 171, 0.75); --accent-a10: rgba(147, 196, 171, 0.85);
+  --accent-a11: rgba(168, 214, 191, 0.95); --accent-a12: rgba(220, 240, 229, 0.98);
+  --accent-contrast: #0f1a15;
+
+  --pgb-sage-deep: #93c4ab;
+}
+
+/* ---- Headings: a short sage bar under the page title ---------------------------------------------- */
+.yue h1::after {
+  content: "";
+  display: block;
+  width: 3.5rem;
+  height: 4px;
+  margin-top: 0.6rem;
+  border-radius: 2px;
+  background: var(--pgb-sage);
+}
+
+/* ---- Landing page: introduction --------------------------------------------------------------------- */
+.pgb-hero {
+  margin: 1.25rem 0 2rem;
+}
+.pgb-hero .pgb-tagline {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--pgb-sage-deep);
+}
+.pgb-hero .pgb-lead { margin: 0 0 1.1rem; font-size: 1.02rem; line-height: 1.65; }
+.pgb-hero .pgb-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; line-height: 0; }
+.pgb-hero .pgb-badges a { display: inline-flex; border: 0; text-decoration: none; }
+.pgb-hero .pgb-badges img { display: block; height: 22px; margin: 0; }
+@media (max-width: 640px) { .pgb-hero .pgb-tagline { font-size: 1.15rem; } }
+
+/* ---- Landing page: one colour per section card ------------------------------------------------------ */
+.pgb-cards .sd-card {
+  border: 1px solid var(--sy-c-border, rgba(0, 0, 0, 0.08));
+  border-top: 5px solid var(--pgb-card, var(--pgb-sage));
+  border-radius: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pgb-cards .sd-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(31, 58, 46, 0.12) !important; }
+.pgb-cards .sd-card-title { color: var(--pgb-card, var(--pgb-sage-deep)); font-weight: 650; }
+.pgb-cards .sd-col:nth-child(7n + 1) .sd-card { --pgb-card: var(--pgb-sage); }
+.pgb-cards .sd-col:nth-child(7n + 2) .sd-card { --pgb-card: var(--pgb-teal); }
+.pgb-cards .sd-col:nth-child(7n + 3) .sd-card { --pgb-card: var(--pgb-sky); }
+.pgb-cards .sd-col:nth-child(7n + 4) .sd-card { --pgb-card: var(--pgb-honey); }
+.pgb-cards .sd-col:nth-child(7n + 5) .sd-card { --pgb-card: var(--pgb-coral); }
+.pgb-cards .sd-col:nth-child(7n + 6) .sd-card { --pgb-card: var(--pgb-rose); }
+.pgb-cards .sd-col:nth-child(7n + 7) .sd-card { --pgb-card: var(--pgb-lavender); }
+html.light .pgb-cards .sd-card-title { filter: brightness(0.72) saturate(1.2); }
+
+/* ---- Study pages: key findings, one large figure per card ------------------------------------------ */
+.pgb-stats .sd-card {
+  border: 1px solid var(--sy-c-border, rgba(0, 0, 0, 0.08));
+  border-left: 5px solid var(--pgb-card, var(--pgb-sage));
+  border-radius: 10px;
+  background: var(--accent-a2);
+}
+.pgb-stats .sd-card-body { padding: 0.95rem 1.1rem 0.8rem; }
+.pgb-stats .sd-card-body p { margin: 0 0 0.35rem; line-height: 1.5; font-size: 0.95rem; }
+.pgb-stats .pgb-stat {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--pgb-sage-deep);
+}
+.pgb-stats .sd-col:nth-child(4n + 1) .sd-card { --pgb-card: var(--pgb-sage); }
+.pgb-stats .sd-col:nth-child(4n + 2) .sd-card { --pgb-card: var(--pgb-coral); }
+.pgb-stats .sd-col:nth-child(4n + 3) .sd-card { --pgb-card: var(--pgb-sky); }
+.pgb-stats .sd-col:nth-child(4n + 4) .sd-card { --pgb-card: var(--pgb-honey); }
+@media (max-width: 640px) { .pgb-stats .pgb-stat { font-size: 1.3rem; } }
+
+/* ---- Notebooks: input cells with a sage edge ------------------------------------------------------- */
+.nbinput.container { border-left: 3px solid var(--pgb-sage); padding-left: 0.75rem; }
+
+/* ---- Mermaid diagrams: no code-block box; centred, natural size (see pypsa-gb.js) -------------------- */
+pre.mermaid {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0.5rem 0 !important;
+  margin: 1.5rem 0 !important;
+  overflow: visible;
+}
+
+/* ---- Landing page: the three maps -------------------------------------------------------------- */
+.pgb-maps img {
+  width: 100%;
+  border: 1px solid var(--sy-c-border, #e1e9e6);
+  border-radius: 12px;
+  background: #ffffff;
+  transition: box-shadow 0.15s ease;
+}
+.pgb-maps a:hover img { box-shadow: 0 8px 22px rgba(31, 58, 46, 0.14); }
+.pgb-maps p { font-size: 0.9rem; line-height: 1.5; margin-top: 0.6rem; }
+
+/* ---- Contributors: a grid of people (GitHub picture, name, role) ------------------------------------- */
+.pgb-people {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 1rem 0.75rem;
+  margin: 1rem 0 1.25rem;
+}
+.pgb-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.4rem;
+  border: 1px solid var(--sy-c-border, #e1e9e6);
+  border-radius: 12px;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.pgb-person:hover { border-color: var(--pgb-sage); box-shadow: 0 6px 16px rgba(31, 58, 46, 0.10); }
+.pgb-person img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-4, #d6e8de);
+  margin-bottom: 0.2rem;
+}
+.pgb-person-name { font-weight: 600; font-size: 0.88rem; line-height: 1.25; }
+.pgb-person-role { font-size: 0.75rem; color: var(--sy-c-text-weak, #5f6b66); line-height: 1.2; }
+
+/* ---- Tutorials gallery: cards like the landing page's ------------------------------------------------- */
+div.nbsphinx-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 2rem;
+}
+div.nbsphinx-gallery > a {
+  border: 1px solid var(--sy-c-border, #e1e9e6) !important;
+  border-top: 4px solid var(--pgb-sage) !important;
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem 0.8rem !important;
+  text-decoration: none !important;
+  background: #ffffff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+div.nbsphinx-gallery > a:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(31, 58, 46, 0.12); }
+div.nbsphinx-gallery img { width: 100%; height: 150px; object-fit: contain; border-radius: 6px; }
+div.nbsphinx-gallery > a > div:last-child { font-size: 0.92rem; font-weight: 600; line-height: 1.35; color: #2c3a35; }
+
+/* ---- Study gallery (sphinx-design cards with a figure): styled like the tutorials gallery -------------- */
+.pgb-gallery .sd-card {
+  border: 1px solid var(--sy-c-border, #e1e9e6);
+  border-top: 4px solid var(--pgb-sage);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pgb-gallery .sd-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(31, 58, 46, 0.12) !important; }
+.pgb-gallery .sd-card-img-top { height: 190px; object-fit: contain; background: #ffffff; padding: 0.6rem 0.6rem 0; }
+.pgb-gallery .sd-card-title { font-size: 1rem; font-weight: 650; line-height: 1.35; }
+.pgb-gallery .sd-card-text { font-size: 0.92rem; line-height: 1.5; }
+
+/* ---- Landing page: the model at a glance (docs/source/_includes/model_at_a_glance.html) ------------- */
+.pgb-flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1.15fr auto 1fr;
+  align-items: stretch;
+  gap: 0.6rem;
+  margin: 1.25rem 0 1.5rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+.pgb-flow-col {
+  --pgb-col: var(--pgb-sage);
+  position: relative;
+  padding: 0.95rem 0.9rem 0.9rem;
+  border: 1px solid var(--sy-c-border, rgba(0, 0, 0, 0.08));
+  border-top: 5px solid var(--pgb-col);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pgb-col) 7%, transparent);
+}
+.pgb-flow-data { --pgb-col: var(--pgb-sky); }
+.pgb-flow-build { --pgb-col: var(--pgb-sage); }
+.pgb-flow-solve { --pgb-col: var(--pgb-honey); }
+.pgb-flow-results { --pgb-col: var(--pgb-coral); }
+.pgb-flow-col h4 {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin: 0 0 0.6rem; font-size: 1rem; font-weight: 700;
+}
+.pgb-flow-step {
+  display: inline-grid; place-items: center;
+  width: 1.55rem; height: 1.55rem; border-radius: 50%;
+  background: var(--pgb-col); color: #fff; font-size: 0.8rem; font-weight: 700;
+}
+.pgb-flow-sub { margin: -0.35rem 0 0.6rem; font-size: 0.78rem; opacity: 0.75; }
+.pgb-flow-col ul { margin: 0; padding: 0; list-style: none; }
+.pgb-flow-col li { margin: 0 0 0.5rem; padding-left: 0.75rem; border-left: 2px solid var(--pgb-col); }
+.pgb-flow-col li:last-child { margin-bottom: 0; }
+.pgb-flow-col li strong, .pgb-flow-box strong { display: block; font-weight: 650; }
+.pgb-flow-box {
+  margin: 0 0 0.5rem; padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: var(--sy-c-background, #fff);
+  border: 1px solid color-mix(in srgb, var(--pgb-col) 45%, transparent);
+}
+.pgb-flow-box:last-child { margin-bottom: 0; }
+.pgb-flow-box span { display: block; font-size: 0.8rem; opacity: 0.8; }
+.pgb-flow-stage { border-left: 4px solid var(--pgb-col); }
+.pgb-flow-or {
+  margin: 0.15rem 0 0.4rem; text-align: center; font-size: 0.75rem;
+  font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6;
+}
+.pgb-flow-down { height: 1.1rem; margin: -0.25rem 0 0.25rem; position: relative; }
+.pgb-flow-down::after {
+  content: ""; position: absolute; left: 50%; top: 0.1rem; transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 9px solid var(--pgb-honey);
+}
+.pgb-flow-arrow { position: relative; width: 1.1rem; align-self: center; height: 2rem; }
+.pgb-flow-arrow::before {
+  content: ""; position: absolute; left: 0; right: 7px; top: 50%; height: 2px;
+  background: var(--pgb-sage); transform: translateY(-50%);
+}
+.pgb-flow-arrow::after {
+  content: ""; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  border-top: 7px solid transparent; border-bottom: 7px solid transparent;
+  border-left: 9px solid var(--pgb-sage);
+}
+@media (max-width: 960px) {
+  .pgb-flow { grid-template-columns: 1fr; gap: 0.35rem; }
+  .pgb-flow-arrow { width: 2rem; height: 1.3rem; justify-self: center; }
+  .pgb-flow-arrow::before { left: 50%; right: auto; top: 0; bottom: 7px; width: 2px; height: auto;
+                            transform: translateX(-50%); }
+  .pgb-flow-arrow::after { left: 50%; right: auto; top: auto; bottom: 0; transform: translateX(-50%);
+                           border-left: 7px solid transparent; border-right: 7px solid transparent;
+                           border-top: 9px solid var(--pgb-sage); border-bottom: 0; }
+}
