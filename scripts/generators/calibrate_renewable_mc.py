@@ -1,9 +1,43 @@
 """
 Calibrate renewable marginal costs using ELEXON bid data.
 
-One-time prerun script (NOT part of the per-scenario Snakemake DAG).
+Per-scenario Snakemake rule ``calibrate_renewable_empirical_mc``
+(``rules/generators.smk``); also runs standalone from the CLI.
 Estimates per-generator empirical marginal costs for wind and solar generators
 by analysing their Bid-Offer Data (BOD) bid prices from the ELEXON BMRS API.
+
+Fixes (November 2026), each marked "FIX-n" in the code
+------------------------------------------------------------------
+FIX-1         Carrier: the static offshore/onshore/solar prefix sets are now
+              checked before the BMU-suffix guess. The suffix rule labelled 9
+              offshore BMUs (BOWLW-1, BURBW-1, GNFSW-1/2, GRGBW-1/2/3, KINCW-1,
+              WLNYW-1) as ``wind_onshore`` in both 2020 and 2024.
+FIX-2         Only bid pair -1 is used. BOD stores each period for pair -1 and
+              pair +1; the +1 "bid" is the undo price of an offer, not the
+              price to curtail. In 2024 the two differ in 2.1m of 3.5m rows
+              and including +1 moved a BMU's median by up to £9,999.
+FIX-3         The bid cache is keyed by its date range. A cache (including the
+              legacy ``renewable_bids_cache.csv``) is used only if its real
+              dates cover the request, and is sliced to the request; otherwise
+              the range is fetched and saved as
+              ``renewable_bids_cache_{start}_{end}.csv``. After an archive
+              restore the coverage is checked again instead of assuming it.
+FIX-4         The network is opened with ``network_io.load_network``, which reads
+              the ``.pkl`` the rule passes (``pypsa.Network`` cannot, so every
+              workflow run fell back to station names).
+FIX-5         The reverse prefix->station dict keeps the first station listed
+              (``clyde central``, ``whitelee``), not the last.
+FIX-6         Prefix lookups use 4 characters only; all keys are 4 characters,
+              so the 3- and 5-character tries could never match.
+FIX-7         A BMU with no static station name gets the ELEXON registry
+              ``bmUnitName`` (prefix match), then falls back to its BMU ID, so it
+              is never silently dropped by the ``groupby('station')``.
+FIX-8         Header and output path corrected (this docstring).
+FIX-9         BMU -> generator matching requires the same carrier and every
+              significant word of the station name in the generator name.
+              The old substring / first-word matcher, once FIX-4 let it run,
+              mapped London Array to a reservoir, Race Bank to a solar park and
+              Hornsea 2 to Hornsea 1.
 
 Methodology (inspired by GBPower build_roc_values.py):
     Renewable generators in the Balancing Mechanism submit bid prices that
@@ -21,7 +55,8 @@ Methodology (inspired by GBPower build_roc_values.py):
     distribution: strongly negative bids → ROC; near-zero bids → CfD or merchant.
 
 Output:
-    data/market/renewable_empirical_mc.csv
+    resources/marginal_costs/{scenario}_renewable_empirical_mc.csv  (rule)
+    --output path                                                  (CLI)
     Columns: generator, carrier, empirical_mc, support_type_inferred, n_bmus,
              median_bid, mean_bid, std_bid
 
@@ -204,7 +239,10 @@ RENEWABLE_STATION_TO_PREFIX = {
 }
 
 # Reverse: prefix → station name
-RENEWABLE_PREFIX_TO_STATION = {v: k for k, v in RENEWABLE_STATION_TO_PREFIX.items()}
+# FIX-5: keep the FIRST station for a shared prefix (CLDC, WHIL), not the last.
+RENEWABLE_PREFIX_TO_STATION = {}
+for _station, _prefix in RENEWABLE_STATION_TO_PREFIX.items():
+    RENEWABLE_PREFIX_TO_STATION.setdefault(_prefix, _station)
 
 # Carrier assignment: offshore detection uses BMU suffix 'O', onshore uses 'W'.
 # The static sets below serve as fallback when the ELEXON registry is not available.
@@ -238,14 +276,35 @@ _BMU_REGISTRY_DETAILS: Optional[pd.DataFrame] = None
 def _prefix_to_carrier(prefix: str, bmu_id: str = '') -> str:
     """Map a BMU prefix to its renewable carrier.
 
-    Uses BMU suffix convention as primary signal:
+    FIX-1: the static prefix sets are checked first. The suffix is only a
+    fallback, because older offshore farms use a 'W' suffix (GRGBW-1 Greater
+    Gabbard, WLNYW-1 Walney, GNFSW-1 Gunfleet Sands ...).
+
+    Suffix fallback:
       - 'O' suffix → wind_offshore  (e.g. BEATO-1, SGRWO-3)
       - 'W' suffix → wind_onshore   (e.g. GRIFW-1, STLGW-2)
       - 'S' suffix → solar_pv       (e.g. CLVHS-1, SUTBS-1)
       - 'B' suffix for some onshore  (e.g. WHLWB-1)
-    Falls back to static prefix sets.
+
+    Parameters
+    ----------
+    prefix : str
+        4-character station prefix.
+    bmu_id : str, optional
+        Full BMU ID, used for the suffix fallback.
+
+    Returns
+    -------
+    str
+        Carrier name, or 'unknown_renewable'.
     """
-    # Use the full BMU prefix (all alpha chars) to detect suffix
+    if prefix in _OFFSHORE_PREFIXES:
+        return 'wind_offshore'
+    if prefix in _ONSHORE_PREFIXES:
+        return 'wind_onshore'
+    if prefix in _SOLAR_PREFIXES:
+        return 'solar_pv'
+    # Suffix fallback: full BMU prefix (all alpha chars)
     if bmu_id:
         alpha = ''.join(ch for ch in bmu_id.split('-')[0] if ch.isalpha())
         if alpha:
@@ -256,13 +315,6 @@ def _prefix_to_carrier(prefix: str, bmu_id: str = '') -> str:
                 return 'wind_onshore'
             elif last == 'S':
                 return 'solar_pv'
-    # Fallback to static sets
-    if prefix in _OFFSHORE_PREFIXES:
-        return 'wind_offshore'
-    elif prefix in _ONSHORE_PREFIXES:
-        return 'wind_onshore'
-    elif prefix in _SOLAR_PREFIXES:
-        return 'solar_pv'
     return 'unknown_renewable'
 
 
@@ -390,10 +442,59 @@ def _is_renewable_bmu(bmu_id: str, registry: Optional[set] = None) -> bool:
     prefix = _extract_prefix(bmu_id)
     if prefix is None:
         return False
-    for length in [4, 3, 5]:
-        if prefix[:length] in RENEWABLE_PREFIX_TO_STATION:
-            return True
-    return False
+    # FIX-6: every key is 4 characters, so only a 4-character lookup can match
+    return prefix[:4] in RENEWABLE_PREFIX_TO_STATION
+
+
+def _load_covering_bids_cache(
+    cache_dir: Path,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    logger: logging.Logger = logger,
+) -> Optional[pd.DataFrame]:
+    """
+    Load a cached bid file that covers ``start``..``end`` and slice it (FIX-3).
+
+    Looks at ``renewable_bids_cache_{start}_{end}.csv`` files and the legacy
+    ``renewable_bids_cache.csv``. Coverage is read from the file's own
+    ``datetime`` column, never from its name, because the legacy 2020 file
+    holds only 1-22 January under a year-wide name.
+
+    Parameters
+    ----------
+    cache_dir : Path
+        Directory holding the cache files.
+    start, end : Timestamp
+        Requested first and last day (inclusive).
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame or None
+        Rows with ``start <= datetime < end + 1 day``, or None if no file covers
+        the range.
+    """
+    if not cache_dir.exists():
+        return None
+    candidates = sorted(cache_dir.glob("renewable_bids_cache_*_*.csv"))
+    legacy = cache_dir / "renewable_bids_cache.csv"
+    if legacy.exists():
+        candidates.append(legacy)
+    hi = end + pd.Timedelta(days=1)
+    for path in candidates:
+        df = pd.read_csv(path, parse_dates=['datetime'])
+        if df.empty:
+            continue
+        lo_c, hi_c = df['datetime'].min(), df['datetime'].max()
+        # covers if the file's first day <= start and its last day >= end
+        if lo_c.normalize() <= start and hi_c.normalize() >= end:
+            out = df[(df['datetime'] >= start) & (df['datetime'] < hi)].copy()
+            logger.info(f"Loading cached bids from {path.name} "
+                        f"({lo_c:%Y-%m-%d}..{hi_c:%Y-%m-%d}), {len(out)} rows in range")
+            return out
+        logger.info(f"Cache {path.name} covers {lo_c:%Y-%m-%d}..{hi_c:%Y-%m-%d}, "
+                    f"not {start:%Y-%m-%d}..{end:%Y-%m-%d} - not used")
+    return None
 
 
 def fetch_renewable_bids(
@@ -441,18 +542,20 @@ def fetch_renewable_bids(
     logger.info(f"Fetching renewable BOD bids via stream: {start_date} to {end_date} ({len(dates)} days)")
 
     if output_dir:
-        cache_path = Path(output_dir) / "renewable_bids_cache.csv"
-        if cache_path.exists():
-            logger.info(f"Loading cached bids from {cache_path}")
-            return pd.read_csv(cache_path, parse_dates=['datetime'])
+        # FIX-3: only a cache whose real dates cover the request is used.
+        cached = _load_covering_bids_cache(Path(output_dir), start, end, logger)
+        if cached is not None:
+            return cached
 
         # Try restoring from compressed archive before hitting the API
         try:
             from scripts.utilities.elexon_cache import ensure_cache_for_year
-            year = start.year
-            if ensure_cache_for_year(year, logger=logger) and cache_path.exists():
-                logger.info(f"Restored from archive — loading cached bids for {year}")
-                return pd.read_csv(cache_path, parse_dates=['datetime'])
+            # The archive restores into resources/market/elexon/{year}/, which
+            # is output_dir in the workflow; coverage is re-checked below.
+            ensure_cache_for_year(start.year, logger=logger)
+            cached = _load_covering_bids_cache(Path(output_dir), start, end, logger)
+            if cached is not None:
+                return cached
         except ImportError:
             pass  # elexon_cache not available — fall through to API fetch
 
@@ -517,7 +620,9 @@ def fetch_renewable_bids(
                 f"{df['bmu_id'].nunique() if not df.empty else 0} BMUs")
 
     if output_dir and not df.empty:
-        cache_path = Path(output_dir) / "renewable_bids_cache.csv"
+        # FIX-3: the cache name carries its date range
+        cache_path = Path(output_dir) / (
+            f"renewable_bids_cache_{start:%Y-%m-%d}_{end:%Y-%m-%d}.csv")
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(cache_path, index=False)
         logger.info(f"Cached bids to {cache_path}")
@@ -580,6 +685,13 @@ def analyse_renewable_bids(
     # Realistic renewable bids: ROC generators bid ~ -50 to -150 £/MWh;
     # CfD/merchant near 0.  Values outside ±500 are BM exception bids (e.g.
     # Whitelee's -9999 "do not reduce" bid) and would corrupt the median.
+    # FIX-2: use bid pair -1 only (the first curtailment band below FPN). Pair
+    # +1 rows carry the undo price of an offer, not the price to curtail.
+    if 'pair_id' in bids_df.columns:
+        n_all = len(bids_df)
+        bids_df = bids_df[bids_df['pair_id'] == -1].copy()
+        logger.info(f"Kept {len(bids_df)} of {n_all} bid records (pair_id == -1)")
+
     n_raw = len(bids_df)
     bids_df = bids_df[(bids_df['bid_price'] >= -500.0) & (bids_df['bid_price'] <= 500.0)].copy()
     n_filtered = n_raw - len(bids_df)
@@ -617,6 +729,7 @@ def analyse_renewable_bids(
 
     # Map to station name — try registry first, then static dict
     def _resolve_station(row):
+        """Station name: registry exact ID -> static dict -> registry prefix -> BMU ID."""
         prefix = row['prefix']
         bmu_id = row['bmu_id']
         # Try ELEXON registry details (authoritative station name)
@@ -629,9 +742,17 @@ def analyse_renewable_bids(
                 if name and name != bmu_id:
                     return name.lower()
         # Fallback: static prefix dict
-        if prefix:
-            return RENEWABLE_PREFIX_TO_STATION.get(prefix[:4], None)
-        return None
+        if prefix and prefix[:4] in RENEWABLE_PREFIX_TO_STATION:
+            return RENEWABLE_PREFIX_TO_STATION[prefix[:4]]
+        # FIX-7: registry name of any BMU sharing the 4-char prefix
+        if prefix and _BMU_REGISTRY_DETAILS is not None and not _BMU_REGISTRY_DETAILS.empty:
+            ng = _BMU_REGISTRY_DETAILS['nationalGridBmUnit'].astype(str)
+            match = _BMU_REGISTRY_DETAILS[ng.str.upper().str.startswith(prefix[:4])]
+            names = match['bmUnitName'].dropna().astype(str)
+            if not names.empty:
+                return names.iloc[0].lower()
+        # FIX-7: never return None - groupby('station') would drop the BMU
+        return bmu_id
 
     bmu_stats['station'] = bmu_stats.apply(_resolve_station, axis=1)
 
@@ -699,6 +820,40 @@ def analyse_renewable_bids(
     return agg
 
 
+# FIX-9: words that say nothing about which station a name refers to.
+_NAME_STOPWORDS = {
+    'wind', 'farm', 'windfarm', 'wf', 'offshore', 'onshore', 'solar', 'park',
+    'extension', 'ext', 'unit', 'generator', 'bmu', 'limited', 'ltd', 'energy',
+    'module', 'phase', 'the', 'of', 'and', 'osp', 'scheme', 'project', 'site',
+}
+
+
+def _name_tokens(name) -> frozenset:
+    """
+    Split a station or generator name into significant lower-case tokens.
+
+    Parameters
+    ----------
+    name : str
+        Any name (``"Hornsea_1___Heron_&_Njord"``, ``"hornsea_wf_2a"``).
+
+    Returns
+    -------
+    frozenset of str
+        Tokens of 3+ letters, plus number tokens, minus ``_NAME_STOPWORDS``.
+        A token such as ``2a`` is split into ``2`` and ``a`` so that phase
+        numbers are compared as numbers.
+    """
+    import re
+    out = set()
+    for tok in re.findall(r'[a-z]+|\d+', str(name).lower()):
+        if tok in _NAME_STOPWORDS:
+            continue
+        if tok.isdigit() or len(tok) >= 3:
+            out.add(tok)
+    return frozenset(out)
+
+
 def _map_bmus_to_generators(
     bmu_stats: pd.DataFrame,
     network_path: Optional[str],
@@ -707,89 +862,79 @@ def _map_bmus_to_generators(
     """
     Map BMU IDs to PyPSA generator names.
 
-    Matching strategy (in priority order):
-      1. Direct station name match against generator index
-      2. Station name substring match (both directions)
-      3. Key-word extraction from ELEXON bmUnitName for broader matching
-      4. Falls back to using station name as identifier
+    FIX-9        The old matcher took the first generator whose name was a
+    substring of the station name (or the reverse), then fell back to the
+    first word of the station name, and ignored carrier. Checked on the
+    2020 network with 2024 BMUs it gave London Array -> "Londons_Queen_
+    Elizabeth_II_reservoir", Race Bank -> "Hunters_Race_Solar_Park", East
+    Anglia One and North Kyle -> "Chelveston ... Wind Farm", Hornsea 2 ->
+    Hornsea 1, Blackcraig -> "Craig_Wind_Farm". Now a generator matches only
+    if (a) it has the BMU's carrier and (b) every significant token of the
+    station name appears in the generator name. The registry name is tried
+    first, then the static station name. Of several matches the one with
+    the fewest extra tokens wins; a tie is left unmapped and logged.
 
-    If a network path is provided, matches BMU station names against actual
-    generator names in the network. Otherwise, uses the station name directly.
+    Parameters
+    ----------
+    bmu_stats : DataFrame
+        One row per BMU with ``bmu_id``, ``prefix``, ``carrier``, ``station``.
+    network_path : str, optional
+        Network file (.pkl or .nc). Without it, the station name is used as
+        the generator identifier.
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame
+        ``bmu_stats`` plus a ``generator`` column (None where unmapped).
     """
     bmu_stats = bmu_stats.copy()
     bmu_stats['generator'] = None
 
-    if network_path and Path(network_path).exists():
-        try:
-            import pypsa
-            network = pypsa.Network(network_path)
-
-            # Build renewable generator lookup
-            renewable_carriers = {'wind_offshore', 'wind_onshore', 'solar_pv',
-                                  'large_hydro', 'small_hydro', 'tidal_stream',
-                                  'shoreline_wave', 'marine'}
-            gen_lookup = {}
-            for gen_name in network.generators.index:
-                carrier = network.generators.loc[gen_name, 'carrier']
-                if carrier not in renewable_carriers:
-                    continue
-                base = gen_name.split('__agg')[0].lower().strip()
-                gen_lookup[base] = gen_name
-                gen_lookup[gen_name.lower()] = gen_name
-
-            # Sort gen_lookup entries longest-first for better partial matching
-            gen_keys_sorted = sorted(gen_lookup.keys(), key=len, reverse=True)
-
-            for idx, row in bmu_stats.iterrows():
-                station = row.get('station')
-                if station is None:
-                    continue
-                station_lower = station.lower().strip()
-                station_nospace = station_lower.replace(' ', '').replace('_', '')
-
-                # 1. Direct match
-                if station_lower in gen_lookup:
-                    bmu_stats.at[idx, 'generator'] = gen_lookup[station_lower]
-                    continue
-
-                # 2. Station name is a substring of generator name (or vice versa)
-                matched = False
-                for key in gen_keys_sorted:
-                    key_nospace = key.replace(' ', '').replace('_', '')
-                    if station_nospace in key_nospace or key_nospace in station_nospace:
-                        bmu_stats.at[idx, 'generator'] = gen_lookup[key]
-                        matched = True
-                        break
-
-                if matched:
-                    continue
-
-                # 3. Try matching on key words (e.g. "hornsea" from "hornsea_1a")
-                #    Extract significant words (≥4 chars) from station name
-                words = [w for w in station_lower.replace('_', ' ').split()
-                         if len(w) >= 4 and w not in ('wind', 'farm', 'offshore',
-                                                       'onshore', 'solar', 'extension',
-                                                       'windfarm', 'unit', 'generator')]
-                if words:
-                    keyword = words[0]  # Use the most significant word
-                    for key in gen_keys_sorted:
-                        if keyword in key:
-                            bmu_stats.at[idx, 'generator'] = gen_lookup[key]
-                            matched = True
-                            break
-
-            n_mapped = bmu_stats['generator'].notna().sum()
-            n_total = len(bmu_stats)
-            logger.info(f"Mapped {n_mapped}/{n_total} BMUs to network generators "
-                         f"({n_total - n_mapped} unmapped)")
-
-        except Exception as e:
-            logger.warning(f"Could not load network for mapping: {e}")
-            bmu_stats['generator'] = bmu_stats['station']
-    else:
+    if not (network_path and Path(network_path).exists()):
         # No network — use station name as generator identifier
         bmu_stats['generator'] = bmu_stats['station']
+        return bmu_stats
 
+    try:
+        # FIX-4: load_network reads the .pkl the rule passes; pypsa.Network
+        # cannot, so every workflow run fell back to station names.
+        from scripts.utilities.network_io import load_network
+        network = load_network(network_path)
+    except Exception as e:
+        logger.warning(f"Could not load network for mapping: {e}")
+        bmu_stats['generator'] = bmu_stats['station']
+        return bmu_stats
+
+    renewable_carriers = {'wind_offshore', 'wind_onshore', 'solar_pv'}
+    gens = network.generators[network.generators['carrier'].isin(renewable_carriers)]
+    cand = [(g, c, _name_tokens(g.split('__agg')[0])) for g, c in gens['carrier'].items()]
+
+    n_tie = 0
+    for idx, row in bmu_stats.iterrows():
+        static = (RENEWABLE_PREFIX_TO_STATION.get(row['prefix'][:4])
+                  if row.get('prefix') else None)
+        for name in (row.get('station'), static):
+            toks = _name_tokens(name) if name else frozenset()
+            if not toks:
+                continue
+            hits = [(len(gt - toks), g) for g, c, gt in cand
+                    if c == row['carrier'] and toks <= gt]
+            if not hits:
+                continue
+            hits.sort()
+            if len(hits) > 1 and hits[0][0] == hits[1][0]:
+                n_tie += 1
+                logger.info(f"  {row['bmu_id']}: '{name}' matches "
+                            f"{[h[1] for h in hits[:3]]} equally - left unmapped")
+                break
+            bmu_stats.at[idx, 'generator'] = hits[0][1]
+            break
+
+    n_mapped = bmu_stats['generator'].notna().sum()
+    n_total = len(bmu_stats)
+    logger.info(f"Mapped {n_mapped}/{n_total} BMUs to network generators "
+                f"({n_total - n_mapped} unmapped, {n_tie} ties)")
     return bmu_stats
 
 

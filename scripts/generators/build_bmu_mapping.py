@@ -19,6 +19,14 @@ Usage:
         --output data/generators/bmus_prepared.csv
 
     # Or via Snakemake rule (see rules/market.smk)
+
+Fixes (November 2026), marked "FIX-n" in the code
+-------------------------------------------------------------
+FIX-1  ``_select_generator_match`` no longer matches a BMU to a generator
+       whose carrier is a different known fuel from the Power Station
+       Dictionary fuel. Before, Drax units 1-4 (biomass) were mapped to
+       "Drax - coal units", which put ~1,594 MWh of Drax biomass BM
+       volume under coal in the 2020 BM validation.
 """
 
 import pandas as pd
@@ -434,6 +442,13 @@ def _load_power_station_dictionary(
     return df
 
 
+# FIX-1: carriers that name a definite fuel; a BMU whose dictionary fuel maps
+# to a different one of these must not be matched to that generator.
+_KNOWN_FUEL_CARRIERS = {
+    "nuclear", "CCGT", "OCGT", "coal", "oil", "biomass", "waste_to_energy",
+}
+
+
 def _fuel_to_carrier_candidates(
     fuel: str | None,
     plant_type: str | None,
@@ -663,6 +678,17 @@ def _select_generator_match(
     if expected_carriers:
         candidates.loc[candidates["carrier"].isin(expected_carriers), "score"] += 80
         candidates.loc[~candidates["carrier"].isin(expected_carriers), "score"] -= 25
+        # FIX-1: a candidate with a DIFFERENT known fuel is never a match.
+        # The -25 penalty lost to the +60 name match, so T_DRAXX-1..4 (BIOMASS
+        # in the Power Station Dictionary) were mapped to "Drax - coal units".
+        # Unclassified / pseudo carriers are still allowed.
+        conflicting = (
+            candidates["carrier"].isin(_KNOWN_FUEL_CARRIERS)
+            & ~candidates["carrier"].isin(expected_carriers)
+        )
+        candidates = candidates[~conflicting].copy()
+        if candidates.empty:
+            return None, "unmatched"
 
     if expected_bus:
         candidates.loc[candidates["bus"] == expected_bus, "score"] += 45
@@ -886,6 +912,8 @@ def build_bmu_mapping(
                     generator_name, match_method = _select_generator_match(
                         station_name=fallback_station_name,
                         lookup_df=component_lookup_df,
+                        # FIX-1: keep the fuel check on the prefix fallback
+                        expected_carriers=expected_carriers,
                     )
                     if generator_name:
                         station_name = fallback_station_name
