@@ -17,6 +17,25 @@ Outputs:
 
 Each CSV has columns: settlement_period (datetime index), then one column per
 BMU ID with the volume-weighted average price (£/MWh) for that period.
+
+Fixes (November 2026), each marked "FIX-..." in the code
+--------------------------------------------------------------------
+FIX-B1610-1  ``fetch_b1610_bulk`` fetches transmission BMUs in batches with the
+             ``bmUnit`` filter; the all-units monthly download (~1.8 GB) failed.
+FIX-B1610-2  A failed B1610 call is retried, then raises; it is no longer
+             skipped and zero-filled.
+FIX-B1610-3  B1610 ``quantity`` (MWh per half hour) is converted to MW (x2).
+FIX-B1610-4  Newest settlement run kept per period; chunk-edge duplicates dropped.
+FIX-B1610-5  The 2-samples-a-day fallback in
+             ``retrieve_wholesale_calibration_data`` only runs on request.
+FIX-MID-1    Docstring: APXMIDP is the APX/EPEX index, not N2EX.
+FIX-MID-2    Zero-volume MID periods (price 0 = no trade) are dropped.
+FIX-MID-3    MID rows after end_date (inclusive "to" bound) are trimmed.
+FIX-BOD-1    BOD sentinel prices (|price| >= 9999) are dropped in
+             ``_bod_side_rows``, so averages and ladders never see them.
+FIX-BOD-2    The processed-BOD cache key carries ``PROCESSED_BOD_VERSION``; the
+             old key ignored the code version, so pre-fix outputs (with
+             sentinel prices) would have been copied back unchanged.
 """
 
 import pandas as pd
@@ -48,6 +67,11 @@ DEFAULT_BOD_CACHE_DIR = Path("data/market/elexon_bod")
 DEFAULT_PROCESSED_BOD_CACHE_DIR = Path("data/market/elexon_processed")
 DEFAULT_RAW_BOD_CACHE_FORMAT = "parquet"
 
+# FIX-BOD-1: |price| at or above this is an ELEXON sentinel, not a price.
+BOD_SENTINEL_PRICE = 9999.0
+# FIX-BOD-2: bump when the BOD processing changes, to invalidate processed caches
+PROCESSED_BOD_VERSION = "v2-nosentinel"
+
 
 def _processed_bod_cache_path(
     cache_dir: Path,
@@ -59,7 +83,11 @@ def _processed_bod_cache_path(
     """Return the reusable processed-output cache directory for a date range."""
     ladder_tag = f"ladders-{int(bool(build_ladders))}"
     block_tag = f"blocks-{int(max_ladder_blocks)}" if build_ladders else "blocks-0"
-    return cache_dir / f"{start_date}_to_{end_date}_{ladder_tag}_{block_tag}"
+    # FIX-BOD-2: the processing version is part of the key, so outputs made
+    # before FIX-BOD-1 (sentinel prices still in) are never reused.
+    return cache_dir / (
+        f"{start_date}_to_{end_date}_{ladder_tag}_{block_tag}_{PROCESSED_BOD_VERSION}"
+    )
 
 
 def _processed_bod_files(path: Path) -> dict[str, Path]:
@@ -370,6 +398,12 @@ def _bod_side_rows(bod_df: pd.DataFrame, price_col: str, side: str) -> pd.DataFr
     use negative pair IDs.
     """
     side_df = bod_df[bod_df[price_col].notna()].copy()
+    # FIX-BOD-1: ELEXON uses +/-9999 and +/-99999 as "do not dispatch" sentinel
+    # prices. They are not real prices and dominated weighted averages
+    # (nuclear offer reference £10,000/MWh in the BM scorecard). Dropped here
+    # so neither the hourly averages nor the ladders see them.
+    _p = pd.to_numeric(side_df[price_col], errors="coerce").abs()
+    side_df = side_df[_p < BOD_SENTINEL_PRICE].copy()
     if "pair_id" not in side_df.columns:
         return side_df
 
@@ -847,7 +881,7 @@ def fetch_generation_per_unit(
 
     Returns
     -------
-    DataFrame with columns: bmu_id, quantity (MW), settlement_period
+    DataFrame with columns: bmu_id, generation_mw (average MW), settlement_period
     """
     _check_requests_available()
 
@@ -871,6 +905,8 @@ def fetch_generation_per_unit(
     if "bmUnit" in df.columns:
         df = df.rename(columns={"bmUnit": "bmu_id", "quantity": "generation_mw"})
         df = df[df["bmu_id"].str.startswith("T_", na=False)].copy()
+        # FIX-B1610-3: quantity is MWh per half hour; x2 gives average MW
+        df["generation_mw"] = pd.to_numeric(df["generation_mw"], errors="coerce") * 2.0
         df["settlement_period"] = settlement_period
 
     return df[["bmu_id", "generation_mw", "settlement_period"]] if not df.empty else pd.DataFrame()
@@ -1062,7 +1098,8 @@ def fetch_mid_prices_bulk(
     end_date : str
         End date (YYYY-MM-DD), inclusive.
     data_provider : str
-        MID data provider to filter on. Default 'APXMIDP' (N2EX market index).
+        MID data provider to filter on. Default 'APXMIDP' (the APX / EPEX Spot
+        index; N2EX is 'N2EXMIDP'). FIX-MID-1: the old text called it N2EX.
     logger : Logger
 
     Returns
@@ -1112,6 +1149,17 @@ def fetch_mid_prices_bulk(
     df["datetime"] = pd.to_datetime(df["settlementDate"]) + \
         pd.to_timedelta((df["settlementPeriod"].astype(int) - 1) * 30, unit="min")
     df = df.set_index("datetime").sort_index()
+    # FIX-MID-3: the stream's "to" bound is inclusive, so the first period of
+    # the day after end_date came back too. Trim to the requested days.
+    df = df[(df.index >= start) & (df.index < end)]
+
+    # FIX-MID-2: a period with zero traded volume is reported with price 0.
+    # That is "no trade", not a price of £0/MWh, so it is dropped.
+    if "volume" in df.columns:
+        no_trade = pd.to_numeric(df["volume"], errors="coerce").fillna(0) <= 0
+        if no_trade.any():
+            logger.info(f"Dropping {int(no_trade.sum())} zero-volume MID periods (no trade)")
+        df = df[~no_trade]
 
     prices = df["price"].astype(float)
     prices.name = "mid_price"
@@ -1130,18 +1178,70 @@ def fetch_mid_prices_bulk(
     return prices
 
 
+# B1610 settlement run types, oldest to newest. The newest run is the most
+# complete reconciliation, so it wins when one period has several runs.
+B1610_RUN_ORDER = ["II", "SF", "R1", "R2", "R3", "RF", "DF"]
+
+
+def fetch_transmission_bmu_ids(logger: logging.Logger = logger) -> list:
+    """
+    List every transmission (``T_``) BMU in the ELEXON BMU register.
+
+    FIX-B1610-1 helper: the B1610 stream is fetched per batch of BMUs, so the
+    BMU list must be known up front.
+
+    Parameters
+    ----------
+    logger : Logger
+
+    Returns
+    -------
+    list of str
+        ``elexonBmUnit`` IDs starting with ``T_``.
+
+    Raises
+    ------
+    requests.HTTPError
+        If the register cannot be downloaded.
+    """
+    _check_requests_available()
+    resp = requests.get(f"{ELEXON_API_BASE}/reference/bmunits/all", timeout=120)
+    resp.raise_for_status()
+    ids = sorted({str(r.get("elexonBmUnit")) for r in resp.json()
+                  if str(r.get("elexonBmUnit", "")).startswith("T_")})
+    logger.info(f"  ELEXON register: {len(ids)} transmission BMUs")
+    return ids
+
+
 def fetch_b1610_bulk(
     start_date: str,
     end_date: str,
+    bmu_ids: Optional[list] = None,
+    batch_size: int = 25,
+    max_retries: int = 3,
     logger: logging.Logger = logger,
 ) -> pd.DataFrame:
     """
-    Fetch B1610 actual generation per BMU in bulk via stream endpoint.
+    Fetch B1610 actual generation per transmission BMU, all 48 periods a day.
 
-    Uses /datasets/B1610/stream for fast bulk download in monthly chunks,
-    replacing the per-SP fetch approach (~730 individual API calls → ~12 bulk
-    calls for a full year). Returns the same pivoted format as the sampled
-    approach but with full settlement period coverage.
+    FIX-B1610-1  The old version asked for every BMU in the country (embedded
+                 ``2__`` units included) one month at a time. One day is about
+                 60 MB, so a month is about 1.8 GB of JSON; the first chunk
+                 failed and the caller silently fell back to 2 samples a day
+                 (which is how 09:30 / 18:30-only files were made). The stream
+                 now uses the ``bmUnit`` filter, ``batch_size`` BMUs per call,
+                 one month per call (about 4 MB per BMU-year).
+    FIX-B1610-2  A failed chunk after the first was logged and skipped, and its
+                 periods were then zero-filled by the pivot, i.e. counted as
+                 "off". Each call is now retried and the fetch raises if it
+                 still fails.
+    FIX-B1610-3  ``quantity`` is energy in MWh per half-hour settlement period,
+                 not MW (Drax unit 1, ~645 MW, peaks at 323). It is now
+                 multiplied by 2 so the returned values are average MW.
+    FIX-B1610-4  If a period is reported by more than one settlement run, the
+                 newest run (``B1610_RUN_ORDER``) is kept instead of the max.
+                 The stream's ``to`` bound is inclusive, so chunk-edge rows
+                 appear twice; they are de-duplicated.
 
     Parameters
     ----------
@@ -1149,94 +1249,102 @@ def fetch_b1610_bulk(
         Start date (YYYY-MM-DD).
     end_date : str
         End date (YYYY-MM-DD), inclusive.
+    bmu_ids : list of str, optional
+        ``T_`` BMU IDs to fetch. Defaults to the whole ELEXON register.
+    batch_size : int
+        BMUs per API call.
+    max_retries : int
+        Attempts per call before raising.
     logger : Logger
 
     Returns
     -------
-    DataFrame with datetime index, BMU ID columns, MW values.
-        Empty DataFrame if the stream endpoint is unavailable.
+    DataFrame
+        Datetime index (settlement-period start, local clock time), one column
+        per BMU, values = average MW over the half hour. Missing periods are
+        NaN for the caller to decide on, not 0.
+
+    Raises
+    ------
+    RuntimeError
+        If a call still fails after ``max_retries`` attempts.
     """
     _check_requests_available()
 
     url = f"{ELEXON_API_BASE}/datasets/B1610/stream"
+    if bmu_ids is None:
+        bmu_ids = fetch_transmission_bmu_ids(logger=logger)
+    bmu_ids = sorted({b for b in bmu_ids if str(b).startswith("T_")})
+    batches = [bmu_ids[i:i + batch_size] for i in range(0, len(bmu_ids), batch_size)]
+
     start = pd.Timestamp(start_date)
     end = pd.Timestamp(end_date) + pd.Timedelta(days=1)
+    months = []
+    m = start
+    while m < end:
+        m_end = min(m + pd.DateOffset(months=1), end)
+        months.append((m, m_end))
+        m = m_end
 
-    all_records = []
-    chunk_start = start
-    chunk_num = 0
+    n_calls = len(batches) * len(months)
+    logger.info(f"  B1610: {len(bmu_ids)} BMUs in {len(batches)} batches x "
+                f"{len(months)} months = {n_calls} calls")
+    frames = []
     fetch_start = time.time()
+    call = 0
+    for m_start, m_end in months:
+        for batch in batches:
+            call += 1
+            params = [("from", m_start.strftime("%Y-%m-%dT00:00Z")),
+                      ("to", m_end.strftime("%Y-%m-%dT00:00Z")),
+                      ("format", "json")] + [("bmUnit", b) for b in batch]
+            for attempt in range(1, max_retries + 1):
+                try:
+                    resp = requests.get(url, params=params, timeout=300)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    break
+                except Exception as e:
+                    if attempt == max_retries:
+                        raise RuntimeError(
+                            f"FAILED: B1610 {m_start.date()}..{m_end.date()} "
+                            f"batch {batch[0]}..{batch[-1]} - {type(e).__name__}: {e}"
+                        ) from e
+                    time.sleep(5 * attempt)
+            if isinstance(data, dict):
+                data = data.get("data", [])
+            if data:
+                frames.append(pd.DataFrame(data)[
+                    ["bmUnit", "settlementDate", "settlementPeriod",
+                     "settlementRunType", "quantity"]])
+            if call % 20 == 0 or call == n_calls:
+                logger.info(f"  B1610 call {call}/{n_calls} "
+                            f"({time.time() - fetch_start:.0f}s elapsed)")
+            time.sleep(1.0 / ELEXON_RATE_LIMIT)
 
-    while chunk_start < end:
-        # Monthly chunks to stay within API response size limits
-        chunk_end = min(chunk_start + pd.DateOffset(months=1), end)
-        chunk_num += 1
-        params = {
-            "from": chunk_start.strftime("%Y-%m-%dT00:00Z"),
-            "to": chunk_end.strftime("%Y-%m-%dT00:00Z"),
-            "format": "json",
-        }
-
-        elapsed = time.time() - fetch_start
-        logger.info(f"  Fetching B1610 chunk {chunk_num}: "
-                     f"{chunk_start.date()} to {chunk_end.date()} "
-                     f"({elapsed:.0f}s elapsed)")
-
-        try:
-            resp = requests.get(url, params=params, timeout=300)
-            resp.raise_for_status()
-            data = resp.json()
-            if isinstance(data, list):
-                all_records.extend(data)
-            elif isinstance(data, dict):
-                all_records.extend(data.get("data", []))
-        except Exception as e:
-            logger.warning(f"  B1610 stream chunk failed: {e}")
-            # If stream endpoint is not available, return empty to signal fallback
-            if chunk_num == 1:
-                logger.warning("  B1610 stream endpoint unavailable — will fall back to per-SP fetch")
-                return pd.DataFrame()
-
-        chunk_start = chunk_end
-        time.sleep(0.5)
-
-    if not all_records:
+    if not frames:
         logger.warning("No B1610 data returned from stream")
         return pd.DataFrame()
 
-    df = pd.DataFrame(all_records)
+    df = pd.concat(frames, ignore_index=True)
+    df = df[(df["settlementDate"] >= start.strftime("%Y-%m-%d"))
+            & (df["settlementDate"] < end.strftime("%Y-%m-%d"))]
+    rank = {r: i for i, r in enumerate(B1610_RUN_ORDER)}
+    df["_run"] = df["settlementRunType"].map(rank).fillna(-1)
+    df = (df.sort_values("_run")
+            .drop_duplicates(["bmUnit", "settlementDate", "settlementPeriod"], keep="last"))
+    df["datetime"] = pd.to_datetime(df["settlementDate"]) + \
+        pd.to_timedelta((df["settlementPeriod"].astype(int) - 1) * 30, unit="min")
+    df["generation_mw"] = df["quantity"].astype(float) * 2.0  # MWh per half hour -> MW
 
-    # Standardise column names
-    col_map = {
-        "bmUnit": "bmu_id",
-        "settlementDate": "settlement_date",
-        "settlementPeriod": "settlement_period",
-        "quantity": "generation_mw",
-    }
-    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
-
-    # Filter to transmission BMUs only
-    if "bmu_id" in df.columns:
-        df = df[df["bmu_id"].str.startswith("T_", na=False)].copy()
-
-    if df.empty:
-        logger.warning("No transmission BMUs in B1610 stream data")
-        return pd.DataFrame()
-
-    # Build datetime index
-    df["datetime"] = pd.to_datetime(df["settlement_date"]) + \
-        pd.to_timedelta((df["settlement_period"].astype(int) - 1) * 30, unit="min")
-
-    # Pivot to matrix form (datetime × bmu_id)
     gen_pivot = df.pivot_table(
-        index="datetime", columns="bmu_id", values="generation_mw",
-        aggfunc="max"
-    ).fillna(0.0).sort_index()
+        index="datetime", columns="bmUnit", values="generation_mw", aggfunc="mean"
+    ).sort_index()
+    gen_pivot.columns.name = "bmu_id"
 
-    elapsed = time.time() - fetch_start
-    logger.info(f"  B1610 stream complete: {gen_pivot.shape[0]} periods × "
-                f"{gen_pivot.shape[1]} BMUs in {elapsed:.0f}s")
-
+    logger.info(f"  B1610 stream complete: {gen_pivot.shape[0]} periods x "
+                f"{gen_pivot.shape[1]} BMUs in {time.time() - fetch_start:.0f}s; "
+                f"run types {df['settlementRunType'].value_counts().to_dict()}")
     return gen_pivot
 
 
@@ -1246,10 +1354,18 @@ def retrieve_wholesale_calibration_data(
     output_dir: str,
     sample_sps: list = None,
     use_stream: bool = True,
+    allow_sampled_fallback: bool = False,
+    bmu_ids: Optional[list] = None,
     logger: logging.Logger = logger,
 ) -> dict:
     """
     Fetch year-long wholesale market data for per-generator MC calibration.
+
+    FIX-B1610-5  The 2-samples-a-day fallback ran silently whenever the stream
+                 returned nothing, and the result was saved under the same name
+                 as a full-resolution file. It now runs only when
+                 ``allow_sampled_fallback=True``; otherwise an empty stream
+                 raises. ``bmu_ids`` is passed to ``fetch_b1610_bulk``.
 
     Downloads:
       1. MID wholesale prices via bulk stream (fast, full resolution)
@@ -1310,9 +1426,15 @@ def retrieve_wholesale_calibration_data(
     # Try bulk stream first (fast: ~12 API calls vs ~730)
     if use_stream:
         logger.info("\n── Stage 2: B1610 Generation (bulk stream) ──")
-        gen_pivot = fetch_b1610_bulk(start_date, end_date, logger=logger)
+        gen_pivot = fetch_b1610_bulk(start_date, end_date, bmu_ids=bmu_ids,
+                                     logger=logger)
 
-    # Fall back to per-SP sampling if stream returned empty
+    # FIX-B1610-5: fall back to per-SP sampling only when asked to
+    if gen_pivot.empty and not allow_sampled_fallback:
+        raise RuntimeError(
+            "FAILED: B1610 stream returned no data and allow_sampled_fallback "
+            "is False - refusing to save a 2-samples-a-day file as full data"
+        )
     if gen_pivot.empty:
         n_queries = n_days * len(sample_sps)
         logger.info(f"\n── Stage 2: B1610 Generation (per-SP fallback, "

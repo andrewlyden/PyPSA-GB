@@ -327,6 +327,26 @@ def cache_status(cache_dir=None, logger=logger):
 # SNAKEMAKE INTEGRATION
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _pn_rows_per_day(pn_path):
+    """
+    Median number of rows per calendar day in a cached PN / B1610 file.
+
+    Parameters
+    ----------
+    pn_path : Path
+        CSV with a datetime first column.
+
+    Returns
+    -------
+    float
+        Median rows per day (0.0 for an empty file).
+    """
+    idx = pd.to_datetime(pd.read_csv(pn_path, usecols=[0]).iloc[:, 0], errors="coerce").dropna()
+    if idx.empty:
+        return 0.0
+    return float(idx.dt.normalize().value_counts().median())
+
+
 def ensure_cache_for_year(year, cache_dir=None, logger=logger):
     """
     Ensure ELEXON calibration data for a specific year is available.
@@ -338,8 +358,18 @@ def ensure_cache_for_year(year, cache_dir=None, logger=logger):
     pn = cache_dir / f"pn_data_{year}.csv"
     mid = cache_dir / f"mid_prices_{year}.csv"
 
+    # FIX-CACHE-1: a file existing is not enough. The 2020 and 2024 caches
+    # held 2 samples a day (09:30, 18:30) under the full-data name and were
+    # reported as a hit. Accept only >= 40 rows per day.
     if pn.exists() and mid.exists():
-        return True
+        rows_per_day = _pn_rows_per_day(pn)
+        if rows_per_day >= 40:
+            return True
+        logger.warning(
+            f"ELEXON cache {pn} has {rows_per_day:.0f} rows per day (expected 48); "
+            "treating as a cache miss"
+        )
+        return False
 
     logger.info(f"ELEXON cache miss for {year} — attempting restore from archive")
     restored = restore_cache(
@@ -348,7 +378,9 @@ def ensure_cache_for_year(year, cache_dir=None, logger=logger):
         logger=logger,
     )
 
-    return year in restored and len(restored[year]) > 0
+    ok = year in restored and len(restored[year]) > 0
+    # FIX-CACHE-1: a restored archive must also be full resolution
+    return bool(ok and pn.exists() and _pn_rows_per_day(pn) >= 40)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
