@@ -9,190 +9,274 @@ market data.
 Usage (standalone):
     python scripts/generators/export_correction_factors.py \
         --input-dir resources/marginal_costs \
-        --output data/market/historical_carrier_correction_factors.csv
+        --output resources/marginal_costs/historical_carrier_correction_factors.csv
 
 The output CSV has columns:
-    source_year, carrier, correction_factor, empirical_mc, formula_mc, n_generators
+    source_year, carrier, correction_factor, adder_gbp_per_mwh, empirical_mc,
+    formula_mc, n_generators, source_file
 
-A "median" row across all source years is appended for each carrier.
+A "median" row across all source years is appended for each carrier
+(nuclear excluded, see FIX-6).
+
+Fixes (November 2026), each marked "FIX-n" in the code
+------------------------------------------------------------------
+FIX-1         The source year was the first 4 digits of the file *name*:
+              ``test_zonal_market_0001_...`` became year 1, names without
+              digits were skipped, and same-year files overwrote each other.
+              The year now comes from the file's own ``date`` column. Files
+              spanning several years are skipped. When several files give the
+              same year, the one with the most dates is kept and the others are
+              logged. The glob is ``*_daily_empirical_mc*.csv`` so the
+              ``*_corrected.csv`` files are found.
+FIX-2         Fuel prices, carbon prices, emission factors and efficiencies
+              were copies of ``apply_marginal_costs.py`` (only 2021-24; Biomass
+              EF 120 vs 0). They are now imported from it, so the factor is
+              computed with the same numbers it is applied with, and 2010-2024
+              (including 2020) are available.
+FIX-3         A carrier needs at least ``min_generators`` generators (default 3)
+              in a year; below that the row is skipped and logged. Coal and
+              OCGT factors rested on 1 generator.
+FIX-4         One multiplier on fuel + carbon fits poorly across years. An
+              additive column ``adder_gbp_per_mwh = empirical - formula`` is
+              written next to ``correction_factor`` so the two can be compared.
+              ``apply_marginal_costs.py`` still reads ``correction_factor`` only.
+FIX-5         A carrier with formula MC 0 (no efficiency in the table) was
+              written with factor 1.0. It is now skipped and logged.
+FIX-6         Default output moved from ``data/market/`` (raw inputs, immutable)
+              to ``resources/marginal_costs/``; ``config/defaults.yaml`` still
+              points at the old ``data/market`` file.
+              ``print`` replaced by logging. Nuclear is left out of the
+              ``median`` rows because ``apply_marginal_costs`` never applies it.
 """
 
 import argparse
-import re
+import logging
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
+project_root = Path(__file__).resolve().parents[2]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-def find_daily_mc_files(input_dir: Path) -> dict:
-    """Find daily empirical MC CSVs and extract source year from filename.
+from scripts.generators import apply_marginal_costs as amc  # noqa: E402
+from scripts.utilities.logging_config import setup_logging  # noqa: E402
 
-    Expected pattern: *_daily_empirical_mc.csv with a 4-digit year in the name.
-    Returns {year: filepath}.
+logger = setup_logging("export_correction_factors")
+
+DEFAULT_OUTPUT = Path("resources/marginal_costs/historical_carrier_correction_factors.csv")
+DEFAULT_MIN_GENERATORS = 3
+
+# FIX-2: the same tables apply_marginal_costs uses (aliases kept for callers)
+HISTORICAL_FUEL_PRICES = amc.HISTORICAL_FUEL_PRICES
+HISTORICAL_CARBON_PRICES = amc.HISTORICAL_CARBON_PRICES
+
+
+def find_daily_mc_files(input_dir: Path, logger: logging.Logger = logger) -> dict:
     """
-    files = {}
-    for f in sorted(input_dir.glob("*_daily_empirical_mc.csv")):
-        match = re.search(r'(\d{4})', f.stem)
-        if match:
-            year = int(match.group(1))
-            files[year] = f
-    return files
+    Find daily empirical MC CSVs and take the source year from their dates.
+
+    FIX-1: the year is read from the ``date`` column, not the file name.
+
+    Parameters
+    ----------
+    input_dir : Path
+        Directory to search for ``*_daily_empirical_mc*.csv``.
+    logger : Logger
+
+    Returns
+    -------
+    dict
+        {year: filepath}. One file per year: the one with the most dates.
+    """
+    best = {}  # year -> (n_dates, path)
+    for f in sorted(Path(input_dir).glob("*_daily_empirical_mc*.csv")):
+        try:
+            dates = pd.to_datetime(pd.read_csv(f, usecols=["date"])["date"], errors="coerce").dropna()
+        except (ValueError, KeyError):
+            logger.info(f"  {f.name}: no 'date' column - skipped")
+            continue
+        years = dates.dt.year.unique()
+        if len(years) != 1:
+            logger.info(f"  {f.name}: spans years {sorted(years)} - skipped")
+            continue
+        year, n = int(years[0]), int(dates.nunique())
+        if year in best:
+            keep, drop = ((n, f), best[year]) if n > best[year][0] else (best[year], (n, f))
+            logger.info(f"  {year}: kept {keep[1].name} ({keep[0]} dates), "
+                        f"not {drop[1].name} ({drop[0]} dates)")
+            best[year] = keep
+        else:
+            best[year] = (n, f)
+    return {y: p for y, (_, p) in sorted(best.items())}
 
 
 def compute_correction_factors(daily_mc_path: Path) -> pd.DataFrame:
-    """Compute per-carrier correction factors from a single daily MC file.
+    """
+    Per-carrier median empirical MC from a single daily MC file.
 
-    Returns DataFrame with columns: carrier, correction_factor, empirical_mc,
-    formula_mc, n_generators.
+    Parameters
+    ----------
+    daily_mc_path : Path
+        CSV with columns generator, carrier, empirical_mc.
+
+    Returns
+    -------
+    DataFrame
+        Columns carrier, empirical_mc, n_generators (empty if columns missing).
     """
     df = pd.read_csv(daily_mc_path)
-    if 'generator' not in df.columns or 'empirical_mc' not in df.columns:
-        return pd.DataFrame()
-    if 'carrier' not in df.columns:
+    if not {'generator', 'empirical_mc', 'carrier'}.issubset(df.columns):
         return pd.DataFrame()
 
-    # Compute median empirical MC per carrier across all generators and days
-    carrier_stats = (
+    # Median empirical MC per carrier across all generators and days
+    return (
         df.groupby('carrier')
-        .agg(
-            empirical_mc=('empirical_mc', 'median'),
-            n_generators=('generator', 'nunique'),
-        )
+        .agg(empirical_mc=('empirical_mc', 'median'),
+             n_generators=('generator', 'nunique'))
         .reset_index()
     )
-    return carrier_stats
 
 
 def _formula_mc(carrier: str, fuel_prices: dict, carbon_price: float) -> float:
-    """Calculate formula MC for a carrier using standard efficiency assumptions."""
-    CARRIER_EFF = {
-        'CCGT': 0.49, 'OCGT': 0.35, 'Coal': 0.36, 'coal': 0.36,
-        'Oil': 0.30, 'oil': 0.30, 'Biomass': 0.35, 'nuclear': 0.33,
-    }
-    EMISSION_FACTORS = {
-        'CCGT': 488, 'OCGT': 488, 'Coal': 846, 'coal': 846,
-        'Oil': 533, 'oil': 533, 'Biomass': 120, 'nuclear': 12,
-    }
+    """
+    Formula MC for a carrier with the workflow's own efficiency table.
 
-    eff = CARRIER_EFF.get(carrier)
+    FIX-2: uses ``apply_marginal_costs.FORMULA_CARRIER_EFF``,
+    ``CARBON_EMISSION_FACTORS`` and ``calculate_marginal_cost``.
+
+    Parameters
+    ----------
+    carrier : str
+    fuel_prices : dict
+        Expanded fuel prices from ``apply_marginal_costs.load_fuel_prices``.
+    carbon_price : float
+        £/t CO2.
+
+    Returns
+    -------
+    float
+        £/MWh_e, or 0.0 when the carrier has no efficiency in the table.
+    """
+    eff = amc.FORMULA_CARRIER_EFF.get(carrier)
     if eff is None:
         return 0.0
-    fp = fuel_prices.get(carrier, 0)
-    ef = EMISSION_FACTORS.get(carrier, 0)
-    return (fp / eff) + (ef * carbon_price / 1000 / eff)
-
-
-# Historical fuel and carbon prices (matching apply_marginal_costs.py)
-HISTORICAL_FUEL_PRICES = {
-    2021: {'CCGT': 45.0, 'OCGT': 45.0, 'Coal': 15.0, 'coal': 15.0, 'Oil': 50.0, 'oil': 50.0, 'Biomass': 35.0, 'nuclear': 8.0},
-    2022: {'CCGT': 80.0, 'OCGT': 80.0, 'Coal': 25.0, 'coal': 25.0, 'Oil': 70.0, 'oil': 70.0, 'Biomass': 40.0, 'nuclear': 8.0},
-    2023: {'CCGT': 40.0, 'OCGT': 40.0, 'Coal': 15.0, 'coal': 15.0, 'Oil': 55.0, 'oil': 55.0, 'Biomass': 40.0, 'nuclear': 8.0},
-    2024: {'CCGT': 35.0, 'OCGT': 35.0, 'Coal': 12.0, 'coal': 12.0, 'Oil': 50.0, 'oil': 50.0, 'Biomass': 40.0, 'nuclear': 8.0},
-}
-HISTORICAL_CARBON_PRICES = {
-    2021: 63.0, 2022: 88.0, 2023: 68.0, 2024: 85.0,
-}
+    return amc.calculate_marginal_cost(carrier, fuel_prices.get(carrier, 0.0), carbon_price, eff)[2]
 
 
 def export_correction_factors(input_dir: Path, output_path: Path,
-                              verbose: bool = False) -> pd.DataFrame:
-    """Main function: find files, compute factors, write output."""
-    mc_files = find_daily_mc_files(input_dir)
-    if not mc_files:
-        print(f"No daily empirical MC files found in {input_dir}")
-        return pd.DataFrame()
+                              verbose: bool = False,
+                              min_generators: int = DEFAULT_MIN_GENERATORS,
+                              logger: logging.Logger = logger) -> pd.DataFrame:
+    """
+    Find daily MC files, compute per-carrier factors and adders, write the CSV.
 
-    if verbose:
-        print(f"Found {len(mc_files)} daily MC files: {sorted(mc_files.keys())}")
+    Parameters
+    ----------
+    input_dir : Path
+        Directory with ``*_daily_empirical_mc*.csv`` files.
+    output_path : Path
+        CSV to write.
+    verbose : bool
+        Log each row at INFO.
+    min_generators : int
+        Minimum generators per carrier-year (FIX-3).
+    logger : Logger
+
+    Returns
+    -------
+    DataFrame
+        The rows written (empty if none).
+    """
+    mc_files = find_daily_mc_files(input_dir, logger=logger)
+    if not mc_files:
+        logger.warning(f"No daily empirical MC files found in {input_dir}")
+        return pd.DataFrame()
+    names = {y: p.name for y, p in mc_files.items()}
+    logger.info(f"Daily MC files by year: {names}")
 
     all_rows = []
     for year, filepath in sorted(mc_files.items()):
         if year not in HISTORICAL_FUEL_PRICES:
-            if verbose:
-                print(f"  Skipping year {year}: no historical fuel prices available")
+            logger.info(f"  Skipping year {year}: no historical fuel prices available")
             continue
-
-        fuel_prices = HISTORICAL_FUEL_PRICES[year]
-        carbon_price = HISTORICAL_CARBON_PRICES.get(year, 85.0)
+        cfg = {'modelled_year': year, 'marginal_costs': {}}
+        fuel_prices = amc.load_fuel_prices(cfg)
+        carbon_price = amc.get_carbon_price(cfg)
 
         carrier_stats = compute_correction_factors(filepath)
-        if carrier_stats.empty:
-            continue
-
         for _, row in carrier_stats.iterrows():
-            carrier = row['carrier']
-            emp_mc = row['empirical_mc']
+            carrier, emp_mc, n_gen = row['carrier'], row['empirical_mc'], int(row['n_generators'])
             formula = _formula_mc(carrier, fuel_prices, carbon_price)
-            if formula > 0:
-                factor = emp_mc / formula
-            else:
-                factor = 1.0
-
+            if formula <= 0:  # FIX-5
+                logger.info(f"  {year} {carrier}: no formula MC (no efficiency) - skipped")
+                continue
+            if n_gen < min_generators:  # FIX-3
+                logger.info(f"  {year} {carrier}: {n_gen} generator(s) < {min_generators} - skipped")
+                continue
             all_rows.append({
                 'source_year': year,
                 'carrier': carrier,
-                'correction_factor': round(factor, 4),
+                'correction_factor': round(emp_mc / formula, 4),
+                'adder_gbp_per_mwh': round(emp_mc - formula, 2),  # FIX-4
                 'empirical_mc': round(emp_mc, 2),
                 'formula_mc': round(formula, 2),
-                'n_generators': int(row['n_generators']),
+                'n_generators': n_gen,
+                'source_file': filepath.name,
             })
             if verbose:
-                print(f"  {year} {carrier}: factor={factor:.4f} "
-                      f"(empirical={emp_mc:.1f} / formula={formula:.1f})")
+                r = all_rows[-1]
+                logger.info(f"  {year} {carrier}: factor={r['correction_factor']:.4f}, "
+                            f"adder={r['adder_gbp_per_mwh']:+.1f} "
+                            f"(empirical={emp_mc:.1f} / formula={formula:.1f}, n={n_gen})")
 
     if not all_rows:
-        print("No correction factors computed")
+        logger.warning("No correction factors computed")
         return pd.DataFrame()
 
     result = pd.DataFrame(all_rows)
 
-    # Add median row per carrier across all source years
+    # Median row per carrier across source years (FIX-6: nuclear excluded)
     median_rows = []
     for carrier in result['carrier'].unique():
+        if str(carrier).lower() == 'nuclear':
+            continue
         cdf = result[result['carrier'] == carrier]
         median_rows.append({
             'source_year': 'median',
             'carrier': carrier,
             'correction_factor': round(cdf['correction_factor'].median(), 4),
+            'adder_gbp_per_mwh': round(cdf['adder_gbp_per_mwh'].median(), 2),
             'empirical_mc': round(cdf['empirical_mc'].median(), 2),
             'formula_mc': round(cdf['formula_mc'].median(), 2),
             'n_generators': int(cdf['n_generators'].median()),
+            'source_file': ';'.join(sorted(cdf['source_file'].unique())),
         })
-
     result = pd.concat([result, pd.DataFrame(median_rows)], ignore_index=True)
 
-    # Write output
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     result.to_csv(output_path, index=False)
-    print(f"Wrote {len(result)} rows to {output_path}")
-    if verbose:
-        print("\nMedian correction factors:")
-        for _, row in result[result['source_year'] == 'median'].iterrows():
-            print(f"  {row['carrier']}: {row['correction_factor']:.4f}")
-
+    logger.info(f"Wrote {len(result)} rows to {output_path}")
     return result
 
 
 def main():
+    """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Export carrier correction factors from historical ELEXON calibration"
     )
-    parser.add_argument(
-        "--input-dir", type=Path,
-        default=Path("resources/marginal_costs"),
-        help="Directory containing *_daily_empirical_mc.csv files"
-    )
-    parser.add_argument(
-        "--output", type=Path,
-        default=Path("data/market/historical_carrier_correction_factors.csv"),
-        help="Output CSV path"
-    )
+    parser.add_argument("--input-dir", type=Path, default=Path("resources/marginal_costs"),
+                        help="Directory containing *_daily_empirical_mc*.csv files")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Output CSV path")
+    parser.add_argument("--min-generators", type=int, default=DEFAULT_MIN_GENERATORS,
+                        help="Minimum generators per carrier-year")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
-    export_correction_factors(args.input_dir, args.output, verbose=args.verbose)
+    export_correction_factors(args.input_dir, args.output, verbose=args.verbose,
+                              min_generators=args.min_generators)
 
 
 if __name__ == "__main__":
