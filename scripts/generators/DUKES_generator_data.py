@@ -475,7 +475,7 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
     # Load failure cache (stations that couldn't be geocoded)
     failed_stations = set()
     if Path(failure_cache_file).exists():
-        with open(failure_cache_file, 'r') as f:
+        with open(failure_cache_file, 'r', encoding='utf-8') as f:
             failed_stations = set(line.strip() for line in f if line.strip())
         logger.info(f"Loaded {len(failed_stations)} previously failed stations from cache")
     
@@ -630,7 +630,7 @@ def geocode_from_nominatim(df: pd.DataFrame, cache_file: str = "data/generators/
     # Save failure cache
     if new_failures:
         all_failures = failed_stations.union(set(new_failures))
-        with open(failure_cache_file, 'w') as f:
+        with open(failure_cache_file, 'w', encoding='utf-8') as f:
             for station in sorted(all_failures):
                 f.write(f"{station}\n")
         logger.info(f"✓ Saved {len(new_failures)} new failures to cache (total: {len(all_failures)})")
@@ -677,7 +677,7 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
     # Load failure cache
     failed_stations = set()
     if Path(failure_cache_file).exists():
-        with open(failure_cache_file, 'r') as f:
+        with open(failure_cache_file, 'r', encoding='utf-8') as f:
             failed_stations = set(line.strip() for line in f if line.strip())
     
     # Initialize columns if needed
@@ -823,7 +823,7 @@ def geocode_from_location_name(df: pd.DataFrame, cache_file: str = "data/generat
     # Save failure cache
     if new_failures:
         all_failures = failed_stations.union(set(new_failures))
-        with open(failure_cache_file, 'w') as f:
+        with open(failure_cache_file, 'w', encoding='utf-8') as f:
             for station in sorted(all_failures):
                 f.write(f"{station}\n")
         logger.info(f"✓ Saved {len(new_failures)} new failures to cache (total: {len(all_failures)})")
