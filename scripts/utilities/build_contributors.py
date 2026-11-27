@@ -1,7 +1,7 @@
 """Write the docs' contributor grid from GitHub's contributor list.
 
 Reads ``docs/source/contributors.yaml`` (repository, lead developer, the 2024 paper's co-authors, names for accounts
-without a public display name, accounts to leave out) and GitHub's REST API (``/repos/{repo}/contributors``, ordered
+without a public display name, contributors GitHub's list leaves out, accounts to leave out) and GitHub's REST API (``/repos/{repo}/contributors``, ordered
 by commits; each account's public name from ``/users/{login}``), and writes ``docs/source/_includes/contributors.html``:
 one card per person (GitHub picture, name, role), lead first, then the paper's co-authors, then everyone else by
 commits.
@@ -51,6 +51,10 @@ def contributors(config: dict) -> list[dict]:
         if len(batch) < 100:
             break
         page += 1
+    # Contributors GitHub's list leaves out (credited as co-authors of a squashed commit), after everyone it gives.
+    listed = {a["login"] for a in accounts}
+    accounts += [{"login": login} for login in config.get("extra") or []
+                 if login not in listed and login not in exclude]
     people = []
     for account in accounts:
         login = account["login"]
