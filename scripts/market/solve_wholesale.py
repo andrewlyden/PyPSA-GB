@@ -59,6 +59,7 @@ from scripts.solve.hydro_constraints import (
     log_hydro_constraint_setup,
     update_large_hydro_storage_state,
 )
+from scripts.generators.thermal_ramping import widen_ramp_limits_to_availability
 from scripts.market.market_utils import (
     HYDROGEN_PRICE_COLUMN,
     SolveFailedError,
@@ -1671,6 +1672,7 @@ if __name__ == "__main__":
         # floor (already clipped to availability) becomes energy per block and
         # p_min_pu is zeroed, before the collapse so the copy inherits it.
         energy_floor = prepare_min_output_energy_budget(network, scenario_config, logger)
+        widen_ramp_limits_to_availability(network, logger)
 
         # ── Configure solver ─────────────────────────────────────────────
         solver_name, solver_options = configure_solver(

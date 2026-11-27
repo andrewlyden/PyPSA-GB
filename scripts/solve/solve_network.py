@@ -24,6 +24,7 @@ from scripts.interconnectors.market_coupling import (
 
 # Fast I/O for network loading/saving
 from scripts.utilities.network_io import load_network, save_network
+from scripts.generators.thermal_ramping import widen_ramp_limits_to_availability
 # Transformer impedances are stored per unit on s_nom: rating changes must
 # rescale them (scripts/network_build/branch_units.py).
 from scripts.network_build.branch_units import (
@@ -2398,7 +2399,8 @@ if __name__ == "__main__":
             logger.info("  Generators of same carrier at same bus are aggregated")
             logger.info("  This significantly improves solve speed")
 
-        
+        widen_ramp_limits_to_availability(network, logger)
+
         # Configure solver
         solver_name, solver_options = configure_solver(network, solver_name, solver_options, logger)
         
