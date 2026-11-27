@@ -89,6 +89,30 @@ The model has no unit commitment. Thermal operation is limited by linear constra
 | Outages | `thermal.outages` | reproducible planned and forced outages applied to `p_max_pu` (seeded) |
 | Ramp limits | `thermal.ramping` | `ramp_limit_up` / `ramp_limit_down` as a share of `p_nom` per hour |
 
+A ramp limit beside a must-run floor could make a solve infeasible wherever availability falls, or the floor rises,
+faster than the limit allows (an outage, say). For a unit that has both, each solve stage holds the floor at or below
+availability and widens the limit in those snapshots to the step itself
+(`thermal_ramping.widen_ramp_limits_to_availability`), so an outage is forced, not dispatched, and the limit holds
+everywhere else. Units without a floor keep their limit unchanged.
+
+**Example: nuclear with limited flexibility.** Nuclear has no ramp limit by default. A scenario can hold it to a
+minimum output and a ramp rate with the same two keys:
+
+```yaml
+thermal:
+  availability_factors:
+    enabled: true
+    min_output:
+      nuclear: 0.20        # floor, share of p_nom
+  ramping:
+    enabled: true
+    carriers:
+      nuclear: {ramp_limit_up: 0.025, ramp_limit_down: 0.025}   # share of p_nom per snapshot
+```
+
+Ramp limits act between consecutive snapshots, so at 30-minute resolution the same value allows twice the change per
+hour. With no unit commitment there are no start-up decisions, minimum up and down times or cycling costs.
+
 Outages follow, per carrier, a number of planned outages a year of a given length in given months, and a forced outage
 rate with a mean duration. Units are drawn independently with a fixed seed, so a rebuild gives the same profile. Gas CHP
 can carry a seasonal must-run floor that follows heat demand (see the heat credit below).

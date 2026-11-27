@@ -67,6 +67,7 @@ from scripts.solve.solve_network import (
     get_solve_mode_from_config,
 )
 from scripts.market.commitment_proxy import apply_commitment_proxy
+from scripts.generators.thermal_ramping import widen_ramp_limits_to_availability
 from scripts.market.market_utils import (
     HYDROGEN_PRICE_COLUMN,
     SolveFailedError,
@@ -2784,8 +2785,9 @@ if __name__ == "__main__":
         if remove_must_run and "p_min_pu" in network.generators.columns:
             network.generators["p_min_pu"] = 0.0
             logger.info("Removed must-run constraints (p_min_pu = 0)")
+        widen_ramp_limits_to_availability(network, logger)
 
-        #  Apply MC floors for zero-cost dispatchable generators 
+        #  Apply MC floors for zero-cost dispatchable generators
         # Generators with MC=0 that should have non-zero costs create
         # unrealistic dispatch in both wholesale and BM stages.
         mc_floors = balancing_config.get("mc_floors", {})
