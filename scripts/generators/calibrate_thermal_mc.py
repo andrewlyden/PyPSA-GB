@@ -1,25 +1,61 @@
 """
-Calibrate thermal marginal costs using ELEXON day-ahead price data.
+Calibrate thermal marginal costs using ELEXON wholesale price data.
 
-One-time prerun script (NOT part of the per-scenario Snakemake DAG).
+Standalone CLI script. It is not a Snakemake rule itself, but its BMU mapper
+``_build_direct_bmu_mapping`` is imported by ``calibrate_daily_mc.py``,
+``calibrate_daily_mc_corrected.py`` and ``calibrate_monthly_mc.py``, so a
+change here changes the daily empirical MCs used by the workflow.
 Compares formula-based marginal costs against empirical switch-on prices
-derived from ELEXON Physical Notification (PN) dispatch patterns.
+derived from ELEXON B1610 actual output (files are still named ``pn_*`` for
+history; they are not Physical Notifications) and MID wholesale prices.
 
 Methodology (based on GBPower build_thermal_generator_prices.py):
     For each carrier group, identifies the price at which generators switch
-    from zero to positive output (PN > 0). The median of these switch-on
-    prices across generators and days gives the empirical marginal cost.
+    from zero to positive output (B1610 > 1 MW). The median of these
+    switch-on prices (10th percentile of prices while running) across
+    generators gives the empirical marginal cost.
+
+Fixes (November 2026), each marked "FIX-n" in the code
+------------------------------------------------------------------
+FIX-1         ``calibrate_correction_factors`` matched carriers by exact case.
+              Its keys were ``Coal``/``Oil``/``Biomass`` but network carriers
+              are ``coal``/``oil``/``biomass``, so those factors were 1.0 even
+              with a full BMU map. Matching is now case-insensitive.
+FIX-2         The formula MC ignored ``year`` (fixed "2023 baseline" table,
+              about 2x below the workflow's own formula). It is now computed
+              for ``year`` by ``apply_marginal_costs.calculate_marginal_cost``
+              with that year's historical fuel and carbon prices and
+              ``FORMULA_CARRIER_EFF``. ``DEFAULT_FORMULA_MC`` is used only for
+              a year outside the price table.
+FIX-3         No PN file, or no BMU->carrier map, returned and wrote
+              factors of 1.0 with only a warning (the warning claimed a
+              "column names as carrier guess" that did not exist). Both now
+              raise ``ValueError``.
+FIX-4         ``_build_direct_bmu_mapping`` opened the network with
+              ``pypsa.Network``, which cannot read the ``.pkl`` files the
+              workflow writes. It now uses ``network_io.load_network``.
+FIX-5         The mapper used a narrow thermal set (no waste_to_energy,
+              gas_engine, biogas, Conventional Steam ...). It now uses
+              ``apply_marginal_costs.THERMAL_CARRIERS`` plus nuclear. Embedded
+              ``E_`` BMUs are mapped as well as ``T_``. A storage unit no
+              longer overwrites a larger thermal entry with the same name.
+FIX-6         Docstrings: data is B1610 and MID, not PN and day-ahead; the
+              switch-on price is the 10th percentile, not the minimum. The
+              day-ahead file is read with ``squeeze("columns")`` so a one-row
+              file stays a Series.
+FIX-7         Default CLI outputs moved from ``data/market/`` (raw inputs,
+              immutable) to ``resources/marginal_costs/``.
 
     correction_factor = empirical_mc / formula_mc
 
 Output:
-    data/market/carrier_correction_factors.csv
+    resources/marginal_costs/carrier_correction_factors.csv  (FIX-7)
     Columns: carrier, formula_mc, empirical_mc, correction_factor
 
 Usage:
     python scripts/generators/calibrate_thermal_mc.py \\
         --year 2023 \\
-        --output data/market/carrier_correction_factors.csv
+        --output resources/marginal_costs/carrier_correction_factors.csv
 
     Or within Python:
         from scripts.generators.calibrate_thermal_mc import calibrate_correction_factors
@@ -36,7 +72,11 @@ from scripts.utilities.logging_config import setup_logging
 
 logger = setup_logging("calibrate_thermal_mc")
 
-# Default formula MCs by carrier (£/MWh) for 2023 baseline
+# Formula-MC carriers, in the network's own spelling (FIX-1)
+FORMULA_CARRIERS = ['CCGT', 'OCGT', 'coal', 'oil', 'biomass', 'nuclear']
+
+# FIX-2: fallback only, for a year outside apply_marginal_costs'
+# HISTORICAL_FUEL_PRICES. Default formula MCs by carrier (£/MWh), 2023 baseline
 # These approximate the formula: (fuel_price / efficiency) + (emission_factor × carbon_price / 1000 / efficiency)
 DEFAULT_FORMULA_MC = {
     'CCGT': 65.0,
@@ -48,6 +88,42 @@ DEFAULT_FORMULA_MC = {
 }
 
 
+def formula_mc_for_year(year: int) -> dict:
+    """
+    Formula marginal cost per carrier for a historical year (FIX-2).
+
+    Uses the workflow's own formula and tables, so the factor is computed on
+    the same basis it is applied on.
+
+    Parameters
+    ----------
+    year : int
+        Historical year (must be in ``HISTORICAL_FUEL_PRICES``).
+
+    Returns
+    -------
+    dict
+        {carrier: £/MWh_e} for ``FORMULA_CARRIERS``. Nuclear uses the
+        expanded nuclear fuel price and efficiency 0.33.
+
+    Raises
+    ------
+    KeyError
+        If ``year`` has no historical prices.
+    """
+    from scripts.generators import apply_marginal_costs as amc
+    if year not in amc.HISTORICAL_FUEL_PRICES:
+        raise KeyError(f"No historical fuel prices for {year}")
+    cfg = {'modelled_year': year, 'marginal_costs': {}}
+    fuel = amc.load_fuel_prices(cfg)
+    co2 = amc.get_carbon_price(cfg)
+    out = {}
+    for c in FORMULA_CARRIERS:
+        eff = amc.FORMULA_CARRIER_EFF[c]
+        out[c] = amc.calculate_marginal_cost(c, fuel[c], co2, eff)[2]
+    return out
+
+
 def compute_switch_on_prices(
     pn_df: pd.DataFrame,
     dah_prices: pd.Series,
@@ -55,19 +131,19 @@ def compute_switch_on_prices(
     logger: logging.Logger = logger,
 ) -> dict:
     """
-    Compute empirical switch-on marginal cost per carrier from PN + day-ahead data.
+    Compute empirical switch-on marginal cost per carrier from B1610 + MID data.
 
-    For each generator, finds the minimum day-ahead price at which it dispatches
-    (PN > 0). The median across all generators in a carrier group gives the
-    carrier's empirical marginal cost.
+    For each generator, takes the 10th percentile of the wholesale price over
+    the periods it runs (output > 1 MW) (FIX-6: was described as the minimum).
+    The median across all generators in a carrier group gives the carrier's
+    empirical marginal cost.
 
     Parameters
     ----------
     pn_df : DataFrame
-        Physical Notification data. Index = datetime, columns = generator/BMU IDs,
-        values = MW output.
+        B1610 actual output. Index = datetime, columns = BMU IDs, values = MW.
     dah_prices : Series
-        Day-ahead prices (£/MWh) indexed by datetime.
+        Wholesale (MID) prices (£/MWh) indexed by datetime.
     carrier_map : dict
         {generator_id: carrier} mapping.
     logger : Logger
@@ -149,7 +225,12 @@ def calibrate_correction_factors(
     DataFrame with columns: carrier, formula_mc, empirical_mc, correction_factor
     """
     if formula_mc is None:
-        formula_mc = DEFAULT_FORMULA_MC.copy()
+        try:
+            formula_mc = formula_mc_for_year(year)  # FIX-2
+        except KeyError:
+            logger.warning(f"No historical prices for {year}: using DEFAULT_FORMULA_MC")
+            formula_mc = {k.lower() if k != 'CCGT' and k != 'OCGT' else k: v
+                          for k, v in DEFAULT_FORMULA_MC.items()}
 
     logger.info(f"Calibrating correction factors for year {year}")
 
@@ -158,20 +239,12 @@ def calibrate_correction_factors(
         pn_df = pd.read_csv(pn_file, index_col=0, parse_dates=True)
         logger.info(f"Loaded PN data: {pn_df.shape}")
     else:
-        logger.warning("No PN data file provided. Using placeholder correction factors.")
-        # Return default factors (1.0 = no correction)
-        rows = [{'carrier': c, 'formula_mc': mc, 'empirical_mc': mc,
-                 'correction_factor': 1.0} for c, mc in formula_mc.items()]
-        df = pd.DataFrame(rows)
-        if output_file:
-            Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-            df.to_csv(output_file, index=False)
-            logger.info(f"Saved placeholder factors to {output_file}")
-        return df
+        # FIX-3: no silent placeholder factors
+        raise ValueError(f"FAILED: PN data file not found: {pn_file}")
 
     # Load day-ahead prices
     if dah_file and Path(dah_file).exists():
-        dah_prices = pd.read_csv(dah_file, index_col=0, parse_dates=True).squeeze()
+        dah_prices = pd.read_csv(dah_file, index_col=0, parse_dates=True).squeeze("columns")  # FIX-6
     else:
         logger.error("No day-ahead price data — cannot calibrate")
         return pd.DataFrame()
@@ -183,15 +256,21 @@ def calibrate_correction_factors(
         if 'bmu_id' in bmu_df.columns and 'carrier' in bmu_df.columns:
             carrier_map = dict(zip(bmu_df['bmu_id'], bmu_df['carrier']))
     if not carrier_map:
-        logger.warning("No BMU→carrier mapping — using column names as carrier guess")
+        # FIX-3: without a map no BMU has a carrier, so every factor would be 1.0
+        raise ValueError(f"FAILED: no BMU->carrier mapping (bmu_mapping_file={bmu_mapping_file})")
 
     # Compute empirical switch-on prices
     empirical = compute_switch_on_prices(pn_df, dah_prices, carrier_map, logger)
 
     # Build correction factor table
     rows = []
+    # FIX-1: compare carriers case-insensitively (Coal vs coal)
+    empirical_lc = {str(k).lower(): v for k, v in empirical.items()}
     for carrier, fmc in formula_mc.items():
-        emp = empirical.get(carrier, fmc)
+        emp = empirical_lc.get(str(carrier).lower())
+        if emp is None:
+            logger.warning(f"  {carrier}: no empirical value - factor not computed")
+            continue
         if fmc > 0:
             factor = emp / fmc
         else:
@@ -371,7 +450,7 @@ def calibrate_per_generator(
     prices_file: str = None,
     bmu_mapping_file: str = None,
     network_path: str = None,
-    output_file: str = "data/market/generator_marginal_costs.csv",
+    output_file: str = "resources/marginal_costs/generator_marginal_costs.csv",
     logger: logging.Logger = logger,
 ) -> pd.DataFrame:
     """
@@ -474,10 +553,11 @@ def _build_direct_bmu_mapping(
     -------
     DataFrame with columns: bmu_id, generator_name, carrier
     """
-    import pypsa
     from scripts.generators.build_bmu_mapping import BMU_PREFIX_TO_STATION
+    from scripts.generators.apply_marginal_costs import THERMAL_CARRIERS
+    from scripts.utilities.network_io import load_network
 
-    network = pypsa.Network(network_path)
+    network = load_network(network_path)  # FIX-4: reads .pkl and .nc
 
     # Station name → generator name aliases for cases where fuzzy matching fails
     # (e.g. 'EP SHB LTD' is abbreviated 'South Humber Bank')
@@ -487,8 +567,8 @@ def _build_direct_bmu_mapping(
     }
 
     # Build generator lookup from network — only thermal/storage carriers
-    thermal_carriers = {'CCGT', 'OCGT', 'nuclear', 'Coal', 'coal', 'Oil', 'oil',
-                        'Biomass', 'biomass', 'CHP'}
+    # FIX-5: the workflow's thermal set, plus nuclear
+    thermal_carriers = set(THERMAL_CARRIERS) | {'nuclear'}
     gen_lookup = {}  # lowercase station → (generator_name, carrier, p_nom)
     for gen_name in network.generators.index:
         carrier = network.generators.loc[gen_name, 'carrier']
@@ -510,18 +590,21 @@ def _build_direct_bmu_mapping(
         base_name = su_name.split('__agg')[0].lower().strip()
         carrier = network.storage_units.loc[su_name, 'carrier'] if 'carrier' in network.storage_units.columns else ''
         p_nom = network.storage_units.loc[su_name, 'p_nom'] if 'p_nom' in network.storage_units.columns else 0
-        gen_lookup[base_name] = (su_name, carrier, p_nom)
+        # FIX-5: never overwrite a larger thermal entry with the same key
+        if base_name not in gen_lookup or p_nom > gen_lookup[base_name][2]:
+            gen_lookup[base_name] = (su_name, carrier, p_nom)
 
     results = []
     matched = 0
     unmatched_prefixes = set()
 
     for bmu_id in bmu_ids:
-        if not isinstance(bmu_id, str) or not bmu_id.startswith('T_'):
+        # FIX-5: embedded E_ BMUs are mapped too, not only transmission T_
+        if not isinstance(bmu_id, str) or not bmu_id.startswith(('T_', 'E_')):
             continue
 
-        # Extract core prefix: strip T_ then take first 4 chars
-        core = bmu_id[2:]  # Remove T_
+        # Extract core prefix: strip T_/E_ then take first 4 chars
+        core = bmu_id[2:]
         station_name = None
 
         for prefix_len in [4, 5, 3]:
@@ -591,7 +674,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default="data/market/carrier_correction_factors.csv",
+        default="resources/marginal_costs/carrier_correction_factors.csv",
         help="Output CSV path",
     )
     parser.add_argument("--per-generator", action="store_true",
@@ -630,8 +713,8 @@ def main():
         pn_file = args.pn_file
         prices_file = args.prices_file or args.dah_file
         output = args.output
-        if output == "data/market/carrier_correction_factors.csv":
-            output = "data/market/generator_marginal_costs.csv"
+        if output == "resources/marginal_costs/carrier_correction_factors.csv":
+            output = "resources/marginal_costs/generator_marginal_costs.csv"
 
         calibrate_per_generator(
             pn_file=pn_file,

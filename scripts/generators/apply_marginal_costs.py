@@ -6,6 +6,18 @@ Simplified two-tier approach:
   2. Formula/subsidy fallback otherwise
 
 Flat if/elif logic — no layers, no static prerun files.
+
+Fixes (November 2026), each marked "FIX-n" in the code
+------------------------------------------------------------------
+FIX-1         ``calculate_marginal_cost`` silently replaced an efficiency
+              outside (0, 1] (or NaN) with 1.0, under-stating MC. It now raises
+              ``ValueError``, like ``cost_utils.marginal_cost``.
+FIX-2         The carrier-factor efficiencies are a module constant
+              ``FORMULA_CARRIER_EFF`` (was a dict inside
+              ``_compute_carrier_factors``) so the thermal calibration and the
+              correction-factor exporter import them instead of copying them.
+              ``biomass`` (lower case, the network carrier) was missing, so
+              biomass never got a factor; it is added with the Biomass value.
 """
 
 import json
@@ -75,6 +87,13 @@ BIOFUEL_CARRIERS = {
 # carbon pricing. CCS Gas assumes 90% capture of the unabated combustion factor.
 # A future-cost case on net-CV efficiencies prices gas on the net-CV factor
 # instead (``carbon_emission_factors``; item F24.1).
+# Efficiencies used to compute carrier correction factors (empirical / formula).
+# FIX-2: a module constant so other scripts use the same values.
+FORMULA_CARRIER_EFF = {
+    'CCGT': 0.49, 'OCGT': 0.35, 'Coal': 0.36, 'coal': 0.36,
+    'Oil': 0.30, 'oil': 0.30, 'Biomass': 0.35, 'biomass': 0.35, 'nuclear': 0.33,
+}
+
 GAS_EMISSION_CARRIERS = ('gas', 'Gas', 'CCGT', 'OCGT', 'CHP', 'micro_CHP', 'gas_engine')
 _GAS_GROSS_KG = round(GAS_CO2_T_PER_MWH_TH_GROSS_CV * 1000.0, 6)
 CARBON_EMISSION_FACTORS = {
@@ -573,9 +592,18 @@ def calculate_marginal_cost(carrier: str, fuel_price: float,
     inputs are divided by electrical efficiency exactly once. ``emission_factors``
     defaults to the gross-CV table (``carbon_emission_factors`` picks the
     scenario's).
+
+    Raises
+    ------
+    ValueError
+        If efficiency is NaN or outside (0, 1] (FIX-1).
     """
-    if efficiency <= 0 or efficiency > 1.0:
-        efficiency = 1.0
+    # FIX-1: fail loudly instead of silently using 1.0
+    if not (efficiency == efficiency) or efficiency <= 0 or efficiency > 1.0:
+        raise ValueError(
+            f"FAILED: calculate_marginal_cost({carrier!r}) - efficiency {efficiency!r} "
+            "is not in (0, 1]"
+        )
     fuel_cost = fuel_price / efficiency
     if emission_factors is None:
         emission_factors = CARBON_EMISSION_FACTORS
@@ -711,10 +739,7 @@ def _compute_carrier_factors(thermal_daily_df, fuel_prices, carbon_price,
     if thermal_daily_df is None or thermal_daily_df.empty:
         return {}
 
-    CARRIER_EFF = {
-        'CCGT': 0.49, 'OCGT': 0.35, 'Coal': 0.36, 'coal': 0.36,
-        'Oil': 0.30, 'oil': 0.30, 'Biomass': 0.35, 'nuclear': 0.33,
-    }
+    CARRIER_EFF = FORMULA_CARRIER_EFF  # FIX-2
 
     carrier_medians = thermal_daily_df.groupby('carrier')['empirical_mc'].median()
     factors = {}

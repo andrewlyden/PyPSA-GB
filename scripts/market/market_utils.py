@@ -6,6 +6,22 @@ Shared helper functions for the two-stage market dispatch simulation:
   - Wholesale position extraction from solved networks
   - Redispatch volume and cost computation
   - Congestion identification on lines/transformers
+
+Fixes (November 2026), marked "FIX-n" in the code
+-------------------------------------------------------------
+FIX-1  ``_load_elexon_bid_offer`` records each generator's price source
+       (elexon_bmu / fitted / carrier_median / derived / zero) on
+       ``network._bm_price_source``; ``compute_redispatch_volumes`` writes it
+       as a ``price_source`` column in the redispatch summary, so the BM
+       calibration scorecard can leave out prices copied from the ELEXON
+       carrier median it compares against.
+FIX-2  ``_load_elexon_bid_offer``: once sentinel prices are removed (by
+       ``elexon_data`` or the defensive-bid mask) a BMU can have prices on
+       one side only, or a column with no value at all. The old code assumed
+       both sides exist and raised ``KeyError`` (Didcot GT, 7 Jan 2020).
+       Generators are now directly matched only when both sides have a real
+       price; storage aggregates each side over the columns it has, keeping
+       the derived price for an empty side.
 """
 
 import json
@@ -3309,8 +3325,18 @@ def _load_elexon_bid_offer(
 
     matched = 0
     direct_matched_generators = []
+    one_sided = []
     for gen_name in network.generators.index:
-        if gen_name in elexon_offers.columns:
+        # FIX-2: once sentinel prices are dropped (elexon_data FIX-BOD-1) a BMU
+        # can have real offers but no bids, or the reverse (e.g. Didcot GT:
+        # every bid was a 9999 sentinel). The old code assumed both columns
+        # exist and raised KeyError. A generator is directly matched only
+        # when both sides have a real price; otherwise it uses the fallback.
+        has_offer = gen_name in elexon_offers.columns and elexon_offers[gen_name].notna().any()
+        has_bid = gen_name in elexon_bids.columns and elexon_bids[gen_name].notna().any()
+        if has_offer != has_bid:
+            one_sided.append(gen_name)
+        if has_offer and has_bid:
             gen_offer[gen_name] = elexon_offers[gen_name].mean()
             # ELEXON sign convention: negative bid = ESO must PAY generator to reduce.
             # Our objective uses: min  offerinc + biddec, where bid must be
@@ -3322,6 +3348,16 @@ def _load_elexon_bid_offer(
             direct_matched_generators.append(gen_name)
 
     network._bm_direct_matched_generators = pd.Index(direct_matched_generators)
+    if one_sided:
+        logger.info(
+            f"FIX-2: {len(one_sided)} generator(s) have ELEXON prices on one side only "
+            f"(after removing sentinels) and use the fallback: {one_sided[:10]}"
+        )
+    # FIX-1: record where each generator's BM price comes from, so the
+    # calibration scorecard can leave out prices copied from the ELEXON
+    # carrier median (comparing those with that median is circular).
+    price_source = pd.Series("unpriced", index=network.generators.index, dtype=object)
+    price_source.loc[pd.Index(direct_matched_generators)] = "elexon_bmu"
 
     ladder_cfg = elexon_cfg.get("price_ladders", {}) or {}
     if bool(ladder_cfg.get("enabled", False)):
@@ -3402,6 +3438,7 @@ def _load_elexon_bid_offer(
         if len(fitted_applied_idx) > 0:
             gen_offer.loc[fitted_applied_idx] = fit_offer.loc[fitted_applied_idx]
             gen_bid.loc[fitted_applied_idx] = fit_bid.loc[fitted_applied_idx]
+            price_source.loc[fitted_applied_idx] = "fitted"  # FIX-1
 
     # Fill remaining unmatched generators with the configured fallback
     unmatched = gen_offer.isna()
@@ -3433,8 +3470,10 @@ def _load_elexon_bid_offer(
                 gen_bid[idx] = carrier_avg_bid.get(carrier, derived_bid[idx])
                 if carrier in carrier_avg_offer or carrier in carrier_avg_bid:
                     filled_carrier_avg += 1
+                    price_source[idx] = "carrier_median"  # FIX-1
                 else:
                     filled_derived += 1
+                    price_source[idx] = "derived"  # FIX-1
 
             logger.info(
                 f"Carrier-average fallback: {filled_carrier_avg} generators filled "
@@ -3461,9 +3500,12 @@ def _load_elexon_bid_offer(
             )
             gen_offer.loc[unmatched] = derived_offer.loc[unmatched]
             gen_bid.loc[unmatched] = derived_bid.loc[unmatched]
+            price_source.loc[unmatched] = "derived"  # FIX-1
         else:
             gen_offer[unmatched] = 0.0
             gen_bid[unmatched] = 0.0
+            price_source.loc[unmatched] = "zero"  # FIX-1
+    network._bm_price_source = price_source  # FIX-1
 
     matched_mask = ~unmatched
     _log_elexon_coverage_summary(
@@ -3493,7 +3535,8 @@ def _load_elexon_bid_offer(
 
         # Overlay ELEXON per-snapshot data for matched generators
         for gen_name in gen_names:
-            if gen_name in elexon_offers.columns:
+            # FIX-2: overlay only generators directly matched on both sides
+            if gen_name in network._bm_direct_matched_generators:
                 offer_aligned = elexon_offers[gen_name].reindex(snaps)
                 bid_aligned = elexon_bids[gen_name].reindex(snaps)
                 # Fill gaps with the static mean
@@ -3601,13 +3644,24 @@ def _load_elexon_bid_offer(
             if not matched_cols:
                 continue
 
-            offer_series = _aggregate_storage_prices(
-                elexon_offers_raw, matched_cols
-            )
-            bid_series = -_aggregate_storage_prices(elexon_bids_raw, matched_cols)
+            # FIX-2: a storage BMU can be missing from one side after the
+            # sentinel filter; aggregate each side over the columns it has,
+            # and keep the derived price for a side with no ELEXON data.
+            offer_cols = [c for c in matched_cols if c in elexon_offers_raw.columns]
+            bid_cols = [c for c in matched_cols if c in elexon_bids_raw.columns]
+            offer_series = (_aggregate_storage_prices(elexon_offers_raw, offer_cols)
+                            if offer_cols else pd.Series(dtype=float))
+            bid_series = (-_aggregate_storage_prices(elexon_bids_raw, bid_cols)
+                          if bid_cols else pd.Series(dtype=float))
 
-            static_offer = float(offer_series.mean())
-            static_bid = float(bid_series.mean())
+            static_offer = (float(offer_series.mean()) if offer_series.notna().any()
+                            else float(su_offer.loc[su_names].mean()))
+            static_bid = (float(bid_series.mean()) if bid_series.notna().any()
+                          else float(su_bid.loc[su_names].mean()))
+            if not offer_series.notna().any():
+                offer_series = pd.Series(static_offer, index=elexon_offers_raw.index)
+            if not bid_series.notna().any():
+                bid_series = pd.Series(static_bid, index=elexon_bids_raw.index)
             su_offer.loc[su_names] = static_offer
             su_bid.loc[su_names] = static_bid
 
@@ -4156,6 +4210,11 @@ def compute_redispatch_volumes(
                 "component": name,
                 "type": component_type,
                 "carrier": components.loc[name, "carrier"] if name in components.index else "unknown",
+                # FIX-1: origin of the BM price ("" when not recorded)
+                "price_source": (
+                    str(getattr(network, "_bm_price_source", {}).get(name, ""))
+                    if component_type == "generator" else "storage"
+                ),
                 "increase_MWh": increase,
                 "decrease_MWh": decrease,
                 "offer_cost": offer_cost,

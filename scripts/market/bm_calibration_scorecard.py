@@ -15,6 +15,35 @@ in the scenario config to enable.
 See also:
   - scripts/market/validate_bm.py — upstream BOALF/B1610 comparison
   - scripts/market/market_utils.py — bid/offer price calculation
+
+Fixes (November 2026), each marked "FIX-n" in the code
+------------------------------------------------------------------
+FIX-1         ELEXON sentinel prices (|price| >= 9999, "do not dispatch")
+              are removed before averaging. They made the nuclear reference
+              £10,000/MWh and wind_onshore offers £1,250.
+FIX-2         A volume check now runs when the model OR BOAV volume reaches
+              ``min_volume_mwh``. Before, only model volume counted, so a
+              carrier the model under-uses (coal: BOAV 5,424 / 5,890 MWh,
+              model 1.8 / 0) was never checked.
+FIX-3         Storage units are included (Pumped Storage, Battery). The
+              table looped over ``network.generators`` only, so two priority
+              carriers could never be flagged.
+FIX-4         A ratio whose ELEXON reference is below £1/MWh in size is NaN
+              (CCGT bid reference -1.93 gave ratio 7.18). A volume-weighted
+              ELEXON reference (each BMU's mean price weighted by its BOAV
+              accepted volume on that side) is added when ``boav_data.csv``
+              is available: ``vw_offer_elexon`` / ``vw_bid_elexon``.
+FIX-5         The model's effective price leaves out generators whose BM
+              price was copied from the ELEXON carrier median
+              (``price_source == "carrier_median"`` in the redispatch summary,
+              market_utils FIX-1); comparing those with that median is
+              circular (solar offer ratio 1.00). Their volume is reported in
+              ``model_inc_MWh_carrier_median`` / ``model_dec_MWh_carrier_median``.
+              Older summaries without ``price_source`` are flagged in
+              ``price_source_known``.
+FIX-6         Dashboard colour bands follow ``tolerance`` (red > tolerance,
+              amber > tolerance / 2) instead of fixed 0.2 / 0.1; unused
+              ``col`` argument removed.
 """
 
 import pandas as pd
@@ -36,6 +65,11 @@ except ImportError:
     HAS_PLOTLY = False
 
 from scripts.utilities.logging_config import setup_logging
+
+# FIX-1: same sentinel limit as elexon_data FIX-BOD-1
+BOD_SENTINEL_PRICE = 9999.0
+# FIX-4: references smaller than this (£/MWh, absolute) give unstable ratios
+MIN_REFERENCE_PRICE = 1.0
 
 
 # Carriers we watch closely when deciding whether calibration has regressed.
@@ -65,6 +99,9 @@ def _load_elexon_prices(
     bids = pd.read_csv(elexon_bids_path, index_col=0)
     offers.index = pd.to_datetime(offers.index)
     bids.index = pd.to_datetime(bids.index)
+    # FIX-1: drop ELEXON sentinel prices before any averaging
+    offers = offers.where(offers.abs() < BOD_SENTINEL_PRICE)
+    bids = bids.where(bids.abs() < BOD_SENTINEL_PRICE)
 
     bmu_map = pd.read_csv(bmu_mapping_path)
     bmu_to_gen = dict(zip(bmu_map["bmu_id"], bmu_map["generator_name"]))
@@ -79,6 +116,56 @@ def _load_elexon_prices(
     return offers_mapped, bids_mapped, bmu_to_gen
 
 
+def _accepted_volume_by_generator(
+    boav_data: Optional[pd.DataFrame],
+    bmu_to_gen: dict,
+) -> tuple[pd.Series, pd.Series]:
+    """
+    BOAV accepted volume per generator, offer side and bid side (FIX-4).
+
+    Parameters
+    ----------
+    boav_data : DataFrame or None
+        Raw BOAV rows with ``bmu_id``, ``side`` and ``accepted_volume_mwh``.
+    bmu_to_gen : dict
+        BMU ID -> generator name.
+
+    Returns
+    -------
+    (Series, Series)
+        Absolute MWh per generator for offers and for bids (empty if no data).
+    """
+    if boav_data is None or boav_data.empty:
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    df = boav_data.copy()
+    df["generator"] = df["bmu_id"].map(bmu_to_gen)
+    df = df[df["generator"].notna()]
+    df["mwh"] = pd.to_numeric(df["accepted_volume_mwh"], errors="coerce").abs()
+    off = df[df["side"] == "offer"].groupby("generator")["mwh"].sum()
+    bid = df[df["side"] == "bid"].groupby("generator")["mwh"].sum()
+    return off, bid
+
+
+def _weighted(values: pd.Series, weights: pd.Series) -> float:
+    """
+    Weighted mean of ``values`` by ``weights`` on their shared index.
+
+    Parameters
+    ----------
+    values, weights : Series
+
+    Returns
+    -------
+    float
+        NaN when no positive weight overlaps a finite value.
+    """
+    w = weights.reindex(values.index).fillna(0.0)
+    ok = values.notna() & (w > 0)
+    if not ok.any():
+        return np.nan
+    return float((values[ok] * w[ok]).sum() / w[ok].sum())
+
+
 def _build_scorecard(
     network,
     redispatch: pd.DataFrame,
@@ -86,11 +173,51 @@ def _build_scorecard(
     offers_mapped: pd.DataFrame,
     bids_mapped: pd.DataFrame,
     mapped_gen_names: set,
+    accepted_off: Optional[pd.Series] = None,
+    accepted_bid: Optional[pd.Series] = None,
 ) -> pd.DataFrame:
-    """Assemble per-carrier comparison table."""
-    gens = network.generators
+    """
+    Assemble the per-carrier comparison table.
 
-    # Model: per-carrier volumes and costs
+    Parameters
+    ----------
+    network : pypsa.Network
+    redispatch : DataFrame
+        Redispatch summary (one row per component).
+    boav_by_carrier : DataFrame
+        BOAV accepted volumes by carrier.
+    offers_mapped, bids_mapped : DataFrame
+        ELEXON prices with columns renamed to generator names.
+    mapped_gen_names : set
+        Generators (and storage units) with at least one mapped BMU.
+    accepted_off, accepted_bid : Series, optional
+        BOAV accepted MWh per generator, for the volume-weighted reference.
+
+    Returns
+    -------
+    DataFrame
+        One row per carrier, sorted by capacity.
+    """
+    # FIX-3: storage units are carriers too
+    comps = pd.concat([
+        network.generators[["carrier", "p_nom"]],
+        network.storage_units[["carrier", "p_nom"]],
+    ])
+    accepted_off = accepted_off if accepted_off is not None else pd.Series(dtype=float)
+    accepted_bid = accepted_bid if accepted_bid is not None else pd.Series(dtype=float)
+
+    # FIX-5: model price excludes carrier-median-priced generators
+    price_source_known = "price_source" in redispatch.columns
+    if price_source_known:
+        circular = redispatch["price_source"].astype(str) == "carrier_median"
+    else:
+        circular = pd.Series(False, index=redispatch.index)
+    circ_by_carrier = (
+        redispatch[circular].groupby("carrier")[["increase_MWh", "decrease_MWh"]].sum()
+    )
+    priced = redispatch[~circular]
+
+    # Model: per-carrier volumes (all components) and costs (non-circular)
     model_by_carrier = (
         redispatch.groupby("carrier")
         .agg(
@@ -100,14 +227,20 @@ def _build_scorecard(
             bid_cost=("bid_cost", "sum"),
         )
     )
+    priced_by_carrier = priced.groupby("carrier").agg(
+        increase_MWh=("increase_MWh", "sum"),
+        decrease_MWh=("decrease_MWh", "sum"),
+        offer_cost=("offer_cost", "sum"),
+        bid_cost=("bid_cost", "sum"),
+    )
     model_by_carrier["eff_offer_model"] = (
-        model_by_carrier["offer_cost"]
-        / model_by_carrier["increase_MWh"].replace(0, np.nan)
-    )
+        priced_by_carrier["offer_cost"]
+        / priced_by_carrier["increase_MWh"].replace(0, np.nan)
+    ).reindex(model_by_carrier.index)
     model_by_carrier["eff_bid_model"] = (
-        model_by_carrier["bid_cost"]
-        / model_by_carrier["decrease_MWh"].replace(0, np.nan)
-    )
+        priced_by_carrier["bid_cost"]
+        / priced_by_carrier["decrease_MWh"].replace(0, np.nan)
+    ).reindex(model_by_carrier.index)
 
     # BOAV accepted volumes are the settlement benchmark for BM volume.
     boav = boav_by_carrier.set_index("carrier") if not boav_by_carrier.empty else pd.DataFrame()
@@ -115,8 +248,8 @@ def _build_scorecard(
     boav_dec = boav["decrease_mwh"] if "decrease_mwh" in boav.columns else pd.Series(dtype=float)
 
     rows = []
-    for carrier in sorted(gens["carrier"].unique()):
-        car_gens = gens[gens["carrier"] == carrier]
+    for carrier in sorted(comps["carrier"].unique()):
+        car_gens = comps[comps["carrier"] == carrier]
         matched_gens = car_gens.index[car_gens.index.isin(mapped_gen_names)]
 
         matched_in_offers = [g for g in matched_gens if g in offers_mapped.columns]
@@ -127,13 +260,15 @@ def _build_scorecard(
         if matched_in_offers:
             offer_per_gen = offers_mapped[matched_in_offers].mean(axis=0)
             median_offer_elexon = float(offer_per_gen.median())
+            vw_offer_elexon = _weighted(offer_per_gen, accepted_off)  # FIX-4
         else:
-            median_offer_elexon = np.nan
+            median_offer_elexon = vw_offer_elexon = np.nan
         if matched_in_bids:
             bid_per_gen = -bids_mapped[matched_in_bids].mean(axis=0)
             median_bid_elexon = float(bid_per_gen.median())
+            vw_bid_elexon = _weighted(bid_per_gen, accepted_bid)  # FIX-4
         else:
-            median_bid_elexon = np.nan
+            median_bid_elexon = vw_bid_elexon = np.nan
 
         model_row = model_by_carrier.reindex([carrier]).iloc[0] if carrier in model_by_carrier.index else None
         eff_offer_model = float(model_row["eff_offer_model"]) if model_row is not None else np.nan
@@ -147,8 +282,9 @@ def _build_scorecard(
         boav_inc_mwh = float(boav_inc.get(carrier, np.nan))
         boav_dec_mwh = float(boav_dec.get(carrier, np.nan))
 
-        def _ratio(num, denom):
-            if denom is None or not np.isfinite(denom) or denom == 0:
+        def _ratio(num, denom, min_abs=0.0):
+            # FIX-4: price references below MIN_REFERENCE_PRICE give NaN
+            if denom is None or not np.isfinite(denom) or denom == 0 or abs(denom) < min_abs:
                 return np.nan
             if num is None or not np.isfinite(num):
                 return np.nan
@@ -163,10 +299,17 @@ def _build_scorecard(
                 if len(matched_gens) else 0.0,
             "median_offer_elexon": median_offer_elexon,
             "median_bid_elexon": median_bid_elexon,
+            "vw_offer_elexon": vw_offer_elexon,
+            "vw_bid_elexon": vw_bid_elexon,
             "eff_offer_model": eff_offer_model,
             "eff_bid_model": eff_bid_model,
-            "offer_ratio": _ratio(eff_offer_model, median_offer_elexon),
-            "bid_ratio": _ratio(eff_bid_model, median_bid_elexon),
+            "offer_ratio": _ratio(eff_offer_model, median_offer_elexon, MIN_REFERENCE_PRICE),
+            "bid_ratio": _ratio(eff_bid_model, median_bid_elexon, MIN_REFERENCE_PRICE),
+            "vw_offer_ratio": _ratio(eff_offer_model, vw_offer_elexon, MIN_REFERENCE_PRICE),
+            "vw_bid_ratio": _ratio(eff_bid_model, vw_bid_elexon, MIN_REFERENCE_PRICE),
+            "price_source_known": price_source_known,
+            "model_inc_MWh_carrier_median": float(circ_by_carrier["increase_MWh"].get(carrier, 0.0)),
+            "model_dec_MWh_carrier_median": float(circ_by_carrier["decrease_MWh"].get(carrier, 0.0)),
             "model_inc_MWh": inc_mwh_model,
             "model_dec_MWh": dec_mwh_model,
             "boav_inc_MWh": boav_inc_mwh,
@@ -195,16 +338,21 @@ def _flag_regressions(
         if car not in priority:
             continue
 
-        for name, model_mwh_col, ratio_col, side in [
-            ("offer", "model_inc_MWh", "offer_ratio", "price"),
-            ("bid", "model_dec_MWh", "bid_ratio", "price"),
-            ("inc_volume", "model_inc_MWh", "inc_ratio", "volume"),
-            ("dec_volume", "model_dec_MWh", "dec_ratio", "volume"),
+        for name, model_mwh_col, ratio_col, side, boav_col in [
+            ("offer", "model_inc_MWh", "offer_ratio", "price", None),
+            ("bid", "model_dec_MWh", "bid_ratio", "price", None),
+            ("inc_volume", "model_inc_MWh", "inc_ratio", "volume", "boav_inc_MWh"),
+            ("dec_volume", "model_dec_MWh", "dec_ratio", "volume", "boav_dec_MWh"),
         ]:
             ratio = row[ratio_col]
             if not np.isfinite(ratio):
                 continue
-            if row[model_mwh_col] < min_volume_mwh:
+            # FIX-2: a volume check counts BOAV volume too, so a carrier the
+            # model under-uses is still checked
+            volume = row[model_mwh_col]
+            if boav_col is not None and np.isfinite(row.get(boav_col, np.nan)):
+                volume = max(volume, row[boav_col])
+            if volume < min_volume_mwh:
                 continue
             if abs(ratio - 1.0) > tolerance:
                 issues.append({
@@ -224,6 +372,7 @@ def _build_dashboard(
     scenario_id: str,
     output_path: Path,
     logger: logging.Logger,
+    tolerance: float = 0.20,
 ) -> None:
     """Write an HTML dashboard with carrier-level ratio bars."""
     if not HAS_PLOTLY:
@@ -252,11 +401,12 @@ def _build_dashboard(
         vertical_spacing=0.16,
     )
 
-    def _trace(col, y_col, label, row, col_idx):
+    def _trace(y_col, label, row, col_idx):
         vals = disp[y_col].replace([np.inf, -np.inf], np.nan)
+        # FIX-6: bands follow the configured tolerance
         colors = [
-            "#d9534f" if (np.isfinite(v) and abs(v - 1.0) > 0.2)
-            else "#f0ad4e" if (np.isfinite(v) and abs(v - 1.0) > 0.1)
+            "#d9534f" if (np.isfinite(v) and abs(v - 1.0) > tolerance)
+            else "#f0ad4e" if (np.isfinite(v) and abs(v - 1.0) > tolerance / 2)
             else "#5cb85c"
             for v in vals
         ]
@@ -274,10 +424,10 @@ def _build_dashboard(
         )
         fig.add_vline(x=1.0, line_dash="dash", line_color="gray", row=row, col=col_idx)
 
-    _trace("offer_ratio", "offer_ratio", "offer", 1, 1)
-    _trace("bid_ratio", "bid_ratio", "bid", 1, 2)
-    _trace("inc_ratio", "inc_ratio", "inc", 2, 1)
-    _trace("dec_ratio", "dec_ratio", "dec", 2, 2)
+    _trace("offer_ratio", "offer", 1, 1)
+    _trace("bid_ratio", "bid", 1, 2)
+    _trace("inc_ratio", "inc", 2, 1)
+    _trace("dec_ratio", "dec", 2, 2)
 
     fig.update_layout(
         title=f"BM Calibration Scorecard — {scenario_id}",
@@ -314,8 +464,14 @@ def run_scorecard(
     min_volume_mwh: float,
     fail_on_regression: bool,
     logger: logging.Logger,
+    boav_data_csv: Optional[Path] = None,
 ) -> pd.DataFrame:
-    """End-to-end scorecard build. Raises on regression when requested."""
+    """
+    End-to-end scorecard build. Raises on regression when requested.
+
+    ``boav_data_csv`` (raw BOAV rows) is optional; when present it gives the
+    volume-weighted ELEXON reference (FIX-4).
+    """
     if pypsa is None:
         raise ImportError("pypsa is required for the calibration scorecard")
 
@@ -338,9 +494,19 @@ def run_scorecard(
     )
     mapped_gen_names = set(bmu_to_gen.values())
 
+    boav_data = None
+    if boav_data_csv is not None and Path(boav_data_csv).exists():
+        boav_data = pd.read_csv(boav_data_csv)
+        logger.info(f"BOAV rows for volume weighting: {len(boav_data)} ({boav_data_csv})")
+    accepted_off, accepted_bid = _accepted_volume_by_generator(boav_data, bmu_to_gen)
+    if "price_source" not in redispatch.columns:
+        logger.warning("Redispatch summary has no price_source column (pre-FIX-2 run): "
+                       "model prices still include carrier-median-priced generators")
+
     scorecard = _build_scorecard(
         network, redispatch, boav_by_carrier,
         offers_mapped, bids_mapped, mapped_gen_names,
+        accepted_off=accepted_off, accepted_bid=accepted_bid,
     )
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -366,7 +532,8 @@ def run_scorecard(
         )
 
     output_html.parent.mkdir(parents=True, exist_ok=True)
-    _build_dashboard(scorecard, issues, scenario_id, output_html, logger)
+    _build_dashboard(scorecard, issues, scenario_id, output_html, logger,
+                     tolerance=tolerance)
     logger.info(f"Wrote calibration dashboard: {output_html}")
 
     if fail_on_regression and not issues.empty:
@@ -397,6 +564,11 @@ if __name__ == "__main__":
     tolerance = float(calibration_cfg.get("tolerance", 0.20))
     min_volume_mwh = float(calibration_cfg.get("min_volume_mwh", 1000.0))
     fail_on_regression = bool(calibration_cfg.get("fail_on_regression", False))
+    # FIX-4: raw BOAV rows written by validate_bm (optional, not a rule input)
+    _year = scenario_config.get("modelled_year")
+    boav_data_csv = Path(
+        f"resources/market/elexon/validation/{_year}/{scenario_id}/boav_data.csv"
+    )
 
     run_scorecard(
         scenario_id=scenario_id,
@@ -412,4 +584,5 @@ if __name__ == "__main__":
         min_volume_mwh=min_volume_mwh,
         fail_on_regression=fail_on_regression,
         logger=logger,
+        boav_data_csv=boav_data_csv,
     )
